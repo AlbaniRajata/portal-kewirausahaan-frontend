@@ -1,16 +1,23 @@
-import { Routes, Route, Navigate } from "react-router-dom";
-import LoginPage from "../pages/auth/LoginPage";
+import { Routes, Route } from "react-router-dom";
 
-const AppRoutes = () => {
+import LandingPage from "../pages/public/LandingPage";
+import LoginPage from "../pages/auth/LoginPage";
+import RegisterPage from "../pages/auth/RegisterPage";
+
+import NotFoundPage from "../pages/errors/NotFoundPage";
+import ServerErrorPage from "../pages/errors/ServerErrorPage";
+
+export default function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/login" />} />
+      <Route path="/" element={<LandingPage />} />
 
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/daftar" element={<RegisterPage />} />
 
-      <Route path="*" element={<h2>404 Not Found</h2>} />
+      <Route path="/500" element={<ServerErrorPage />} />
+
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
-};
-
-export default AppRoutes;
+}
