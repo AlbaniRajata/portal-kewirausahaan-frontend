@@ -27,7 +27,7 @@ const LandingPage = () => {
 
           <Button
             variant="contained"
-            onClick={() => navigate("/register")}
+            onClick={() => navigate("/daftar/mahasiswa")}
           >
             Daftar
           </Button>
