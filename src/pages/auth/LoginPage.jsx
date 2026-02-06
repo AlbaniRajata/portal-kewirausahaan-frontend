@@ -8,11 +8,8 @@ import {
   Paper,
   TextField,
   Typography,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Alert,
+  Modal,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
@@ -27,7 +24,7 @@ export default function LoginPage() {
   const setAuth = useAuthStore((s) => s.setAuth);
 
   const [showPassword, setShowPassword] = useState(false);
-  const [openRegisterDialog, setOpenRegisterDialog] = useState(false);
+  const [openRegisterModal, setOpenRegisterModal] = useState(false);
 
   const [form, setForm] = useState({
     email: "",
@@ -46,8 +43,19 @@ export default function LoginPage() {
 
   const validate = () => {
     const newErrors = {};
-    if (!form.email) newErrors.email = "Wajib diisi";
-    if (!form.password) newErrors.password = "Wajib diisi";
+
+    if (!form.email) {
+      newErrors.email = "Email wajib diisi";
+    } else if (!form.email.includes("@")) {
+      newErrors.email = "Format email tidak valid";
+    }
+
+    if (!form.password) {
+      newErrors.password = "Password wajib diisi";
+    } else if (form.password.length < 8) {
+      newErrors.password = "Password minimal 8 karakter";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -81,21 +89,38 @@ export default function LoginPage() {
 
       const role = res.data.user.role;
 
-      if (role === "mahasiswa") navigate("/dashboard/mahasiswa");
-      else if (role === "dosen") navigate("/dashboard/dosen");
-      else navigate("/dashboard");
+      if (role === "mahasiswa") {
+        navigate("/mahasiswa/biodata");
+      } else if (role === "dosen") {
+        navigate("/mahasiswa/biodata");
+      } else {
+        navigate("/dashboard");
+      }
     } catch (err) {
-      const message =
-        err.response?.data?.message || "Login gagal. Coba lagi.";
+      const message = err.response?.data?.message || "Login gagal. Coba lagi.";
       setAlert(message);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      handleLogin();
+    }
+  };
+
+  const handleRegisterChoice = (type) => {
+    setOpenRegisterModal(false);
+    if (type === "mahasiswa") {
+      navigate("/daftar/mahasiswa");
+    } else if (type === "dosen") {
+      navigate("/daftar/dosen");
+    }
+  };
+
   return (
     <Box sx={{ minHeight: "100vh", display: "flex" }}>
-      {/* LEFT IMAGE */}
       <Box
         sx={{
           flex: 1,
@@ -139,7 +164,6 @@ export default function LoginPage() {
         </Box>
       </Box>
 
-      {/* RIGHT FORM */}
       <Box
         sx={{
           flex: 1,
@@ -151,11 +175,17 @@ export default function LoginPage() {
         }}
       >
         <Paper elevation={0} sx={{ width: "100%", maxWidth: 540, p: 4 }}>
-          <Typography align="center" sx={{ fontSize: 26, fontWeight: 700, mb: 1 }}>
+          <Typography
+            align="center"
+            sx={{ fontSize: 26, fontWeight: 700, mb: 1 }}
+          >
             Portal Kewirausahaan PMW & INBIS
           </Typography>
 
-          <Typography align="center" sx={{ fontSize: 14, color: "#777", mb: 3 }}>
+          <Typography
+            align="center"
+            sx={{ fontSize: 14, color: "#777", mb: 3 }}
+          >
             Silahkan masuk untuk melanjutkan
           </Typography>
 
@@ -173,8 +203,10 @@ export default function LoginPage() {
             placeholder="Masukkan email Anda"
             value={form.email}
             onChange={(e) => handleChange("email", e.target.value)}
+            onKeyPress={handleKeyPress}
             error={!!errors.email}
             helperText={errors.email}
+            disabled={loading}
             sx={{ mb: 2, "& fieldset": { borderRadius: 2 } }}
           />
 
@@ -187,13 +219,18 @@ export default function LoginPage() {
             placeholder="Masukkan password Anda"
             value={form.password}
             onChange={(e) => handleChange("password", e.target.value)}
+            onKeyPress={handleKeyPress}
             error={!!errors.password}
             helperText={errors.password}
+            disabled={loading}
             sx={{ "& fieldset": { borderRadius: 2 } }}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
-                  <IconButton onClick={() => setShowPassword(!showPassword)}>
+                  <IconButton
+                    onClick={() => setShowPassword(!showPassword)}
+                    disabled={loading}
+                  >
                     {showPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
                 </InputAdornment>
@@ -236,7 +273,8 @@ export default function LoginPage() {
           <Button
             fullWidth
             variant="outlined"
-            onClick={() => setOpenRegisterDialog(true)}
+            onClick={() => setOpenRegisterModal(true)}
+            disabled={loading}
             sx={{
               py: 1.4,
               borderRadius: 2,
@@ -251,32 +289,97 @@ export default function LoginPage() {
         </Paper>
       </Box>
 
-      {/* REGISTER DIALOG */}
-      <Dialog
-        open={openRegisterDialog}
-        onClose={() => setOpenRegisterDialog(false)}
+      <Modal
+        open={openRegisterModal}
+        onClose={() => !loading && setOpenRegisterModal(false)}
       >
-        <DialogTitle>Daftar sebagai</DialogTitle>
-        <DialogContent>
-          <Typography sx={{ color: "#555" }}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: "90%",
+            maxWidth: 480,
+            bgcolor: "background.paper",
+            borderRadius: 3,
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <Typography
+            align="center"
+            sx={{ fontSize: 24, fontWeight: 700, mb: 1 }}
+          >
+            Daftar Sebagai
+          </Typography>
+
+          <Typography
+            align="center"
+            sx={{ fontSize: 14, color: "#777", mb: 4 }}
+          >
             Pilih jenis akun yang akan didaftarkan
           </Typography>
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
+
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Button
+              fullWidth
+              variant="contained"
+              onClick={() => handleRegisterChoice("mahasiswa")}
+              disabled={loading}
+              sx={{
+                py: 2,
+                borderRadius: 2,
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: 16,
+                backgroundColor: "#0D59F2",
+                "&:hover": { backgroundColor: "#0846c7" },
+              }}
+            >
+              Mahasiswa
+            </Button>
+
+            <Button
+              fullWidth
+              variant="outlined"
+              onClick={() => handleRegisterChoice("dosen")}
+              disabled={loading}
+              sx={{
+                py: 2,
+                borderRadius: 2,
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: 16,
+                borderColor: "#0D59F2",
+                color: "#0D59F2",
+                "&:hover": {
+                  borderColor: "#0846c7",
+                  backgroundColor: "rgba(13, 89, 242, 0.04)",
+                },
+              }}
+            >
+              Dosen
+            </Button>
+          </Box>
+
           <Button
-            variant="outlined"
-            onClick={() => navigate("/daftar/mahasiswa")}
+            fullWidth
+            variant="text"
+            onClick={() => setOpenRegisterModal(false)}
+            disabled={loading}
+            sx={{
+              mt: 3,
+              py: 1,
+              textTransform: "none",
+              fontWeight: 600,
+              color: "#777",
+            }}
           >
-            Mahasiswa
+            Batal
           </Button>
-          <Button
-            variant="contained"
-            onClick={() => navigate("/daftar/dosen")}
-          >
-            Dosen
-          </Button>
-        </DialogActions>
-      </Dialog>
+        </Box>
+      </Modal>
     </Box>
   );
 }
