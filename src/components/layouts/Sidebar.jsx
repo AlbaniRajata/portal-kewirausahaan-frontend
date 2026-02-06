@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PersonIcon from "@mui/icons-material/Person";
+import GroupIcon from "@mui/icons-material/Group";
 import DescriptionIcon from "@mui/icons-material/Description";
 import SchoolIcon from "@mui/icons-material/School";
 import AssessmentIcon from "@mui/icons-material/Assessment";
@@ -29,6 +30,11 @@ export default function Sidebar() {
       path: "/mahasiswa/biodata",
     },
     {
+      text: "Anggota Tim",
+      icon: <GroupIcon />,
+      path: "/mahasiswa/anggota-tim",
+    },
+    {
       text: "Daftar Proposal",
       icon: <DescriptionIcon />,
       path: "/mahasiswa/proposal",
@@ -40,12 +46,10 @@ export default function Sidebar() {
       submenu: [
         {
           text: "Pengajuan Pembimbing",
-          icon: <PersonIcon />,
           path: "/mahasiswa/bimbingan/pengajuan",
         },
         {
           text: "Jadwal Bimbingan",
-          icon: <PersonIcon />,
           path: "/mahasiswa/bimbingan/jadwal",
         },
       ],

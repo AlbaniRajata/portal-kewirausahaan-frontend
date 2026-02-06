@@ -80,7 +80,7 @@ export default function LoginPage() {
       await Swal.fire({
         icon: "success",
         title: "Login berhasil",
-        text: "Anda akan diarahkan ke dashboard",
+        text: "Sedang diarahkan ke biodata Anda...",
         timer: 2000,
         timerProgressBar: true,
         showConfirmButton: false,

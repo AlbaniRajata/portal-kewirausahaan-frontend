@@ -6,6 +6,7 @@ import RegisterMahasiswaPage from "../pages/auth/RegisterMahasiswaPage";
 import RegisterDosenPage from "../pages/auth/RegisterDosenPage";
 
 import BiodataMahasiswaPage from "../pages/mahasiswa/BiodataMahasiswaPage";
+import AnggotaTimPage from "../pages/mahasiswa/AnggotaTimPage";
 import PrivateRoute from "../components/PrivateRoute";
 
 import NotFoundPage from "../pages/errors/NotFoundPage";
@@ -19,7 +20,6 @@ export default function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/daftar/mahasiswa" element={<RegisterMahasiswaPage />} />
       <Route path="/daftar/dosen" element={<RegisterDosenPage />} />
-
       <Route
         path="/mahasiswa/biodata"
         element={
@@ -28,7 +28,14 @@ export default function AppRoutes() {
           </PrivateRoute>
         }
       />
-
+      <Route
+        path="/mahasiswa/anggota-tim"
+        element={
+          <PrivateRoute>
+            <AnggotaTimPage />
+          </PrivateRoute>
+        }
+      />
       <Route path="/500" element={<ServerErrorPage />} />
 
       <Route path="*" element={<NotFoundPage />} />
