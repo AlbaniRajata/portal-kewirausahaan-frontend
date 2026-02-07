@@ -1,35 +1,16 @@
 import { Box, IconButton, Avatar, Typography, Menu, MenuItem } from "@mui/material";
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useAuthStore } from "../../store/authStore";
 import { useNavigate } from "react-router-dom";
-import { getProfile } from "../../api/mahasiswa";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 
 export default function Navbar() {
   const navigate = useNavigate();
-  const { user, logout, updateUser } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const [anchorEl, setAnchorEl] = useState(null);
-  const [profileData, setProfileData] = useState(null);
-
-  const fetchProfileData = useCallback(async () => {
-    try {
-      const response = await getProfile();
-      setProfileData(response.data);
-      updateUser(response.data);
-    } catch (err) {
-      console.error("Error fetching profile:", err);
-    }
-  }, [updateUser]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      await fetchProfileData();
-    };
-    fetchData();
-  }, [fetchProfileData]);
 
   const handleOpenMenu = (event) => {
     setAnchorEl(event.currentTarget);
@@ -44,11 +25,22 @@ export default function Navbar() {
     navigate("/login");
   };
 
-  const displayName = profileData?.nama_lengkap || user?.nama_lengkap || user?.username || "User";
+  const getRoleLabel = (roleId) => {
+    const roles = {
+      1: "Mahasiswa",
+      2: "Administrator",
+      3: "Dosen Pembimbing",
+      4: "Reviewer Internal",
+      5: "Juri Eksternal",
+    };
+    return roles[roleId] || "User";
+  };
+
+  const displayName = user?.nama_lengkap || user?.username || "User";
   const displayProgram = "Program Mahasiswa Wirausaha";
-  const displayRole = user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "Mahasiswa";
+  const displayRole = getRoleLabel(user?.id_role);
   const baseUrl = import.meta.env.VITE_API_URL.replace('/api', '');
-  const photoUrl = profileData?.foto ? `${baseUrl}/uploads/profil/${profileData.foto}` : null;
+  const photoUrl = user?.foto ? `${baseUrl}/uploads/profil/${user.foto}` : null;
   
   return (
     <Box

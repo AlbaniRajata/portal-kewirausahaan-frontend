@@ -80,21 +80,22 @@ export default function LoginPage() {
       await Swal.fire({
         icon: "success",
         title: "Login berhasil",
-        text: "Sedang diarahkan ke biodata Anda...",
-        timer: 2000,
+        timer: 1500,
         timerProgressBar: true,
         showConfirmButton: false,
         allowOutsideClick: false,
       });
 
-      const role = res.data.user.role;
+      const roleId = res.data.user.id_role;
 
-      if (role === "mahasiswa") {
+      if (roleId === 2) {
+        navigate("/admin/verifikasi");
+      } else if (roleId === 1) {
         navigate("/mahasiswa/biodata");
-      } else if (role === "dosen") {
-        navigate("/mahasiswa/biodata");
+      } else if (roleId === 3) {
+        navigate("/dosen/biodata");
       } else {
-        navigate("/dashboard");
+        navigate("/");
       }
     } catch (err) {
       const message = err.response?.data?.message || "Login gagal. Coba lagi.";

@@ -4,6 +4,7 @@ import LandingPage from "../pages/public/LandingPage";
 import LoginPage from "../pages/auth/LoginPage";
 import RegisterMahasiswaPage from "../pages/auth/RegisterMahasiswaPage";
 import RegisterDosenPage from "../pages/auth/RegisterDosenPage";
+import VerifikasiPage from "../pages/admin/VerifikasiPage";
 
 import BiodataMahasiswaPage from "../pages/mahasiswa/BiodataMahasiswaPage";
 import AnggotaTimPage from "../pages/mahasiswa/AnggotaTimPage";
@@ -21,9 +22,17 @@ export default function AppRoutes() {
       <Route path="/daftar/mahasiswa" element={<RegisterMahasiswaPage />} />
       <Route path="/daftar/dosen" element={<RegisterDosenPage />} />
       <Route
+        path="/admin/verifikasi"
+        element={
+          <PrivateRoute requiredRole={2}>
+            <VerifikasiPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
         path="/mahasiswa/biodata"
         element={
-          <PrivateRoute>
+          <PrivateRoute requiredRole={1}>
             <BiodataMahasiswaPage />
           </PrivateRoute>
         }

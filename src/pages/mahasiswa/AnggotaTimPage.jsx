@@ -19,7 +19,8 @@ import {
 } from "@mui/material";
 import { Add, Delete, Search } from "@mui/icons-material";
 import Swal from "sweetalert2";
-import DashboardLayout from "../../components/layouts/DashboardLayout";
+import BodyLayout from "../../components/layouts/BodyLayout";
+import MahasiswaSidebar from "../../components/layouts/MahasiswaSidebar";
 import { getTimStatus, getTimDetail, createTim, searchMahasiswa } from "../../api/tim";
 import { getAllProgram } from "../../api/public";
 
@@ -224,11 +225,11 @@ export default function AnggotaTimPage() {
 
   if (loading) {
     return (
-      <DashboardLayout>
+      <BodyLayout Sidebar={MahasiswaSidebar}>
         <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
           <CircularProgress />
         </Box>
-      </DashboardLayout>
+      </BodyLayout>
     );
   }
 
@@ -236,7 +237,7 @@ export default function AnggotaTimPage() {
     const allApproved = timDetail?.anggota?.every((item) => item.peran === 1 || item.status === 1);
 
     return (
-      <DashboardLayout>
+      <BodyLayout Sidebar={MahasiswaSidebar}>
         <Box>
           <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>
             Anggota Tim
@@ -323,12 +324,12 @@ export default function AnggotaTimPage() {
             </TableContainer>
           </Paper>
         </Box>
-      </DashboardLayout>
+      </BodyLayout>
     );
   }
 
   return (
-    <DashboardLayout>
+    <BodyLayout>
       <Box>
         <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>
           Anggota Tim
@@ -531,6 +532,6 @@ export default function AnggotaTimPage() {
           </Box>
         </Paper>
       </Box>
-    </DashboardLayout>
+    </BodyLayout>
   );
 }

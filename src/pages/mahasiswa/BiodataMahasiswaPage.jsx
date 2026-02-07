@@ -14,7 +14,8 @@ import {
 } from "@mui/material";
 import { Visibility, VisibilityOff, PhotoCamera } from "@mui/icons-material";
 import Swal from "sweetalert2";
-import DashboardLayout from "../../components/layouts/DashboardLayout";
+import BodyLayout from "../../components/layouts/BodyLayout";
+import MahasiswaSidebar from "../../components/layouts/MahasiswaSidebar";
 import { getProfile, updateProfile, updatePassword } from "../../api/mahasiswa";
 import { getAllJurusan } from "../../api/jurusan";
 import { getAllProdi } from "../../api/public";
@@ -321,16 +322,16 @@ export default function BiodataMahasiswaPage() {
 
   if (loading) {
     return (
-      <DashboardLayout>
+      <BodyLayout Sidebar={MahasiswaSidebar}>
         <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
           <CircularProgress />
         </Box>
-      </DashboardLayout>
+      </BodyLayout>
     );
   }
 
   return (
-    <DashboardLayout>
+    <BodyLayout Sidebar={MahasiswaSidebar}>
       <Box>
         <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>
           Biodata Anda
@@ -659,6 +660,6 @@ export default function BiodataMahasiswaPage() {
           </Box>
         </Paper>
       </Box>
-    </DashboardLayout>
+    </BodyLayout>
   );
 }
