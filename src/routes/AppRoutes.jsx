@@ -10,7 +10,8 @@ import ProgramPage from "../pages/admin/ProgramPage";
 
 import BiodataMahasiswaPage from "../pages/mahasiswa/BiodataMahasiswaPage";
 import AnggotaTimPage from "../pages/mahasiswa/AnggotaTimPage";
-import ProposalPage from "../pages/mahasiswa/ProposalPage";
+import DaftarProposalPage from "../pages/mahasiswa/DaftarProposalPage";
+import FormProposalPage from "../pages/mahasiswa/FormProposalPage";
 
 import PrivateRoute from "../components/PrivateRoute";
 
@@ -42,7 +43,8 @@ export default function AppRoutes() {
       >
         <Route path="biodata" element={<BiodataMahasiswaPage />} />
         <Route path="anggota-tim" element={<AnggotaTimPage />} />
-        <Route path="proposal" element={<ProposalPage />} />
+        <Route path="proposal" element={<DaftarProposalPage />} />
+        <Route path="proposal/form" element={<FormProposalPage />} />
       </Route>
 
       {/* ERROR */}

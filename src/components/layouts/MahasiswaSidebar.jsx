@@ -16,7 +16,12 @@ export default function SidebarMahasiswa() {
   const location = useLocation();
   const [openBimbingan, setOpenBimbingan] = useState(false);
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => {
+    if (path === "/mahasiswa/proposal" && location.pathname === "/mahasiswa/proposal/form") {
+      return true;
+    }
+    return location.pathname === path;
+  };
 
   const menuItems = [
     {

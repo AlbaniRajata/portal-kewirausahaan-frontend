@@ -15,8 +15,9 @@ import {
   TableHead,
   TableRow,
   Chip,
+  IconButton,
 } from "@mui/material";
-import { CloudUpload, Send, Save, Download } from "@mui/icons-material";
+import { CloudUpload, Send, Save, Download, Close, AttachFile } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
@@ -28,13 +29,14 @@ import {
 } from "../../api/proposal";
 import { getAllKategori } from "../../api/public";
 
-export default function ProposalPage() {
+export default function ProposalFormPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState(null);
   const [kategoriOptions, setKategoriOptions] = useState([]);
   const [alert, setAlert] = useState("");
   const [file, setFile] = useState(null);
+  const [filePreview, setFilePreview] = useState(null);
 
   const [form, setForm] = useState({
     judul: "",
@@ -62,6 +64,14 @@ export default function ProposalPage() {
           id_kategori: p.id_kategori || "",
           modal_diajukan: p.modal_diajukan || "",
         });
+        
+        // Set existing file preview
+        if (p.file_proposal) {
+          setFilePreview({
+            name: p.file_proposal,
+            isExisting: true,
+          });
+        }
       }
     } catch (err) {
       console.error("Error fetching status:", err);
@@ -99,7 +109,19 @@ export default function ProposalPage() {
     }
 
     setFile(selectedFile);
+    setFilePreview({
+      name: selectedFile.name,
+      isExisting: false,
+    });
     setAlert("");
+    setErrors({ ...errors, file: "" });
+  };
+
+  const handleRemoveFile = () => {
+    setFile(null);
+    setFilePreview(null);
+    const fileInput = document.getElementById("file-upload");
+    if (fileInput) fileInput.value = "";
   };
 
   const validate = () => {
@@ -273,7 +295,7 @@ export default function ProposalPage() {
       <BodyLayout Sidebar={SidebarMahasiswa}>
         <Box>
           <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>
-            Pendaftaran Proposal
+            Form Proposal
           </Typography>
           <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>
             Lengkapi form di bawah ini untuk mendaftarkan proposal Anda
@@ -292,7 +314,7 @@ export default function ProposalPage() {
       <BodyLayout Sidebar={SidebarMahasiswa}>
         <Box>
           <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>
-            Pendaftaran Proposal
+            Form Proposal
           </Typography>
           <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>
             Lengkapi form di bawah ini untuk mendaftarkan proposal Anda
@@ -311,7 +333,7 @@ export default function ProposalPage() {
       <BodyLayout Sidebar={SidebarMahasiswa}>
         <Box>
           <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>
-            Pendaftaran Proposal
+            Form Proposal
           </Typography>
           <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>
             Lengkapi form di bawah ini untuk mendaftarkan proposal Anda
@@ -341,6 +363,8 @@ export default function ProposalPage() {
                     <TableRow key={index}>
                       <TableCell>{member.nama_lengkap}</TableCell>
                       <TableCell>{member.nim}</TableCell>
+                      <TableCell>{member.email}</TableCell>
+                      <TableCell>{member.nama_prodi}</TableCell>
                       <TableCell>
                         <Chip
                           label={member.peran === 1 ? "Ketua" : "Anggota"}
@@ -374,7 +398,7 @@ export default function ProposalPage() {
     <BodyLayout Sidebar={SidebarMahasiswa}>
       <Box>
         <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>
-          Pendaftaran Proposal
+          Form Proposal
         </Typography>
         <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>
           Lengkapi form di bawah ini untuk mendaftarkan proposal Anda
@@ -430,11 +454,11 @@ export default function ProposalPage() {
           <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, mb: 3 }}>
             <Box>
               <Typography sx={{ fontWeight: 600, mb: 1 }}>
-                Skema Program
+                Program
               </Typography>
               <TextField
                 fullWidth
-                value={status?.data?.tim?.nama_program || ""}
+                value={status?.data?.tim?.keterangan || ""}
                 disabled
               />
             </Box>
@@ -501,7 +525,10 @@ export default function ProposalPage() {
                   justifyContent: "space-between",
                 }}
               >
-                <Typography>{status.data.proposal.file_proposal}</Typography>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <AttachFile sx={{ color: "#666" }} />
+                  <Typography>{status.data.proposal.file_proposal}</Typography>
+                </Box>
                 <Button
                   startIcon={<Download />}
                   component="a"
@@ -513,39 +540,78 @@ export default function ProposalPage() {
                 </Button>
               </Box>
             ) : (
-              <Box
-                sx={{
-                  border: "2px dashed #e0e0e0",
-                  borderRadius: 2,
-                  p: 4,
-                  textAlign: "center",
-                  backgroundColor: "#fafafa",
-                }}
-              >
-                <input
-                  type="file"
-                  accept="application/pdf"
-                  onChange={handleFileChange}
-                  style={{ display: "none" }}
-                  id="file-upload"
-                  disabled={!canEdit || submitting}
-                />
-                <label htmlFor="file-upload">
-                  <Button
-                    component="span"
-                    startIcon={<CloudUpload />}
-                    disabled={!canEdit || submitting}
-                    sx={{ textTransform: "none" }}
+              <>
+                {filePreview ? (
+                  <Box
+                    sx={{
+                      border: "1px solid #e0e0e0",
+                      borderRadius: 2,
+                      p: 2,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      backgroundColor: "#f5f5f5",
+                    }}
                   >
-                    {file ? file.name : "Klik untuk upload atau seret file pdf (Max 10 MB)"}
-                  </Button>
-                </label>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <AttachFile sx={{ color: "#0D59F2" }} />
+                      <Typography sx={{ fontWeight: 500 }}>{filePreview.name}</Typography>
+                      {filePreview.isExisting && (
+                        <Chip label="File Tersimpan" size="small" color="success" />
+                      )}
+                    </Box>
+                    {canEdit && !submitting && (
+                      <IconButton
+                        size="small"
+                        onClick={handleRemoveFile}
+                        sx={{ color: "#d32f2f" }}
+                      >
+                        <Close />
+                      </IconButton>
+                    )}
+                  </Box>
+                ) : (
+                  <Box
+                    component="label"
+                    htmlFor="file-upload"
+                    sx={{
+                      border: "2px dashed #e0e0e0",
+                      borderRadius: 2,
+                      p: 4,
+                      textAlign: "center",
+                      backgroundColor: "#fafafa",
+                      cursor: canEdit && !submitting ? "pointer" : "not-allowed",
+                      transition: "all 0.2s",
+                      "&:hover": canEdit && !submitting ? {
+                        backgroundColor: "#f0f0f0",
+                        borderColor: "#0D59F2",
+                      } : {},
+                      display: "block",
+                    }}
+                  >
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      onChange={handleFileChange}
+                      style={{ display: "none" }}
+                      id="file-upload"
+                      disabled={!canEdit || submitting}
+                    />
+                    <CloudUpload sx={{ fontSize: 48, color: "#bbb", mb: 1 }} />
+                    <Typography sx={{ color: "#666", mb: 0.5 }}>
+                      Klik atau seret file PDF ke sini
+                    </Typography>
+                    <Typography sx={{ fontSize: 12, color: "#999" }}>
+                      Maksimal 10 MB
+                    </Typography>
+                  </Box>
+                )}
                 {errors.file && (
                   <Typography sx={{ color: "error.main", fontSize: 12, mt: 1 }}>
                     {errors.file}
                   </Typography>
                 )}
-              </Box>
+              </>
             )}
           </Box>
 
@@ -573,6 +639,8 @@ export default function ProposalPage() {
                 <TableRow>
                   <TableCell>Nama</TableCell>
                   <TableCell>NIM</TableCell>
+                  <TableCell>Email</TableCell>
+                  <TableCell>Prodi</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -587,6 +655,8 @@ export default function ProposalPage() {
                       </Box>
                     </TableCell>
                     <TableCell>{member.nim}</TableCell>
+                    <TableCell>{member.email}</TableCell>
+                    <TableCell>{member.nama_prodi}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -595,17 +665,23 @@ export default function ProposalPage() {
         </Paper>
 
         <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
+          <Button
+            variant="contained"
+            onClick={() => window.location.href = "/mahasiswa/proposal"}
+            disabled={submitting}
+            sx={{ 
+              textTransform: "none", 
+              px: 4, 
+              backgroundColor: "#FDB022", 
+              color: "#fff", 
+              "&:hover": { backgroundColor: "#e09a1a" },
+            }}
+          >
+            Kembali
+          </Button>
+
           {canEdit && (
             <>
-              <Button
-                variant="outlined"
-                onClick={() => window.location.href = "/mahasiswa/anggota-tim"}
-                disabled={submitting}
-                sx={{ textTransform: "none", px: 4 }}
-              >
-                Kembali
-              </Button>
-
               <Button
                 variant="contained"
                 startIcon={<Save />}
@@ -614,8 +690,8 @@ export default function ProposalPage() {
                 sx={{
                   textTransform: "none",
                   px: 4,
-                  backgroundColor: "#FDB022",
-                  "&:hover": { backgroundColor: "#e09a1a" },
+                  backgroundColor: "#0D59F2",
+                  "&:hover": { backgroundColor: "#0846c7" },
                 }}
               >
                 {submitting ? "Menyimpan..." : "Simpan"}
@@ -630,8 +706,8 @@ export default function ProposalPage() {
                   sx={{
                     textTransform: "none",
                     px: 4,
-                    backgroundColor: "#0D59F2",
-                    "&:hover": { backgroundColor: "#0846c7" },
+                    backgroundColor: "#0df20d",
+                    "&:hover": { backgroundColor: "#0ac70a" },
                   }}
                 >
                   {submitting ? "Mengajukan..." : "Simpan & Ajukan"}
