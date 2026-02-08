@@ -6,7 +6,7 @@ export default function BodyLayout({ children, Sidebar }) {
     <Box sx={{ display: "flex", minHeight: "100vh", backgroundColor: "#f5f5f5" }}>
       {Sidebar && <Sidebar />}
       
-      <Box sx={{ flex: 1, marginLeft: Sidebar ? "280px" : "0" }}>
+      <Box sx={{ flex: 1, marginLeft: Sidebar ? "250px" : "0" }}>
         <Navbar />
         
         <Box

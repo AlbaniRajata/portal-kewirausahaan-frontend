@@ -11,3 +11,8 @@ export const getAllProgram = async (search = "") => {
   const res = await api.get("/public/program", { params });
   return res.data;
 };
+
+export const getAllKategori = async () => {
+  const res = await api.get("/public/kategori");
+  return res.data;
+};

@@ -10,6 +10,7 @@ import BarChartIcon from "@mui/icons-material/BarChart";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import InfoIcon from "@mui/icons-material/Info";
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
@@ -26,6 +27,11 @@ export default function AdminSidebar() {
       text: "Dashboard",
       icon: <DashboardIcon />,
       path: "/admin/dashboard",
+    },
+    {
+      text: "Kelola Program",
+      icon: <CalendarMonthIcon />,
+      path: "/admin/program",
     },
     {
       text: "Verifikasi Pengguna",

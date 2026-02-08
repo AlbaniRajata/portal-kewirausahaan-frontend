@@ -11,7 +11,7 @@ import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 
-export default function Sidebar() {
+export default function SidebarMahasiswa() {
   const navigate = useNavigate();
   const location = useLocation();
   const [openBimbingan, setOpenBimbingan] = useState(false);

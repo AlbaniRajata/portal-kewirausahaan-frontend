@@ -53,3 +53,8 @@ export const rejectDosen = async (id) => {
   const res = await api.post(`/admin/verifikasi/dosen/${id}/reject`);
   return res.data;
 };
+
+export const setProgramTimeline = async (id_program, data) => {
+  const res = await api.patch(`/admin/program/${id_program}/timeline`, data);
+  return res.data;
+};

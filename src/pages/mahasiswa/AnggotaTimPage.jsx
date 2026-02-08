@@ -20,7 +20,7 @@ import {
 import { Add, Delete, Search } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
-import MahasiswaSidebar from "../../components/layouts/MahasiswaSidebar";
+import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
 import { getTimStatus, getTimDetail, createTim, searchMahasiswa } from "../../api/tim";
 import { getAllProgram } from "../../api/public";
 
@@ -73,7 +73,7 @@ export default function AnggotaTimPage() {
       const response = await getAllProgram();
       if (response.success) {
         const formatted = response.data.map((item) => ({
-          label: item.nama_program,
+          label: item.keterangan,
           id: item.id_program,
         }));
         setProgramOptions(formatted);
@@ -225,7 +225,7 @@ export default function AnggotaTimPage() {
 
   if (loading) {
     return (
-      <BodyLayout Sidebar={MahasiswaSidebar}>
+      <BodyLayout Sidebar={SidebarMahasiswa}>
         <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
           <CircularProgress />
         </Box>
@@ -237,7 +237,7 @@ export default function AnggotaTimPage() {
     const allApproved = timDetail?.anggota?.every((item) => item.peran === 1 || item.status === 1);
 
     return (
-      <BodyLayout Sidebar={MahasiswaSidebar}>
+      <BodyLayout Sidebar={SidebarMahasiswa}>
         <Box>
           <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>
             Anggota Tim
@@ -276,7 +276,7 @@ export default function AnggotaTimPage() {
               </Typography>
               <TextField
                 fullWidth
-                value={timDetail?.nama_program || ""}
+                value={timDetail?.keterangan || ""}
                 disabled
               />
             </Box>
@@ -329,7 +329,7 @@ export default function AnggotaTimPage() {
   }
 
   return (
-    <BodyLayout>
+    <BodyLayout Sidebar={SidebarMahasiswa}>
       <Box>
         <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>
           Anggota Tim
