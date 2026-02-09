@@ -17,7 +17,14 @@ import {
   Chip,
   IconButton,
 } from "@mui/material";
-import { CloudUpload, Send, Save, Download, Close, AttachFile } from "@mui/icons-material";
+import {
+  CloudUpload,
+  Send,
+  Save,
+  Download,
+  Close,
+  AttachFile,
+} from "@mui/icons-material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
@@ -64,8 +71,7 @@ export default function ProposalFormPage() {
           id_kategori: p.id_kategori || "",
           modal_diajukan: p.modal_diajukan || "",
         });
-        
-        // Set existing file preview
+
         if (p.file_proposal) {
           setFilePreview({
             name: p.file_proposal,
@@ -171,7 +177,10 @@ export default function ProposalFormPage() {
 
       let response;
       if (status.data.proposal) {
-        response = await updateProposal(status.data.proposal.id_proposal, formData);
+        response = await updateProposal(
+          status.data.proposal.id_proposal,
+          formData,
+        );
       } else {
         response = await createProposal(formData);
       }
@@ -188,7 +197,8 @@ export default function ProposalFormPage() {
       fetchStatus();
     } catch (err) {
       console.error("Error saving proposal:", err);
-      const errorMessage = err.response?.data?.message || "Gagal menyimpan proposal";
+      const errorMessage =
+        err.response?.data?.message || "Gagal menyimpan proposal";
       setAlert(errorMessage);
 
       await Swal.fire({
@@ -238,7 +248,8 @@ export default function ProposalFormPage() {
       fetchStatus();
     } catch (err) {
       console.error("Error submitting proposal:", err);
-      const errorMessage = err.response?.data?.message || "Gagal submit proposal";
+      const errorMessage =
+        err.response?.data?.message || "Gagal submit proposal";
 
       await Swal.fire({
         icon: "error",
@@ -283,7 +294,14 @@ export default function ProposalFormPage() {
   if (loading) {
     return (
       <BodyLayout Sidebar={SidebarMahasiswa}>
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "60vh",
+          }}
+        >
           <CircularProgress />
         </Box>
       </BodyLayout>
@@ -302,7 +320,8 @@ export default function ProposalFormPage() {
           </Typography>
 
           <Alert severity="warning">
-            Anda belum terdaftar dalam tim. Silakan ajukan anggota tim terlebih dahulu.
+            Anda belum terdaftar dalam tim. Silakan ajukan anggota tim terlebih
+            dahulu.
           </Alert>
         </Box>
       </BodyLayout>
@@ -310,6 +329,203 @@ export default function ProposalFormPage() {
   }
 
   if (!status?.isKetua) {
+    if (status?.data?.proposal) {
+      const proposal = status.data.proposal;
+
+      return (
+        <BodyLayout Sidebar={SidebarMahasiswa}>
+          <Box>
+            <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>
+              Form Proposal
+            </Typography>
+            <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>
+              Detail proposal tim Anda
+            </Typography>
+
+            <Alert severity="info" sx={{ mb: 3 }}>
+              Anda adalah anggota tim. Proposal hanya dapat diedit oleh ketua tim.
+            </Alert>
+
+            <Paper sx={{ p: 4, mb: 3 }}>
+              <Typography sx={{ fontSize: 20, fontWeight: 700, mb: 3 }}>
+                Detail Proposal
+              </Typography>
+
+              <Box sx={{ mb: 3 }}>
+                <Typography sx={{ fontWeight: 600, mb: 1 }}>
+                  Judul Proposal
+                </Typography>
+                <TextField
+                  fullWidth
+                  value={proposal.judul || ""}
+                  disabled
+                  multiline
+                  rows={2}
+                />
+              </Box>
+
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 3,
+                  mb: 3,
+                }}
+              >
+                <Box>
+                  <Typography sx={{ fontWeight: 600, mb: 1 }}>
+                    Program
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    value={status?.data?.tim?.keterangan || ""}
+                    disabled
+                  />
+                </Box>
+
+                <Box>
+                  <Typography sx={{ fontWeight: 600, mb: 1 }}>
+                    Kategori Usaha
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    value={proposal.nama_kategori || ""}
+                    disabled
+                  />
+                </Box>
+              </Box>
+
+              <Box sx={{ mb: 3 }}>
+                <Typography sx={{ fontWeight: 600, mb: 1 }}>
+                  Anggaran Dana
+                </Typography>
+                <TextField
+                  fullWidth
+                  value={formatRupiah(proposal.modal_diajukan)}
+                  disabled
+                  InputProps={{
+                    startAdornment: <Typography sx={{ mr: 1 }}>Rp</Typography>,
+                  }}
+                />
+              </Box>
+
+              <Box sx={{ mb: 3 }}>
+                <Typography sx={{ fontWeight: 600, mb: 1 }}>
+                  Upload Proposal
+                </Typography>
+                {proposal.file_proposal ? (
+                  <Box
+                    sx={{
+                      border: "1px solid #e0e0e0",
+                      borderRadius: 2,
+                      p: 2,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <AttachFile sx={{ color: "#666" }} />
+                      <Typography>{proposal.file_proposal}</Typography>
+                    </Box>
+                    <Button
+                      startIcon={<Download />}
+                      component="a"
+                      href={`${import.meta.env.VITE_API_URL.replace("/api", "")}/uploads/proposal/${proposal.file_proposal}`}
+                      target="_blank"
+                      sx={{ textTransform: "none" }}
+                    >
+                      Download
+                    </Button>
+                  </Box>
+                ) : (
+                  <TextField fullWidth value="-" disabled />
+                )}
+              </Box>
+
+              <Box sx={{ mb: 3 }}>
+                <Typography sx={{ fontWeight: 600, mb: 1 }}>
+                  Status Proposal
+                </Typography>
+                <Chip
+                  label={getStatusLabel(proposal.status).text}
+                  color={getStatusLabel(proposal.status).color}
+                />
+              </Box>
+            </Paper>
+
+            <Paper sx={{ p: 4, mb: 3 }}>
+              <Typography sx={{ fontSize: 20, fontWeight: 700, mb: 3 }}>
+                Anggota Tim
+              </Typography>
+
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+                      <TableCell sx={{ fontWeight: 700 }}>Nama</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>NIM</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>Prodi</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>Peran</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {status.data.anggota.members.map((member, index) => (
+                      <TableRow key={index} hover>
+                        <TableCell>
+                          <Typography sx={{ fontWeight: 500 }}>
+                            {member.nama_lengkap}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 14 }}>
+                            {member.nim}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 14 }}>
+                            {member.email}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 14 }}>
+                            {member.nama_prodi}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={member.peran === 1 ? "Ketua" : "Anggota"}
+                            color={member.peran === 1 ? "primary" : "default"}
+                            size="small"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Paper>
+
+            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+              <Button
+                onClick={() => (window.location.href = "/mahasiswa/proposal")}
+                sx={{
+                  textTransform: "none",
+                  px: 4,
+                  backgroundColor: "#FDB022",
+                  color: "#fff",
+                  "&:hover": { backgroundColor: "#e09a1a" },
+                }}
+              >
+                Kembali
+              </Button>
+            </Box>
+          </Box>
+        </BodyLayout>
+      );
+    }
+
     return (
       <BodyLayout Sidebar={SidebarMahasiswa}>
         <Box>
@@ -321,7 +537,8 @@ export default function ProposalFormPage() {
           </Typography>
 
           <Alert severity="info">
-            Hanya ketua tim yang dapat mengajukan proposal.
+            Hanya ketua tim yang dapat mengajukan proposal. Proposal akan muncul
+            di sini setelah dibuat oleh ketua.
           </Alert>
         </Box>
       </BodyLayout>
@@ -340,7 +557,8 @@ export default function ProposalFormPage() {
           </Typography>
 
           <Alert severity="warning" sx={{ mb: 3 }}>
-            Belum semua anggota menyetujui undangan. Pengajuan proposal hanya bisa dilakukan setelah semua anggota menyetujui undangan.
+            Belum semua anggota menyetujui undangan. Pengajuan proposal hanya
+            bisa dilakukan setelah semua anggota menyetujui undangan.
           </Alert>
 
           <Paper sx={{ p: 3 }}>
@@ -351,20 +569,38 @@ export default function ProposalFormPage() {
             <TableContainer>
               <Table>
                 <TableHead>
-                  <TableRow>
-                    <TableCell>Nama</TableCell>
-                    <TableCell>NIM</TableCell>
-                    <TableCell>Peran</TableCell>
-                    <TableCell>Status</TableCell>
+                  <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+                    <TableCell sx={{ fontWeight: 700 }}>Nama</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>NIM</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Prodi</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Peran</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {status.data.anggota.members.map((member, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{member.nama_lengkap}</TableCell>
-                      <TableCell>{member.nim}</TableCell>
-                      <TableCell>{member.email}</TableCell>
-                      <TableCell>{member.nama_prodi}</TableCell>
+                    <TableRow key={index} hover>
+                      <TableCell>
+                        <Typography sx={{ fontWeight: 500 }}>
+                          {member.nama_lengkap}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography sx={{ fontSize: 14 }}>
+                          {member.nim}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography sx={{ fontSize: 14 }}>
+                          {member.email}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography sx={{ fontSize: 14 }}>
+                          {member.nama_prodi}
+                        </Typography>
+                      </TableCell>
                       <TableCell>
                         <Chip
                           label={member.peran === 1 ? "Ketua" : "Anggota"}
@@ -445,17 +681,24 @@ export default function ProposalFormPage() {
               helperText={errors.judul}
               disabled={!canEdit || submitting}
               inputProps={{ maxLength: 200 }}
+              multiline
+              rows={2}
             />
             <Typography sx={{ fontSize: 12, color: "#666", mt: 0.5 }}>
               {form.judul.length}/200 karakter
             </Typography>
           </Box>
 
-          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, mb: 3 }}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 3,
+              mb: 3,
+            }}
+          >
             <Box>
-              <Typography sx={{ fontWeight: 600, mb: 1 }}>
-                Program
-              </Typography>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Program</Typography>
               <TextField
                 fullWidth
                 value={status?.data?.tim?.keterangan || ""}
@@ -532,7 +775,7 @@ export default function ProposalFormPage() {
                 <Button
                   startIcon={<Download />}
                   component="a"
-                  href={`${import.meta.env.VITE_API_URL.replace('/api', '')}/uploads/proposal/${status.data.proposal.file_proposal}`}
+                  href={`${import.meta.env.VITE_API_URL.replace("/api", "")}/uploads/proposal/${status.data.proposal.file_proposal}`}
                   target="_blank"
                   sx={{ textTransform: "none" }}
                 >
@@ -555,9 +798,15 @@ export default function ProposalFormPage() {
                   >
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <AttachFile sx={{ color: "#0D59F2" }} />
-                      <Typography sx={{ fontWeight: 500 }}>{filePreview.name}</Typography>
+                      <Typography sx={{ fontWeight: 500 }}>
+                        {filePreview.name}
+                      </Typography>
                       {filePreview.isExisting && (
-                        <Chip label="File Tersimpan" size="small" color="success" />
+                        <Chip
+                          label="File Tersimpan"
+                          size="small"
+                          color="success"
+                        />
                       )}
                     </Box>
                     {canEdit && !submitting && (
@@ -580,12 +829,16 @@ export default function ProposalFormPage() {
                       p: 4,
                       textAlign: "center",
                       backgroundColor: "#fafafa",
-                      cursor: canEdit && !submitting ? "pointer" : "not-allowed",
+                      cursor:
+                        canEdit && !submitting ? "pointer" : "not-allowed",
                       transition: "all 0.2s",
-                      "&:hover": canEdit && !submitting ? {
-                        backgroundColor: "#f0f0f0",
-                        borderColor: "#0D59F2",
-                      } : {},
+                      "&:hover":
+                        canEdit && !submitting
+                          ? {
+                              backgroundColor: "#f0f0f0",
+                              borderColor: "#0D59F2",
+                            }
+                          : {},
                       display: "block",
                     }}
                   >
@@ -636,27 +889,44 @@ export default function ProposalFormPage() {
           <TableContainer>
             <Table>
               <TableHead>
-                <TableRow>
-                  <TableCell>Nama</TableCell>
-                  <TableCell>NIM</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Prodi</TableCell>
+                <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+                  <TableCell sx={{ fontWeight: 700 }}>Nama</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>NIM</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Prodi</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Peran</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {status.data.anggota.members.map((member, index) => (
-                  <TableRow key={index}>
+                  <TableRow key={index} hover>
                     <TableCell>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Typography sx={{ fontWeight: 500 }}>
                         {member.nama_lengkap}
-                        {member.peran === 1 && (
-                          <Chip label="Ketua" color="primary" size="small" />
-                        )}
-                      </Box>
+                      </Typography>
                     </TableCell>
-                    <TableCell>{member.nim}</TableCell>
-                    <TableCell>{member.email}</TableCell>
-                    <TableCell>{member.nama_prodi}</TableCell>
+                    <TableCell>
+                      <Typography sx={{ fontSize: 14 }}>
+                        {member.nim}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography sx={{ fontSize: 14 }}>
+                        {member.email}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography sx={{ fontSize: 14 }}>
+                        {member.nama_prodi}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={member.peran === 1 ? "Ketua" : "Anggota"}
+                        color={member.peran === 1 ? "primary" : "default"}
+                        size="small"
+                      />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -667,13 +937,13 @@ export default function ProposalFormPage() {
         <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
           <Button
             variant="contained"
-            onClick={() => window.location.href = "/mahasiswa/proposal"}
+            onClick={() => (window.location.href = "/mahasiswa/proposal")}
             disabled={submitting}
-            sx={{ 
-              textTransform: "none", 
-              px: 4, 
-              backgroundColor: "#FDB022", 
-              color: "#fff", 
+            sx={{
+              textTransform: "none",
+              px: 4,
+              backgroundColor: "#FDB022",
+              color: "#fff",
               "&:hover": { backgroundColor: "#e09a1a" },
             }}
           >

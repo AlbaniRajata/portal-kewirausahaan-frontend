@@ -58,3 +58,17 @@ export const setProgramTimeline = async (id_program, data) => {
   const res = await api.patch(`/admin/program/${id_program}/timeline`, data);
   return res.data;
 };
+
+export const getProposalList = async (filters = {}) => {
+  const params = new URLSearchParams();
+  if (filters.id_program) params.append('id_program', filters.id_program);
+  if (filters.status !== undefined && filters.status !== '') params.append('status', filters.status);
+
+  const res = await api.get(`/admin/proposal?${params.toString()}`);
+  return res.data;
+};
+
+export const getProposalDetailAdmin = async (id_proposal) => {
+  const res = await api.get(`/admin/proposal/${id_proposal}`);
+  return res.data;
+};

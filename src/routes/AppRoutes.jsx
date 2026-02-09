@@ -7,6 +7,8 @@ import RegisterDosenPage from "../pages/auth/RegisterDosenPage";
 
 import VerifikasiPage from "../pages/admin/VerifikasiPage";
 import ProgramPage from "../pages/admin/ProgramPage";
+import ProposalListPage from "../pages/admin/ProposalListPage";
+import ProposalDetailPage from "../pages/admin/ProposalDetailPage";
 
 import BiodataMahasiswaPage from "../pages/mahasiswa/BiodataMahasiswaPage";
 import AnggotaTimPage from "../pages/mahasiswa/AnggotaTimPage";
@@ -28,19 +30,15 @@ export default function AppRoutes() {
       <Route path="/daftar/dosen" element={<RegisterDosenPage />} />
 
       {/* ADMIN*/}
-      <Route
-        path="/admin"
-        element={<PrivateRoute />}
-      >
+      <Route path="/admin" element={<PrivateRoute />}>
         <Route path="verifikasi" element={<VerifikasiPage />} />
         <Route path="program" element={<ProgramPage />} />
+        <Route path="proposal" element={<ProposalListPage />} />
+        <Route path="proposal/:id_proposal" element={<ProposalDetailPage />} />
       </Route>
 
       {/* MAHASISWA*/}
-      <Route
-        path="/mahasiswa"
-        element={<PrivateRoute />}
-      >
+      <Route path="/mahasiswa" element={<PrivateRoute />}>
         <Route path="biodata" element={<BiodataMahasiswaPage />} />
         <Route path="anggota-tim" element={<AnggotaTimPage />} />
         <Route path="proposal" element={<DaftarProposalPage />} />
