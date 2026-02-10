@@ -17,7 +17,7 @@ import DistribusiManualTab from "../../components/admin/DistribusiManualTab";
 import HistoryDistribusiTable from "../../components/admin/HistoryDistribusiTable";
 import { getAllProgram } from "../../api/public";
 
-export default function DistribusiReviewerPage() {
+export default function DistribusiPenilaiPage() {
   const [selectedProgram, setSelectedProgram] = useState("");
   const [selectedTahap, setSelectedTahap] = useState(1);
   const [activeTab, setActiveTab] = useState(0);
@@ -31,6 +31,11 @@ export default function DistribusiReviewerPage() {
     { value: 1, label: "Tahap 1 - Desk Evaluasi" },
     { value: 2, label: "Tahap 2 - Wawancara" },
   ];
+
+  const tabLabels = {
+    1: ["Distribusi Otomatis", "Distribusi Manual", "History Distribusi"],
+    2: ["Distribusi Otomatis Panel", "Distribusi Manual Panel", "History Distribusi"],
+  };
 
   useEffect(() => {
     const fetchPrograms = async () => {
@@ -54,6 +59,10 @@ export default function DistribusiReviewerPage() {
 
     fetchPrograms();
   }, []);
+
+  useEffect(() => {
+    setActiveTab(0);
+  }, [selectedTahap]);
 
   const handleDistribusiSuccess = (message) => {
     setAlert({
@@ -86,10 +95,10 @@ export default function DistribusiReviewerPage() {
       <Box>
         <Box sx={{ mb: 4 }}>
           <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>
-            Distribusi Reviewer
+            Distribusi Penilai
           </Typography>
           <Typography sx={{ fontSize: 14, color: "#777" }}>
-            Kelola distribusi proposal ke reviewer untuk setiap tahap penilaian
+            Kelola distribusi proposal ke penilai untuk setiap tahap penilaian
           </Typography>
         </Box>
 
@@ -164,18 +173,13 @@ export default function DistribusiReviewerPage() {
                   borderColor: "divider",
                 }}
               >
-                <Tab
-                  label="Distribusi Otomatis"
-                  sx={{ textTransform: "none", fontWeight: 600 }}
-                />
-                <Tab
-                  label="Distribusi Manual"
-                  sx={{ textTransform: "none", fontWeight: 600 }}
-                />
-                <Tab
-                  label="History Distribusi"
-                  sx={{ textTransform: "none", fontWeight: 600 }}
-                />
+                {tabLabels[selectedTahap].map((label, index) => (
+                  <Tab
+                    key={index}
+                    label={label}
+                    sx={{ textTransform: "none", fontWeight: 600 }}
+                  />
+                ))}
               </Tabs>
 
               <Box sx={{ p: 3 }}>

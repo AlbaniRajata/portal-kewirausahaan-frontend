@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Paper,
@@ -28,11 +28,7 @@ export default function DistribusiDetailPage() {
     3: { label: "Dibatalkan", color: "default" },
   };
 
-  useEffect(() => {
-    fetchDistribusiDetail();
-  }, [id_distribusi, id_program, tahap]);
-
-  const fetchDistribusiDetail = async () => {
+  const fetchDistribusiDetail = useCallback (async () => {
     try {
       setLoading(true);
       const response = await getDistribusiDetail(
@@ -52,7 +48,11 @@ export default function DistribusiDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id_distribusi, id_program, tahap]);
+
+  useEffect(() => {
+    fetchDistribusiDetail();
+  }, [fetchDistribusiDetail]);
 
   const formatDate = (dateString) => {
     if (!dateString) return "-";

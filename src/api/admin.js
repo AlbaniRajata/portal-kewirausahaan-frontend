@@ -1,7 +1,5 @@
 import api from "./axios";
 
-// ============ EXISTING FUNCTIONS ============
-
 export const getPendingMahasiswa = async (filters = {}) => {
   const params = new URLSearchParams();
   if (filters.status_verifikasi !== undefined) params.append('status_verifikasi', filters.status_verifikasi);
@@ -120,6 +118,47 @@ export const reassignReviewer = async (id_program, tahap, id_distribusi, id_revi
   const response = await api.post(
     `/admin/program/${id_program}/distribusi/reviewer/tahap/${tahap}/${id_distribusi}/reassign`,
     { id_reviewer_baru }
+  );
+  return response.data;
+};
+
+export const getPreviewDistribusiTahap2 = async (id_program) => {
+  const response = await api.get(
+    `/admin/program/${id_program}/panel/tahap2/preview`
+  );
+  return response.data;
+};
+
+export const executeAutoDistribusiTahap2 = async (id_program) => {
+  const response = await api.post(
+    `/admin/program/${id_program}/panel/tahap2/auto`
+  );
+  return response.data;
+};
+
+export const executeManualDistribusiTahap2 = async (id_program, payload) => {
+  const response = await api.post(
+    `/admin/program/${id_program}/panel/tahap2/manual`,
+    payload
+  );
+  return response.data;
+};
+
+export const getJuriList = async () => {
+  const response = await api.get('/admin/juri');
+  return response.data;
+};
+
+export const getDistribusiReviewerHistoryTahap2 = async (id_program) => {
+  const response = await api.get(
+    `/admin/program/${id_program}/distribusi/reviewer/tahap/2/history`
+  );
+  return response.data;
+};
+
+export const getDistribusiJuriHistoryTahap2 = async (id_program) => {
+  const response = await api.get(
+    `/admin/program/${id_program}/distribusi/juri/tahap/2/history`
   );
   return response.data;
 };

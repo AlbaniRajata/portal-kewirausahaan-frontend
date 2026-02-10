@@ -9,7 +9,7 @@ import VerifikasiPage from "../pages/admin/VerifikasiPage";
 import ProgramPage from "../pages/admin/ProgramPage";
 import ProposalListPage from "../pages/admin/ProposalListPage";
 import ProposalDetailPage from "../pages/admin/ProposalDetailPage";
-import DistribusiReviewerPage from "../pages/admin/DistribusiReviewerPage";
+import DistribusiPenilaiPage from "../pages/admin/DistribusiPenilaiPage";
 import DistribusiDetailPage from "../pages/admin/DistribusiDetailPage";
 
 import BiodataMahasiswaPage from "../pages/mahasiswa/BiodataMahasiswaPage";
@@ -37,7 +37,7 @@ export default function AppRoutes() {
         <Route path="program" element={<ProgramPage />} />
         <Route path="proposal" element={<ProposalListPage />} />
         <Route path="proposal/:id_proposal" element={<ProposalDetailPage />} />
-        <Route path="distribusi-penilai" element={<DistribusiReviewerPage />} />
+        <Route path="distribusi-penilai" element={<DistribusiPenilaiPage />} />
         <Route path="program/:id_program/distribusi/reviewer/tahap/:tahap/:id_distribusi" element={<DistribusiDetailPage />} />
       </Route>
 

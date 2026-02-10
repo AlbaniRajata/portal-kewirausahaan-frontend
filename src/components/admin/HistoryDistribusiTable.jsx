@@ -18,14 +18,17 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Paper,
 } from "@mui/material";
-import { SwapHoriz, Visibility } from "@mui/icons-material";
+import { SwapHoriz } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import {
   getDistribusiHistory,
   getReviewerList,
   reassignReviewer,
+  getDistribusiReviewerHistoryTahap2,
+  getDistribusiJuriHistoryTahap2,
 } from "../../api/admin";
 
 export default function HistoryDistribusiTable({
@@ -37,12 +40,20 @@ export default function HistoryDistribusiTable({
 }) {
   const navigate = useNavigate();
   const [history, setHistory] = useState([]);
+  const [historyReviewer, setHistoryReviewer] = useState([]);
+  const [historyJuri, setHistoryJuri] = useState([]);
   const [filteredHistory, setFilteredHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState("");
 
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  const [pageReviewer, setPageReviewer] = useState(0);
+  const [rowsPerPageReviewer, setRowsPerPageReviewer] = useState(10);
+  
+  const [pageJuri, setPageJuri] = useState(0);
+  const [rowsPerPageJuri, setRowsPerPageJuri] = useState(10);
 
   const [reassignDialog, setReassignDialog] = useState({
     open: false,
@@ -64,13 +75,23 @@ export default function HistoryDistribusiTable({
 
     try {
       setLoading(true);
-      const response = await getDistribusiHistory(id_program, tahap);
-
-      if (response.success) {
-        setHistory(response.data || []);
-        setFilteredHistory(response.data || []);
+      
+      if (tahap === 1) {
+        const response = await getDistribusiHistory(id_program, tahap);
+        if (response.success) {
+          setHistory(response.data || []);
+          setFilteredHistory(response.data || []);
+        }
       } else {
-        onError(response.message);
+        const [reviewerRes, juriRes] = await Promise.all([
+          getDistribusiReviewerHistoryTahap2(id_program),
+          getDistribusiJuriHistoryTahap2(id_program),
+        ]);
+
+        if (reviewerRes.success && juriRes.success) {
+          setHistoryReviewer(reviewerRes.data || []);
+          setHistoryJuri(juriRes.data || []);
+        }
       }
     } catch (err) {
       console.error("Error fetching history:", err);
@@ -93,19 +114,23 @@ export default function HistoryDistribusiTable({
 
   useEffect(() => {
     fetchHistory();
-    fetchReviewers();
-  }, [fetchHistory, fetchReviewers, refresh]);
+    if (tahap === 1) {
+      fetchReviewers();
+    }
+  }, [fetchHistory, fetchReviewers, refresh, tahap]);
 
   useEffect(() => {
-    if (statusFilter === "") {
-      setFilteredHistory(history);
-    } else {
-      setFilteredHistory(
-        history.filter((item) => item.status === Number(statusFilter)),
-      );
+    if (tahap === 1) {
+      if (statusFilter === "") {
+        setFilteredHistory(history);
+      } else {
+        setFilteredHistory(
+          history.filter((item) => item.status === Number(statusFilter)),
+        );
+      }
+      setPage(0);
     }
-    setPage(0);
-  }, [statusFilter, history]);
+  }, [statusFilter, history, tahap]);
 
   const handleOpenReassign = (distribusi) => {
     setReassignDialog({
@@ -215,10 +240,23 @@ export default function HistoryDistribusiTable({
     setPage(0);
   };
 
-  const paginatedHistory = filteredHistory.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage,
-  );
+  const handleChangePageReviewer = (event, newPage) => {
+    setPageReviewer(newPage);
+  };
+
+  const handleChangeRowsPerPageReviewer = (event) => {
+    setRowsPerPageReviewer(parseInt(event.target.value, 10));
+    setPageReviewer(0);
+  };
+
+  const handleChangePageJuri = (event, newPage) => {
+    setPageJuri(newPage);
+  };
+
+  const handleChangeRowsPerPageJuri = (event) => {
+    setRowsPerPageJuri(parseInt(event.target.value, 10));
+    setPageJuri(0);
+  };
 
   if (loading) {
     return (
@@ -228,106 +266,302 @@ export default function HistoryDistribusiTable({
     );
   }
 
-  return (
-    <Box>
-      {/* Filter */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
-        <TextField
-          select
-          label="Filter Status"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          sx={{ minWidth: 200 }}
-        >
-          <MenuItem value="">Semua Status</MenuItem>
-          {Object.entries(statusConfig).map(([key, config]) => (
-            <MenuItem key={key} value={key}>
-              {config.icon} {config.label}
-            </MenuItem>
-          ))}
-        </TextField>
+  if (tahap === 1) {
+    const paginatedHistory = filteredHistory.slice(
+      page * rowsPerPage,
+      page * rowsPerPage + rowsPerPage,
+    );
 
-        <Typography sx={{ fontSize: 14, color: "#666", alignSelf: "center" }}>
-          Total: {filteredHistory.length} distribusi
-        </Typography>
-      </Box>
+    return (
+      <Box>
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+          <TextField
+            select
+            label="Filter Status"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            sx={{ minWidth: 200 }}
+          >
+            <MenuItem value="">Semua Status</MenuItem>
+            {Object.entries(statusConfig).map(([key, config]) => (
+              <MenuItem key={key} value={key}>
+                {config.label}
+              </MenuItem>
+            ))}
+          </TextField>
 
-      {/* Table */}
-      {filteredHistory.length === 0 ? (
-        <Box sx={{ textAlign: "center", py: 5 }}>
-          <Typography sx={{ fontSize: 16, color: "#666" }}>
-            Belum ada history distribusi
+          <Typography sx={{ fontSize: 14, color: "#666", alignSelf: "center" }}>
+            Total: {filteredHistory.length} distribusi
           </Typography>
         </Box>
-      ) : (
-        <>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                  <TableCell sx={{ fontWeight: 700 }}>Proposal</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Tim</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Reviewer</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Assigned At</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                  <TableCell sx={{ fontWeight: 700, textAlign: "center" }}>
-                    Aksi
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {paginatedHistory.map((item) => {
-                  const statusInfo = statusConfig[item.status];
-                  return (
-                    <TableRow key={item.id_distribusi} hover>
-                      <TableCell>
-                        <Typography sx={{ fontSize: 14, maxWidth: 250 }}>
-                          {item.judul}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography sx={{ fontSize: 14 }}>
-                          {item.nama_tim}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
+
+        {filteredHistory.length === 0 ? (
+          <Box sx={{ textAlign: "center", py: 5 }}>
+            <Typography sx={{ fontSize: 16, color: "#666" }}>
+              Belum ada history distribusi
+            </Typography>
+          </Box>
+        ) : (
+          <>
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+                    <TableCell sx={{ fontWeight: 700 }}>Proposal</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Tim</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Reviewer</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Assigned At</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                    <TableCell sx={{ fontWeight: 700, textAlign: "center" }}>
+                      Aksi
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {paginatedHistory.map((item) => {
+                    const statusInfo = statusConfig[item.status];
+                    return (
+                      <TableRow key={item.id_distribusi} hover>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 14, maxWidth: 250 }}>
+                            {item.judul}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 14 }}>
+                            {item.nama_tim}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Box>
+                            <Typography sx={{ fontSize: 14, fontWeight: 500 }}>
+                              {item.nama_reviewer}
+                            </Typography>
+                            <Typography sx={{ fontSize: 12, color: "#666" }}>
+                              {item.institusi || "-"}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 13 }}>
+                            {formatDate(item.assigned_at)}
+                          </Typography>
+                          <Typography sx={{ fontSize: 11, color: "#999" }}>
+                            oleh {item.admin_name}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={statusInfo.label}
+                            color={statusInfo.color}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              gap: 1,
+                              justifyContent: "center",
+                            }}
+                          >
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              onClick={() => navigate(`/admin/program/${id_program}/distribusi/reviewer/tahap/${tahap}/${item.id_distribusi}`)}
+                              sx={{ textTransform: "none" }}
+                            >
+                              Detail
+                            </Button>
+
+                            {item.status === 2 && (
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color="warning"
+                                startIcon={<SwapHoriz />}
+                                onClick={() => handleOpenReassign(item)}
+                                sx={{ textTransform: "none" }}
+                              >
+                                Reassign
+                              </Button>
+                            )}
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+
+            <TablePagination
+              component="div"
+              count={filteredHistory.length}
+              page={page}
+              onPageChange={handleChangePage}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              rowsPerPageOptions={[5, 10, 25, 50]}
+              labelRowsPerPage="Baris per halaman:"
+              labelDisplayedRows={({ from, to, count }) =>
+                `${from}-${to} dari ${count}`
+              }
+            />
+          </>
+        )}
+
+        <Dialog
+          open={reassignDialog.open}
+          onClose={handleCloseReassign}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Reassign Reviewer</DialogTitle>
+          <DialogContent>
+            {reassignDialog.distribusi && (
+              <Box sx={{ pt: 2 }}>
+                <Typography sx={{ fontSize: 14, mb: 2, color: "#666" }}>
+                  Proposal: <b>{reassignDialog.distribusi.judul}</b>
+                </Typography>
+
+                <Typography sx={{ fontSize: 14, mb: 2, color: "#666" }}>
+                  Reviewer Lama: <b>{reassignDialog.distribusi.nama_reviewer}</b>
+                </Typography>
+
+                <TextField
+                  select
+                  fullWidth
+                  label="Reviewer Baru"
+                  value={selectedNewReviewer}
+                  onChange={(e) => setSelectedNewReviewer(e.target.value)}
+                >
+                  <MenuItem value="">Pilih Reviewer Baru</MenuItem>
+                  {reviewers
+                    .filter(
+                      (r) => r.id_user !== reassignDialog.distribusi.id_reviewer,
+                    )
+                    .map((reviewer) => (
+                      <MenuItem key={reviewer.id_user} value={reviewer.id_user}>
                         <Box>
-                          <Typography sx={{ fontSize: 14, fontWeight: 500 }}>
-                            {item.nama_reviewer}
+                          <Typography sx={{ fontWeight: 500 }}>
+                            {reviewer.nama_lengkap}
                           </Typography>
                           <Typography sx={{ fontSize: 12, color: "#666" }}>
-                            {item.institusi || "-"}
+                            {reviewer.institusi || "-"}
                           </Typography>
                         </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Typography sx={{ fontSize: 13 }}>
-                          {formatDate(item.assigned_at)}
-                        </Typography>
-                        <Typography sx={{ fontSize: 11, color: "#999" }}>
-                          oleh {item.admin_name}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={statusInfo.label}
-                          color={statusInfo.color}
-                          size="small"
-                          icon={
-                            <span style={{ fontSize: 14 }}>
-                              {statusInfo.icon}
-                            </span>
-                          }
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            gap: 1,
-                            justifyContent: "center",
-                          }}
-                        >
+                      </MenuItem>
+                    ))}
+                </TextField>
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={handleCloseReassign}
+              disabled={reassigning}
+              sx={{ textTransform: "none" }}
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={handleReassignSubmit}
+              variant="contained"
+              disabled={reassigning}
+              sx={{
+                textTransform: "none",
+                backgroundColor: "#0D59F2",
+                "&:hover": { backgroundColor: "#0a47c4" },
+              }}
+            >
+              {reassigning ? "Memproses..." : "Reassign"}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    );
+  }
+
+  const paginatedHistoryReviewer = historyReviewer.slice(
+    pageReviewer * rowsPerPageReviewer,
+    pageReviewer * rowsPerPageReviewer + rowsPerPageReviewer,
+  );
+
+  const paginatedHistoryJuri = historyJuri.slice(
+    pageJuri * rowsPerPageJuri,
+    pageJuri * rowsPerPageJuri + rowsPerPageJuri,
+  );
+
+  return (
+    <Box>
+      <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 2 }}>
+        Distribusi Reviewer
+      </Typography>
+      <Paper sx={{ mb: 4 }}>
+        {historyReviewer.length === 0 ? (
+          <Box sx={{ textAlign: "center", py: 5 }}>
+            <Typography sx={{ fontSize: 16, color: "#666" }}>
+              Belum ada distribusi reviewer
+            </Typography>
+          </Box>
+        ) : (
+          <>
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+                    <TableCell sx={{ fontWeight: 700 }}>Proposal</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Tim</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Reviewer</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Assigned At</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                    <TableCell sx={{ fontWeight: 700, textAlign: "center" }}>
+                      Aksi
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {paginatedHistoryReviewer.map((item) => {
+                    const statusInfo = statusConfig[item.status];
+                    return (
+                      <TableRow key={item.id_distribusi} hover>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 14, maxWidth: 250 }}>
+                            {item.judul}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 14 }}>
+                            {item.nama_tim}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Box>
+                            <Typography sx={{ fontSize: 14, fontWeight: 500 }}>
+                              {item.nama_reviewer}
+                            </Typography>
+                            <Typography sx={{ fontSize: 12, color: "#666" }}>
+                              {item.institusi || "-"}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 13 }}>
+                            {formatDate(item.assigned_at)}
+                          </Typography>
+                          <Typography sx={{ fontSize: 11, color: "#999" }}>
+                            oleh {item.admin_name}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={statusInfo.label}
+                            color={statusInfo.color}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell>
                           <Button
                             size="small"
                             variant="outlined"
@@ -336,114 +570,125 @@ export default function HistoryDistribusiTable({
                           >
                             Detail
                           </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
 
-                          {item.status === 2 && (
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              color="warning"
-                              startIcon={<SwapHoriz />}
-                              onClick={() => handleOpenReassign(item)}
-                              sx={{ textTransform: "none" }}
-                            >
-                              Reassign
-                            </Button>
-                          )}
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
+            <TablePagination
+              component="div"
+              count={historyReviewer.length}
+              page={pageReviewer}
+              onPageChange={handleChangePageReviewer}
+              rowsPerPage={rowsPerPageReviewer}
+              onRowsPerPageChange={handleChangeRowsPerPageReviewer}
+              rowsPerPageOptions={[5, 10, 25, 50]}
+              labelRowsPerPage="Baris per halaman:"
+              labelDisplayedRows={({ from, to, count }) =>
+                `${from}-${to} dari ${count}`
+              }
+            />
+          </>
+        )}
+      </Paper>
 
-          {/* Pagination */}
-          <TablePagination
-            component="div"
-            count={filteredHistory.length}
-            page={page}
-            onPageChange={handleChangePage}
-            rowsPerPage={rowsPerPage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-            rowsPerPageOptions={[5, 10, 25, 50]}
-            labelRowsPerPage="Baris per halaman:"
-            labelDisplayedRows={({ from, to, count }) =>
-              `${from}-${to} dari ${count}`
-            }
-          />
-        </>
-      )}
+      <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 2 }}>
+        Distribusi Juri
+      </Typography>
+      <Paper>
+        {historyJuri.length === 0 ? (
+          <Box sx={{ textAlign: "center", py: 5 }}>
+            <Typography sx={{ fontSize: 16, color: "#666" }}>
+              Belum ada distribusi juri
+            </Typography>
+          </Box>
+        ) : (
+          <>
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+                    <TableCell sx={{ fontWeight: 700 }}>Proposal</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Tim</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Juri</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Assigned At</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                    <TableCell sx={{ fontWeight: 700, textAlign: "center" }}>
+                      Aksi
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {paginatedHistoryJuri.map((item) => {
+                    const statusInfo = statusConfig[item.status];
+                    return (
+                      <TableRow key={item.id_distribusi} hover>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 14, maxWidth: 250 }}>
+                            {item.judul}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 14 }}>
+                            {item.nama_tim}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 14, fontWeight: 500 }}>
+                            {item.nama_juri}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 13 }}>
+                            {formatDate(item.assigned_at)}
+                          </Typography>
+                          <Typography sx={{ fontSize: 11, color: "#999" }}>
+                            oleh {item.admin_name}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={statusInfo.label}
+                            color={statusInfo.color}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => navigate(`/admin/program/${id_program}/distribusi/juri/tahap/${tahap}/${item.id_distribusi}`)}
+                            sx={{ textTransform: "none" }}
+                          >
+                            Detail
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
 
-      {/* Reassign Dialog */}
-      <Dialog
-        open={reassignDialog.open}
-        onClose={handleCloseReassign}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Reassign Reviewer</DialogTitle>
-        <DialogContent>
-          {reassignDialog.distribusi && (
-            <Box sx={{ pt: 2 }}>
-              <Typography sx={{ fontSize: 14, mb: 2, color: "#666" }}>
-                Proposal: <b>{reassignDialog.distribusi.judul}</b>
-              </Typography>
-
-              <Typography sx={{ fontSize: 14, mb: 2, color: "#666" }}>
-                Reviewer Lama: <b>{reassignDialog.distribusi.nama_reviewer}</b>
-              </Typography>
-
-              <TextField
-                select
-                fullWidth
-                label="Reviewer Baru"
-                value={selectedNewReviewer}
-                onChange={(e) => setSelectedNewReviewer(e.target.value)}
-              >
-                <MenuItem value="">Pilih Reviewer Baru</MenuItem>
-                {reviewers
-                  .filter(
-                    (r) => r.id_user !== reassignDialog.distribusi.id_reviewer,
-                  )
-                  .map((reviewer) => (
-                    <MenuItem key={reviewer.id_user} value={reviewer.id_user}>
-                      <Box>
-                        <Typography sx={{ fontWeight: 500 }}>
-                          {reviewer.nama_lengkap}
-                        </Typography>
-                        <Typography sx={{ fontSize: 12, color: "#666" }}>
-                          {reviewer.institusi || "-"}
-                        </Typography>
-                      </Box>
-                    </MenuItem>
-                  ))}
-              </TextField>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={handleCloseReassign}
-            disabled={reassigning}
-            sx={{ textTransform: "none" }}
-          >
-            Batal
-          </Button>
-          <Button
-            onClick={handleReassignSubmit}
-            variant="contained"
-            disabled={reassigning}
-            sx={{
-              textTransform: "none",
-              backgroundColor: "#0D59F2",
-              "&:hover": { backgroundColor: "#0a47c4" },
-            }}
-          >
-            {reassigning ? "Memproses..." : "Reassign"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+            <TablePagination
+              component="div"
+              count={historyJuri.length}
+              page={pageJuri}
+              onPageChange={handleChangePageJuri}
+              rowsPerPage={rowsPerPageJuri}
+              onRowsPerPageChange={handleChangeRowsPerPageJuri}
+              rowsPerPageOptions={[5, 10, 25, 50]}
+              labelRowsPerPage="Baris per halaman:"
+              labelDisplayedRows={({ from, to, count }) =>
+                `${from}-${to} dari ${count}`
+              }
+            />
+          </>
+        )}
+      </Paper>
     </Box>
   );
 }
