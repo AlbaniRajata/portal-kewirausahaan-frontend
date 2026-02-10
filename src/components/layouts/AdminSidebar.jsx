@@ -20,7 +20,14 @@ export default function AdminSidebar() {
   const location = useLocation();
   const [openPengguna, setOpenPengguna] = useState(false);
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => {
+    if (location.pathname === path) return true;
+    
+    if (path === "/admin/proposal" && location.pathname.startsWith("/admin/proposal/")) return true;
+    if (path === "/admin/distribusi-penilai" && location.pathname.includes("/distribusi/reviewer/")) return true;
+    
+    return false;
+  };
 
   const menuItems = [
     {
