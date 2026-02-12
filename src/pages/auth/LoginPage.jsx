@@ -94,7 +94,11 @@ export default function LoginPage() {
         navigate("/mahasiswa/biodata");
       } else if (roleId === 3) {
         navigate("/dosen/biodata");
-      } else {
+      } else if (roleId === 4) {
+        navigate("/reviewer/penugasan");
+      } else if (roleId === 5) {
+        navigate("/juri/penugasan");
+      }else {
         navigate("/");
       }
     } catch (err) {

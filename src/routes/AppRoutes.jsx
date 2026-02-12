@@ -17,6 +17,12 @@ import AnggotaTimPage from "../pages/mahasiswa/AnggotaTimPage";
 import DaftarProposalPage from "../pages/mahasiswa/DaftarProposalPage";
 import FormProposalPage from "../pages/mahasiswa/FormProposalPage";
 
+import PenugasanPage from "../pages/reviewer/PenugasanPage";
+import DetailPenugasanPage from "../pages/reviewer/DetailPenugasanPage";
+
+import JuriPenugasanPage from "../pages/juri/PenugasanPage";
+import JuriDetailPenugasanPage from "../pages/juri/DetailPenugasanPage";
+
 import PrivateRoute from "../components/PrivateRoute";
 
 import NotFoundPage from "../pages/errors/NotFoundPage";
@@ -47,6 +53,18 @@ export default function AppRoutes() {
         <Route path="anggota-tim" element={<AnggotaTimPage />} />
         <Route path="proposal" element={<DaftarProposalPage />} />
         <Route path="proposal/form" element={<FormProposalPage />} />
+      </Route>
+
+      {/* REVIEWER*/}
+      <Route path="/reviewer" element={<PrivateRoute />}>
+        <Route path="penugasan" element={<PenugasanPage />} />
+        <Route path="penugasan/:id_distribusi" element={<DetailPenugasanPage />} />
+      </Route>
+
+      {/* JURI*/}
+      <Route path="/juri" element={<PrivateRoute />}>
+        <Route path="penugasan" element={<JuriPenugasanPage />} />
+        <Route path="penugasan/:id_distribusi" element={<JuriDetailPenugasanPage />} />
       </Route>
 
       {/* ERROR */}
