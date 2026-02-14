@@ -20,7 +20,8 @@ import {
   DialogContent,
   DialogActions,
 } from "@mui/material";
-import { CheckCircle, Cancel, Visibility, Assignment as AssignmentIcon } from "@mui/icons-material";
+import { CheckCircle, Cancel, Visibility, Assignment } from "@mui/icons-material";
+import AssignmentIcon from "@mui/icons-material/Assignment";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
@@ -31,7 +32,7 @@ export default function PenugasanPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [penugasan, setPenugasan] = useState([]);
-  const [tahap, setTahap] = useState(1);
+  const [tahapFilter, setTahapFilter] = useState("1");
   const [statusFilter, setStatusFilter] = useState("");
   const [alert, setAlert] = useState("");
 
@@ -43,10 +44,10 @@ export default function PenugasanPage() {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchPenugasan = useCallback (async () => {
+  const fetchPenugasan = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await getListPenugasan(tahap, statusFilter);
+      const response = await getListPenugasan(tahapFilter, statusFilter);
 
       if (response.success) {
         setPenugasan(response.data.penugasan || []);
@@ -59,16 +60,11 @@ export default function PenugasanPage() {
     } finally {
       setLoading(false);
     }
-  }, [tahap, statusFilter]);
+  }, [tahapFilter, statusFilter]);
 
   useEffect(() => {
     fetchPenugasan();
   }, [fetchPenugasan]);
-
-  const formatRupiah = (value) => {
-    if (!value) return "Rp 0";
-    return "Rp " + new Intl.NumberFormat("id-ID").format(value);
-  };
 
   const formatDate = (dateString) => {
     if (!dateString) return "-";
@@ -84,7 +80,7 @@ export default function PenugasanPage() {
 
   const getStatusLabel = (status) => {
     const labels = {
-      0: { text: "Menunggu Respon", color: "warning" },
+      0: { text: "Menunggu Response", color: "warning" },
       1: { text: "Disetujui", color: "success" },
       2: { text: "Ditolak", color: "error" },
       3: { text: "Selesai Menilai", color: "info" },
@@ -92,10 +88,10 @@ export default function PenugasanPage() {
     return labels[status] || { text: "Unknown", color: "default" };
   };
 
-  const handleAccept = async (penugasan) => {
+  const handleAccept = async (item) => {
     const result = await Swal.fire({
       title: "Konfirmasi",
-      html: `Terima penugasan untuk proposal:<br/><br/><b>${penugasan.judul}</b>?`,
+      html: `Terima penugasan untuk proposal:<br/><br/><b>${item.judul}</b>?`,
       icon: "question",
       showCancelButton: true,
       confirmButtonColor: "#0D59F2",
@@ -108,7 +104,7 @@ export default function PenugasanPage() {
 
     try {
       setSubmitting(true);
-      const response = await acceptPenugasan(penugasan.id_distribusi);
+      const response = await acceptPenugasan(item.id_distribusi);
 
       if (response.success) {
         Swal.fire({
@@ -141,20 +137,14 @@ export default function PenugasanPage() {
     }
   };
 
-  const handleOpenReject = (penugasan) => {
-    setRejectDialog({
-      open: true,
-      penugasan,
-    });
+  const handleOpenReject = (item) => {
+    setRejectDialog({ open: true, penugasan: item });
     setCatatan("");
     setErrors({});
   };
 
   const handleCloseReject = () => {
-    setRejectDialog({
-      open: false,
-      penugasan: null,
-    });
+    setRejectDialog({ open: false, penugasan: null });
     setCatatan("");
     setErrors({});
   };
@@ -224,10 +214,6 @@ export default function PenugasanPage() {
     }
   };
 
-  const handleViewDetail = (id_distribusi) => {
-    navigate(`/reviewer/penugasan/${id_distribusi}`);
-  };
-
   return (
     <BodyLayout Sidebar={ReviewerSidebar}>
       <Box>
@@ -257,11 +243,11 @@ export default function PenugasanPage() {
                 select
                 fullWidth
                 label="Tahap"
-                value={tahap}
-                onChange={(e) => setTahap(Number(e.target.value))}
+                value={tahapFilter}
+                onChange={(e) => setTahapFilter(e.target.value)}
               >
-                <MenuItem value={1}>Tahap 1 - Desk Evaluasi</MenuItem>
-                <MenuItem value={2}>Tahap 2 - Wawancara</MenuItem>
+                <MenuItem value="1">Tahap 1 - Desk Evaluasi</MenuItem>
+                <MenuItem value="2">Tahap 2 - Panel Wawancara</MenuItem>
               </TextField>
             </Box>
 
@@ -277,6 +263,7 @@ export default function PenugasanPage() {
                 <MenuItem value="0">Menunggu Response</MenuItem>
                 <MenuItem value="1">Disetujui</MenuItem>
                 <MenuItem value="2">Ditolak</MenuItem>
+                <MenuItem value="3">Selesai Menilai</MenuItem>
               </TextField>
             </Box>
           </Box>
@@ -294,7 +281,7 @@ export default function PenugasanPage() {
                 Belum Ada Penugasan
               </Typography>
               <Typography sx={{ fontSize: 14, color: "#999" }}>
-                Penugasan yang diberikan akan muncul di sini
+                Penugasan penilaian yang diberikan akan muncul di sini
               </Typography>
             </Box>
           ) : (
@@ -306,8 +293,7 @@ export default function PenugasanPage() {
                     <TableCell sx={{ fontWeight: 700 }}>Nama Tim</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Program</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Kategori</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Modal</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Ditugaskan</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Timeline Penilaian</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
                     <TableCell sx={{ fontWeight: 700, textAlign: "center" }}>Aksi</TableCell>
                   </TableRow>
@@ -338,14 +324,23 @@ export default function PenugasanPage() {
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          <Typography sx={{ fontSize: 14, fontWeight: 500 }}>
-                            {formatRupiah(item.modal_diajukan)}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography sx={{ fontSize: 13 }}>
-                            {formatDate(item.assigned_at)}
-                          </Typography>
+                          {item.penilaian_mulai && item.penilaian_selesai ? (
+                            <Box>
+                              <Typography sx={{ fontSize: 13, fontWeight: 500 }}>
+                                {formatDate(item.penilaian_mulai)}
+                              </Typography>
+                              <Typography sx={{ fontSize: 11, color: "#999" }}>
+                                s/d
+                              </Typography>
+                              <Typography sx={{ fontSize: 13, fontWeight: 500 }}>
+                                {formatDate(item.penilaian_selesai)}
+                              </Typography>
+                            </Box>
+                          ) : (
+                            <Typography sx={{ fontSize: 13, color: "#999" }}>
+                              -
+                            </Typography>
+                          )}
                         </TableCell>
                         <TableCell>
                           <Chip
@@ -384,15 +379,27 @@ export default function PenugasanPage() {
                             )}
 
                             {item.status !== 0 && (
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                startIcon={<Visibility />}
-                                onClick={() => handleViewDetail(item.id_distribusi)}
-                                sx={{ textTransform: "none" }}
-                              >
-                                Detail
-                              </Button>
+                              <>
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  startIcon={<Visibility />}
+                                  onClick={() => navigate(`/reviewer/penugasan/${item.id_distribusi}?tab=0`)}
+                                  sx={{ textTransform: "none" }}
+                                >
+                                  Detail
+                                </Button>
+                                <Button
+                                  size="small"
+                                  variant="contained"
+                                  startIcon={<Assignment />}
+                                  onClick={() => navigate(`/reviewer/penugasan/${item.id_distribusi}?tab=1`)}
+                                  disabled={item.status !== 1}
+                                  sx={{ textTransform: "none" }}
+                                >
+                                  Nilai
+                                </Button>
+                              </>
                             )}
                           </Box>
                         </TableCell>
@@ -405,7 +412,7 @@ export default function PenugasanPage() {
           )}
         </Paper>
 
-        <Box sx={{ mt: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Box sx={{ mt: 3 }}>
           <Typography sx={{ fontSize: 14, color: "#666" }}>
             Total: {penugasan.length} penugasan
           </Typography>

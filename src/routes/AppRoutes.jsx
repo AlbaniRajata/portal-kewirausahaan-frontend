@@ -18,7 +18,7 @@ import DaftarProposalPage from "../pages/mahasiswa/DaftarProposalPage";
 import FormProposalPage from "../pages/mahasiswa/FormProposalPage";
 
 import PenugasanPage from "../pages/reviewer/PenugasanPage";
-import DetailPenugasanPage from "../pages/reviewer/DetailPenugasanPage";
+import PenugasanDetailPage from "../pages/reviewer/PenugasanDetailPage";
 
 import JuriPenugasanPage from "../pages/juri/PenugasanPage";
 import JuriDetailPenugasanPage from "../pages/juri/DetailPenugasanPage";
@@ -58,7 +58,7 @@ export default function AppRoutes() {
       {/* REVIEWER*/}
       <Route path="/reviewer" element={<PrivateRoute />}>
         <Route path="penugasan" element={<PenugasanPage />} />
-        <Route path="penugasan/:id_distribusi" element={<DetailPenugasanPage />} />
+        <Route path="penugasan/:id_distribusi" element={<PenugasanDetailPage />} />
       </Route>
 
       {/* JURI*/}

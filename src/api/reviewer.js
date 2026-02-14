@@ -25,3 +25,18 @@ export const rejectPenugasan = async (id_distribusi, catatan) => {
   const res = await api.patch(`/reviewer/penugasan/${id_distribusi}/reject`, { catatan });
   return res.data;
 };
+
+export const getFormPenilaian = async (id_distribusi) => {
+  const res = await api.get(`/reviewer/penilaian/${id_distribusi}`);
+  return res.data;
+};
+
+export const simpanNilai = async (id_distribusi, payload) => {
+  const res = await api.post(`/reviewer/penilaian/${id_distribusi}`, { nilai: payload });
+  return res.data;
+};
+
+export const submitPenilaian = async (id_distribusi) => {
+  const res = await api.post(`/reviewer/penilaian/${id_distribusi}/submit`);
+  return res.data;
+};

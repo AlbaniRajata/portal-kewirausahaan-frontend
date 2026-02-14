@@ -1,5 +1,35 @@
 import api from "./axios";
 
+export const getMyProgram = async () => {
+  const res = await api.get("/admin/program/my");
+  return res.data;
+};
+
+export const setProgramTimeline = async (id_program, payload) => {
+  const res = await api.patch(`/admin/program/${id_program}/timeline`, payload);
+  return res.data;
+};
+
+export const getTahapProgram = async (id_program) => {
+  const res = await api.get(`/admin/program/${id_program}/tahap`);
+  return res.data;
+};
+
+export const createTahapProgram = async (id_program, payload) => {
+  const res = await api.post(`/admin/program/${id_program}/tahap`, payload);
+  return res.data;
+};
+
+export const updateTahapProgram = async (id_tahap, payload) => {
+  const res = await api.patch(`/admin/tahap/${id_tahap}`, payload);
+  return res.data;
+};
+
+export const deleteTahapProgram = async (id_tahap) => {
+  const res = await api.delete(`/admin/tahap/${id_tahap}`);
+  return res.data;
+};
+
 export const getPendingMahasiswa = async (filters = {}) => {
   const params = new URLSearchParams();
   if (filters.status_verifikasi !== undefined) params.append('status_verifikasi', filters.status_verifikasi);
@@ -51,11 +81,6 @@ export const approveDosen = async (id) => {
 
 export const rejectDosen = async (id) => {
   const res = await api.post(`/admin/verifikasi/dosen/${id}/reject`);
-  return res.data;
-};
-
-export const setProgramTimeline = async (id_program, data) => {
-  const res = await api.patch(`/admin/program/${id_program}/timeline`, data);
   return res.data;
 };
 
