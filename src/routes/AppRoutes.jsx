@@ -11,6 +11,7 @@ import ProposalListPage from "../pages/admin/ProposalListPage";
 import ProposalDetailPage from "../pages/admin/ProposalDetailPage";
 import DistribusiPenilaiPage from "../pages/admin/DistribusiPenilaiPage";
 import DistribusiDetailPage from "../pages/admin/DistribusiDetailPage";
+import RekapPenilaianPage from "../pages/admin/RekapPenilaianPage";
 
 import BiodataMahasiswaPage from "../pages/mahasiswa/BiodataMahasiswaPage";
 import AnggotaTimPage from "../pages/mahasiswa/AnggotaTimPage";
@@ -45,6 +46,7 @@ export default function AppRoutes() {
         <Route path="proposal/:id_proposal" element={<ProposalDetailPage />} />
         <Route path="distribusi-penilai" element={<DistribusiPenilaiPage />} />
         <Route path="program/:id_program/distribusi/reviewer/tahap/:tahap/:id_distribusi" element={<DistribusiDetailPage />} />
+        <Route path="rekap-penilaian" element={<RekapPenilaianPage />} />
       </Route>
 
       {/* MAHASISWA*/}

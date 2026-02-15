@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -37,7 +37,6 @@ export default function DistribusiOtomatisTab({
   const [executing, setExecuting] = useState(false);
   const [expandedReviewer, setExpandedReviewer] = useState({});
   const [errorMsg, setErrorMsg] = useState("");
-  const hasLoadedRef = useRef(false);
 
   useEffect(() => {
     const fetchPreview = async () => {
@@ -63,17 +62,10 @@ export default function DistribusiOtomatisTab({
         setPreview(null);
       } finally {
         setLoading(false);
-        hasLoadedRef.current = true;
       }
     };
 
-    if (!hasLoadedRef.current) {
-      fetchPreview();
-    }
-  }, [id_program, tahap]);
-
-  useEffect(() => {
-    hasLoadedRef.current = false;
+    fetchPreview();
   }, [id_program, tahap]);
 
   const handleRefresh = async () => {

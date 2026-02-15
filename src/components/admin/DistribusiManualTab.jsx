@@ -92,7 +92,7 @@ export default function DistribusiManualTab({
 
     try {
       setLoadingProposals(true);
-      const statusFilter = tahap === 1 ? 1 : 5;
+      const statusFilter = tahap === 1 ? 1 : 4;
       const response = await getProposalList({
         id_program: id_program,
         status: statusFilter,
@@ -384,9 +384,8 @@ function DistribusiManualTahap1({
   };
 
   return (
-    <Box>
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography sx={{ fontSize: 16, fontWeight: 600, mb: 2 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        <Typography sx={{ fontSize: 16, fontWeight: 600 }}>
           1. Pilih Reviewer
         </Typography>
 
@@ -415,9 +414,7 @@ function DistribusiManualTahap1({
             </MenuItem>
           ))}
         </TextField>
-      </Paper>
 
-      <Paper sx={{ p: 3 }}>
         <Box
           sx={{
             display: "flex",
@@ -470,9 +467,7 @@ function DistribusiManualTahap1({
                   <TableCell sx={{ fontWeight: 700 }}>Judul Proposal</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Tim</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Modal</TableCell>
-                  <TableCell sx={{ fontWeight: 700, textAlign: "center" }}>
-                    Aksi
-                  </TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Aksi</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -515,7 +510,7 @@ function DistribusiManualTahap1({
                         onClick={() =>
                           navigate(`/admin/proposal/${proposal.id_proposal}`)
                         }
-                        sx={{ textTransform: "none" }}
+                        sx={{ textTransform: "none", }}
                       >
                         Detail
                       </Button>
@@ -546,7 +541,6 @@ function DistribusiManualTahap1({
               : `Assign ${selectedProposals.length} Proposal`}
           </Button>
         </Box>
-      </Paper>
     </Box>
   );
 }
@@ -570,9 +564,8 @@ function DistribusiManualTahap2({
   navigate,
 }) {
   return (
-    <Box>
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography sx={{ fontSize: 16, fontWeight: 600, mb: 2 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        <Typography sx={{ fontSize: 16, fontWeight: 600 }}>
           1. Pilih Reviewer ({selectedReviewers.length} terpilih)
         </Typography>
 
@@ -603,10 +596,8 @@ function DistribusiManualTahap2({
             ))
           }
         />
-      </Paper>
 
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography sx={{ fontSize: 16, fontWeight: 600, mb: 2 }}>
+        <Typography sx={{ fontSize: 16, fontWeight: 600 }}>
           2. Pilih Juri ({selectedJuries.length} terpilih)
         </Typography>
 
@@ -637,10 +628,8 @@ function DistribusiManualTahap2({
             ))
           }
         />
-      </Paper>
 
-      <Paper sx={{ p: 3 }}>
-        <Typography sx={{ fontSize: 16, fontWeight: 600, mb: 2 }}>
+        <Typography sx={{ fontSize: 16, fontWeight: 600 }}>
           3. Pilih Proposal (1 proposal)
         </Typography>
 
@@ -664,9 +653,7 @@ function DistribusiManualTahap2({
                   <TableCell sx={{ fontWeight: 700 }}>Judul Proposal</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Tim</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Modal</TableCell>
-                  <TableCell sx={{ fontWeight: 700, textAlign: "center" }}>
-                    Aksi
-                  </TableCell>
+                  <TableCell sx={{ fontWeight: 700}}>Aksi</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -745,7 +732,6 @@ function DistribusiManualTahap2({
               : `Assign Panel ke Proposal`}
           </Button>
         </Box>
-      </Paper>
     </Box>
   );
 }

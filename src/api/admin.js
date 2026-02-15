@@ -187,3 +187,23 @@ export const getDistribusiJuriHistoryTahap2 = async (id_program) => {
   );
   return response.data;
 };
+
+export const getRekapDesk = async (id_program, id_proposal) => {
+  const res = await api.get(`/admin/program/${id_program}/proposal/${id_proposal}/rekap-desk`);
+  return res.data;
+};
+
+export const getRekapWawancara = async (id_program, id_proposal) => {
+  const res = await api.get(`/admin/program/${id_program}/proposal/${id_proposal}/rekap-wawancara`);
+  return res.data;
+};
+
+export const finalisasiDeskBatch = async (id_program, payload) => {
+  const res = await api.post(`/admin/program/${id_program}/proposal/finalisasi-desk-batch`, payload);
+  return res.data;
+};
+
+export const finalisasiWawancaraBatch = async (id_program, payload) => {
+  const res = await api.post(`/admin/program/${id_program}/proposal/finalisasi-wawancara`, payload);
+  return res.data;
+};

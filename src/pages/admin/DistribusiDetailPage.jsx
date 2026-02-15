@@ -22,10 +22,11 @@ export default function DistribusiDetailPage() {
   const [alert, setAlert] = useState("");
 
   const statusConfig = {
-    0: { label: "Menunggu Respon", color: "warning" },
+    0: { label: "Menunggu Response", color: "warning" },
     1: { label: "Disetujui", color: "success" },
     2: { label: "Ditolak", color: "error" },
-    3: { label: "Dibatalkan", color: "default" },
+    3: { label: "Draft Penilaian", color: "info" },
+    4: { label: "Selesai Dinilai", color: "secondary" },
   };
 
   const fetchDistribusiDetail = useCallback (async () => {

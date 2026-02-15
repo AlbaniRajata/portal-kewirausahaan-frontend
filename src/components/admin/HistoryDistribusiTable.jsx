@@ -51,7 +51,7 @@ export default function HistoryDistribusiTable({
 
   const [pageReviewer, setPageReviewer] = useState(0);
   const [rowsPerPageReviewer, setRowsPerPageReviewer] = useState(10);
-  
+
   const [pageJuri, setPageJuri] = useState(0);
   const [rowsPerPageJuri, setRowsPerPageJuri] = useState(10);
 
@@ -67,7 +67,8 @@ export default function HistoryDistribusiTable({
     0: { label: "Menunggu Response", color: "warning" },
     1: { label: "Disetujui", color: "success" },
     2: { label: "Ditolak", color: "error" },
-    3: { label: "Dibatalkan", color: "default" },
+    3: { label: "Draft Penilaian", color: "info" },
+    4: { label: "Selesai Dinilai", color: "secondary" },
   };
 
   const fetchHistory = useCallback(async () => {
@@ -75,7 +76,7 @@ export default function HistoryDistribusiTable({
 
     try {
       setLoading(true);
-      
+
       if (tahap === 1) {
         const response = await getDistribusiHistory(id_program, tahap);
         if (response.success) {
@@ -319,7 +320,7 @@ export default function HistoryDistribusiTable({
                 </TableHead>
                 <TableBody>
                   {paginatedHistory.map((item) => {
-                    const statusInfo = statusConfig[item.status];
+                    const statusInfo = statusConfig[item.status] || { label: `Status ${item.status}`, color: "default" };
                     return (
                       <TableRow key={item.id_distribusi} hover>
                         <TableCell>
@@ -368,7 +369,11 @@ export default function HistoryDistribusiTable({
                             <Button
                               size="small"
                               variant="outlined"
-                              onClick={() => navigate(`/admin/program/${id_program}/distribusi/reviewer/tahap/${tahap}/${item.id_distribusi}`)}
+                              onClick={() =>
+                                navigate(
+                                  `/admin/program/${id_program}/distribusi/reviewer/tahap/${tahap}/${item.id_distribusi}`,
+                                )
+                              }
                               sx={{ textTransform: "none" }}
                             >
                               Detail
@@ -426,7 +431,8 @@ export default function HistoryDistribusiTable({
                 </Typography>
 
                 <Typography sx={{ fontSize: 14, mb: 2, color: "#666" }}>
-                  Reviewer Lama: <b>{reassignDialog.distribusi.nama_reviewer}</b>
+                  Reviewer Lama:{" "}
+                  <b>{reassignDialog.distribusi.nama_reviewer}</b>
                 </Typography>
 
                 <TextField
@@ -439,7 +445,8 @@ export default function HistoryDistribusiTable({
                   <MenuItem value="">Pilih Reviewer Baru</MenuItem>
                   {reviewers
                     .filter(
-                      (r) => r.id_user !== reassignDialog.distribusi.id_reviewer,
+                      (r) =>
+                        r.id_user !== reassignDialog.distribusi.id_reviewer,
                     )
                     .map((reviewer) => (
                       <MenuItem key={reviewer.id_user} value={reviewer.id_user}>
@@ -498,7 +505,6 @@ export default function HistoryDistribusiTable({
       <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 2 }}>
         Distribusi Reviewer
       </Typography>
-      <Paper sx={{ mb: 4 }}>
         {historyReviewer.length === 0 ? (
           <Box sx={{ textAlign: "center", py: 5 }}>
             <Typography sx={{ fontSize: 16, color: "#666" }}>
@@ -523,7 +529,7 @@ export default function HistoryDistribusiTable({
                 </TableHead>
                 <TableBody>
                   {paginatedHistoryReviewer.map((item) => {
-                    const statusInfo = statusConfig[item.status];
+                    const statusInfo = statusConfig[item.status] || { label: `Status ${item.status}`, color: "default" };
                     return (
                       <TableRow key={item.id_distribusi} hover>
                         <TableCell>
@@ -565,7 +571,11 @@ export default function HistoryDistribusiTable({
                           <Button
                             size="small"
                             variant="outlined"
-                            onClick={() => navigate(`/admin/program/${id_program}/distribusi/reviewer/tahap/${tahap}/${item.id_distribusi}`)}
+                            onClick={() =>
+                              navigate(
+                                `/admin/program/${id_program}/distribusi/reviewer/tahap/${tahap}/${item.id_distribusi}`,
+                              )
+                            }
                             sx={{ textTransform: "none" }}
                           >
                             Detail
@@ -593,12 +603,10 @@ export default function HistoryDistribusiTable({
             />
           </>
         )}
-      </Paper>
 
       <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 2 }}>
         Distribusi Juri
       </Typography>
-      <Paper>
         {historyJuri.length === 0 ? (
           <Box sx={{ textAlign: "center", py: 5 }}>
             <Typography sx={{ fontSize: 16, color: "#666" }}>
@@ -623,7 +631,7 @@ export default function HistoryDistribusiTable({
                 </TableHead>
                 <TableBody>
                   {paginatedHistoryJuri.map((item) => {
-                    const statusInfo = statusConfig[item.status];
+                    const statusInfo = statusConfig[item.status] || { label: `Status ${item.status}`, color: "default" };
                     return (
                       <TableRow key={item.id_distribusi} hover>
                         <TableCell>
@@ -660,7 +668,11 @@ export default function HistoryDistribusiTable({
                           <Button
                             size="small"
                             variant="outlined"
-                            onClick={() => navigate(`/admin/program/${id_program}/distribusi/juri/tahap/${tahap}/${item.id_distribusi}`)}
+                            onClick={() =>
+                              navigate(
+                                `/admin/program/${id_program}/distribusi/juri/tahap/${tahap}/${item.id_distribusi}`,
+                              )
+                            }
                             sx={{ textTransform: "none" }}
                           >
                             Detail
@@ -688,7 +700,6 @@ export default function HistoryDistribusiTable({
             />
           </>
         )}
-      </Paper>
     </Box>
   );
 }
