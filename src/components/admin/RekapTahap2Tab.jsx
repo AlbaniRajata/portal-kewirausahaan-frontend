@@ -18,16 +18,17 @@ import {
 import { Visibility } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import {
-  getListProposalRekapTahap1,
-  finalisasiDeskBatch,
+  getListProposalRekapTahap2,
+  finalisasiWawancaraBatch,
 } from "../../api/admin";
 import DetailRekapDialog from "./DetailRekapDialog";
 
-const getStatusInfo = (status, totalReviewer, totalSubmit) => {
-  if (status === 3) return { text: "Tidak Lolos Desk", color: "error" };
-  if (status === 4) return { text: "Lolos Desk", color: "success" };
-  if (status === 2) {
-    if (totalSubmit === totalReviewer && totalReviewer > 0) {
+const getStatusInfo = (status, totalPanel, totalSubmit) => {
+  if (status === 6) return { text: "Tidak Lolos Wawancara", color: "error" };
+  if (status === 7) return { text: "Lolos Wawancara", color: "success" };
+  if (status === 8) return { text: "Lolos (Selesai)", color: "success" };
+  if (status === 5) {
+    if (totalSubmit === totalPanel && totalPanel > 0) {
       return { text: "Menunggu Finalisasi", color: "warning" };
     }
     return { text: "Sedang Dinilai", color: "info" };
@@ -35,7 +36,7 @@ const getStatusInfo = (status, totalReviewer, totalSubmit) => {
   return { text: "Unknown", color: "default" };
 };
 
-export default function RekapTahap1Tab({ id_program }) {
+export default function RekapTahap2Tab({ id_program }) {
   const [loading, setLoading] = useState(true);
   const [proposalList, setProposalList] = useState([]);
   const [selected, setSelected] = useState([]);
@@ -48,7 +49,7 @@ export default function RekapTahap1Tab({ id_program }) {
   const fetchProposals = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await getListProposalRekapTahap1(id_program);
+      const res = await getListProposalRekapTahap2(id_program);
       if (res.success) {
         setProposalList(res.data || []);
       } else {
@@ -67,7 +68,7 @@ export default function RekapTahap1Tab({ id_program }) {
   }, [fetchProposals]);
 
   const finalisableProposals = proposalList.filter(
-    (p) => p.status === 2 && p.total_submit === p.total_reviewer && p.total_reviewer > 0
+    (p) => p.status === 5 && p.total_submit === p.total_panel && p.total_panel > 0
   );
 
   const handleSelectAll = (e) => {
@@ -89,7 +90,7 @@ export default function RekapTahap1Tab({ id_program }) {
   const handleFinalisasi = async (isLolos) => {
     if (selected.length === 0) return;
 
-    const label = isLolos ? "Lolos Desk" : "Tidak Lolos Desk";
+    const label = isLolos ? "Lolos Wawancara" : "Tidak Lolos Wawancara";
     const confirmColor = isLolos ? "#0D59F2" : "#d33";
 
     const result = await Swal.fire({
@@ -111,7 +112,7 @@ export default function RekapTahap1Tab({ id_program }) {
         ? { lolos: selected, tidak_lolos: [] }
         : { lolos: [], tidak_lolos: selected };
 
-      const res = await finalisasiDeskBatch(id_program, payload);
+      const res = await finalisasiWawancaraBatch(id_program, payload);
 
       if (res.success) {
         await Swal.fire({
@@ -200,7 +201,7 @@ export default function RekapTahap1Tab({ id_program }) {
       ) : proposalList.length === 0 ? (
         <Box sx={{ textAlign: "center", py: 8 }}>
           <Typography sx={{ color: "#666" }}>
-            Belum ada proposal untuk tahap desk evaluasi
+            Belum ada proposal untuk tahap wawancara
           </Typography>
         </Box>
       ) : (
@@ -218,7 +219,7 @@ export default function RekapTahap1Tab({ id_program }) {
                 <TableCell sx={{ fontWeight: 700 }}>Judul Proposal</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Tim</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Kategori</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Penilaian Submit</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Panel Submit</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
                 <TableCell sx={{ fontWeight: 700, textAlign: "center" }}>
                   Aksi
@@ -227,8 +228,8 @@ export default function RekapTahap1Tab({ id_program }) {
             </TableHead>
             <TableBody>
               {proposalList.map((p) => {
-                const statusInfo = getStatusInfo(p.status, p.total_reviewer, p.total_submit);
-                const isFinalisable = p.status === 2 && p.total_submit === p.total_reviewer && p.total_reviewer > 0;
+                const statusInfo = getStatusInfo(p.status, p.total_panel, p.total_submit);
+                const isFinalisable = p.status === 5 && p.total_submit === p.total_panel && p.total_panel > 0;
                 const isSelected = selected.includes(p.id_proposal);
 
                 return (
@@ -252,14 +253,14 @@ export default function RekapTahap1Tab({ id_program }) {
                     </TableCell>
                     <TableCell>
                       <Typography sx={{ fontSize: 14 }}>
-                        {p.nama_kategori || "-"}
+                        {p.nama_kategori}
                       </Typography>
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={`${p.total_submit} / ${p.total_reviewer}`}
+                        label={`${p.total_submit} / ${p.total_panel}`}
                         size="small"
-                        color={p.total_submit === p.total_reviewer ? "success" : "default"}
+                        color={p.total_submit === p.total_panel ? "success" : "default"}
                       />
                     </TableCell>
                     <TableCell>
@@ -297,7 +298,7 @@ export default function RekapTahap1Tab({ id_program }) {
         id_program={id_program}
         id_proposal={selectedProposal?.id_proposal}
         judul={selectedProposal?.judul}
-        tahap={1}
+        tahap={2}
       />
     </Box>
   );

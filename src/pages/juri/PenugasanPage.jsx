@@ -20,7 +20,12 @@ import {
   DialogContent,
   DialogActions,
 } from "@mui/material";
-import { CheckCircle, Cancel, Visibility } from "@mui/icons-material";
+import {
+  CheckCircle,
+  Cancel,
+  Visibility,
+  Assignment,
+} from "@mui/icons-material";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
@@ -43,7 +48,7 @@ export default function PenugasanPage() {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchPenugasan = useCallback (async () => {
+  const fetchPenugasan = useCallback(async () => {
     try {
       setLoading(true);
       const response = await getListPenugasan(statusFilter);
@@ -85,9 +90,10 @@ export default function PenugasanPage() {
   const getStatusLabel = (status) => {
     const labels = {
       0: { text: "Menunggu Response", color: "warning" },
-      1: { text: "Diterima", color: "success" },
+      1: { text: "Disetujui", color: "success" },
       2: { text: "Ditolak", color: "error" },
-      3: { text: "Selesai Menilai", color: "info" },
+      3: { text: "Draft Penilaian", color: "info" },
+      4: { text: "Selesai Dinilai", color: "secondary" },
     };
     return labels[status] || { text: "Unknown", color: "default" };
   };
@@ -251,9 +257,10 @@ export default function PenugasanPage() {
             >
               <MenuItem value="">Semua Status</MenuItem>
               <MenuItem value="0">Menunggu Response</MenuItem>
-              <MenuItem value="1">Diterima</MenuItem>
+              <MenuItem value="1">Disetujui</MenuItem>
               <MenuItem value="2">Ditolak</MenuItem>
-              <MenuItem value="3">Selesai Menilai</MenuItem>
+              <MenuItem value="3">Draft Penilaian</MenuItem>
+              <MenuItem value="4">Selesai Dinilai</MenuItem>
             </TextField>
           </Box>
         </Paper>
@@ -283,7 +290,7 @@ export default function PenugasanPage() {
                     <TableCell sx={{ fontWeight: 700 }}>Program</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Kategori</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Modal</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Ditugaskan</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Timeline Penilaian</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
                     <TableCell sx={{ fontWeight: 700, textAlign: "center" }}>Aksi</TableCell>
                   </TableRow>
@@ -319,9 +326,23 @@ export default function PenugasanPage() {
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          <Typography sx={{ fontSize: 13 }}>
-                            {formatDate(item.assigned_at)}
-                          </Typography>
+                          {item.penilaian_mulai && item.penilaian_selesai ? (
+                            <Box>
+                              <Typography sx={{ fontSize: 13, fontWeight: 500 }}>
+                                {formatDate(item.penilaian_mulai)}
+                              </Typography>
+                              <Typography sx={{ fontSize: 11, color: "#999" }}>
+                                s/d
+                              </Typography>
+                              <Typography sx={{ fontSize: 13, fontWeight: 500 }}>
+                                {formatDate(item.penilaian_selesai)}
+                              </Typography>
+                            </Box>
+                          ) : (
+                            <Typography sx={{ fontSize: 13, color: "#999" }}>
+                              -
+                            </Typography>
+                          )}
                         </TableCell>
                         <TableCell>
                           <Chip
@@ -360,15 +381,27 @@ export default function PenugasanPage() {
                             )}
 
                             {item.status !== 0 && (
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                startIcon={<Visibility />}
-                                onClick={() => navigate(`/juri/penugasan/${item.id_distribusi}`)}
-                                sx={{ textTransform: "none" }}
-                              >
-                                Detail
-                              </Button>
+                              <>
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  startIcon={<Visibility />}
+                                  onClick={() => navigate(`/juri/penugasan/${item.id_distribusi}?tab=0`)}
+                                  sx={{ textTransform: "none" }}
+                                >
+                                  Detail
+                                </Button>
+                                <Button
+                                  size="small"
+                                  variant="contained"
+                                  startIcon={<Assignment />}
+                                  onClick={() => navigate(`/juri/penugasan/${item.id_distribusi}?tab=1`)}
+                                  disabled={![1, 3].includes(item.status)}
+                                  sx={{ textTransform: "none" }}
+                                >
+                                  Nilai
+                                </Button>
+                              </>
                             )}
                           </Box>
                         </TableCell>

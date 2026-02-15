@@ -245,13 +245,13 @@ export default function DetailPenugasanTab({
         </Box>
       )}
 
-      {penugasan.status === 2 && penugasan.catatan_reviewer && (
+      {penugasan.status === 2 && penugasan.catatan_juri && (
         <Box sx={{ mb: 3 }}>
           <Alert severity="error" icon={<Info />}>
             <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.5 }}>
               Catatan Penolakan
             </Typography>
-            <Typography sx={{ fontSize: 14 }}>{penugasan.catatan_reviewer}</Typography>
+            <Typography sx={{ fontSize: 14 }}>{penugasan.catatan_juri}</Typography>
           </Alert>
         </Box>
       )}
@@ -286,7 +286,7 @@ export default function DetailPenugasanTab({
 
         <Button
           variant="contained"
-          onClick={() => navigate("/reviewer/penugasan")}
+          onClick={() => navigate("/juri/penugasan")}
           sx={{
             backgroundColor: "#FDB022",
             "&:hover": { backgroundColor: "#E09A1A" },

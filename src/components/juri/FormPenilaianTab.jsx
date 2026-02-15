@@ -19,7 +19,7 @@ import {
 import { Save, Send, ArrowBack, CheckCircle, Info } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import { getFormPenilaian, simpanNilai, submitPenilaian } from "../../api/reviewer";
+import { getFormPenilaian, simpanNilai, submitPenilaian } from "../../api/juri";
 
 export default function FormPenilaianTab({ id_distribusi }) {
   const navigate = useNavigate();
@@ -236,7 +236,7 @@ export default function FormPenilaianTab({ id_distribusi }) {
           showConfirmButton: false,
         });
         setTimeout(() => {
-          navigate("/reviewer/penugasan");
+          navigate("/juri/penugasan");
         }, 2000);
       } else {
         Swal.fire({
@@ -292,7 +292,7 @@ export default function FormPenilaianTab({ id_distribusi }) {
         <Button
           variant="outlined"
           startIcon={<ArrowBack />}
-          onClick={() => navigate("/reviewer/penugasan")}
+          onClick={() => navigate("/juri/penugasan")}
           sx={{ textTransform: "none" }}
         >
           Kembali ke Penugasan
@@ -539,7 +539,7 @@ export default function FormPenilaianTab({ id_distribusi }) {
           <Button
             variant="contained"
             startIcon={<ArrowBack />}
-            onClick={() => navigate("/reviewer/penugasan")}
+            onClick={() => navigate("/juri/penugasan")}
             sx={{
               backgroundColor: "#FDB022",
               "&:hover": { backgroundColor: "#E09A1A" },

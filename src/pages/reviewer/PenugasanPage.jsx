@@ -20,13 +20,22 @@ import {
   DialogContent,
   DialogActions,
 } from "@mui/material";
-import { CheckCircle, Cancel, Visibility, Assignment } from "@mui/icons-material";
+import {
+  CheckCircle,
+  Cancel,
+  Visibility,
+  Assignment,
+} from "@mui/icons-material";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import ReviewerSidebar from "../../components/layouts/ReviewerSidebar";
-import { getListPenugasan, acceptPenugasan, rejectPenugasan } from "../../api/reviewer";
+import {
+  getListPenugasan,
+  acceptPenugasan,
+  rejectPenugasan,
+} from "../../api/reviewer";
 
 export default function PenugasanPage() {
   const navigate = useNavigate();
@@ -83,7 +92,8 @@ export default function PenugasanPage() {
       0: { text: "Menunggu Response", color: "warning" },
       1: { text: "Disetujui", color: "success" },
       2: { text: "Ditolak", color: "error" },
-      3: { text: "Selesai Menilai", color: "info" },
+      3: { text: "Draft Penilaian", color: "info" },
+      4: { text: "Selesai Dinilai", color: "secondary" },
     };
     return labels[status] || { text: "Unknown", color: "default" };
   };
@@ -177,7 +187,7 @@ export default function PenugasanPage() {
       setSubmitting(true);
       const response = await rejectPenugasan(
         rejectDialog.penugasan.id_distribusi,
-        catatan.trim()
+        catatan.trim(),
       );
 
       if (response.success) {
@@ -263,7 +273,8 @@ export default function PenugasanPage() {
                 <MenuItem value="0">Menunggu Response</MenuItem>
                 <MenuItem value="1">Disetujui</MenuItem>
                 <MenuItem value="2">Ditolak</MenuItem>
-                <MenuItem value="3">Selesai Menilai</MenuItem>
+                <MenuItem value="3">Draft Penilaian</MenuItem>
+                <MenuItem value="4">Selesai Dinilai</MenuItem>
               </TextField>
             </Box>
           </Box>
@@ -277,7 +288,9 @@ export default function PenugasanPage() {
           ) : penugasan.length === 0 ? (
             <Box sx={{ p: 8, textAlign: "center" }}>
               <AssignmentIcon sx={{ fontSize: 80, color: "#ddd", mb: 2 }} />
-              <Typography sx={{ fontSize: 18, fontWeight: 600, color: "#666", mb: 1 }}>
+              <Typography
+                sx={{ fontSize: 18, fontWeight: 600, color: "#666", mb: 1 }}
+              >
                 Belum Ada Penugasan
               </Typography>
               <Typography sx={{ fontSize: 14, color: "#999" }}>
@@ -289,13 +302,19 @@ export default function PenugasanPage() {
               <Table>
                 <TableHead>
                   <TableRow sx={{ backgroundColor: "#fff" }}>
-                    <TableCell sx={{ fontWeight: 700 }}>Judul Proposal</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>
+                      Judul Proposal
+                    </TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Nama Tim</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Program</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Kategori</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Timeline Penilaian</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>
+                      Timeline Penilaian
+                    </TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                    <TableCell sx={{ fontWeight: 700, textAlign: "center" }}>Aksi</TableCell>
+                    <TableCell sx={{ fontWeight: 700, textAlign: "center" }}>
+                      Aksi
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -326,13 +345,17 @@ export default function PenugasanPage() {
                         <TableCell>
                           {item.penilaian_mulai && item.penilaian_selesai ? (
                             <Box>
-                              <Typography sx={{ fontSize: 13, fontWeight: 500 }}>
+                              <Typography
+                                sx={{ fontSize: 13, fontWeight: 500 }}
+                              >
                                 {formatDate(item.penilaian_mulai)}
                               </Typography>
                               <Typography sx={{ fontSize: 11, color: "#999" }}>
                                 s/d
                               </Typography>
-                              <Typography sx={{ fontSize: 13, fontWeight: 500 }}>
+                              <Typography
+                                sx={{ fontSize: 13, fontWeight: 500 }}
+                              >
                                 {formatDate(item.penilaian_selesai)}
                               </Typography>
                             </Box>
@@ -350,7 +373,14 @@ export default function PenugasanPage() {
                           />
                         </TableCell>
                         <TableCell>
-                          <Box sx={{ display: "flex", gap: 1, justifyContent: "center", flexWrap: "wrap" }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              gap: 1,
+                              justifyContent: "center",
+                              flexWrap: "wrap",
+                            }}
+                          >
                             {item.status === 0 && (
                               <>
                                 <Button
@@ -384,7 +414,11 @@ export default function PenugasanPage() {
                                   size="small"
                                   variant="outlined"
                                   startIcon={<Visibility />}
-                                  onClick={() => navigate(`/reviewer/penugasan/${item.id_distribusi}?tab=0`)}
+                                  onClick={() =>
+                                    navigate(
+                                      `/reviewer/penugasan/${item.id_distribusi}?tab=0`,
+                                    )
+                                  }
                                   sx={{ textTransform: "none" }}
                                 >
                                   Detail
@@ -393,8 +427,12 @@ export default function PenugasanPage() {
                                   size="small"
                                   variant="contained"
                                   startIcon={<Assignment />}
-                                  onClick={() => navigate(`/reviewer/penugasan/${item.id_distribusi}?tab=1`)}
-                                  disabled={item.status !== 1}
+                                  onClick={() =>
+                                    navigate(
+                                      `/reviewer/penugasan/${item.id_distribusi}?tab=1`,
+                                    )
+                                  }
+                                  disabled={![1, 3].includes(item.status)}
                                   sx={{ textTransform: "none" }}
                                 >
                                   Nilai
@@ -418,7 +456,12 @@ export default function PenugasanPage() {
           </Typography>
         </Box>
 
-        <Dialog open={rejectDialog.open} onClose={handleCloseReject} maxWidth="sm" fullWidth>
+        <Dialog
+          open={rejectDialog.open}
+          onClose={handleCloseReject}
+          maxWidth="sm"
+          fullWidth
+        >
           <DialogTitle>Tolak Penugasan</DialogTitle>
           <DialogContent>
             <Typography variant="body2" sx={{ mb: 2 }}>

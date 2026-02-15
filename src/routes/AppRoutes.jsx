@@ -22,7 +22,7 @@ import PenugasanPage from "../pages/reviewer/PenugasanPage";
 import PenugasanDetailPage from "../pages/reviewer/PenugasanDetailPage";
 
 import JuriPenugasanPage from "../pages/juri/PenugasanPage";
-import JuriDetailPenugasanPage from "../pages/juri/DetailPenugasanPage";
+import JuriDetailPenugasanPage from "../pages/juri/PenugasanDetailPage";
 
 import PrivateRoute from "../components/PrivateRoute";
 

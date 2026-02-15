@@ -132,7 +132,6 @@ export default function DetailRekapDialog({ open, onClose, id_program, id_propos
         ) : alert ? (
           <Alert severity="info">{alert}</Alert>
         ) : !data ? null : tahap === 1 ? (
-          // TAHAP 1 - Hanya Reviewer
           <Box>
             <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 2 }}>
               Penilaian Reviewer
@@ -147,7 +146,6 @@ export default function DetailRekapDialog({ open, onClose, id_program, id_propos
             )}
           </Box>
         ) : (
-          // TAHAP 2 - Reviewer + Juri
           <Box>
             <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 2 }}>
               Panel Reviewer
