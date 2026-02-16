@@ -21,7 +21,7 @@ import { Add, Delete, Search } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
-import { getTimStatus, getTimDetail, createTim, searchMahasiswa } from "../../api/tim";
+import { getTimStatus, getTimDetail, createTim, searchMahasiswa } from "../../api/mahasiswa";
 import { getAllProgram } from "../../api/public";
 
 export default function PengajuanAnggotaPage() {

@@ -4,7 +4,7 @@ import BodyLayout from "../../components/layouts/BodyLayout";
 import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
 import PengajuanAnggotaPage from "./PengajuanAnggotaPage";
 import UndanganAnggotaPage from "./UndanganAnggotaPage";
-import { getTimStatus } from "../../api/tim";
+import { getTimStatus } from "../../api/mahasiswa";
 
 export default function AnggotaTimPage() {
   const [loading, setLoading] = useState(true);

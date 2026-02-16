@@ -33,7 +33,7 @@ import {
   createProposal,
   updateProposal,
   submitProposal,
-} from "../../api/proposal";
+} from "../../api/mahasiswa";
 import { getAllKategori } from "../../api/public";
 
 export default function ProposalFormPage() {

@@ -18,7 +18,7 @@ import { Add, Visibility, Edit, Description } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
-import { getProposalStatus } from "../../api/proposal";
+import { getProposalStatus } from "../../api/mahasiswa";
 
 export default function DaftarProposalPage() {
   const navigate = useNavigate();
@@ -63,14 +63,13 @@ export default function DaftarProposalPage() {
       0: { text: "Draft", color: "default" },
       1: { text: "Diajukan", color: "info" },
       2: { text: "Ditugaskan ke Reviewer", color: "primary" },
-      3: { text: "Tidak Lolos Desk", color: "error" },
-      4: { text: "Lolos Desk", color: "success" },
-      5: { text: "Wawancara Dijadwalkan", color: "warning" },
-      6: { text: "Panel Wawancara", color: "primary" },
-      7: { text: "Tidak Lolos Wawancara", color: "error" },
-      8: { text: "Lolos Wawancara", color: "success" },
-      9: { text: "Pembimbing Diajukan", color: "info" },
-      10: { text: "Pembimbing Disetujui", color: "success" },
+      3: { text: "Tidak Lolos Desk Evaluasi", color: "error" },
+      4: { text: "Lolos Desk Evaluasi", color: "success" },
+      5: { text: "Panel Wawancara", color: "warning" },
+      6: { text: "Tidak Lolos Wawancara", color: "error" },
+      7: { text: "Lolos Wawancara", color: "success" },
+      8: { text: "Pembimbing Diajukan", color: "info" },
+      9: { text: "Pembimbing Disetujui", color: "success" },
     };
     return labels[statusCode] || { text: "Unknown", color: "default" };
   };
@@ -105,7 +104,7 @@ export default function DaftarProposalPage() {
               Kelola proposal kewirausahaan Anda
             </Typography>
           </Box>
-          
+
           {status?.isKetua && status?.data?.anggota?.all_accepted && !status?.data?.proposal && (
             <Button
               variant="contained"

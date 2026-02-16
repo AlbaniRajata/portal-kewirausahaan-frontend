@@ -17,12 +17,20 @@ import BiodataMahasiswaPage from "../pages/mahasiswa/BiodataMahasiswaPage";
 import AnggotaTimPage from "../pages/mahasiswa/AnggotaTimPage";
 import DaftarProposalPage from "../pages/mahasiswa/DaftarProposalPage";
 import FormProposalPage from "../pages/mahasiswa/FormProposalPage";
+import PengajuanPembimbingPage from "../pages/mahasiswa/PengajuanPembimbingPage";
+import LogBimbinganPage from "../pages/mahasiswa/LogBimbinganPage";
+import DetailLogBimbinganPage from "../pages/mahasiswa/DetailLogBimbinganPage";
 
 import PenugasanPage from "../pages/reviewer/PenugasanPage";
 import PenugasanDetailPage from "../pages/reviewer/PenugasanDetailPage";
 
 import JuriPenugasanPage from "../pages/juri/PenugasanPage";
 import JuriDetailPenugasanPage from "../pages/juri/PenugasanDetailPage";
+
+import DaftarPengajuanPembimbingPage from "../pages/dosen/DaftarPengajuanPembimbingPage";
+import DetailPengajuanPembimbingPage from "../pages/dosen/DetailPengajuanPembimbingPage";
+import DaftarBimbinganPage from "../pages/dosen/DaftarBimbinganPage"; 
+import DetailBimbinganPage from "../pages/dosen/DetailBimbinganPage";
 
 import PrivateRoute from "../components/PrivateRoute";
 
@@ -55,6 +63,9 @@ export default function AppRoutes() {
         <Route path="anggota-tim" element={<AnggotaTimPage />} />
         <Route path="proposal" element={<DaftarProposalPage />} />
         <Route path="proposal/form" element={<FormProposalPage />} />
+        <Route path="pembimbing/dosen" element={<PengajuanPembimbingPage />} />
+        <Route path="bimbingan" element={<LogBimbinganPage />} />
+        <Route path="bimbingan/:id_bimbingan" element={<DetailLogBimbinganPage />} />
       </Route>
 
       {/* REVIEWER*/}
@@ -67,6 +78,14 @@ export default function AppRoutes() {
       <Route path="/juri" element={<PrivateRoute />}>
         <Route path="penugasan" element={<JuriPenugasanPage />} />
         <Route path="penugasan/:id_distribusi" element={<JuriDetailPenugasanPage />} />
+      </Route>
+
+      {/* DOSEN*/}
+      <Route path="/dosen" element={<PrivateRoute />}>
+        <Route path="pembimbing/pengajuan" element={<DaftarPengajuanPembimbingPage />} />
+        <Route path="pembimbing/pengajuan/:id_pengajuan" element={<DetailPengajuanPembimbingPage />} />
+        <Route path="bimbingan" element={<DaftarBimbinganPage />} />
+        <Route path="bimbingan/pengajuan/:id_bimbingan" element={<DetailBimbinganPage />} />
       </Route>
 
       {/* ERROR */}

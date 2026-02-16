@@ -23,7 +23,7 @@ import { CheckCircle, Cancel } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
-import { getTimDetail, acceptInvite, rejectInvite } from "../../api/tim";
+import { getTimDetail, acceptInvite, rejectInvite } from "../../api/mahasiswa";
 
 export default function UndanganAnggotaPage() {
   const [loading, setLoading] = useState(true);
