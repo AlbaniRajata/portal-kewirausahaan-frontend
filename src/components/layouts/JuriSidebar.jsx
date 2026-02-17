@@ -1,16 +1,23 @@
-import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText } from "@mui/material";
+import {
+  Box,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Tooltip,
+} from "@mui/material";
 import { useNavigate, useLocation } from "react-router-dom";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 
-export default function JuriSidebar() {
+export default function JuriSidebar({ collapsed }) {
   const navigate = useNavigate();
   const location = useLocation();
 
   const isActive = (path) => {
     if (location.pathname === path) return true;
-
     if (path === "/juri/penugasan" && location.pathname.startsWith("/juri/penugasan/")) return true;
     return false;
   };
@@ -31,7 +38,7 @@ export default function JuriSidebar() {
   return (
     <Box
       sx={{
-        width: 250,
+        width: collapsed ? 70 : 250,
         height: "100vh",
         backgroundColor: "#fff",
         borderRight: "1px solid #e0e0e0",
@@ -40,56 +47,83 @@ export default function JuriSidebar() {
         position: "fixed",
         left: 0,
         top: 0,
+        transition: "width 0.3s ease",
       }}
     >
       <Box
         sx={{
-          p: 1,
+          p: 2,
           display: "flex",
-          flexDirection: "column",
+          flexDirection: "row",
           alignItems: "center",
-          gap: 1,
+          gap: 1.5,
           borderBottom: "1px solid #e0e0e0",
+          minHeight: 73,
+          justifyContent: "center",
         }}
       >
-        <AccountBalanceIcon sx={{ fontSize: 30, color: "#0D59F2" }} />
-        <Box sx={{ textAlign: "center" }}>
-          <Box sx={{ fontWeight: 700, fontSize: 12, color: "#000" }}>
+        <AccountBalanceIcon
+          sx={{
+            fontSize: 32,
+            color: "#0D59F2",
+            transition: "font-size 0.3s ease",
+          }}
+        />
+        {!collapsed && (
+          <Box
+            sx={{
+              fontWeight: 700,
+              fontSize: 13,
+              color: "#000",
+              lineHeight: 1.2,
+              whiteSpace: "nowrap",
+            }}
+          >
             UPA PKK POLINEMA
           </Box>
-        </Box>
+        )}
       </Box>
 
-      <List sx={{ px: 2, py: 2, flex: 1 }}>
+      <List sx={{ px: collapsed ? 1 : 2, py: 2, flex: 1 }}>
         {menuItems.map((item, index) => (
           <ListItem key={index} disablePadding sx={{ mb: 0.5 }}>
-            <ListItemButton
-              onClick={() => navigate(item.path)}
-              sx={{
-                borderRadius: 2,
-                backgroundColor: isActive(item.path) ? "#F0F4FF" : "transparent",
-                "&:hover": {
-                  backgroundColor: isActive(item.path) ? "#F0F4FF" : "#f5f5f5",
-                },
-              }}
-            >
-              <ListItemIcon
+            <Tooltip title={collapsed ? item.text : ""} placement="right">
+              <ListItemButton
+                onClick={() => navigate(item.path)}
                 sx={{
-                  minWidth: 40,
-                  color: isActive(item.path) ? "#0D59F2" : "#666",
+                  borderRadius: 50,
+                  backgroundColor: isActive(item.path) ? "#F0F4FF" : "transparent",
+                  "&:hover": {
+                    backgroundColor: isActive(item.path) ? "#F0F4FF" : "#f5f5f5",
+                  },
+                  justifyContent: collapsed ? "center" : "flex-start",
+                  px: collapsed ? 1 : 2,
+                  minHeight: 44,
                 }}
               >
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText
-                primary={item.text}
-                primaryTypographyProps={{
-                  fontSize: 14,
-                  fontWeight: isActive(item.path) ? 600 : 500,
-                  color: isActive(item.path) ? "#0D59F2" : "#333",
-                }}
-              />
-            </ListItemButton>
+                <ListItemIcon
+                  sx={{
+                    minWidth: collapsed ? "auto" : 40,
+                    color: isActive(item.path) ? "#0D59F2" : "#666",
+                    justifyContent: "center",
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
+                  {item.icon}
+                </ListItemIcon>
+                {!collapsed && (
+                  <ListItemText
+                    primary={item.text}
+                    primaryTypographyProps={{
+                      fontSize: 14,
+                      fontWeight: isActive(item.path) ? 600 : 500,
+                      color: isActive(item.path) ? "#0D59F2" : "#333",
+                    }}
+                  />
+                )}
+              </ListItemButton>
+            </Tooltip>
           </ListItem>
         ))}
       </List>
