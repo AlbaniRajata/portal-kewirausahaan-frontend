@@ -1,16 +1,36 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  Box, Typography, Paper, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, Button, Chip,
-  CircularProgress, Alert, TextField, InputAdornment,
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  IconButton, Divider,
+  Box,
+  Typography,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Button,
+  Chip,
+  CircularProgress,
+  Alert,
+  TextField,
+  InputAdornment,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  Divider,
 } from "@mui/material";
-import { Search, Close, School } from "@mui/icons-material";
+import { Search, Close, Visibility } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import MahasiswaSidebar from "../../components/layouts/MahasiswaSidebar";
-import { getStatusPembimbing, getListDosen, ajukanPembimbing } from "../../api/mahasiswa";
+import {
+  getStatusPembimbing,
+  getListDosen,
+  ajukanPembimbing,
+} from "../../api/mahasiswa";
 
 const STATUS_PENGAJUAN = {
   0: { text: "Menunggu Respon", color: "warning" },
@@ -21,8 +41,11 @@ const STATUS_PENGAJUAN = {
 const formatDate = (dateString) => {
   if (!dateString) return "-";
   return new Date(dateString).toLocaleString("id-ID", {
-    day: "2-digit", month: "long", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 };
 
@@ -82,13 +105,15 @@ export default function PengajuanPembimbingPage() {
     fetchDosen();
   }, [fetchStatus, fetchDosen]);
 
-  const filteredDosen = dosenList.filter((d) =>
-    (d.nama_lengkap || "").toLowerCase().includes(search.toLowerCase()) ||
-    (d.bidang_keahlian || "").toLowerCase().includes(search.toLowerCase()) ||
-    (d.nip || "").includes(search)
+  const filteredDosen = dosenList.filter(
+    (d) =>
+      (d.nama_lengkap || "").toLowerCase().includes(search.toLowerCase()) ||
+      (d.bidang_keahlian || "").toLowerCase().includes(search.toLowerCase()) ||
+      (d.nip || "").includes(search),
   );
 
   const bisaAjukan = statusData?.bisa_ajukan === true;
+  const isKetua = statusData?.is_ketua === true;
   const pengajuan = statusData?.pengajuan;
   const statusPengajuan = pengajuan?.status;
 
@@ -178,8 +203,18 @@ export default function PengajuanPembimbingPage() {
         </Box>
 
         {alertMsg && (
-          <Alert severity={alertType} sx={{ mb: 3 }} onClose={() => setAlertMsg("")}>
+          <Alert
+            severity={alertType}
+            sx={{ mb: 3 }}
+            onClose={() => setAlertMsg("")}
+          >
             {alertMsg}
+          </Alert>
+        )}
+
+        {!isKetua && (
+          <Alert severity="info" sx={{ mb: 3 }}>
+            Hanya ketua tim yang dapat mengajukan dosen pembimbing.
           </Alert>
         )}
 
@@ -193,30 +228,28 @@ export default function PengajuanPembimbingPage() {
               Status Pengajuan Pembimbing
             </Typography>
 
-            <Box sx={{ mb: 2 }}>
-              <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>
-                Judul Proposal
-              </Typography>
-              <Typography sx={{ fontSize: 14, fontWeight: 600 }}>
-                {statusData.proposal.judul}
-              </Typography>
-            </Box>
+            {pengajuan?.nama_dosen && (
+              <Box sx={{ mb: 2 }}>
+                <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>
+                  Dosen Pembimbing
+                </Typography>
+                <Typography sx={{ fontSize: 14, fontWeight: 600 }}>
+                  {pengajuan.nama_dosen}
+                </Typography>
+              </Box>
+            )}
 
             {pengajuan && (
               <>
                 <Divider sx={{ my: 2 }} />
 
-                <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 2 }}>
-                  <Box>
-                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>
-                      Status Pengajuan
-                    </Typography>
-                    <Chip
-                      label={STATUS_PENGAJUAN[statusPengajuan]?.text || "-"}
-                      color={STATUS_PENGAJUAN[statusPengajuan]?.color || "default"}
-                      size="small"
-                    />
-                  </Box>
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr 1fr",
+                    gap: 2,
+                  }}
+                >
                   <Box>
                     <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>
                       Tanggal Diajukan
@@ -238,7 +271,14 @@ export default function PengajuanPembimbingPage() {
                 </Box>
 
                 {pengajuan.catatan_dosen && (
-                  <Box sx={{ mt: 2, p: 2, backgroundColor: "#fff3e0", borderRadius: 1 }}>
+                  <Box
+                    sx={{
+                      mt: 2,
+                      p: 2,
+                      backgroundColor: "#fff3e0",
+                      borderRadius: 1,
+                    }}
+                  >
                     <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>
                       Catatan Dosen
                     </Typography>
@@ -257,15 +297,17 @@ export default function PengajuanPembimbingPage() {
             )}
             {!bisaAjukan && statusPengajuan === 0 && (
               <Alert severity="info" sx={{ mt: 2 }}>
-                Pengajuan sedang menunggu respon dari dosen. Anda tidak dapat mengajukan dosen lain saat ini.
+                Pengajuan sedang menunggu respon dari dosen. Anda tidak dapat
+                mengajukan dosen lain saat ini.
               </Alert>
             )}
-            {bisaAjukan && statusPengajuan === 2 && (
+            {bisaAjukan && statusPengajuan === 2 && isKetua && (
               <Alert severity="warning" sx={{ mt: 2 }}>
-                Pengajuan sebelumnya ditolak. Silakan ajukan dosen pembimbing lain.
+                Pengajuan sebelumnya ditolak. Silakan ajukan dosen pembimbing
+                lain.
               </Alert>
             )}
-            {bisaAjukan && !pengajuan && (
+            {bisaAjukan && !pengajuan && isKetua && (
               <Alert severity="info" sx={{ mt: 2 }}>
                 Pilih dosen dari daftar di bawah untuk mengajukan pembimbing.
               </Alert>
@@ -273,12 +315,20 @@ export default function PengajuanPembimbingPage() {
           </Paper>
         ) : (
           <Alert severity="info" sx={{ mb: 3 }}>
-            Fitur pengajuan pembimbing hanya tersedia setelah proposal lolos seleksi wawancara.
+            Fitur pengajuan pembimbing hanya tersedia setelah proposal lolos
+            seleksi wawancara.
           </Alert>
         )}
 
         <Paper sx={{ p: 3 }}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 3,
+            }}
+          >
             <Typography sx={{ fontSize: 16, fontWeight: 700 }}>
               Daftar Dosen Pembimbing
             </Typography>
@@ -312,47 +362,129 @@ export default function PengajuanPembimbingPage() {
             <TableContainer>
               <Table>
                 <TableHead>
-                  <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                    <TableCell sx={{ fontWeight: 700 }}>Nama Dosen</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>NIP</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Bidang Keahlian</TableCell>
+                  <TableRow sx={{ backgroundColor: "#0D59F2" }}>
+                    <TableCell sx={{ fontWeight: 700, color: "#fff", fontSize: 14 }}>
+                      Nama Dosen
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#fff", fontSize: 14 }}>
+                      NIP
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#fff", fontSize: 14 }}>
+                      Bidang Keahlian
+                    </TableCell>
                     {statusData && (
-                      <TableCell sx={{ fontWeight: 700, textAlign: "center" }}>Aksi</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#fff", fontSize: 14, textAlign: "center" }}>
+                        Aksi
+                      </TableCell>
                     )}
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {filteredDosen.map((dosen) => (
-                    <TableRow key={dosen.id_user} hover>
-                      <TableCell>
-                        <Typography sx={{ fontWeight: 500, fontSize: 14 }}>
-                          {dosen.nama_lengkap}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography sx={{ fontSize: 14, fontFamily: "monospace" }}>
-                          {dosen.nip || "-"}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography sx={{ fontSize: 14 }}>
-                          {dosen.bidang_keahlian || "-"}
-                        </Typography>
-                      </TableCell>
-                      {statusData && (
-                        <TableCell align="center">
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            onClick={() => handleOpenDetail(dosen)}
-                            sx={{ textTransform: "none" }}
-                          >
-                            Lihat
-                          </Button>
+                  {filteredDosen.map((dosen) => {
+                    const pengajuanDosenIni = getPengajuanDosenIni(
+                      dosen.id_user,
+                    );
+
+                    return (
+                      <TableRow 
+                        key={dosen.id_user} 
+                        hover
+                        sx={{ 
+                          '&:hover': { 
+                            backgroundColor: '#f8f9ff',
+                          } 
+                        }}
+                      >
+                        <TableCell>
+                          <Typography sx={{ fontWeight: 500, fontSize: 14 }}>
+                            {dosen.nama_lengkap}
+                          </Typography>
                         </TableCell>
-                      )}
-                    </TableRow>
-                  ))}
+
+                        <TableCell>
+                          <Typography sx={{ fontSize: 14 }}>
+                            {dosen.nip || "-"}
+                          </Typography>
+                        </TableCell>
+
+                        <TableCell>
+                          <Typography sx={{ fontSize: 14 }}>
+                            {dosen.bidang_keahlian || "-"}
+                          </Typography>
+                        </TableCell>
+
+                        {statusData && (
+                          <TableCell align="center">
+                            {!pengajuanDosenIni && bisaAjukan && isKetua && (
+                              <Button
+                                size="small"
+                                variant="contained"
+                                onClick={() => handleOpenDetail(dosen)}
+                                sx={{
+                                  textTransform: "none",
+                                  backgroundColor: "#0D59F2",
+                                  "&:hover": { backgroundColor: "#0a47c4" },
+                                }}
+                              >
+                                Ajukan
+                              </Button>
+                            )}
+
+                            {!pengajuanDosenIni && (!bisaAjukan || !isKetua) && (
+                              <Button
+                                size="small"
+                                startIcon={<Visibility />}
+                                variant="outlined"
+                                onClick={() => handleOpenDetail(dosen)}
+                                sx={{ textTransform: "none" }}
+                              >
+                                Lihat
+                              </Button>
+                            )}
+
+                            {pengajuanDosenIni?.status === 0 && (
+                              <Chip
+                                label="Menunggu Respon"
+                                color="warning"
+                                size="small"
+                              />
+                            )}
+
+                            {pengajuanDosenIni?.status === 1 && (
+                              <Chip
+                                label="Pembimbing Anda"
+                                color="success"
+                                size="small"
+                              />
+                            )}
+
+                            {pengajuanDosenIni?.status === 2 && bisaAjukan && isKetua && (
+                              <Button
+                                size="small"
+                                variant="contained"
+                                onClick={() => handleOpenDetail(dosen)}
+                                sx={{
+                                  textTransform: "none",
+                                  backgroundColor: "#0D59F2",
+                                  "&:hover": { backgroundColor: "#0a47c4" },
+                                }}
+                              >
+                                Ajukan Lagi
+                              </Button>
+                            )}
+
+                            {pengajuanDosenIni?.status === 2 && (!bisaAjukan || !isKetua) && (
+                              <Chip
+                                label="Ditolak"
+                                color="error"
+                                size="small"
+                              />
+                            )}
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -360,15 +492,22 @@ export default function PengajuanPembimbingPage() {
         </Paper>
       </Box>
 
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+      <Dialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, pr: 4 }}>
-            <School sx={{ color: "#0D59F2" }} />
             <Typography sx={{ fontWeight: 700, fontSize: 16 }}>
               Detail Dosen Pembimbing
             </Typography>
           </Box>
-          <IconButton onClick={handleCloseDialog} sx={{ position: "absolute", right: 8, top: 8 }}>
+          <IconButton
+            onClick={handleCloseDialog}
+            sx={{ position: "absolute", right: 8, top: 8 }}
+          >
             <Close />
           </IconButton>
         </DialogTitle>
@@ -385,10 +524,19 @@ export default function PengajuanPembimbingPage() {
                 </Typography>
               </Box>
 
-              <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, mb: 3 }}>
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 3,
+                  mb: 3,
+                }}
+              >
                 <Box>
-                  <Typography sx={{ fontSize: 13, color: "#888", mb: 0.5 }}>NIP</Typography>
-                  <Typography sx={{ fontSize: 14, fontFamily: "monospace", fontWeight: 500 }}>
+                  <Typography sx={{ fontSize: 13, color: "#888", mb: 0.5 }}>
+                    NIP
+                  </Typography>
+                  <Typography sx={{ fontSize: 14, fontWeight: 500 }}>
                     {selectedDosen.nip || "-"}
                   </Typography>
                 </Box>
@@ -409,14 +557,27 @@ export default function PengajuanPembimbingPage() {
                   Status Pengajuan ke Dosen Ini
                 </Typography>
                 {(() => {
-                  const pengajuanDosenIni = getPengajuanDosenIni(selectedDosen.id_user);
+                  const pengajuanDosenIni = getPengajuanDosenIni(
+                    selectedDosen.id_user,
+                  );
                   if (!pengajuanDosenIni) {
-                    return <Chip label="Belum Diajukan" color="default" size="small" />;
+                    return (
+                      <Chip
+                        label="Belum Diajukan"
+                        color="default"
+                        size="small"
+                      />
+                    );
                   }
                   return (
                     <Chip
-                      label={STATUS_PENGAJUAN[pengajuanDosenIni.status]?.text || "-"}
-                      color={STATUS_PENGAJUAN[pengajuanDosenIni.status]?.color || "default"}
+                      label={
+                        STATUS_PENGAJUAN[pengajuanDosenIni.status]?.text || "-"
+                      }
+                      color={
+                        STATUS_PENGAJUAN[pengajuanDosenIni.status]?.color ||
+                        "default"
+                      }
                       size="small"
                     />
                   );
@@ -428,25 +589,34 @@ export default function PengajuanPembimbingPage() {
 
         <DialogActions sx={{ px: 3, py: 2 }}>
           <Button
+            variant="contained"
             onClick={handleCloseDialog}
-            sx={{ textTransform: "none", color: "#666" }}
+            sx={{
+              textTransform: "none",
+              backgroundColor: "#6c757d",
+              "&:hover": { backgroundColor: "#545b62" },
+            }}
           >
             Tutup
           </Button>
-          {bisaAjukan && (
-            <Button
-              variant="contained"
-              onClick={handleAjukan}
-              disabled={submitting}
-              sx={{
-                textTransform: "none",
-                backgroundColor: "#0D59F2",
-                "&:hover": { backgroundColor: "#0a47c4" },
-              }}
-            >
-              {submitting ? "Memproses..." : "Ajukan sebagai Pembimbing"}
-            </Button>
-          )}
+
+          {bisaAjukan &&
+            isKetua &&
+            (!getPengajuanDosenIni(selectedDosen?.id_user) ||
+              getPengajuanDosenIni(selectedDosen?.id_user)?.status === 2) && (
+              <Button
+                variant="contained"
+                onClick={handleAjukan}
+                disabled={submitting}
+                sx={{
+                  textTransform: "none",
+                  backgroundColor: "#0D59F2",
+                  "&:hover": { backgroundColor: "#0a47c4" },
+                }}
+              >
+                {submitting ? "Memproses..." : "Ajukan sebagai Pembimbing"}
+              </Button>
+            )}
         </DialogActions>
       </Dialog>
     </BodyLayout>

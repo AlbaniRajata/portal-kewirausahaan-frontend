@@ -93,7 +93,7 @@ export default function LoginPage() {
       } else if (roleId === 1) {
         navigate("/mahasiswa/biodata");
       } else if (roleId === 3) {
-        navigate("/dosen/biodata");
+        navigate("/dosen/pembimbing/pengajuan");
       } else if (roleId === 4) {
         navigate("/reviewer/penugasan");
       } else if (roleId === 5) {

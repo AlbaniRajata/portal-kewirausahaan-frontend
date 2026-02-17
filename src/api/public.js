@@ -1,5 +1,10 @@
 import api from "./axios";
 
+export const getProfile = async () => {
+  const res = await api.get("/public/profile");
+  return res.data;
+};
+
 export const getAllProdi = async (search = "") => {
   const params = search ? { search } : {};
   const res = await api.get("/public/prodi", { params });

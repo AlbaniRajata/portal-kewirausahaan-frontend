@@ -4,11 +4,12 @@ import NotificationsIcon from "@mui/icons-material/Notifications";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import LogoutIcon from "@mui/icons-material/Logout";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import MenuIcon from "@mui/icons-material/Menu";
 import { useAuthStore } from "../../store/authStore";
 import { useNavigate } from "react-router-dom";
-import { getProfile } from "../../api/mahasiswa";
+import { getProfile } from "../../api/public";
 
-export default function Navbar() {
+export default function Navbar({ onToggleSidebar, sidebarCollapsed }) {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const [anchorEl, setAnchorEl] = useState(null);
@@ -19,7 +20,9 @@ export default function Navbar() {
     (async () => {
       try {
         const res = await getProfile();
-        if (active) setProfile(res.data);
+        if (active && res.success) {
+          setProfile(res.data);
+        }
       } catch (error) {
         console.error("Gagal mengambil profil:", error);
       }
@@ -29,21 +32,10 @@ export default function Navbar() {
     };
   }, []);
 
-  const getRoleLabel = (roleId) => {
-    const roles = {
-      1: "Mahasiswa",
-      2: "Administrator",
-      3: "Dosen Pembimbing",
-      4: "Reviewer Internal",
-      5: "Juri Eksternal",
-    };
-    return roles[roleId] || "User";
-  };
-
   const baseUrl = import.meta.env.VITE_API_URL.replace("/api", "");
 
   const displayName = profile?.nama_lengkap || user?.nama_lengkap || "User";
-  const displayRole = getRoleLabel(user?.id_role);
+  const displayRole = profile?.keterangan || "User";
   const photoUrl = profile?.foto ? `${baseUrl}/uploads/profil/${profile.foto}` : null;
 
   return (
@@ -53,7 +45,7 @@ export default function Navbar() {
         position: "fixed",
         boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
         top: 0,
-        left: 250,
+        left: sidebarCollapsed ? 70 : 250,
         right: 0,
         zIndex: 100,
         px: 4,
@@ -62,17 +54,19 @@ export default function Navbar() {
         justifyContent: "space-between",
         backgroundColor: "#fff",
         borderBottom: "1px solid #e0e0e0",
+        transition: "left 0.3s ease",
       }}
     >
-      <Typography sx={{ fontSize: 18, fontWeight: 600 }}>
-        Program Mahasiswa Wirausaha
-      </Typography>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <IconButton onClick={onToggleSidebar}>
+          <MenuIcon />
+        </IconButton>
+        <Typography sx={{ fontSize: 18, fontWeight: 600 }}>
+          Program Mahasiswa Wirausaha
+        </Typography>
+      </Box>
 
       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-        <IconButton>
-          <NotificationsIcon />
-        </IconButton>
-
         <Box
           onClick={(e) => setAnchorEl(e.currentTarget)}
           sx={{ display: "flex", alignItems: "center", gap: 1.5, cursor: "pointer" }}

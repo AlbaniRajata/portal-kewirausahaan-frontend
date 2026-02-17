@@ -13,8 +13,16 @@ import {
   TableRow,
   Chip,
   Alert,
+  TextField,
+  Divider,
 } from "@mui/material";
-import { Add, Visibility, Edit, Description } from "@mui/icons-material";
+import {
+  Add,
+  Visibility,
+  Edit,
+  Description,
+  CheckCircle,
+} from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
@@ -52,26 +60,37 @@ export default function DaftarProposalPage() {
     if (!dateString) return "-";
     const date = new Date(dateString);
     return date.toLocaleDateString("id-ID", {
-      day: "numeric",
+      day: "2-digit",
       month: "long",
       year: "numeric",
     });
   };
 
-  const getStatusLabel = (statusCode) => {
-    const labels = {
-      0: { text: "Draft", color: "default" },
-      1: { text: "Diajukan", color: "info" },
-      2: { text: "Ditugaskan ke Reviewer", color: "primary" },
-      3: { text: "Tidak Lolos Desk Evaluasi", color: "error" },
-      4: { text: "Lolos Desk Evaluasi", color: "success" },
-      5: { text: "Panel Wawancara", color: "warning" },
-      6: { text: "Tidak Lolos Wawancara", color: "error" },
-      7: { text: "Lolos Wawancara", color: "success" },
-      8: { text: "Pembimbing Diajukan", color: "info" },
-      9: { text: "Pembimbing Disetujui", color: "success" },
-    };
-    return labels[statusCode] || { text: "Unknown", color: "default" };
+  const getStatusInfo = (statusCode) => {
+    switch (statusCode) {
+      case 0:
+        return { label: "Draft", color: "default" };
+      case 1:
+        return { label: "Diajukan", color: "info" };
+      case 2:
+        return { label: "Review Tahap 1", color: "primary" };
+      case 3:
+        return { label: "Tidak Lolos Desk", color: "error" };
+      case 4:
+        return { label: "Lolos Desk", color: "success" };
+      case 5:
+        return { label: "Panel Wawancara", color: "warning" };
+      case 6:
+        return { label: "Tidak Lolos Wawancara", color: "error" };
+      case 7:
+        return { label: "Lolos Wawancara", color: "success" };
+      case 8:
+        return { label: "Pembimbing Diajukan", color: "info" };
+      case 9:
+        return { label: "Pembimbing Disetujui", color: "success" };
+      default:
+        return { label: "Unknown", color: "default" };
+    }
   };
 
   const handleCreateProposal = () => {
@@ -85,17 +104,34 @@ export default function DaftarProposalPage() {
   if (loading) {
     return (
       <BodyLayout Sidebar={SidebarMahasiswa}>
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "60vh",
+          }}
+        >
           <CircularProgress />
         </Box>
       </BodyLayout>
     );
   }
 
+  const proposal = status?.data?.proposal;
+  const statusInfo = proposal ? getStatusInfo(proposal.status) : null;
+
   return (
     <BodyLayout Sidebar={SidebarMahasiswa}>
       <Box>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 4,
+          }}
+        >
           <Box>
             <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>
               Daftar Proposal
@@ -105,20 +141,26 @@ export default function DaftarProposalPage() {
             </Typography>
           </Box>
 
-          {status?.isKetua && status?.data?.anggota?.all_accepted && !status?.data?.proposal && (
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={handleCreateProposal}
-              sx={{
-                textTransform: "none",
-                backgroundColor: "#0D59F2",
-                "&:hover": { backgroundColor: "#0846c7" },
-              }}
-            >
-              Buat Proposal
-            </Button>
-          )}
+          {status?.isKetua &&
+            status?.data?.anggota?.all_accepted &&
+            !status?.data?.proposal && (
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={handleCreateProposal}
+                sx={{
+                  textTransform: "none",
+                  backgroundColor: "#0D59F2",
+                  "&:hover": { backgroundColor: "#0846c7" },
+                  px: 3,
+                  py: 1.2,
+                  fontSize: 15,
+                  fontWeight: 600,
+                }}
+              >
+                Buat Proposal
+              </Button>
+            )}
         </Box>
 
         {alert && (
@@ -129,7 +171,8 @@ export default function DaftarProposalPage() {
 
         {!status?.hasTim && (
           <Alert severity="warning" sx={{ mb: 3 }}>
-            Anda belum terdaftar dalam tim. Silakan ajukan anggota tim terlebih dahulu.
+            Anda belum terdaftar dalam tim. Silakan ajukan anggota tim terlebih
+            dahulu.
           </Alert>
         )}
 
@@ -139,32 +182,77 @@ export default function DaftarProposalPage() {
           </Alert>
         )}
 
-        {status?.hasTim && status?.isKetua && !status?.data?.anggota?.all_accepted && (
-          <Alert severity="warning" sx={{ mb: 3 }}>
-            Belum semua anggota menyetujui undangan. Pengajuan proposal hanya bisa dilakukan setelah semua anggota menyetujui undangan.
-          </Alert>
-        )}
+        {status?.hasTim &&
+          status?.isKetua &&
+          !status?.data?.anggota?.all_accepted && (
+            <Alert severity="warning" sx={{ mb: 3 }}>
+              Belum semua anggota menyetujui undangan. Pengajuan proposal hanya
+              bisa dilakukan setelah semua anggota menyetujui undangan.
+            </Alert>
+          )}
 
-        <Paper sx={{ overflow: "hidden" }}>
-          {status?.data?.proposal ? (
+        <Paper sx={{ overflow: "hidden", mb: 3 }}>
+          {proposal ? (
             <TableContainer>
               <Table>
                 <TableHead>
-                  <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                    <TableCell sx={{ fontWeight: 700 }}>Judul Proposal</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Program</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Kategori</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Anggaran</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Tanggal Submit</TableCell>
-                    <TableCell sx={{ fontWeight: 700, textAlign: "center" }}>Aksi</TableCell>
+                  <TableRow sx={{ backgroundColor: "#0D59F2" }}>
+                    <TableCell
+                      sx={{ fontWeight: 700, color: "#fff", fontSize: 14 }}
+                    >
+                      Judul Proposal
+                    </TableCell>
+                    <TableCell
+                      sx={{ fontWeight: 700, color: "#fff", fontSize: 14 }}
+                    >
+                      Program
+                    </TableCell>
+                    <TableCell
+                      sx={{ fontWeight: 700, color: "#fff", fontSize: 14 }}
+                    >
+                      Kategori
+                    </TableCell>
+                    <TableCell
+                      sx={{ fontWeight: 700, color: "#fff", fontSize: 14 }}
+                    >
+                      Modal Diajukan
+                    </TableCell>
+                    <TableCell
+                      sx={{ fontWeight: 700, color: "#fff", fontSize: 14 }}
+                    >
+                      Tanggal Submit
+                    </TableCell>
+                    <TableCell
+                      sx={{ fontWeight: 700, color: "#fff", fontSize: 14 }}
+                    >
+                      Status
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        fontWeight: 700,
+                        color: "#fff",
+                        fontSize: 14,
+                        textAlign: "center",
+                      }}
+                    >
+                      Aksi
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  <TableRow hover>
+                  <TableRow
+                    hover
+                    sx={{
+                      "&:hover": {
+                        backgroundColor: "#f8f9ff",
+                      },
+                    }}
+                  >
                     <TableCell>
-                      <Typography sx={{ fontWeight: 500, maxWidth: 300 }}>
-                        {status.data.proposal.judul}
+                      <Typography
+                        sx={{ fontWeight: 600, maxWidth: 350, fontSize: 14 }}
+                      >
+                        {proposal.judul}
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -174,36 +262,54 @@ export default function DaftarProposalPage() {
                     </TableCell>
                     <TableCell>
                       <Typography sx={{ fontSize: 14 }}>
-                        {status.data.proposal.nama_kategori || "-"}
+                        {proposal.nama_kategori || "-"}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography sx={{ fontSize: 14, fontWeight: 500 }}>
-                        {formatRupiah(status.data.proposal.modal_diajukan)}
+                      <Typography
+                        sx={{ fontSize: 14, fontWeight: 600, color: "#0D59F2" }}
+                      >
+                        {formatRupiah(proposal.modal_diajukan)}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography sx={{ fontSize: 14 }}>
+                        {formatDate(proposal.tanggal_submit)}
                       </Typography>
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={getStatusLabel(status.data.proposal.status).text}
-                        color={getStatusLabel(status.data.proposal.status).color}
+                        label={statusInfo.label}
+                        color={statusInfo.color}
                         size="small"
                       />
                     </TableCell>
                     <TableCell>
-                      <Typography sx={{ fontSize: 14 }}>
-                        {formatDate(status.data.proposal.tanggal_submit)}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          gap: 1,
+                          justifyContent: "center",
+                        }}
+                      >
                         <Button
                           size="small"
-                          variant="outlined"
-                          startIcon={status.data.proposal.status === 0 ? <Edit /> : <Visibility />}
+                          variant={
+                            proposal.status === 0 ? "contained" : "outlined"
+                          }
+                          startIcon={
+                            proposal.status === 0 ? <Edit /> : <Visibility />
+                          }
                           onClick={handleViewProposal}
-                          sx={{ textTransform: "none" }}
+                          sx={{
+                            textTransform: "none",
+                            ...(proposal.status === 0 && {
+                              backgroundColor: "#FDB022",
+                              "&:hover": { backgroundColor: "#e09a1a" },
+                            }),
+                          }}
                         >
-                          {status.data.proposal.status === 0 ? "Edit" : "Lihat"}
+                          {proposal.status === 0 ? "Edit" : "Lihat"}
                         </Button>
                       </Box>
                     </TableCell>
@@ -212,28 +318,43 @@ export default function DaftarProposalPage() {
               </Table>
             </TableContainer>
           ) : (
-            <Box sx={{ p: 8, textAlign: "center" }}>
-              <Description sx={{ fontSize: 80, color: "#ddd", mb: 2 }} />
-              <Typography sx={{ fontSize: 18, fontWeight: 600, color: "#666", mb: 1 }}>
+            <Box sx={{ p: 10, textAlign: "center" }}>
+              <Description sx={{ fontSize: 100, color: "#e0e0e0", mb: 3 }} />
+              <Typography
+                sx={{ fontSize: 20, fontWeight: 600, color: "#666", mb: 1 }}
+              >
                 Belum Ada Proposal
               </Typography>
-              <Typography sx={{ fontSize: 14, color: "#999", mb: 3 }}>
+              <Typography
+                sx={{
+                  fontSize: 14,
+                  color: "#999",
+                  mb: 4,
+                  maxWidth: 500,
+                  mx: "auto",
+                }}
+              >
                 {status?.isKetua && status?.data?.anggota?.all_accepted
-                  ? "Mulai buat proposal kewirausahaan Anda"
+                  ? "Mulai buat proposal kewirausahaan Anda dengan klik tombol di bawah"
                   : "Proposal akan muncul di sini setelah dibuat oleh ketua tim"}
               </Typography>
               {status?.isKetua && status?.data?.anggota?.all_accepted && (
                 <Button
                   variant="contained"
+                  size="large"
                   startIcon={<Add />}
                   onClick={handleCreateProposal}
                   sx={{
                     textTransform: "none",
                     backgroundColor: "#0D59F2",
                     "&:hover": { backgroundColor: "#0846c7" },
+                    px: 4,
+                    py: 1.5,
+                    fontSize: 15,
+                    fontWeight: 600,
                   }}
                 >
-                  Buat Proposal
+                  Buat Proposal Sekarang
                 </Button>
               )}
             </Box>
@@ -241,44 +362,75 @@ export default function DaftarProposalPage() {
         </Paper>
 
         {status?.data?.tim && (
-          <Paper sx={{ p: 3, mt: 3 }}>
-            <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 2 }}>
+          <Paper sx={{ p: 4 }}>
+            <Typography sx={{ fontSize: 20, fontWeight: 700, mb: 3 }}>
               Informasi Tim
             </Typography>
-            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+
+            <Divider sx={{ mb: 3 }} />
+
+            <Box
+              sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3 }}
+            >
               <Box>
-                <Typography sx={{ fontSize: 12, color: "#777", mb: 0.5 }}>
+                <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>
                   Nama Tim
                 </Typography>
-                <Typography sx={{ fontWeight: 500 }}>
-                  {status.data.tim.nama_tim}
-                </Typography>
+                <TextField
+                  fullWidth
+                  value={status.data.tim.nama_tim}
+                  disabled
+                  InputProps={{
+                    sx: { fontWeight: 500 },
+                  }}
+                />
               </Box>
+
               <Box>
-                <Typography sx={{ fontSize: 12, color: "#777", mb: 0.5 }}>
+                <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>
                   Program
                 </Typography>
-                <Typography sx={{ fontWeight: 500 }}>
-                  {status.data.tim.keterangan}
-                </Typography>
+                <TextField
+                  fullWidth
+                  value={status.data.tim.keterangan}
+                  disabled
+                  InputProps={{
+                    sx: { fontWeight: 500 },
+                  }}
+                />
               </Box>
+
               <Box>
-                <Typography sx={{ fontSize: 12, color: "#777", mb: 0.5 }}>
+                <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>
                   Jumlah Anggota
                 </Typography>
-                <Typography sx={{ fontWeight: 500 }}>
-                  {status.data.anggota?.total || 0} orang
-                </Typography>
+                <TextField
+                  fullWidth
+                  value={`${status.data.anggota?.total || 0} orang`}
+                  disabled
+                  InputProps={{
+                    sx: { fontWeight: 500 },
+                  }}
+                />
               </Box>
+
               <Box>
-                <Typography sx={{ fontSize: 12, color: "#777", mb: 0.5 }}>
+                <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>
                   Status Tim
                 </Typography>
-                <Chip
-                  label={status.data.anggota?.all_accepted ? "Lengkap" : "Menunggu Persetujuan"}
-                  color={status.data.anggota?.all_accepted ? "success" : "warning"}
-                  size="small"
-                />
+                <Box sx={{ pt: 1 }}>
+                  <Chip
+                    label={
+                      status.data.anggota?.all_accepted
+                        ? "Lengkap"
+                        : "Menunggu Persetujuan"
+                    }
+                    color={
+                      status.data.anggota?.all_accepted ? "success" : "warning"
+                    }
+                    size="small"
+                  />
+                </Box>
               </Box>
             </Box>
           </Paper>

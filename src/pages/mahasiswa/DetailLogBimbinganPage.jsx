@@ -1,11 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Box, Typography, Paper, Button, Chip,
-  CircularProgress, Alert, Divider,
+  CircularProgress, Alert, Divider, TextField,
 } from "@mui/material";
-import {
-  ArrowBack, BookOutlined, Person, CalendarMonth, Devices,
-} from "@mui/icons-material";
+import { ArrowBack } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
@@ -18,8 +16,8 @@ const STATUS_BIMBINGAN = {
 };
 
 const METODE_LABEL = {
-  1: { text: "Online", color: "info" },
-  2: { text: "Offline", color: "default" },
+  1: "Online",
+  2: "Offline",
 };
 
 const formatDate = (dateString) => {
@@ -77,31 +75,23 @@ export default function DetailLogBimbinganPage() {
     );
   }
 
+  const statusInfo = STATUS_BIMBINGAN[bimbingan.status] || { text: "-", color: "default" };
+
   return (
     <BodyLayout Sidebar={SidebarMahasiswa}>
       <Box>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 4 }}>
-          <Button
-            startIcon={<ArrowBack />}
-            onClick={() => navigate("/mahasiswa/bimbingan")}
-            sx={{ textTransform: "none", color: "#555" }}
-          >
-            Kembali
-          </Button>
-          <Divider orientation="vertical" flexItem />
-          <Box>
-            <Typography sx={{ fontSize: 24, fontWeight: 700 }}>
-              Detail Bimbingan
-            </Typography>
-            <Typography sx={{ fontSize: 13, color: "#777" }}>
+        <Box sx={{ mb: 4 }}>
+          <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>
+            Detail Bimbingan
+          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Typography sx={{ fontSize: 14, color: "#777" }}>
               Diajukan pada {formatDate(bimbingan.created_at)}
             </Typography>
-          </Box>
-          <Box sx={{ ml: "auto" }}>
             <Chip
-              label={STATUS_BIMBINGAN[bimbingan.status]?.text || "-"}
-              color={STATUS_BIMBINGAN[bimbingan.status]?.color || "default"}
-              sx={{ fontWeight: 600 }}
+              label={statusInfo.text}
+              color={statusInfo.color}
+              size="small"
             />
           </Box>
         </Box>
@@ -112,118 +102,138 @@ export default function DetailLogBimbinganPage() {
           </Alert>
         )}
 
-        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, mb: 3 }}>
-          <Paper sx={{ p: 3 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2.5 }}>
-              <BookOutlined sx={{ color: "#0D59F2", fontSize: 20 }} />
-              <Typography sx={{ fontSize: 16, fontWeight: 700 }}>
-                Informasi Bimbingan
+        <Paper sx={{ p: 4, mb: 3 }}>
+          <Typography sx={{ fontSize: 20, fontWeight: 700, mb: 3 }}>
+            Informasi Bimbingan
+          </Typography>
+
+          <Divider sx={{ mb: 3 }} />
+
+          <Box sx={{ mb: 3 }}>
+            <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>
+              Topik Bimbingan
+            </Typography>
+            <TextField
+              fullWidth
+              value={bimbingan.topik}
+              disabled
+              multiline
+              rows={2}
+            />
+          </Box>
+
+          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, mb: 3 }}>
+            <Box>
+              <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>
+                Tanggal Bimbingan
               </Typography>
+              <TextField
+                fullWidth
+                value={formatDate(bimbingan.tanggal_bimbingan)}
+                disabled
+              />
             </Box>
 
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <Box>
-                <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Topik</Typography>
-                <Typography sx={{ fontWeight: 600, fontSize: 15 }}>
-                  {bimbingan.topik}
-                </Typography>
-              </Box>
-
-              <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
-                <Box>
-                  <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>
-                    Tanggal Bimbingan
-                  </Typography>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                    <CalendarMonth sx={{ fontSize: 15, color: "#555" }} />
-                    <Typography sx={{ fontSize: 13 }}>
-                      {formatDate(bimbingan.tanggal_bimbingan)}
-                    </Typography>
-                  </Box>
-                </Box>
-                <Box>
-                  <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Metode</Typography>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                    <Devices sx={{ fontSize: 15, color: "#555" }} />
-                    <Chip
-                      label={METODE_LABEL[bimbingan.metode]?.text || bimbingan.metode}
-                      size="small"
-                      variant="outlined"
-                      color={METODE_LABEL[bimbingan.metode]?.color || "default"}
-                    />
-                  </Box>
-                </Box>
-              </Box>
-
-              {bimbingan.deskripsi && (
-                <Box>
-                  <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Deskripsi</Typography>
-                  <Typography sx={{ fontSize: 14, color: "#444", lineHeight: 1.6 }}>
-                    {bimbingan.deskripsi}
-                  </Typography>
-                </Box>
-              )}
-
-              <Box>
-                <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Judul Proposal</Typography>
-                <Typography sx={{ fontSize: 14 }}>
-                  {bimbingan.judul_proposal}
-                </Typography>
-              </Box>
-            </Box>
-          </Paper>
-
-          <Paper sx={{ p: 3 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2.5 }}>
-              <Person sx={{ color: "#0D59F2", fontSize: 20 }} />
-              <Typography sx={{ fontSize: 16, fontWeight: 700 }}>
-                Informasi Peserta
+            <Box>
+              <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>
+                Metode
               </Typography>
+              <TextField
+                fullWidth
+                value={METODE_LABEL[bimbingan.metode] || bimbingan.metode}
+                disabled
+              />
+            </Box>
+          </Box>
+
+          {bimbingan.deskripsi && (
+            <Box sx={{ mb: 3 }}>
+              <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>
+                Deskripsi
+              </Typography>
+              <TextField
+                fullWidth
+                value={bimbingan.deskripsi}
+                disabled
+                multiline
+                rows={4}
+              />
+            </Box>
+          )}
+
+          <Box sx={{ mb: 3 }}>
+            <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>
+              Judul Proposal
+            </Typography>
+            <TextField
+              fullWidth
+              value={bimbingan.judul_proposal}
+              disabled
+              multiline
+              rows={2}
+            />
+          </Box>
+
+          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3 }}>
+            <Box>
+              <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>
+                Dosen Pembimbing
+              </Typography>
+              <TextField
+                fullWidth
+                value={bimbingan.nama_dosen}
+                disabled
+              />
             </Box>
 
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <Box>
-                <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Dosen Pembimbing</Typography>
-                <Typography sx={{ fontWeight: 600, fontSize: 15 }}>
-                  {bimbingan.nama_dosen}
-                </Typography>
-                {bimbingan.nip && (
-                  <Typography sx={{ fontSize: 13, color: "#666", fontFamily: "monospace" }}>
-                    NIP: {bimbingan.nip}
-                  </Typography>
-                )}
-                {bimbingan.bidang_keahlian && (
-                  <Typography sx={{ fontSize: 13, color: "#666" }}>
-                    {bimbingan.bidang_keahlian}
-                  </Typography>
-                )}
-              </Box>
-
-              <Divider />
-
-              <Box>
-                <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Diajukan Oleh</Typography>
-                <Typography sx={{ fontSize: 14, fontWeight: 500 }}>
-                  {bimbingan.nama_pengaju}
-                </Typography>
-              </Box>
+            <Box>
+              <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>
+                NIP
+              </Typography>
+              <TextField
+                fullWidth
+                value={bimbingan.nip || "-"}
+                disabled
+              />
             </Box>
-          </Paper>
-        </Box>
+          </Box>
+        </Paper>
 
         {bimbingan.catatan_dosen && (
-          <Paper sx={{
-            p: 3,
-            borderLeft: `4px solid ${bimbingan.status === 1 ? "#2e7d32" : "#ef5350"}`,
-          }}>
-            <Typography sx={{ fontSize: 14, fontWeight: 700, mb: 1 }}>
+          <Paper sx={{ p: 4, mb: 3 }}>
+            <Typography sx={{ fontSize: 20, fontWeight: 700, mb: 3 }}>
               Catatan Dosen
             </Typography>
-            <Typography sx={{ fontSize: 14, color: "#444" }}>
-              {bimbingan.catatan_dosen}
-            </Typography>
+
+            <Divider sx={{ mb: 3 }} />
+
+            <TextField
+              fullWidth
+              value={bimbingan.catatan_dosen}
+              disabled
+              multiline
+              rows={4}
+            />
           </Paper>
         )}
+
+        <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+          <Button
+            variant="contained"
+            startIcon={<ArrowBack />}
+            onClick={() => navigate("/mahasiswa/bimbingan")}
+            sx={{
+              textTransform: "none",
+              px: 4,
+              py: 1.2,
+              backgroundColor: "#FDB022",
+              "&:hover": { backgroundColor: "#e09a1a" },
+              fontWeight: 600,
+            }}
+          >
+            Kembali
+          </Button>
+        </Box>
       </Box>
     </BodyLayout>
   );
