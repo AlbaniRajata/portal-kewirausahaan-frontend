@@ -27,6 +27,7 @@ import PenugasanDetailPage from "../pages/reviewer/PenugasanDetailPage";
 import JuriPenugasanPage from "../pages/juri/PenugasanPage";
 import JuriDetailPenugasanPage from "../pages/juri/PenugasanDetailPage";
 
+import BiodataDosenPage from "../pages/dosen/BiodataDosenPage";
 import DaftarPengajuanPembimbingPage from "../pages/dosen/DaftarPengajuanPembimbingPage";
 import DetailPengajuanPembimbingPage from "../pages/dosen/DetailPengajuanPembimbingPage";
 import DaftarBimbinganPage from "../pages/dosen/DaftarBimbinganPage"; 
@@ -82,6 +83,7 @@ export default function AppRoutes() {
 
       {/* DOSEN*/}
       <Route path="/dosen" element={<PrivateRoute />}>
+        <Route path="biodata" element={<BiodataDosenPage />} />
         <Route path="pembimbing/pengajuan" element={<DaftarPengajuanPembimbingPage />} />
         <Route path="pembimbing/pengajuan/:id_pengajuan" element={<DetailPengajuanPembimbingPage />} />
         <Route path="bimbingan" element={<DaftarBimbinganPage />} />
