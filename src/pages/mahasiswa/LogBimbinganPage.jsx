@@ -10,7 +10,6 @@ import {
   TableHead,
   TableRow,
   Button,
-  Chip,
   CircularProgress,
   Alert,
   Dialog,
@@ -28,10 +27,37 @@ import BodyLayout from "../../components/layouts/BodyLayout";
 import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
 import { getListBimbingan, ajukanBimbingan } from "../../api/mahasiswa";
 
+const roundedField = {
+  "& .MuiOutlinedInput-root": { borderRadius: "12px" },
+};
+
+const tableHeadCell = {
+  fontWeight: 700,
+  fontSize: 13,
+  color: "#000",
+  backgroundColor: "#fafafa",
+  borderBottom: "2px solid #f0f0f0",
+  py: 2,
+};
+
+const tableBodyRow = {
+  "& td": { borderBottom: "1px solid #f5f5f5", py: 2 },
+};
+
+const StatusPill = ({ label, bg, color }) => (
+  <Box sx={{
+    display: "inline-flex", alignItems: "center",
+    px: 1.5, py: 0.4, borderRadius: "50px",
+    backgroundColor: bg, color, fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
+  }}>
+    {label}
+  </Box>
+);
+
 const STATUS_BIMBINGAN = {
-  0: { text: "Menunggu Konfirmasi", color: "warning" },
-  1: { text: "Disetujui", color: "success" },
-  2: { text: "Ditolak", color: "error" },
+  0: { label: "Menunggu Konfirmasi", color: "#fff8e1",  bg: "#f57f17" },
+  1: { label: "Disetujui",           color: "#e8f5e9",  bg: "#2e7d32" },
+  2: { label: "Ditolak",             color: "#fce4ec",  bg: "#c62828" },
 };
 
 const METODE_OPTIONS = [
@@ -39,28 +65,22 @@ const METODE_OPTIONS = [
   { value: 2, label: "Offline" },
 ];
 
-const METODE_LABEL = {
-  1: { text: "Online", color: "info" },
-  2: { text: "Offline", color: "default" },
+const METODE_PILL = {
+  1: { label: "Online",  color: "#e3f2fd", bg: "#1565c0" },
+  2: { label: "Offline", color: "#f5f5f5", bg: "#555" },
 };
 
 const formatDate = (dateString) => {
   if (!dateString) return "-";
   return new Date(dateString).toLocaleString("id-ID", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+    day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit",
   });
 };
 
 const formatDateDisplay = (dateString) => {
   if (!dateString) return "-";
   return new Date(dateString).toLocaleDateString("id-ID", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
+    day: "2-digit", month: "long", year: "numeric",
   });
 };
 
@@ -72,12 +92,7 @@ const swalOptions = {
   },
 };
 
-const emptyForm = {
-  tanggal_bimbingan: "",
-  metode: "",
-  topik: "",
-  deskripsi: "",
-};
+const emptyForm = { tanggal_bimbingan: "", metode: "", topik: "", deskripsi: "" };
 
 export default function LogBimbinganPage() {
   const navigate = useNavigate();
@@ -100,15 +115,13 @@ export default function LogBimbinganPage() {
       if (res.success) {
         const list = res.data || [];
         setBimbinganList(list);
-        const hasPending = list.some((b) => b.status === 0);
-        setCanAjukan(!hasPending);
+        setCanAjukan(!list.some((b) => b.status === 0));
         setIsKetua(res.is_ketua || false);
       } else {
         setAlertMsg(res.message || "Gagal memuat data bimbingan");
         setAlertType("warning");
       }
     } catch (err) {
-      console.error("Error fetching bimbingan:", err);
       const msg = err.response?.data?.message || "Gagal memuat data bimbingan";
       setAlertMsg(msg);
       setAlertType("error");
@@ -117,21 +130,10 @@ export default function LogBimbinganPage() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchBimbingan();
-  }, [fetchBimbingan]);
+  useEffect(() => { fetchBimbingan(); }, [fetchBimbingan]);
 
-  const handleOpenDialog = () => {
-    setForm(emptyForm);
-    setFormError({});
-    setDialogOpen(true);
-  };
-
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    setForm(emptyForm);
-    setFormError({});
-  };
+  const handleOpenDialog = () => { setForm(emptyForm); setFormError({}); setDialogOpen(true); };
+  const handleCloseDialog = () => { setDialogOpen(false); setForm(emptyForm); setFormError({}); };
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
@@ -141,8 +143,7 @@ export default function LogBimbinganPage() {
 
   const validateForm = () => {
     const errors = {};
-    if (!form.tanggal_bimbingan)
-      errors.tanggal_bimbingan = "Tanggal wajib diisi";
+    if (!form.tanggal_bimbingan) errors.tanggal_bimbingan = "Tanggal wajib diisi";
     if (!form.metode) errors.metode = "Metode wajib dipilih";
     if (!form.topik.trim()) errors.topik = "Topik wajib diisi";
     return errors;
@@ -150,14 +151,9 @@ export default function LogBimbinganPage() {
 
   const handleSubmit = async () => {
     const errors = validateForm();
-    if (Object.keys(errors).length > 0) {
-      setFormError(errors);
-      return;
-    }
+    if (Object.keys(errors).length > 0) { setFormError(errors); return; }
 
-    const metodeLabel =
-      METODE_OPTIONS.find((m) => m.value === Number(form.metode))?.label || "-";
-
+    const metodeLabel = METODE_OPTIONS.find((m) => m.value === Number(form.metode))?.label || "-";
     const result = await Swal.fire({
       ...swalOptions,
       title: "Ajukan Bimbingan?",
@@ -169,11 +165,9 @@ export default function LogBimbinganPage() {
       confirmButtonText: "Ya, Ajukan",
       cancelButtonText: "Batal",
     });
-
     if (!result.isConfirmed) return;
 
     handleCloseDialog();
-
     try {
       setSubmitting(true);
       const res = await ajukanBimbingan({
@@ -182,34 +176,15 @@ export default function LogBimbinganPage() {
         topik: form.topik,
         deskripsi: form.deskripsi || undefined,
       });
-
       if (res.success) {
-        await Swal.fire({
-          ...swalOptions,
-          icon: "success",
-          title: "Berhasil",
-          text: res.message || "Pengajuan bimbingan berhasil dikirim",
-          timer: 2000,
-          timerProgressBar: true,
-          showConfirmButton: false,
-        });
+        await Swal.fire({ ...swalOptions, icon: "success", title: "Berhasil", text: res.message || "Pengajuan bimbingan berhasil dikirim", timer: 2000, timerProgressBar: true, showConfirmButton: false });
         fetchBimbingan();
       } else {
-        await Swal.fire({
-          ...swalOptions,
-          icon: "error",
-          title: "Gagal",
-          text: res.message || "Terjadi kesalahan",
-        });
+        await Swal.fire({ ...swalOptions, icon: "error", title: "Gagal", text: res.message || "Terjadi kesalahan" });
       }
     } catch (err) {
       const msg = err.response?.data?.message || "Gagal mengajukan bimbingan";
-      await Swal.fire({
-        ...swalOptions,
-        icon: "error",
-        title: "Gagal",
-        text: msg,
-      });
+      await Swal.fire({ ...swalOptions, icon: "error", title: "Gagal", text: msg });
     } finally {
       setSubmitting(false);
     }
@@ -218,23 +193,11 @@ export default function LogBimbinganPage() {
   return (
     <BodyLayout Sidebar={SidebarMahasiswa}>
       <Box>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-end",
-            mb: 4,
-          }}
-        >
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", mb: 4 }}>
           <Box>
-            <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>
-              Log Bimbingan
-            </Typography>
-            <Typography sx={{ fontSize: 14, color: "#777" }}>
-              Riwayat dan pengajuan sesi bimbingan dengan dosen pembimbing
-            </Typography>
+            <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Log Bimbingan</Typography>
+            <Typography sx={{ fontSize: 14, color: "#777" }}>Riwayat dan pengajuan sesi bimbingan dengan dosen pembimbing</Typography>
           </Box>
-
           <Button
             variant="contained"
             startIcon={<Add />}
@@ -242,169 +205,94 @@ export default function LogBimbinganPage() {
             disabled={!canAjukan || !isKetua}
             sx={{
               textTransform: "none",
+              borderRadius: "50px",
               backgroundColor: "#0D59F2",
               "&:hover": { backgroundColor: "#0846c7" },
-              px: 3,
-              py: 1.2,
-              fontWeight: 600,
+              px: 3, py: 1.2, fontWeight: 600,
             }}
           >
             Ajukan Bimbingan
           </Button>
         </Box>
 
-        {alertMsg && (
-          <Alert
-            severity={alertType}
-            sx={{ mb: 3 }}
-            onClose={() => setAlertMsg("")}
-          >
-            {alertMsg}
-          </Alert>
-        )}
-
-        {!isKetua && (
-          <Alert severity="info" sx={{ mb: 3 }}>
-            Hanya ketua tim yang dapat mengajukan bimbingan.
-          </Alert>
-        )}
-
+        {alertMsg && <Alert severity={alertType} sx={{ mb: 3, borderRadius: "12px" }} onClose={() => setAlertMsg("")}>{alertMsg}</Alert>}
+        {!isKetua && <Alert severity="info" sx={{ mb: 3, borderRadius: "12px" }}>Hanya ketua tim yang dapat mengajukan bimbingan.</Alert>}
         {!loading && bimbinganList.some((b) => b.status === 0) && isKetua && (
-          <Alert severity="info" sx={{ mb: 3 }}>
-            Ada pengajuan bimbingan yang sedang menunggu konfirmasi dosen. Anda
-            dapat mengajukan bimbingan baru setelah dosen merespons.
-          </Alert>
+          <Alert severity="info" sx={{ mb: 3, borderRadius: "12px" }}>Ada pengajuan bimbingan yang sedang menunggu konfirmasi dosen. Anda dapat mengajukan bimbingan baru setelah dosen merespons.</Alert>
         )}
 
-        <Paper sx={{ overflow: "hidden" }}>
+        <Paper sx={{ overflow: "hidden", borderRadius: "16px", border: "1px solid #f0f0f0" }}>
           {loading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-              <CircularProgress />
-            </Box>
+            <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
           ) : bimbinganList.length === 0 ? (
-            <Box sx={{ p: 10, textAlign: "center" }}>
-              <BookOutlined sx={{ fontSize: 100, color: "#e0e0e0", mb: 3 }} />
-              <Typography
-                sx={{ fontSize: 20, fontWeight: 600, color: "#666", mb: 1 }}
-              >
-                Belum Ada Riwayat Bimbingan
-              </Typography>
+            <Box sx={{ py: 10, textAlign: "center" }}>
+              <Box sx={{ width: 100, height: 100, borderRadius: "50%", backgroundColor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 3 }}>
+                <BookOutlined sx={{ fontSize: 48, color: "#ccc" }} />
+              </Box>
+              <Typography sx={{ fontSize: 20, fontWeight: 700, color: "#444", mb: 1 }}>Belum Ada Riwayat Bimbingan</Typography>
               <Typography sx={{ fontSize: 14, color: "#999" }}>
-                {isKetua
-                  ? "Silakan ajukan sesi bimbingan terlebih dahulu."
-                  : "Riwayat bimbingan akan muncul di sini setelah ketua tim mengajukan."}
+                {isKetua ? "Silakan ajukan sesi bimbingan terlebih dahulu." : "Riwayat bimbingan akan muncul di sini setelah ketua tim mengajukan."}
               </Typography>
             </Box>
           ) : (
             <TableContainer>
               <Table>
                 <TableHead>
-                  <TableRow sx={{ backgroundColor: "#0D59F2" }}>
-                    <TableCell
-                      sx={{ fontWeight: 700, color: "#fff", fontSize: 14 }}
-                    >
-                      Topik
-                    </TableCell>
-                    <TableCell
-                      sx={{ fontWeight: 700, color: "#fff", fontSize: 14 }}
-                    >
-                      Tanggal Bimbingan
-                    </TableCell>
-                    <TableCell
-                      sx={{ fontWeight: 700, color: "#fff", fontSize: 14 }}
-                    >
-                      Metode
-                    </TableCell>
-                    <TableCell
-                      sx={{ fontWeight: 700, color: "#fff", fontSize: 14 }}
-                    >
-                      Dosen
-                    </TableCell>
-                    <TableCell
-                      sx={{ fontWeight: 700, color: "#fff", fontSize: 14 }}
-                    >
-                      Diajukan Oleh
-                    </TableCell>
-                    <TableCell
-                      sx={{ fontWeight: 700, color: "#fff", fontSize: 14 }}
-                    >
-                      Status
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        fontWeight: 700,
-                        color: "#fff",
-                        fontSize: 14,
-                        textAlign: "center",
-                      }}
-                    >
-                      Aksi
-                    </TableCell>
+                  <TableRow>
+                    {["Topik", "Tanggal Bimbingan", "Metode", "Dosen", "Diajukan Oleh", "Status", "Aksi"].map((h, i) => (
+                      <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 6 && { textAlign: "center" }) }}>
+                        {h}
+                      </TableCell>
+                    ))}
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {bimbinganList.map((b) => (
-                    <TableRow 
-                      key={b.id_bimbingan} 
-                      hover
-                      sx={{ 
-                        '&:hover': { 
-                          backgroundColor: '#f8f9ff',
-                        } 
-                      }}
-                    >
-                      <TableCell>
-                        <Typography
-                          sx={{ fontWeight: 500, fontSize: 14, maxWidth: 200 }}
-                        >
-                          {b.topik}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography sx={{ fontSize: 14 }}>
-                          {formatDate(b.tanggal_bimbingan)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={METODE_LABEL[b.metode]?.text || b.metode}
-                          size="small"
-                          variant="outlined"
-                          color={METODE_LABEL[b.metode]?.color || "default"}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Typography sx={{ fontSize: 14 }}>
-                          {b.nama_dosen}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography sx={{ fontSize: 14 }}>
-                          {b.nama_pengaju}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={STATUS_BIMBINGAN[b.status]?.text || "-"}
-                          color={STATUS_BIMBINGAN[b.status]?.color || "default"}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell align="center">
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          startIcon={<Visibility />}
-                          onClick={() =>
-                            navigate(`/mahasiswa/bimbingan/${b.id_bimbingan}`)
-                          }
-                          sx={{ textTransform: "none" }}
-                        >
-                          Detail
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {bimbinganList.map((b) => {
+                    const s = STATUS_BIMBINGAN[b.status];
+                    const m = METODE_PILL[b.metode];
+                    return (
+                      <TableRow key={b.id_bimbingan} sx={tableBodyRow}>
+                        <TableCell>
+                          <Typography sx={{ fontWeight: 600, fontSize: 14, maxWidth: 200 }}>{b.topik}</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 13 }}>{formatDate(b.tanggal_bimbingan)}</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <StatusPill label={m?.label || b.metode} bg={m?.bg || "#f5f5f5"} color={m?.color || "#555"} />
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 13 }}>{b.nama_dosen}</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 13 }}>{b.nama_pengaju}</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <StatusPill label={s?.label || "-"} bg={s?.bg || "#f5f5f5"} color={s?.color || "#666"} />
+                        </TableCell>
+                        <TableCell align="center">
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<Visibility sx={{ fontSize: 14 }} />}
+                            onClick={() => navigate(`/mahasiswa/bimbingan/${b.id_bimbingan}`)}
+                            sx={{
+                              textTransform: "none",
+                              borderRadius: "50px",
+                              fontSize: 12,
+                              fontWeight: 600,
+                              px: 2,
+                              borderColor: "#0D59F2",
+                              color: "#0D59F2",
+                              "&:hover": { backgroundColor: "#f0f4ff" },
+                            }}
+                          >
+                            Detail
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -412,42 +300,31 @@ export default function LogBimbinganPage() {
         </Paper>
       </Box>
 
-      <Dialog
-        open={dialogOpen}
-        onClose={handleCloseDialog}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, pr: 4 }}>
-            <Typography sx={{ fontWeight: 700, fontSize: 16 }}>
-              Ajukan Sesi Bimbingan
-            </Typography>
-          </Box>
-          <IconButton
-            onClick={handleCloseDialog}
-            sx={{ position: "absolute", right: 8, top: 8 }}
-          >
+      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth
+        PaperProps={{ sx: { borderRadius: "16px" } }}>
+        <DialogTitle sx={{ pb: 1 }}>
+          <Typography sx={{ fontWeight: 700, fontSize: 16 }}>Ajukan Sesi Bimbingan</Typography>
+          <IconButton onClick={handleCloseDialog} sx={{ position: "absolute", right: 12, top: 8, color: "#888" }}>
             <Close />
           </IconButton>
         </DialogTitle>
 
-        <DialogContent dividers>
+        <DialogContent dividers sx={{ px: 3, py: 3 }}>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
             <Box>
               <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>
                 Tanggal Bimbingan <span style={{ color: "#ef5350" }}>*</span>
               </Typography>
               <TextField
-                fullWidth
+                fullWidth size="small"
                 type="datetime-local"
                 name="tanggal_bimbingan"
                 value={form.tanggal_bimbingan}
                 onChange={handleFormChange}
                 error={!!formError.tanggal_bimbingan}
                 helperText={formError.tanggal_bimbingan}
-                size="small"
                 InputLabelProps={{ shrink: true }}
+                sx={roundedField}
               />
             </Box>
 
@@ -456,22 +333,17 @@ export default function LogBimbinganPage() {
                 Metode <span style={{ color: "#ef5350" }}>*</span>
               </Typography>
               <TextField
-                fullWidth
-                select
+                fullWidth select size="small"
                 name="metode"
                 value={form.metode}
                 onChange={handleFormChange}
                 error={!!formError.metode}
                 helperText={formError.metode}
-                size="small"
+                sx={roundedField}
               >
-                <MenuItem value="" disabled>
-                  Pilih metode bimbingan
-                </MenuItem>
+                <MenuItem value="" disabled>Pilih metode bimbingan</MenuItem>
                 {METODE_OPTIONS.map((m) => (
-                  <MenuItem key={m.value} value={m.value}>
-                    {m.label}
-                  </MenuItem>
+                  <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>
                 ))}
               </TextField>
             </Box>
@@ -481,52 +353,38 @@ export default function LogBimbinganPage() {
                 Topik Bimbingan <span style={{ color: "#ef5350" }}>*</span>
               </Typography>
               <TextField
-                fullWidth
+                fullWidth size="small"
                 name="topik"
                 value={form.topik}
                 onChange={handleFormChange}
                 error={!!formError.topik}
                 helperText={formError.topik}
-                size="small"
                 placeholder="Contoh: Revisi BAB 2 - Tinjauan Pustaka"
+                sx={roundedField}
               />
             </Box>
 
             <Box>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>
-                Deskripsi / Catatan
-              </Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Deskripsi / Catatan</Typography>
               <TextField
-                fullWidth
-                multiline
-                rows={3}
+                fullWidth multiline rows={3} size="small"
                 name="deskripsi"
                 value={form.deskripsi}
                 onChange={handleFormChange}
-                size="small"
                 placeholder="Opsional — tuliskan detail topik atau hal yang ingin didiskusikan"
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
               />
             </Box>
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button
-            onClick={handleCloseDialog}
-            sx={{ textTransform: "none", color: "#666" }}
-          >
+        <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
+          <Button onClick={handleCloseDialog}
+            sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, color: "#666", border: "1.5px solid #e0e0e0", "&:hover": { backgroundColor: "#f5f5f5" } }}>
             Batal
           </Button>
-          <Button
-            variant="contained"
-            onClick={handleSubmit}
-            disabled={submitting}
-            sx={{
-              textTransform: "none",
-              backgroundColor: "#0D59F2",
-              "&:hover": { backgroundColor: "#0846c7" },
-            }}
-          >
+          <Button variant="contained" onClick={handleSubmit} disabled={submitting}
+            sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" } }}>
             {submitting ? "Memproses..." : "Ajukan Bimbingan"}
           </Button>
         </DialogActions>

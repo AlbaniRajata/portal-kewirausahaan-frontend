@@ -163,7 +163,7 @@ export default function SidebarMahasiswa({ collapsed }) {
                 <ListItemButton
                   onClick={() => handleMenuClick(item)}
                   sx={{
-                    borderRadius: 2,
+                    borderRadius:50,
                     backgroundColor:
                       isActive(item.path) ||
                       (item.hasSubmenu && isInBimbinganSubmenu)

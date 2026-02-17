@@ -10,7 +10,6 @@ import {
   TableHead,
   TableRow,
   Button,
-  Chip,
   CircularProgress,
   Alert,
   TextField,
@@ -32,20 +31,43 @@ import {
   ajukanPembimbing,
 } from "../../api/mahasiswa";
 
+const roundedField = {
+  "& .MuiOutlinedInput-root": { borderRadius: "15px" },
+};
+
+const tableHeadCell = {
+  fontWeight: 700,
+  fontSize: 13,
+  color: "#000",
+  backgroundColor: "#fafafa",
+  borderBottom: "2px solid #f0f0f0",
+  py: 2,
+};
+
+const tableBodyRow = {
+  "& td": { borderBottom: "1px solid #f5f5f5", py: 2 },
+};
+
+const StatusPill = ({ label, bg, color }) => (
+  <Box sx={{
+    display: "inline-flex", alignItems: "center",
+    px: 1.5, py: 0.4, borderRadius: "50px",
+    backgroundColor: bg, color, fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
+  }}>
+    {label}
+  </Box>
+);
+
 const STATUS_PENGAJUAN = {
-  0: { text: "Menunggu Respon", color: "warning" },
-  1: { text: "Disetujui", color: "success" },
-  2: { text: "Ditolak", color: "error" },
+  0: { label: "Menunggu Respon",  color: "#fff8e1", bg: "#f57f17" },
+  1: { label: "Disetujui",        color: "#e8f5e9", bg: "#2e7d32" },
+  2: { label: "Ditolak",          color: "#fce4ec", bg: "#c62828" },
 };
 
 const formatDate = (dateString) => {
   if (!dateString) return "-";
   return new Date(dateString).toLocaleString("id-ID", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+    day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit",
   });
 };
 
@@ -74,9 +96,7 @@ export default function PengajuanPembimbingPage() {
     try {
       setLoadingStatus(true);
       const res = await getStatusPembimbing();
-      if (res.success) {
-        setStatusData(res.data);
-      }
+      if (res.success) setStatusData(res.data);
     } catch (err) {
       console.error("Error fetching status pembimbing:", err);
     } finally {
@@ -88,9 +108,7 @@ export default function PengajuanPembimbingPage() {
     try {
       setLoadingDosen(true);
       const res = await getListDosen();
-      if (res.success) {
-        setDosenList(res.data || []);
-      }
+      if (res.success) setDosenList(res.data || []);
     } catch (err) {
       console.error("Error fetching dosen:", err);
       setAlertMsg("Gagal memuat daftar dosen");
@@ -100,16 +118,12 @@ export default function PengajuanPembimbingPage() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchStatus();
-    fetchDosen();
-  }, [fetchStatus, fetchDosen]);
+  useEffect(() => { fetchStatus(); fetchDosen(); }, [fetchStatus, fetchDosen]);
 
-  const filteredDosen = dosenList.filter(
-    (d) =>
-      (d.nama_lengkap || "").toLowerCase().includes(search.toLowerCase()) ||
-      (d.bidang_keahlian || "").toLowerCase().includes(search.toLowerCase()) ||
-      (d.nip || "").includes(search),
+  const filteredDosen = dosenList.filter((d) =>
+    (d.nama_lengkap || "").toLowerCase().includes(search.toLowerCase()) ||
+    (d.bidang_keahlian || "").toLowerCase().includes(search.toLowerCase()) ||
+    (d.nip || "").includes(search)
   );
 
   const bisaAjukan = statusData?.bisa_ajukan === true;
@@ -117,26 +131,15 @@ export default function PengajuanPembimbingPage() {
   const pengajuan = statusData?.pengajuan;
   const statusPengajuan = pengajuan?.status;
 
-  const handleOpenDetail = (dosen) => {
-    setSelectedDosen(dosen);
-    setDialogOpen(true);
-  };
-
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    setSelectedDosen(null);
-  };
+  const handleOpenDetail = (dosen) => { setSelectedDosen(dosen); setDialogOpen(true); };
+  const handleCloseDialog = () => { setDialogOpen(false); setSelectedDosen(null); };
 
   const handleAjukan = async () => {
     if (!selectedDosen) return;
-
-    const dosenName = selectedDosen.nama_lengkap;
-    const dosenId = selectedDosen.id_user;
-
     const result = await Swal.fire({
       ...swalOptions,
       title: "Konfirmasi Pengajuan",
-      html: `Anda akan mengajukan <b>${dosenName}</b> sebagai dosen pembimbing.<br/><br/>Lanjutkan?`,
+      html: `Anda akan mengajukan <b>${selectedDosen.nama_lengkap}</b> sebagai dosen pembimbing.<br/><br/>Lanjutkan?`,
       icon: "question",
       showCancelButton: true,
       confirmButtonColor: "#0D59F2",
@@ -144,41 +147,20 @@ export default function PengajuanPembimbingPage() {
       confirmButtonText: "Ya, Ajukan",
       cancelButtonText: "Batal",
     });
-
     if (!result.isConfirmed) return;
-
     try {
       setSubmitting(true);
-      const res = await ajukanPembimbing({ id_dosen: dosenId });
-
+      const res = await ajukanPembimbing({ id_dosen: selectedDosen.id_user });
       if (res.success) {
         handleCloseDialog();
-        await Swal.fire({
-          ...swalOptions,
-          icon: "success",
-          title: "Berhasil",
-          text: res.message || "Pengajuan pembimbing berhasil dikirim",
-          timer: 2000,
-          timerProgressBar: true,
-          showConfirmButton: false,
-        });
+        await Swal.fire({ ...swalOptions, icon: "success", title: "Berhasil", text: res.message || "Pengajuan pembimbing berhasil dikirim", timer: 2000, timerProgressBar: true, showConfirmButton: false });
         fetchStatus();
       } else {
-        await Swal.fire({
-          ...swalOptions,
-          icon: "error",
-          title: "Gagal",
-          text: res.message || "Terjadi kesalahan",
-        });
+        await Swal.fire({ ...swalOptions, icon: "error", title: "Gagal", text: res.message || "Terjadi kesalahan" });
       }
     } catch (err) {
       const msg = err.response?.data?.message || "Gagal mengajukan pembimbing";
-      await Swal.fire({
-        ...swalOptions,
-        icon: "error",
-        title: "Gagal",
-        text: msg,
-      });
+      await Swal.fire({ ...swalOptions, icon: "error", title: "Gagal", text: msg });
     } finally {
       setSubmitting(false);
     }
@@ -186,152 +168,92 @@ export default function PengajuanPembimbingPage() {
 
   const getPengajuanDosenIni = (id_user) => {
     if (!pengajuan) return null;
-    if (pengajuan.id_dosen === id_user) return pengajuan;
-    return null;
+    return pengajuan.id_dosen === id_user ? pengajuan : null;
   };
 
   return (
     <BodyLayout Sidebar={MahasiswaSidebar}>
       <Box>
         <Box sx={{ mb: 4 }}>
-          <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>
-            Pengajuan Pembimbing
-          </Typography>
-          <Typography sx={{ fontSize: 14, color: "#777" }}>
-            Ajukan dosen pembimbing untuk proposal Anda yang telah lolos seleksi
-          </Typography>
+          <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Pengajuan Pembimbing</Typography>
+          <Typography sx={{ fontSize: 14, color: "#777" }}>Ajukan dosen pembimbing untuk proposal Anda yang telah lolos seleksi</Typography>
         </Box>
 
-        {alertMsg && (
-          <Alert
-            severity={alertType}
-            sx={{ mb: 3 }}
-            onClose={() => setAlertMsg("")}
-          >
-            {alertMsg}
-          </Alert>
-        )}
-
-        {!isKetua && (
-          <Alert severity="info" sx={{ mb: 3 }}>
-            Hanya ketua tim yang dapat mengajukan dosen pembimbing.
-          </Alert>
-        )}
+        {alertMsg && <Alert severity={alertType} sx={{ mb: 3, borderRadius: "12px" }} onClose={() => setAlertMsg("")}>{alertMsg}</Alert>}
+        {!isKetua && <Alert severity="info" sx={{ mb: 3, borderRadius: "12px" }}>Hanya ketua tim yang dapat mengajukan dosen pembimbing.</Alert>}
 
         {loadingStatus ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
-            <CircularProgress size={24} />
-          </Box>
+          <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}><CircularProgress size={24} /></Box>
         ) : statusData ? (
-          <Paper sx={{ p: 3, mb: 3, borderLeft: "4px solid #0D59F2" }}>
-            <Typography sx={{ fontSize: 16, fontWeight: 700, mb: 2 }}>
-              Status Pengajuan Pembimbing
-            </Typography>
+          <Paper sx={{ p: 4, mb: 3, borderRadius: "16px", border: "1px solid #f0f0f0", borderLeft: "4px solid #0D59F2" }}>
+            <Typography sx={{ fontSize: 16, fontWeight: 700, mb: 3 }}>Status Pengajuan Pembimbing</Typography>
 
             {pengajuan?.nama_dosen && (
-              <Box sx={{ mb: 2 }}>
-                <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>
-                  Dosen Pembimbing
-                </Typography>
-                <Typography sx={{ fontSize: 14, fontWeight: 600 }}>
-                  {pengajuan.nama_dosen}
-                </Typography>
+              <Box sx={{ mb: 3 }}>
+                <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Dosen Pembimbing</Typography>
+                <Typography sx={{ fontSize: 15, fontWeight: 700 }}>{pengajuan.nama_dosen}</Typography>
               </Box>
             )}
 
             {pengajuan && (
               <>
                 <Divider sx={{ my: 2 }} />
-
-                <Box
-                  sx={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr 1fr",
-                    gap: 2,
-                  }}
-                >
+                <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 3 }}>
                   <Box>
-                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>
-                      Tanggal Diajukan
-                    </Typography>
-                    <Typography sx={{ fontSize: 14 }}>
-                      {formatDate(pengajuan.created_at)}
-                    </Typography>
+                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Tanggal Diajukan</Typography>
+                    <Typography sx={{ fontSize: 14, fontWeight: 500 }}>{formatDate(pengajuan.created_at)}</Typography>
                   </Box>
                   {pengajuan.responded_at && (
                     <Box>
-                      <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>
-                        Tanggal Respon
-                      </Typography>
-                      <Typography sx={{ fontSize: 14 }}>
-                        {formatDate(pengajuan.responded_at)}
-                      </Typography>
+                      <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Tanggal Respon</Typography>
+                      <Typography sx={{ fontSize: 14, fontWeight: 500 }}>{formatDate(pengajuan.responded_at)}</Typography>
+                    </Box>
+                  )}
+                  {pengajuan.status !== undefined && (
+                    <Box>
+                      <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Status</Typography>
+                      <StatusPill
+                        label={STATUS_PENGAJUAN[pengajuan.status]?.label || "Unknown"}
+                        bg={STATUS_PENGAJUAN[pengajuan.status]?.bg || "#f5f5f5"}
+                        color={STATUS_PENGAJUAN[pengajuan.status]?.color || "#666"}
+                      />
                     </Box>
                   )}
                 </Box>
 
                 {pengajuan.catatan_dosen && (
-                  <Box
-                    sx={{
-                      mt: 2,
-                      p: 2,
-                      backgroundColor: "#fff3e0",
-                      borderRadius: 1,
-                    }}
-                  >
-                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>
-                      Catatan Dosen
-                    </Typography>
-                    <Typography sx={{ fontSize: 14 }}>
-                      {pengajuan.catatan_dosen}
-                    </Typography>
+                  <Box sx={{ mt: 3, p: 2.5, backgroundColor: "#fff8e1", borderRadius: "12px", border: "1px solid #ffe082" }}>
+                    <Typography sx={{ fontSize: 12, color: "#f57f17", fontWeight: 700, mb: 0.5 }}>Catatan Dosen</Typography>
+                    <Typography sx={{ fontSize: 14 }}>{pengajuan.catatan_dosen}</Typography>
                   </Box>
                 )}
               </>
             )}
 
-            {!bisaAjukan && statusPengajuan === 1 && (
-              <Alert severity="success" sx={{ mt: 2 }}>
-                Pengajuan pembimbing Anda telah disetujui.
-              </Alert>
-            )}
-            {!bisaAjukan && statusPengajuan === 0 && (
-              <Alert severity="info" sx={{ mt: 2 }}>
-                Pengajuan sedang menunggu respon dari dosen. Anda tidak dapat
-                mengajukan dosen lain saat ini.
-              </Alert>
-            )}
-            {bisaAjukan && statusPengajuan === 2 && isKetua && (
-              <Alert severity="warning" sx={{ mt: 2 }}>
-                Pengajuan sebelumnya ditolak. Silakan ajukan dosen pembimbing
-                lain.
-              </Alert>
-            )}
-            {bisaAjukan && !pengajuan && isKetua && (
-              <Alert severity="info" sx={{ mt: 2 }}>
-                Pilih dosen dari daftar di bawah untuk mengajukan pembimbing.
-              </Alert>
-            )}
+            <Box sx={{ mt: 3 }}>
+              {!bisaAjukan && statusPengajuan === 1 && (
+                <Alert severity="success" sx={{ borderRadius: "12px" }}>Pengajuan pembimbing Anda telah disetujui.</Alert>
+              )}
+              {!bisaAjukan && statusPengajuan === 0 && (
+                <Alert severity="info" sx={{ borderRadius: "12px" }}>Pengajuan sedang menunggu respon dari dosen. Anda tidak dapat mengajukan dosen lain saat ini.</Alert>
+              )}
+              {bisaAjukan && statusPengajuan === 2 && isKetua && (
+                <Alert severity="warning" sx={{ borderRadius: "12px" }}>Pengajuan sebelumnya ditolak. Silakan ajukan dosen pembimbing lain.</Alert>
+              )}
+              {bisaAjukan && !pengajuan && isKetua && (
+                <Alert severity="info" sx={{ borderRadius: "12px" }}>Pilih dosen dari daftar di bawah untuk mengajukan pembimbing.</Alert>
+              )}
+            </Box>
           </Paper>
         ) : (
-          <Alert severity="info" sx={{ mb: 3 }}>
-            Fitur pengajuan pembimbing hanya tersedia setelah proposal lolos
-            seleksi wawancara.
+          <Alert severity="info" sx={{ mb: 3, borderRadius: "12px" }}>
+            Fitur pengajuan pembimbing hanya tersedia setelah proposal lolos seleksi wawancara.
           </Alert>
         )}
 
-        <Paper sx={{ p: 3 }}>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              mb: 3,
-            }}
-          >
-            <Typography sx={{ fontSize: 16, fontWeight: 700 }}>
-              Daftar Dosen Pembimbing
-            </Typography>
+        <Paper sx={{ p: 4, borderRadius: "16px", border: "1px solid #f0f0f0" }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+            <Typography sx={{ fontSize: 16, fontWeight: 700 }}>Daftar Dosen Pembimbing</Typography>
             <TextField
               size="small"
               placeholder="Cari nama, NIP, bidang keahlian..."
@@ -344,141 +266,66 @@ export default function PengajuanPembimbingPage() {
                   </InputAdornment>
                 ),
               }}
-              sx={{ minWidth: 300 }}
+              sx={{ minWidth: 300, ...roundedField }}
             />
           </Box>
 
           {loadingDosen ? (
-            <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
-              <CircularProgress />
-            </Box>
+            <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}><CircularProgress /></Box>
           ) : filteredDosen.length === 0 ? (
             <Box sx={{ textAlign: "center", py: 8 }}>
-              <Typography sx={{ color: "#666" }}>
+              <Typography sx={{ color: "#999", fontSize: 14 }}>
                 {search ? "Dosen tidak ditemukan" : "Belum ada dosen tersedia"}
               </Typography>
             </Box>
           ) : (
-            <TableContainer>
+            <TableContainer sx={{ borderRadius: "12px", border: "1px solid #f0f0f0", overflow: "hidden" }}>
               <Table>
                 <TableHead>
-                  <TableRow sx={{ backgroundColor: "#0D59F2" }}>
-                    <TableCell sx={{ fontWeight: 700, color: "#fff", fontSize: 14 }}>
-                      Nama Dosen
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "#fff", fontSize: 14 }}>
-                      NIP
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "#fff", fontSize: 14 }}>
-                      Bidang Keahlian
-                    </TableCell>
-                    {statusData && (
-                      <TableCell sx={{ fontWeight: 700, color: "#fff", fontSize: 14, textAlign: "center" }}>
-                        Aksi
+                  <TableRow>
+                    {["Nama Dosen", "NIP", "Bidang Keahlian", ...(statusData ? ["Aksi"] : [])].map((h, i) => (
+                      <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 3 && { textAlign: "center" }) }}>
+                        {h}
                       </TableCell>
-                    )}
+                    ))}
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {filteredDosen.map((dosen) => {
-                    const pengajuanDosenIni = getPengajuanDosenIni(
-                      dosen.id_user,
-                    );
-
+                    const pengajuanDosenIni = getPengajuanDosenIni(dosen.id_user);
                     return (
-                      <TableRow 
-                        key={dosen.id_user} 
-                        hover
-                        sx={{ 
-                          '&:hover': { 
-                            backgroundColor: '#f8f9ff',
-                          } 
-                        }}
-                      >
-                        <TableCell>
-                          <Typography sx={{ fontWeight: 500, fontSize: 14 }}>
-                            {dosen.nama_lengkap}
-                          </Typography>
-                        </TableCell>
-
-                        <TableCell>
-                          <Typography sx={{ fontSize: 14 }}>
-                            {dosen.nip || "-"}
-                          </Typography>
-                        </TableCell>
-
-                        <TableCell>
-                          <Typography sx={{ fontSize: 14 }}>
-                            {dosen.bidang_keahlian || "-"}
-                          </Typography>
-                        </TableCell>
-
+                      <TableRow key={dosen.id_user} sx={tableBodyRow}>
+                        <TableCell><Typography sx={{ fontWeight: 600, fontSize: 14 }}>{dosen.nama_lengkap}</Typography></TableCell>
+                        <TableCell><Typography sx={{ fontSize: 13 }}>{dosen.nip || "-"}</Typography></TableCell>
+                        <TableCell><Typography sx={{ fontSize: 13 }}>{dosen.bidang_keahlian || "-"}</Typography></TableCell>
                         {statusData && (
                           <TableCell align="center">
                             {!pengajuanDosenIni && bisaAjukan && isKetua && (
-                              <Button
-                                size="small"
-                                variant="contained"
-                                onClick={() => handleOpenDetail(dosen)}
-                                sx={{
-                                  textTransform: "none",
-                                  backgroundColor: "#0D59F2",
-                                  "&:hover": { backgroundColor: "#0a47c4" },
-                                }}
-                              >
+                              <Button size="small" variant="contained" onClick={() => handleOpenDetail(dosen)}
+                                sx={{ textTransform: "none", borderRadius: "50px", fontWeight: 600, fontSize: 12, px: 2, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}>
                                 Ajukan
                               </Button>
                             )}
-
                             {!pengajuanDosenIni && (!bisaAjukan || !isKetua) && (
-                              <Button
-                                size="small"
-                                startIcon={<Visibility />}
-                                variant="outlined"
-                                onClick={() => handleOpenDetail(dosen)}
-                                sx={{ textTransform: "none" }}
-                              >
+                              <Button size="small" startIcon={<Visibility sx={{ fontSize: 14 }} />} variant="outlined" onClick={() => handleOpenDetail(dosen)}
+                                sx={{ textTransform: "none", borderRadius: "50px", fontWeight: 600, fontSize: 12, px: 2, borderColor: "#0D59F2", color: "#0D59F2", "&:hover": { backgroundColor: "#f0f4ff" } }}>
                                 Lihat
                               </Button>
                             )}
-
                             {pengajuanDosenIni?.status === 0 && (
-                              <Chip
-                                label="Menunggu Respon"
-                                color="warning"
-                                size="small"
-                              />
+                              <StatusPill label="Menunggu Respon" color="#fff8e1" bg="#f57f17" />
                             )}
-
                             {pengajuanDosenIni?.status === 1 && (
-                              <Chip
-                                label="Pembimbing Anda"
-                                color="success"
-                                size="small"
-                              />
+                              <StatusPill label="Pembimbing Anda" color="#e8f5e9" bg="#2e7d32" />
                             )}
-
                             {pengajuanDosenIni?.status === 2 && bisaAjukan && isKetua && (
-                              <Button
-                                size="small"
-                                variant="contained"
-                                onClick={() => handleOpenDetail(dosen)}
-                                sx={{
-                                  textTransform: "none",
-                                  backgroundColor: "#0D59F2",
-                                  "&:hover": { backgroundColor: "#0a47c4" },
-                                }}
-                              >
+                              <Button size="small" variant="contained" onClick={() => handleOpenDetail(dosen)}
+                                sx={{ textTransform: "none", borderRadius: "50px", fontWeight: 600, fontSize: 12, px: 2, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}>
                                 Ajukan Lagi
                               </Button>
                             )}
-
                             {pengajuanDosenIni?.status === 2 && (!bisaAjukan || !isKetua) && (
-                              <Chip
-                                label="Ditolak"
-                                color="error"
-                                size="small"
-                              />
+                              <StatusPill label="Ditolak" color="#fce4ec" bg="#c62828" />
                             )}
                           </TableCell>
                         )}
@@ -492,131 +339,59 @@ export default function PengajuanPembimbingPage() {
         </Paper>
       </Box>
 
-      <Dialog
-        open={dialogOpen}
-        onClose={handleCloseDialog}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, pr: 4 }}>
-            <Typography sx={{ fontWeight: 700, fontSize: 16 }}>
-              Detail Dosen Pembimbing
-            </Typography>
-          </Box>
-          <IconButton
-            onClick={handleCloseDialog}
-            sx={{ position: "absolute", right: 8, top: 8 }}
-          >
+      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth
+        PaperProps={{ sx: { borderRadius: "16px" } }}>
+        <DialogTitle sx={{ pb: 1 }}>
+          <Typography sx={{ fontWeight: 700, fontSize: 16 }}>Detail Dosen Pembimbing</Typography>
+          <IconButton onClick={handleCloseDialog} sx={{ position: "absolute", right: 12, top: 8, color: "#888" }}>
             <Close />
           </IconButton>
         </DialogTitle>
 
-        <DialogContent dividers>
+        <DialogContent dividers sx={{ px: 3, py: 3 }}>
           {selectedDosen && (
             <Box>
               <Box sx={{ mb: 3 }}>
-                <Typography sx={{ fontSize: 13, color: "#888", mb: 0.5 }}>
-                  Nama Lengkap
-                </Typography>
-                <Typography sx={{ fontSize: 16, fontWeight: 700 }}>
-                  {selectedDosen.nama_lengkap}
-                </Typography>
+                <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Nama Lengkap</Typography>
+                <Typography sx={{ fontSize: 16, fontWeight: 700 }}>{selectedDosen.nama_lengkap}</Typography>
               </Box>
 
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 3,
-                  mb: 3,
-                }}
-              >
+              <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, mb: 3 }}>
                 <Box>
-                  <Typography sx={{ fontSize: 13, color: "#888", mb: 0.5 }}>
-                    NIP
-                  </Typography>
-                  <Typography sx={{ fontSize: 14, fontWeight: 500 }}>
-                    {selectedDosen.nip || "-"}
-                  </Typography>
+                  <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>NIP</Typography>
+                  <Typography sx={{ fontSize: 14, fontWeight: 500 }}>{selectedDosen.nip || "-"}</Typography>
                 </Box>
                 <Box>
-                  <Typography sx={{ fontSize: 13, color: "#888", mb: 0.5 }}>
-                    Bidang Keahlian
-                  </Typography>
-                  <Typography sx={{ fontSize: 14, fontWeight: 500 }}>
-                    {selectedDosen.bidang_keahlian || "-"}
-                  </Typography>
+                  <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Bidang Keahlian</Typography>
+                  <Typography sx={{ fontSize: 14, fontWeight: 500 }}>{selectedDosen.bidang_keahlian || "-"}</Typography>
                 </Box>
               </Box>
 
               <Divider sx={{ my: 2 }} />
 
-              <Box sx={{ p: 2, backgroundColor: "#f8f9ff", borderRadius: 1 }}>
-                <Typography sx={{ fontSize: 13, color: "#888", mb: 1 }}>
-                  Status Pengajuan ke Dosen Ini
-                </Typography>
+              <Box sx={{ p: 2.5, backgroundColor: "#f8f9ff", borderRadius: "12px", border: "1px solid #f0f0f0" }}>
+                <Typography sx={{ fontSize: 12, mb: 1.5 }}>Status Pengajuan ke Dosen Ini</Typography>
                 {(() => {
-                  const pengajuanDosenIni = getPengajuanDosenIni(
-                    selectedDosen.id_user,
-                  );
-                  if (!pengajuanDosenIni) {
-                    return (
-                      <Chip
-                        label="Belum Diajukan"
-                        color="default"
-                        size="small"
-                      />
-                    );
-                  }
-                  return (
-                    <Chip
-                      label={
-                        STATUS_PENGAJUAN[pengajuanDosenIni.status]?.text || "-"
-                      }
-                      color={
-                        STATUS_PENGAJUAN[pengajuanDosenIni.status]?.color ||
-                        "default"
-                      }
-                      size="small"
-                    />
-                  );
+                  const p = getPengajuanDosenIni(selectedDosen.id_user);
+                  if (!p) return <StatusPill label="Belum Diajukan" color="#f5f5f5" bg="#666" />;
+                  const s = STATUS_PENGAJUAN[p.status];
+                  return <StatusPill label={s?.label || "-"} color={s?.color || "#f5f5f5"} bg={s?.bg || "#666"} />;
                 })()}
               </Box>
             </Box>
           )}
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button
-            variant="contained"
-            onClick={handleCloseDialog}
-            sx={{
-              textTransform: "none",
-              backgroundColor: "#6c757d",
-              "&:hover": { backgroundColor: "#545b62" },
-            }}
-          >
-            Tutup
-          </Button>
+        <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
 
-          {bisaAjukan &&
-            isKetua &&
+          {bisaAjukan && isKetua &&
             (!getPengajuanDosenIni(selectedDosen?.id_user) ||
               getPengajuanDosenIni(selectedDosen?.id_user)?.status === 2) && (
-              <Button
-                variant="contained"
-                onClick={handleAjukan}
-                disabled={submitting}
-                sx={{
-                  textTransform: "none",
-                  backgroundColor: "#0D59F2",
-                  "&:hover": { backgroundColor: "#0a47c4" },
-                }}
-              >
-                {submitting ? "Memproses..." : "Ajukan sebagai Pembimbing"}
-              </Button>
-            )}
+            <Button variant="contained" onClick={handleAjukan} disabled={submitting}
+              sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}>
+              {submitting ? "Memproses..." : "Ajukan sebagai Pembimbing"}
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     </BodyLayout>
