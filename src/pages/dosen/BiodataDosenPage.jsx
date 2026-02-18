@@ -11,7 +11,6 @@ import {
   Alert,
   InputAdornment,
   IconButton,
-  Divider,
 } from "@mui/material";
 import { Visibility, VisibilityOff, PhotoCamera } from "@mui/icons-material";
 import Swal from "sweetalert2";
@@ -20,6 +19,12 @@ import DosenSidebar from "../../components/layouts/DosenSidebar";
 import { getProfile, updateProfile, updatePassword } from "../../api/dosen";
 import { getAllJurusan } from "../../api/jurusan";
 import { getAllProdi } from "../../api/public";
+
+const roundedField = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "15px",
+  },
+};
 
 export default function BiodataDosenPage() {
   const [loading, setLoading] = useState(true);
@@ -69,13 +74,11 @@ export default function BiodataDosenPage() {
     try {
       setLoading(true);
       const response = await getProfile();
-
       const jurusanData = { label: response.data.nama_jurusan, id: response.data.id_jurusan };
       const prodiData = {
         label: `${response.data.jenjang} ${response.data.nama_prodi}`,
         id: response.data.id_prodi,
       };
-
       setFormBiodata({
         nama_lengkap: response.data.nama_lengkap || "",
         email: response.data.email || "",
@@ -87,9 +90,8 @@ export default function BiodataDosenPage() {
         alamat: response.data.alamat || "",
         foto: null,
       });
-
       if (response.data.foto) {
-        const baseUrl = import.meta.env.VITE_API_URL.replace('/api', '');
+        const baseUrl = import.meta.env.VITE_API_URL.replace("/api", "");
         setImagePreview(`${baseUrl}/uploads/profil/${response.data.foto}`);
       }
     } catch (err) {
@@ -105,11 +107,7 @@ export default function BiodataDosenPage() {
       setLoadingJurusan(true);
       const response = await getAllJurusan();
       if (response.success) {
-        const formatted = response.data.map((item) => ({
-          label: item.nama_jurusan,
-          id: item.id_jurusan,
-        }));
-        setJurusanOptions(formatted);
+        setJurusanOptions(response.data.map((item) => ({ label: item.nama_jurusan, id: item.id_jurusan })));
       }
     } catch (err) {
       console.error("Error fetching jurusan:", err);
@@ -123,11 +121,10 @@ export default function BiodataDosenPage() {
       setLoadingProdi(true);
       const response = await getAllProdi();
       if (response.success) {
-        const formatted = response.data.map((item) => ({
+        setProdiOptions(response.data.map((item) => ({
           label: `${item.jenjang} ${item.nama_prodi} - ${item.nama_jurusan} (${item.nama_kampus})`,
           id: item.id_prodi,
-        }));
-        setProdiOptions(formatted);
+        })));
       }
     } catch (err) {
       console.error("Error fetching prodi:", err);
@@ -150,170 +147,78 @@ export default function BiodataDosenPage() {
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-
-    if (!file) {
-      return;
-    }
-
+    if (!file) return;
     const allowedFormats = ["image/jpeg", "image/jpg", "image/png"];
     if (!allowedFormats.includes(file.type)) {
-      setErrors((prev) => ({
-        ...prev,
-        foto: "Format file harus JPG, JPEG, atau PNG",
-      }));
+      setErrors((prev) => ({ ...prev, foto: "Format file harus JPG, JPEG, atau PNG" }));
       return;
     }
-
-    const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
-      setErrors((prev) => ({
-        ...prev,
-        foto: "Ukuran file maksimal 10MB",
-      }));
+    if (file.size > 10 * 1024 * 1024) {
+      setErrors((prev) => ({ ...prev, foto: "Ukuran file maksimal 10MB" }));
       return;
     }
-
     handleChangeBiodata("foto", file);
-
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result);
-    };
+    reader.onloadend = () => setImagePreview(reader.result);
     reader.readAsDataURL(file);
   };
 
   const validateBiodata = () => {
     const newErrors = {};
-
-    if (!formBiodata.nama_lengkap) {
-      newErrors.nama_lengkap = "Nama lengkap wajib diisi";
-    }
-
-    if (!formBiodata.no_hp) {
-      newErrors.no_hp = "Nomor WhatsApp wajib diisi";
-    } else if (!/^08[0-9]{8,11}$/.test(formBiodata.no_hp)) {
-      newErrors.no_hp = "Format nomor tidak valid (08xxxxxxxxxx)";
-    }
-
+    if (!formBiodata.nama_lengkap) newErrors.nama_lengkap = "Nama lengkap wajib diisi";
+    if (!formBiodata.no_hp) newErrors.no_hp = "Nomor WhatsApp wajib diisi";
+    else if (!/^08[0-9]{8,11}$/.test(formBiodata.no_hp)) newErrors.no_hp = "Format nomor tidak valid (08xxxxxxxxxx)";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const validatePassword = () => {
     const newErrors = {};
-
-    if (!formPassword.current_password) {
-      newErrors.current_password = "Password lama wajib diisi";
-    }
-
-    if (!formPassword.new_password) {
-      newErrors.new_password = "Password baru wajib diisi";
-    } else if (formPassword.new_password.length < 8) {
-      newErrors.new_password = "Password minimal 8 karakter";
-    }
-
-    if (!formPassword.confirm_password) {
-      newErrors.confirm_password = "Konfirmasi password wajib diisi";
-    } else if (formPassword.new_password !== formPassword.confirm_password) {
-      newErrors.confirm_password = "Password tidak cocok";
-    }
-
+    if (!formPassword.current_password) newErrors.current_password = "Password lama wajib diisi";
+    if (!formPassword.new_password) newErrors.new_password = "Password baru wajib diisi";
+    else if (formPassword.new_password.length < 8) newErrors.new_password = "Password minimal 8 karakter";
+    if (!formPassword.confirm_password) newErrors.confirm_password = "Konfirmasi password wajib diisi";
+    else if (formPassword.new_password !== formPassword.confirm_password) newErrors.confirm_password = "Password tidak cocok";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmitBiodata = async () => {
-    if (!validateBiodata()) {
-      setAlert("Mohon lengkapi semua field yang wajib diisi");
-      return;
-    }
-
-    setSubmitting(true);
-    setAlert("");
-
+    if (!validateBiodata()) { setAlert("Mohon lengkapi semua field yang wajib diisi"); return; }
+    setSubmitting(true); setAlert("");
     try {
       const formData = new FormData();
       formData.append("nama_lengkap", formBiodata.nama_lengkap);
       formData.append("no_hp", formBiodata.no_hp);
       formData.append("alamat", formBiodata.alamat);
       formData.append("bidang_keahlian", formBiodata.bidang_keahlian);
-
-      if (formBiodata.foto) {
-        formData.append("foto", formBiodata.foto);
-      }
-
+      if (formBiodata.foto) formData.append("foto", formBiodata.foto);
       const response = await updateProfile(formData);
-
-      await Swal.fire({
-        icon: "success",
-        title: "Berhasil",
-        text: response.message || "Biodata berhasil diperbarui",
-        timer: 2000,
-        timerProgressBar: true,
-        showConfirmButton: false,
-      });
-
+      await Swal.fire({ icon: "success", title: "Berhasil", text: response.message || "Biodata berhasil diperbarui", timer: 2000, timerProgressBar: true, showConfirmButton: false });
       fetchProfile();
     } catch (err) {
-      console.error("Error updating biodata:", err);
       const errorMessage = err.response?.data?.message || "Gagal memperbarui biodata";
       setAlert(errorMessage);
-
-      await Swal.fire({
-        icon: "error",
-        title: "Gagal",
-        text: errorMessage,
-        confirmButtonText: "OK",
-      });
-    } finally {
-      setSubmitting(false);
-    }
+      await Swal.fire({ icon: "error", title: "Gagal", text: errorMessage, confirmButtonText: "OK" });
+    } finally { setSubmitting(false); }
   };
 
   const handleSubmitPassword = async () => {
-    if (!validatePassword()) {
-      setAlert("Mohon lengkapi form password dengan benar");
-      return;
-    }
-
-    setSubmittingPassword(true);
-    setAlert("");
-
+    if (!validatePassword()) { setAlert("Mohon lengkapi form password dengan benar"); return; }
+    setSubmittingPassword(true); setAlert("");
     try {
       const response = await updatePassword({
         current_password: formPassword.current_password,
         new_password: formPassword.new_password,
         confirm_password: formPassword.confirm_password,
       });
-
-      await Swal.fire({
-        icon: "success",
-        title: "Berhasil",
-        text: response.message || "Password berhasil diubah",
-        timer: 2000,
-        timerProgressBar: true,
-        showConfirmButton: false,
-      });
-
-      setFormPassword({
-        current_password: "",
-        new_password: "",
-        confirm_password: "",
-      });
+      await Swal.fire({ icon: "success", title: "Berhasil", text: response.message || "Password berhasil diubah", timer: 2000, timerProgressBar: true, showConfirmButton: false });
+      setFormPassword({ current_password: "", new_password: "", confirm_password: "" });
     } catch (err) {
-      console.error("Error updating password:", err);
       const errorMessage = err.response?.data?.message || "Gagal mengubah password";
       setAlert(errorMessage);
-
-      await Swal.fire({
-        icon: "error",
-        title: "Gagal",
-        text: errorMessage,
-        confirmButtonText: "OK",
-      });
-    } finally {
-      setSubmittingPassword(false);
-    }
+      await Swal.fire({ icon: "error", title: "Gagal", text: errorMessage, confirmButtonText: "OK" });
+    } finally { setSubmittingPassword(false); }
   };
 
   if (loading) {
@@ -329,31 +234,17 @@ export default function BiodataDosenPage() {
   return (
     <BodyLayout Sidebar={DosenSidebar}>
       <Box>
-        <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>
-          Biodata Anda
-        </Typography>
-        <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>
-          Lengkapi form biodata di bawah ini
-        </Typography>
+        <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Biodata Anda</Typography>
+        <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>Lengkapi form biodata di bawah ini</Typography>
 
-        {alert && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {alert}
-          </Alert>
-        )}
+        {alert && <Alert severity="error" sx={{ mb: 3 }}>{alert}</Alert>}
 
-        <Paper sx={{ p: 4, mb: 3 }}>
-          <Typography sx={{ fontSize: 20, fontWeight: 700, mb: 3 }}>
-            Informasi Pribadi
-          </Typography>
-
-          <Divider sx={{ mb: 3 }} />
+        <Paper sx={{ p: 4, mb: 3, borderRadius: 5 }}>
+          <Typography sx={{ fontSize: 20, fontWeight: 700, mb: 3 }}>Informasi Pribadi</Typography>
 
           <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, mb: 3 }}>
             <Box>
-              <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>
-                Nama Lengkap
-              </Typography>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Nama Lengkap</Typography>
               <TextField
                 fullWidth
                 placeholder="Masukkan nama lengkap Anda"
@@ -362,39 +253,22 @@ export default function BiodataDosenPage() {
                 error={!!errors.nama_lengkap}
                 helperText={errors.nama_lengkap}
                 disabled={submitting}
+                sx={roundedField}
               />
             </Box>
-
             <Box>
-              <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>
-                Email
-              </Typography>
-              <TextField
-                fullWidth
-                placeholder="Masukkan email Anda"
-                value={formBiodata.email}
-                disabled
-              />
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Email</Typography>
+              <TextField fullWidth value={formBiodata.email} disabled sx={roundedField} />
             </Box>
           </Box>
 
           <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, mb: 3 }}>
             <Box>
-              <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>
-                NIP
-              </Typography>
-              <TextField
-                fullWidth
-                placeholder="Masukkan NIP Anda"
-                value={formBiodata.nip}
-                disabled
-              />
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>NIP</Typography>
+              <TextField fullWidth value={formBiodata.nip} disabled sx={roundedField} />
             </Box>
-
             <Box>
-              <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>
-                Nomor WhatsApp
-              </Typography>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Nomor WhatsApp</Typography>
               <TextField
                 fullWidth
                 placeholder="Masukkan nomor WhatsApp Anda"
@@ -403,19 +277,16 @@ export default function BiodataDosenPage() {
                 error={!!errors.no_hp}
                 helperText={errors.no_hp}
                 disabled={submitting}
+                sx={roundedField}
               />
             </Box>
           </Box>
 
           <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, mb: 3 }}>
             <Box>
-              <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>
-                Jurusan
-              </Typography>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Jurusan</Typography>
               {loadingJurusan ? (
-                <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
-                  <CircularProgress size={24} />
-                </Box>
+                <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}><CircularProgress size={24} /></Box>
               ) : (
                 <Autocomplete
                   options={jurusanOptions}
@@ -425,25 +296,15 @@ export default function BiodataDosenPage() {
                   isOptionEqualToValue={(option, value) => option.id === value.id}
                   disabled
                   renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      placeholder="Pilih jurusan"
-                      error={!!errors.id_jurusan}
-                      helperText={errors.id_jurusan}
-                    />
+                    <TextField {...params} placeholder="Pilih jurusan" error={!!errors.id_jurusan} helperText={errors.id_jurusan} sx={roundedField} />
                   )}
                 />
               )}
             </Box>
-
             <Box>
-              <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>
-                Program Studi
-              </Typography>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Program Studi</Typography>
               {loadingProdi ? (
-                <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
-                  <CircularProgress size={24} />
-                </Box>
+                <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}><CircularProgress size={24} /></Box>
               ) : (
                 <Autocomplete
                   options={prodiOptions}
@@ -453,12 +314,7 @@ export default function BiodataDosenPage() {
                   isOptionEqualToValue={(option, value) => option.id === value.id}
                   disabled
                   renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      placeholder="Pilih program studi"
-                      error={!!errors.id_prodi}
-                      helperText={errors.id_prodi}
-                    />
+                    <TextField {...params} placeholder="Pilih program studi" error={!!errors.id_prodi} helperText={errors.id_prodi} sx={roundedField} />
                   )}
                 />
               )}
@@ -466,9 +322,7 @@ export default function BiodataDosenPage() {
           </Box>
 
           <Box sx={{ mb: 3 }}>
-            <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>
-              Bidang Keahlian
-            </Typography>
+            <Typography sx={{ fontWeight: 600, mb: 1 }}>Bidang Keahlian</Typography>
             <TextField
               fullWidth
               multiline
@@ -477,13 +331,12 @@ export default function BiodataDosenPage() {
               value={formBiodata.bidang_keahlian}
               onChange={(e) => handleChangeBiodata("bidang_keahlian", e.target.value)}
               disabled={submitting}
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
             />
           </Box>
 
           <Box sx={{ mb: 4 }}>
-            <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>
-              Alamat
-            </Typography>
+            <Typography sx={{ fontWeight: 600, mb: 1 }}>Alamat</Typography>
             <TextField
               fullWidth
               multiline
@@ -492,92 +345,53 @@ export default function BiodataDosenPage() {
               value={formBiodata.alamat}
               onChange={(e) => handleChangeBiodata("alamat", e.target.value)}
               disabled={submitting}
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
             />
           </Box>
 
           <Box sx={{ mb: 3 }}>
-            <Typography sx={{ fontWeight: 600, mb: 2, fontSize: 14 }}>
-              Upload Foto Profil
-            </Typography>
+            <Typography sx={{ fontWeight: 600, mb: 2 }}>Upload Foto Profil</Typography>
             <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
-              <Box sx={{ position: "relative" }}>
-                <Avatar
-                  src={imagePreview || ""}
-                  sx={{
-                    width: 120,
-                    height: 120,
-                    backgroundColor: "#f5f5f5",
-                    border: "2px solid #e0e0e0",
-                  }}
-                >
-                  {!imagePreview && <PhotoCamera sx={{ fontSize: 40, color: "#999" }} />}
-                </Avatar>
-                <input
-                  type="file"
-                  hidden
-                  id="foto-upload"
-                  accept="image/jpeg,image/jpg,image/png"
-                  onChange={handleFileChange}
-                />
-              </Box>
+              <Avatar
+                src={imagePreview || ""}
+                sx={{ width: 120, height: 120, backgroundColor: "#f5f5f5", border: "2px solid #e0e0e0" }}
+              >
+                {!imagePreview && <PhotoCamera sx={{ fontSize: 40, color: "#999" }} />}
+              </Avatar>
+              <input type="file" hidden id="foto-upload" accept="image/jpeg,image/jpg,image/png" onChange={handleFileChange} />
               <Box>
                 <Button
                   component="label"
                   htmlFor="foto-upload"
                   variant="contained"
                   disabled={submitting}
-                  sx={{
-                    textTransform: "none",
-                    backgroundColor: "#0D59F2",
-                    "&:hover": { backgroundColor: "#0846c7" },
-                  }}
+                  sx={{ textTransform: "none", borderRadius: "15px", backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" } }}
                 >
                   Choose File
                 </Button>
-                <Typography sx={{ fontSize: 12, color: "#666", mt: 1 }}>
-                  PNG, JPG, up to 10MB.
-                </Typography>
-                {errors.foto && (
-                  <Typography sx={{ fontSize: 12, color: "#d32f2f", mt: 0.5 }}>
-                    {errors.foto}
-                  </Typography>
-                )}
+                <Typography sx={{ fontSize: 12, color: "#666", mt: 1 }}>PNG, JPG, up to 10MB.</Typography>
+                {errors.foto && <Typography sx={{ fontSize: 12, color: "#d32f2f", mt: 0.5 }}>{errors.foto}</Typography>}
               </Box>
             </Box>
           </Box>
-
-          <Divider sx={{ my: 3 }} />
 
           <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
             <Button
               variant="contained"
               onClick={handleSubmitBiodata}
               disabled={submitting}
-              sx={{
-                px: 4,
-                py: 1.2,
-                textTransform: "none",
-                fontWeight: 600,
-                backgroundColor: "#0D59F2",
-                "&:hover": { backgroundColor: "#0846c7" },
-              }}
+              sx={{ px: 4, py: 1.2, textTransform: "none", fontWeight: 600, borderRadius: "15px", backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" } }}
             >
               {submitting ? "Menyimpan..." : "Simpan Perubahan"}
             </Button>
           </Box>
         </Paper>
 
-        <Paper sx={{ p: 4 }}>
-          <Typography sx={{ fontSize: 20, fontWeight: 700, mb: 3 }}>
-            Ganti Password
-          </Typography>
-
-          <Divider sx={{ mb: 3 }} />
+        <Paper sx={{ p: 4, borderRadius: 5 }}>
+          <Typography sx={{ fontSize: 20, fontWeight: 700, mb: 3 }}>Ganti Password</Typography>
 
           <Box sx={{ mb: 2 }}>
-            <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>
-              Password Lama
-            </Typography>
+            <Typography sx={{ fontWeight: 600, mb: 1 }}>Password Lama</Typography>
             <TextField
               fullWidth
               type={showPassword.current ? "text" : "password"}
@@ -587,13 +401,11 @@ export default function BiodataDosenPage() {
               error={!!errors.current_password}
               helperText={errors.current_password}
               disabled={submittingPassword}
+              sx={roundedField}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowPassword((prev) => ({ ...prev, current: !prev.current }))}
-                      edge="end"
-                    >
+                    <IconButton onClick={() => setShowPassword((prev) => ({ ...prev, current: !prev.current }))} edge="end">
                       {showPassword.current ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
@@ -603,9 +415,7 @@ export default function BiodataDosenPage() {
           </Box>
 
           <Box sx={{ mb: 2 }}>
-            <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>
-              Password Baru
-            </Typography>
+            <Typography sx={{ fontWeight: 600, mb: 1 }}>Password Baru</Typography>
             <TextField
               fullWidth
               type={showPassword.new ? "text" : "password"}
@@ -615,13 +425,11 @@ export default function BiodataDosenPage() {
               error={!!errors.new_password}
               helperText={errors.new_password}
               disabled={submittingPassword}
+              sx={roundedField}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowPassword((prev) => ({ ...prev, new: !prev.new }))}
-                      edge="end"
-                    >
+                    <IconButton onClick={() => setShowPassword((prev) => ({ ...prev, new: !prev.new }))} edge="end">
                       {showPassword.new ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
@@ -631,9 +439,7 @@ export default function BiodataDosenPage() {
           </Box>
 
           <Box sx={{ mb: 3 }}>
-            <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>
-              Konfirmasi Password Baru
-            </Typography>
+            <Typography sx={{ fontWeight: 600, mb: 1 }}>Konfirmasi Password Baru</Typography>
             <TextField
               fullWidth
               type={showPassword.confirm ? "text" : "password"}
@@ -643,13 +449,11 @@ export default function BiodataDosenPage() {
               error={!!errors.confirm_password}
               helperText={errors.confirm_password}
               disabled={submittingPassword}
+              sx={roundedField}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowPassword((prev) => ({ ...prev, confirm: !prev.confirm }))}
-                      edge="end"
-                    >
+                    <IconButton onClick={() => setShowPassword((prev) => ({ ...prev, confirm: !prev.confirm }))} edge="end">
                       {showPassword.confirm ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
@@ -658,21 +462,12 @@ export default function BiodataDosenPage() {
             />
           </Box>
 
-          <Divider sx={{ my: 3 }} />
-
           <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
             <Button
               variant="contained"
               onClick={handleSubmitPassword}
               disabled={submittingPassword}
-              sx={{
-                px: 4,
-                py: 1.2,
-                textTransform: "none",
-                fontWeight: 600,
-                backgroundColor: "#0D59F2",
-                "&:hover": { backgroundColor: "#0846c7" },
-              }}
+              sx={{ px: 4, py: 1.2, textTransform: "none", fontWeight: 600, borderRadius: "15px", backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" } }}
             >
               {submittingPassword ? "Mengubah..." : "Ubah Password"}
             </Button>

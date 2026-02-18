@@ -69,7 +69,7 @@ const getStatusInfo = (status) => {
   const map = {
     0: { label: "Menunggu Response", color: "#fff8e1",  bg: "#f57f17" },
     1: { label: "Disetujui",         color: "#e8f5e9",  bg: "#2e7d32" },
-    2: { label: "Ditolak",           color: "#95747f",  bg: "#c62828" },
+    2: { label: "Ditolak",           color: "#ffdfea",  bg: "#c62828" },
     3: { label: "Draft Penilaian",   color: "#e3f2fd",  bg: "#1565c0" },
     4: { label: "Selesai Dinilai",   color: "#f3e5f5",  bg: "#6a1b9a" },
   };
