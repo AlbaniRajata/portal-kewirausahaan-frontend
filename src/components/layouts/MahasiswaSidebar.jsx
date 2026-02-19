@@ -235,7 +235,7 @@ export default function SidebarMahasiswa({ collapsed }) {
                         sx={{
                           pl: 4,
                           pr: 2,
-                          borderRadius: 2,
+                          borderRadius: 5,
                           backgroundColor: isActive(subItem.path)
                             ? "#E8F0FE"
                             : "transparent",

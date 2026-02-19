@@ -98,7 +98,6 @@ export default function DosenSidebar({ collapsed }) {
         transition: "width 0.3s ease",
       }}
     >
-      {/* HEADER */}
       <Box
         sx={{
           p: 2,
@@ -117,8 +116,7 @@ export default function DosenSidebar({ collapsed }) {
           </Box>
         )}
       </Box>
-
-      {/* MENU */}
+      
       <List sx={{ px: collapsed ? 1 : 2, py: 2, flex: 1 }}>
         {menuItems.map((item, index) => {
           const isParentActive =
@@ -131,7 +129,7 @@ export default function DosenSidebar({ collapsed }) {
                   <ListItemButton
                     onClick={() => handleMenuClick(item)}
                     sx={{
-                      borderRadius: 2,
+                      borderRadius: 50,
                       backgroundColor:
                         isActive(item.path) || isParentActive
                           ? "#F0F4FF"
@@ -184,7 +182,6 @@ export default function DosenSidebar({ collapsed }) {
                 </Tooltip>
               </ListItem>
 
-              {/* SUBMENU */}
               {item.hasSubmenu && !collapsed && (
                 <Collapse in={openBimbingan} timeout="auto" unmountOnExit>
                   <List disablePadding>
@@ -199,7 +196,7 @@ export default function DosenSidebar({ collapsed }) {
                             onClick={() => navigate(sub.path)}
                             sx={{
                               pl: 4,
-                              borderRadius: 2,
+                              borderRadius: 50,
                               backgroundColor: subActive
                                 ? "#E8F0FE"
                                 : "transparent",

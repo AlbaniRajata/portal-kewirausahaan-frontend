@@ -32,12 +32,11 @@ export const deleteTahapProgram = async (id_tahap) => {
 
 export const getPendingMahasiswa = async (filters = {}) => {
   const params = new URLSearchParams();
-  if (filters.status_verifikasi !== undefined) params.append('status_verifikasi', filters.status_verifikasi);
-  if (filters.email_verified !== undefined) params.append('email_verified', filters.email_verified);
-  if (filters.id_prodi) params.append('id_prodi', filters.id_prodi);
-  if (filters.tanggal_dari) params.append('tanggal_dari', filters.tanggal_dari);
-  if (filters.tanggal_sampai) params.append('tanggal_sampai', filters.tanggal_sampai);
-
+  if (filters.status_verifikasi !== undefined) params.append("status_verifikasi", filters.status_verifikasi);
+  if (filters.email_verified !== undefined) params.append("email_verified", filters.email_verified);
+  if (filters.id_prodi) params.append("id_prodi", filters.id_prodi);
+  if (filters.tanggal_dari) params.append("tanggal_dari", filters.tanggal_dari);
+  if (filters.tanggal_sampai) params.append("tanggal_sampai", filters.tanggal_sampai);
   const res = await api.get(`/admin/verifikasi/mahasiswa?${params.toString()}`);
   return res.data;
 };
@@ -59,12 +58,11 @@ export const rejectMahasiswa = async (id, catatan) => {
 
 export const getPendingDosen = async (filters = {}) => {
   const params = new URLSearchParams();
-  if (filters.status_verifikasi !== undefined) params.append('status_verifikasi', filters.status_verifikasi);
-  if (filters.email_verified !== undefined) params.append('email_verified', filters.email_verified);
-  if (filters.id_prodi) params.append('id_prodi', filters.id_prodi);
-  if (filters.tanggal_dari) params.append('tanggal_dari', filters.tanggal_dari);
-  if (filters.tanggal_sampai) params.append('tanggal_sampai', filters.tanggal_sampai);
-
+  if (filters.status_verifikasi !== undefined) params.append("status_verifikasi", filters.status_verifikasi);
+  if (filters.email_verified !== undefined) params.append("email_verified", filters.email_verified);
+  if (filters.id_prodi) params.append("id_prodi", filters.id_prodi);
+  if (filters.tanggal_dari) params.append("tanggal_dari", filters.tanggal_dari);
+  if (filters.tanggal_sampai) params.append("tanggal_sampai", filters.tanggal_sampai);
   const res = await api.get(`/admin/verifikasi/dosen?${params.toString()}`);
   return res.data;
 };
@@ -86,9 +84,8 @@ export const rejectDosen = async (id) => {
 
 export const getProposalList = async (filters = {}) => {
   const params = new URLSearchParams();
-  if (filters.id_program) params.append('id_program', filters.id_program);
-  if (filters.status !== undefined && filters.status !== '') params.append('status', filters.status);
-
+  if (filters.id_program) params.append("id_program", filters.id_program);
+  if (filters.status !== undefined && filters.status !== "") params.append("status", filters.status);
   const res = await api.get(`/admin/proposal?${params.toString()}`);
   return res.data;
 };
@@ -99,93 +96,68 @@ export const getProposalDetailAdmin = async (id_proposal) => {
 };
 
 export const getPreviewDistribusi = async (id_program, tahap) => {
-  const response = await api.get(
-    `/admin/program/${id_program}/distribusi/reviewer/tahap/${tahap}/preview`
-  );
-  return response.data;
+  const res = await api.get(`/admin/program/${id_program}/distribusi/reviewer/tahap/${tahap}/preview`);
+  return res.data;
 };
 
 export const executeAutoDistribusi = async (id_program, tahap) => {
-  const response = await api.post(
-    `/admin/program/${id_program}/distribusi/reviewer/tahap/${tahap}/auto`
-  );
-  return response.data;
+  const res = await api.post(`/admin/program/${id_program}/distribusi/reviewer/tahap/${tahap}/auto`);
+  return res.data;
 };
 
 export const executeBulkDistribusi = async (id_program, tahap, payload) => {
-  const response = await api.post(
-    `/admin/program/${id_program}/distribusi/reviewer/tahap/${tahap}/bulk`,
-    payload
-  );
-  return response.data;
+  const res = await api.post(`/admin/program/${id_program}/distribusi/reviewer/tahap/${tahap}/bulk`, payload);
+  return res.data;
 };
 
 export const getReviewerList = async () => {
-  const response = await api.get('/admin/reviewer');
-  return response.data;
+  const res = await api.get("/admin/reviewer");
+  return res.data;
 };
 
 export const getDistribusiHistory = async (id_program, tahap) => {
-  const response = await api.get(
-    `/admin/program/${id_program}/distribusi/reviewer/tahap/${tahap}/history`
-  );
-  return response.data;
+  const res = await api.get(`/admin/program/${id_program}/distribusi/reviewer/tahap/${tahap}/history`);
+  return res.data;
 };
 
 export const getDistribusiDetail = async (id_program, tahap, id_distribusi) => {
-  const response = await api.get(
-    `/admin/program/${id_program}/distribusi/reviewer/tahap/${tahap}/${id_distribusi}`
-  );
-  return response.data;
+  const res = await api.get(`/admin/program/${id_program}/distribusi/reviewer/tahap/${tahap}/${id_distribusi}`);
+  return res.data;
 };
 
 export const reassignReviewer = async (id_program, tahap, id_distribusi, id_reviewer_baru) => {
-  const response = await api.post(
-    `/admin/program/${id_program}/distribusi/reviewer/tahap/${tahap}/${id_distribusi}/reassign`,
-    { id_reviewer_baru }
-  );
-  return response.data;
+  const res = await api.post(`/admin/program/${id_program}/distribusi/reviewer/tahap/${tahap}/${id_distribusi}/reassign`, { id_reviewer_baru });
+  return res.data;
 };
 
 export const getPreviewDistribusiTahap2 = async (id_program) => {
-  const response = await api.get(
-    `/admin/program/${id_program}/panel/tahap2/preview`
-  );
-  return response.data;
+  const res = await api.get(`/admin/program/${id_program}/panel/tahap2/preview`);
+  return res.data;
 };
 
 export const executeAutoDistribusiTahap2 = async (id_program) => {
-  const response = await api.post(
-    `/admin/program/${id_program}/panel/tahap2/auto`
-  );
-  return response.data;
+  const res = await api.post(`/admin/program/${id_program}/panel/tahap2/auto`);
+  return res.data;
 };
 
 export const executeManualDistribusiTahap2 = async (id_program, payload) => {
-  const response = await api.post(
-    `/admin/program/${id_program}/panel/tahap2/manual`,
-    payload
-  );
-  return response.data;
+  const res = await api.post(`/admin/program/${id_program}/panel/tahap2/manual`, payload);
+  return res.data;
 };
 
 export const getJuriList = async () => {
-  const response = await api.get('/admin/juri');
-  return response.data;
+  const res = await api.get("/admin/juri");
+  return res.data;
 };
 
 export const getDistribusiReviewerHistoryTahap2 = async (id_program) => {
-  const response = await api.get(
-    `/admin/program/${id_program}/distribusi/reviewer/tahap/2/history`
-  );
-  return response.data;
+  const res = await api.get(`/admin/program/${id_program}/distribusi/reviewer/tahap/2/history`);
+  return res.data;
 };
 
 export const getDistribusiJuriHistoryTahap2 = async (id_program) => {
-  const response = await api.get(
-    `/admin/program/${id_program}/distribusi/juri/tahap/2/history`
-  );
-  return response.data;
+  const res = await api.get(`/admin/program/${id_program}/distribusi/juri/tahap/2/history`);
+  return res.data;
 };
 
 export const getListProposalRekapTahap1 = async (id_program) => {
@@ -215,5 +187,115 @@ export const finalisasiDeskBatch = async (id_program, payload) => {
 
 export const finalisasiWawancaraBatch = async (id_program, payload) => {
   const res = await api.post(`/admin/program/${id_program}/proposal/finalisasi-wawancara-batch`, payload);
+  return res.data;
+};
+
+export const getDashboardPengajuanPembimbing = async (status = "") => {
+  const res = await api.get(`/admin/bimbingan/pengajuan${status ? `?status=${status}` : ""}`);
+  return res.data;
+};
+
+export const getDashboardBimbingan = async (status = "") => {
+  const res = await api.get(`/admin/bimbingan/jadwal${status ? `?status=${status}` : ""}`);
+  return res.data;
+};
+
+export const getKriteriaPenilaian = async (id_tahap) => {
+  const res = await api.get(`/admin/tahap/${id_tahap}/kriteria`);
+  return res.data;
+};
+
+export const createKriteriaPenilaian = async (id_tahap, payload) => {
+  const res = await api.post(`/admin/tahap/${id_tahap}/kriteria`, payload);
+  return res.data;
+};
+
+export const updateKriteriaPenilaian = async (id_kriteria, payload) => {
+  const res = await api.patch(`/admin/kriteria/${id_kriteria}`, payload);
+  return res.data;
+};
+
+export const deleteKriteriaPenilaian = async (id_kriteria) => {
+  const res = await api.delete(`/admin/kriteria/${id_kriteria}`);
+  return res.data;
+};
+
+export const getKampus = async () => {
+  const res = await api.get("/admin/kampus");
+  return res.data;
+};
+
+export const createKampus = async (payload) => {
+  const res = await api.post("/admin/kampus", payload);
+  return res.data;
+};
+
+export const updateKampus = async (id_kampus, payload) => {
+  const res = await api.patch(`/admin/kampus/${id_kampus}`, payload);
+  return res.data;
+};
+
+export const deleteKampus = async (id_kampus) => {
+  const res = await api.delete(`/admin/kampus/${id_kampus}`);
+  return res.data;
+};
+
+export const getJurusan = async () => {
+  const res = await api.get("/admin/jurusan");
+  return res.data;
+};
+
+export const createJurusan = async (payload) => {
+  const res = await api.post("/admin/jurusan", payload);
+  return res.data;
+};
+
+export const updateJurusan = async (id_jurusan, payload) => {
+  const res = await api.patch(`/admin/jurusan/${id_jurusan}`, payload);
+  return res.data;
+};
+
+export const deleteJurusan = async (id_jurusan) => {
+  const res = await api.delete(`/admin/jurusan/${id_jurusan}`);
+  return res.data;
+};
+
+export const getProdi = async () => {
+  const res = await api.get("/admin/prodi");
+  return res.data;
+};
+
+export const createProdi = async (payload) => {
+  const res = await api.post("/admin/prodi", payload);
+  return res.data;
+};
+
+export const updateProdi = async (id_prodi, payload) => {
+  const res = await api.patch(`/admin/prodi/${id_prodi}`, payload);
+  return res.data;
+};
+
+export const deleteProdi = async (id_prodi) => {
+  const res = await api.delete(`/admin/prodi/${id_prodi}`);
+  return res.data;
+};
+
+export const getKategori = async () => {
+  const res = await api.get("/admin/kategori");
+  return res.data;
+};
+
+export const createKategori = async (payload) => {
+  const res = await api.post("/admin/kategori", payload);
+  return res.data;
+};
+
+export const updateKategori = async (id_kategori, payload) => {
+  const res = await api.patch(`/admin/kategori/${id_kategori}`, payload);
+  return res.data;
+};
+
+export const deleteKategori = async (id_kategori) => {
+  const res = await api.delete(`/admin/kategori/${id_kategori}`);
   return res.data;
 };
