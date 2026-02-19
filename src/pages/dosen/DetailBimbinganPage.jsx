@@ -318,7 +318,7 @@ export default function DetailBimbinganDosenPage() {
                     <Button
                       startIcon={<Download sx={{ fontSize: 16 }} />}
                       component="a"
-                      href={`${import.meta.env.VITE_API_URL}/uploads/${proposal.file_proposal}`}
+                      href={`${import.meta.env.VITE_API_URL.replace("/api", "")}/uploads/proposal/${proposal.file_proposal}`}
                       target="_blank"
                       size="small"
                       sx={{
