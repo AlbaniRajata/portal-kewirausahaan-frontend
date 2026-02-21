@@ -16,6 +16,8 @@ import BimbinganPage from "../pages/admin/BimbinganPage";
 import KampusPage from "../pages/admin/KampusPage";
 import JurusanPage from "../pages/admin/JurusanPage";
 import ProdiPage from "../pages/admin/ProdiPage";
+import KelolaPenggunaPage from "../pages/admin/KelolaPenggunaPage";
+import TimPesertaPage from "../pages/admin/TimPesertaPage";
 
 import BiodataMahasiswaPage from "../pages/mahasiswa/BiodataMahasiswaPage";
 import AnggotaTimPage from "../pages/mahasiswa/AnggotaTimPage";
@@ -64,6 +66,8 @@ export default function AppRoutes() {
         <Route path="kampus" element={<KampusPage />} />
         <Route path="jurusan" element={<JurusanPage />} />
         <Route path="prodi" element={<ProdiPage />} />
+        <Route path="pengguna" element={<KelolaPenggunaPage />} />
+        <Route path="tim-peserta" element={<TimPesertaPage />} />
       </Route>
 
       {/* MAHASISWA*/}

@@ -43,7 +43,7 @@ export default function AdminSidebar({ collapsed }) {
   const isInPesertaPengguna = useMemo(() => {
     return (
       location.pathname === "/admin/verifikasi" ||
-      location.pathname === "/admin/pengguna/kelola" ||
+      location.pathname === "/admin/pengguna" ||
       location.pathname === "/admin/tim-peserta"
     );
   }, [location.pathname]);
@@ -120,7 +120,7 @@ export default function AdminSidebar({ collapsed }) {
         {
           text: "Kelola Pengguna",
           icon: <ManageAccountsIcon sx={{ fontSize: 20 }} />,
-          path: "/admin/pengguna/kelola",
+          path: "/admin/pengguna",
         },
         {
           text: "Tim dan Peserta",

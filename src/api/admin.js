@@ -299,3 +299,114 @@ export const deleteKategori = async (id_kategori) => {
   const res = await api.delete(`/admin/kategori/${id_kategori}`);
   return res.data;
 };
+
+export const getMahasiswaList = async (filters = {}) => {
+  const params = new URLSearchParams();
+  if (filters.search) params.append("search", filters.search);
+  if (filters.is_active !== undefined && filters.is_active !== "") params.append("is_active", filters.is_active);
+  if (filters.id_prodi) params.append("id_prodi", filters.id_prodi);
+  if (filters.status_verifikasi !== undefined && filters.status_verifikasi !== "") params.append("status_verifikasi", filters.status_verifikasi);
+  const res = await api.get(`/admin/pengguna/mahasiswa?${params.toString()}`);
+  return res.data;
+};
+
+export const createMahasiswa = async (payload) => {
+  const res = await api.post("/admin/pengguna/mahasiswa", payload);
+  return res.data;
+};
+
+export const updateMahasiswa = async (id_user, payload) => {
+  const res = await api.patch(`/admin/pengguna/mahasiswa/${id_user}`, payload);
+  return res.data;
+};
+
+export const getDosenList = async (filters = {}) => {
+  const params = new URLSearchParams();
+  if (filters.search) params.append("search", filters.search);
+  if (filters.is_active !== undefined && filters.is_active !== "") params.append("is_active", filters.is_active);
+  if (filters.id_prodi) params.append("id_prodi", filters.id_prodi);
+  if (filters.status_verifikasi !== undefined && filters.status_verifikasi !== "") params.append("status_verifikasi", filters.status_verifikasi);
+  const res = await api.get(`/admin/pengguna/dosen?${params.toString()}`);
+  return res.data;
+};
+
+export const createDosen = async (payload) => {
+  const res = await api.post("/admin/pengguna/dosen", payload);
+  return res.data;
+};
+
+export const updateDosen = async (id_user, payload) => {
+  const res = await api.patch(`/admin/pengguna/dosen/${id_user}`, payload);
+  return res.data;
+};
+
+export const getReviewerListKelola = async (filters = {}) => {
+  const params = new URLSearchParams();
+  if (filters.search) params.append("search", filters.search);
+  if (filters.is_active !== undefined && filters.is_active !== "") params.append("is_active", filters.is_active);
+  const res = await api.get(`/admin/pengguna/reviewer?${params.toString()}`);
+  return res.data;
+};
+
+export const createReviewer = async (payload) => {
+  const res = await api.post("/admin/pengguna/reviewer", payload);
+  return res.data;
+};
+
+export const updateReviewer = async (id_user, payload) => {
+  const res = await api.patch(`/admin/pengguna/reviewer/${id_user}`, payload);
+  return res.data;
+};
+
+export const getJuriListKelola = async (filters = {}) => {
+  const params = new URLSearchParams();
+  if (filters.search) params.append("search", filters.search);
+  if (filters.is_active !== undefined && filters.is_active !== "") params.append("is_active", filters.is_active);
+  const res = await api.get(`/admin/pengguna/juri?${params.toString()}`);
+  return res.data;
+};
+
+export const createJuri = async (payload) => {
+  const res = await api.post("/admin/pengguna/juri", payload);
+  return res.data;
+};
+
+export const updateJuri = async (id_user, payload) => {
+  const res = await api.patch(`/admin/pengguna/juri/${id_user}`, payload);
+  return res.data;
+};
+
+export const toggleUserActive = async (id_user, is_active) => {
+  const res = await api.patch(`/admin/pengguna/${id_user}/toggle-active`, { is_active });
+  return res.data;
+};
+
+export const resetPassword = async (id_user, payload) => {
+  const res = await api.patch(`/admin/pengguna/${id_user}/reset-password`, payload);
+  return res.data;
+};
+
+export const getTimPesertaProgram = async () => {
+  const res = await api.get("/admin/tim-peserta/program");
+  return res.data;
+};
+
+export const getTimList = async (params = {}) => {
+  const res = await api.get("/admin/tim-peserta/tim", { params });
+  return res.data;
+};
+
+export const getTimDetail = async (id_tim) => {
+  const res = await api.get(`/admin/tim-peserta/tim/${id_tim}`);
+  return res.data;
+};
+
+export const getPesertaList = async (params = {}) => {
+  const res = await api.get("/admin/tim-peserta/peserta", { params });
+  return res.data;
+};
+
+export const getPesertaDetail = async (id_user, id_program) => {
+  const res = await api.get(`/admin/tim-peserta/peserta/${id_user}/${id_program}`);
+  return res.data;
+};

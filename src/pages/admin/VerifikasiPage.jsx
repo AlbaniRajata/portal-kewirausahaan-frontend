@@ -73,6 +73,15 @@ const formatDate = (dateString) => {
   });
 };
 
+const getStatusInfo = (status) => {
+  const map = {
+    0: { label: "Menunggu", bg: "#f57f17", color: "#fff8e1" },
+    1: { label: "Disetujui", bg: "#2e7d32", color: "#e8f5e9" },
+    2: { label: "Ditolak", bg: "#c62828", color: "#fce4ec" },
+  };
+  return map[status] || { label: "Unknown", bg: "#f5f5f5", color: "#666" };
+};
+
 export default function VerifikasiPage() {
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -134,7 +143,7 @@ export default function VerifikasiPage() {
       };
       const response = await getPendingDosen(cleanFilters);
       setDosenList(response.data.dosen);
-      setPage(1); 
+      setPage(1);
     } catch (err) {
       console.error("Error fetching dosen:", err);
       setAlert("Gagal memuat data dosen");
@@ -159,6 +168,7 @@ export default function VerifikasiPage() {
 
   const handleViewDetail = async (user) => {
     setSelectedUser(user);
+    setDetailData(null);
     setOpenDetail(true);
     setLoadingDetail(true);
     try {
@@ -216,7 +226,7 @@ export default function VerifikasiPage() {
   };
 
   const handleReject = async () => {
-    if (activeTab === 0 && (!catatan || catatan.trim().length < 10)) {
+    if (!catatan || catatan.trim().length < 10) {
       setErrors({ catatan: "Catatan penolakan minimal 10 karakter" });
       return;
     }
@@ -232,7 +242,7 @@ export default function VerifikasiPage() {
       });
       if (!result.isConfirmed) { setOpenReject(true); return; }
       if (activeTab === 0) await rejectMahasiswa(selectedUser.id_user, catatan.trim());
-      else await rejectDosen(selectedUser.id_user);
+      else await rejectDosen(selectedUser.id_user, catatan.trim());
       await Swal.fire({ icon: "success", title: "Berhasil", text: `${activeTab === 0 ? "Mahasiswa" : "Dosen"} ditolak`, timer: 2000, timerProgressBar: true, showConfirmButton: false });
       setCatatan("");
       setErrors({});
@@ -244,16 +254,6 @@ export default function VerifikasiPage() {
     }
   };
 
-  const getStatusInfo = (status) => {
-    const map = {
-      0: { label: "Menunggu", color: "#fff8e1", bg: "#f57f17" },
-      1: { label: "Disetujui", color: "#e8f5e9", bg: "#2e7d32" },
-      2: { label: "Ditolak", color: "#fce4ec", bg: "#c62828" },
-    };
-    return map[status] || { label: "Unknown", bg: "#f5f5f5", color: "#666" };
-  };
-
-  // Pagination logic
   const currentList = activeTab === 0 ? mahasiswaList : dosenList;
   const totalPages = Math.ceil(currentList.length / rowsPerPage);
   const paginatedList = currentList.slice((page - 1) * rowsPerPage, page * rowsPerPage);
@@ -511,8 +511,8 @@ export default function VerifikasiPage() {
                   <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Email Verified</Typography>
                   <StatusPill
                     label={detailData.email_verified_at ? "Sudah" : "Belum"}
-                    color={detailData.email_verified_at ? "#e8f5e9" : "#fce4ec"}
                     bg={detailData.email_verified_at ? "#2e7d32" : "#c62828"}
+                    color={detailData.email_verified_at ? "#e8f5e9" : "#fce4ec"}
                   />
                 </Box>
                 <Box sx={{ gridColumn: "1 / -1" }}>
@@ -537,7 +537,7 @@ export default function VerifikasiPage() {
                     />
                   </Box>
                 )}
-                {activeTab === 0 && detailData.catatan && (
+                {detailData.catatan && (
                   <Box sx={{ gridColumn: "1 / -1", p: 2.5, backgroundColor: "#fce4ec", borderRadius: "12px", border: "1px solid #ef9a9a" }}>
                     <Typography sx={{ fontSize: 12, color: "#c62828", fontWeight: 700, mb: 0.5 }}>Catatan Penolakan</Typography>
                     <Typography sx={{ fontSize: 14 }}>{detailData.catatan}</Typography>
@@ -598,23 +598,20 @@ export default function VerifikasiPage() {
               </Typography>
               <Typography sx={{ fontSize: 14, fontWeight: 600 }}>{selectedUser?.nama_lengkap || selectedUser?.username}</Typography>
             </Box>
-
-            {activeTab === 0 && (
-              <Box>
-                <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>
-                  Catatan Penolakan <span style={{ color: "#ef5350" }}>*</span>
-                </Typography>
-                <TextField
-                  fullWidth multiline rows={4}
-                  placeholder="Masukkan alasan penolakan (minimal 10 karakter)..."
-                  value={catatan}
-                  onChange={(e) => { setCatatan(e.target.value); setErrors({}); }}
-                  error={!!errors.catatan}
-                  helperText={errors.catatan}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
-                />
-              </Box>
-            )}
+            <Box>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>
+                Catatan Penolakan <span style={{ color: "#ef5350" }}>*</span>
+              </Typography>
+              <TextField
+                fullWidth multiline rows={4}
+                placeholder="Masukkan alasan penolakan (minimal 10 karakter)..."
+                value={catatan}
+                onChange={(e) => { setCatatan(e.target.value); setErrors({}); }}
+                error={!!errors.catatan}
+                helperText={errors.catatan}
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
+              />
+            </Box>
           </DialogContent>
           <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
             <Button onClick={handleCloseReject}
