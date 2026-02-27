@@ -51,8 +51,10 @@ export default function AdminSidebar({ collapsed }) {
   const isInOperasional = useMemo(() => {
     return (
       location.pathname === "/admin/proposal" ||
+      location.pathname.startsWith("/admin/proposal/") ||
       location.pathname === "/admin/tim" ||
       location.pathname === "/admin/distribusi-penilai" ||
+      location.pathname.startsWith("/admin/program/") || //distribusi detail
       location.pathname === "/admin/rekap-penilaian" ||
       location.pathname === "/admin/bimbingan"
     );

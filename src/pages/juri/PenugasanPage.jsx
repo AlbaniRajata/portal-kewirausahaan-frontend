@@ -39,20 +39,19 @@ import {
 } from "../../api/juri";
 
 const roundedField = {
-  "& .MuiOutlinedInput-root": { borderRadius: "12px" },
+  "& .MuiOutlinedInput-root": { borderRadius: "15px" },
 };
 
 const tableHeadCell = {
   fontWeight: 700,
   fontSize: 13,
-  color: "#555",
+  color: "#000",
   backgroundColor: "#fafafa",
   borderBottom: "2px solid #f0f0f0",
   py: 2,
 };
 
 const tableBodyRow = {
-  "&:hover": { backgroundColor: "#f8f9ff" },
   "& td": { borderBottom: "1px solid #f5f5f5", py: 2 },
 };
 
@@ -68,11 +67,11 @@ const StatusPill = ({ label, bg, color }) => (
 
 const getStatusInfo = (status) => {
   const map = {
-    0: { label: "Menunggu Response", bg: "#fff8e1",  color: "#f57f17" },
-    1: { label: "Disetujui",         bg: "#e8f5e9",  color: "#2e7d32" },
-    2: { label: "Ditolak",           bg: "#fce4ec",  color: "#c62828" },
-    3: { label: "Draft Penilaian",   bg: "#e3f2fd",  color: "#1565c0" },
-    4: { label: "Selesai Dinilai",   bg: "#f3e5f5",  color: "#6a1b9a" },
+    0: { label: "Menunggu Response", color: "#fff8e1",  bg: "#f57f17" },
+    1: { label: "Disetujui",         color: "#e8f5e9",  bg: "#2e7d32" },
+    2: { label: "Ditolak",           color: "#ffdfea",  bg: "#c62828" },
+    3: { label: "Draft Penilaian",   color: "#e3f2fd",  bg: "#1565c0" },
+    4: { label: "Selesai Dinilai",   color: "#f3e5f5",  bg: "#6a1b9a" },
   };
   return map[status] || { label: "Unknown", bg: "#f5f5f5", color: "#666" };
 };

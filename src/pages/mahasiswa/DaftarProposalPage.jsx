@@ -112,7 +112,7 @@ export default function DaftarProposalPage() {
                 px: 3, py: 1.2, fontSize: 15, fontWeight: 600,
               }}
             >
-              Buat Proposal
+              Tambah Proposal
             </Button>
           )}
         </Box>
@@ -234,26 +234,9 @@ export default function DaftarProposalPage() {
               </Typography>
               <Typography sx={{ fontSize: 14, color: "#999", mb: 4, maxWidth: 400, mx: "auto", lineHeight: 1.7 }}>
                 {status?.isKetua && status?.data?.anggota?.all_accepted
-                  ? "Mulai buat proposal kewirausahaan Anda dengan klik tombol di bawah"
+                  ? "Tambahkan proposal kewirausahaan Anda dengan klik tombol di kanan atas."
                   : "Proposal akan muncul di sini setelah dibuat oleh ketua tim"}
               </Typography>
-              {status?.isKetua && status?.data?.anggota?.all_accepted && (
-                <Button
-                  variant="contained"
-                  size="large"
-                  startIcon={<Add />}
-                  onClick={() => navigate("/mahasiswa/proposal/form")}
-                  sx={{
-                    textTransform: "none",
-                    borderRadius: "50px",
-                    backgroundColor: "#0D59F2",
-                    "&:hover": { backgroundColor: "#0846c7" },
-                    px: 4, py: 1.5, fontSize: 15, fontWeight: 600,
-                  }}
-                >
-                  Buat Proposal Sekarang
-                </Button>
-              )}
             </Box>
           )}
         </Paper>

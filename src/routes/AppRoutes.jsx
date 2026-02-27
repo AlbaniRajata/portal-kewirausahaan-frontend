@@ -21,6 +21,7 @@ import TimPesertaPage from "../pages/admin/TimPesertaPage";
 
 import BiodataMahasiswaPage from "../pages/mahasiswa/BiodataMahasiswaPage";
 import AnggotaTimPage from "../pages/mahasiswa/AnggotaTimPage";
+import UndanganAnggotaPage from "../pages/mahasiswa/UndanganAnggotaPage";
 import DaftarProposalPage from "../pages/mahasiswa/DaftarProposalPage";
 import FormProposalPage from "../pages/mahasiswa/FormProposalPage";
 import PengajuanPembimbingPage from "../pages/mahasiswa/PengajuanPembimbingPage";
@@ -74,6 +75,7 @@ export default function AppRoutes() {
       <Route path="/mahasiswa" element={<PrivateRoute />}>
         <Route path="biodata" element={<BiodataMahasiswaPage />} />
         <Route path="anggota-tim" element={<AnggotaTimPage />} />
+        <Route path="undangan-anggota" element={<UndanganAnggotaPage />} />
         <Route path="proposal" element={<DaftarProposalPage />} />
         <Route path="proposal/form" element={<FormProposalPage />} />
         <Route path="pembimbing/dosen" element={<PengajuanPembimbingPage />} />

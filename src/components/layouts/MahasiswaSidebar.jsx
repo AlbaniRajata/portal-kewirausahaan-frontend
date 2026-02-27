@@ -49,6 +49,12 @@ export default function SidebarMahasiswa({ collapsed }) {
     ) {
       return true;
     }
+    if (
+      path === "/mahasiswa/anggota-tim" &&
+      location.pathname === "/mahasiswa/undangan-anggota"
+    ) {
+      return true;
+    }
     return location.pathname === path;
   };
 
@@ -163,7 +169,7 @@ export default function SidebarMahasiswa({ collapsed }) {
                 <ListItemButton
                   onClick={() => handleMenuClick(item)}
                   sx={{
-                    borderRadius:50,
+                    borderRadius: 50,
                     backgroundColor:
                       isActive(item.path) ||
                       (item.hasSubmenu && isInBimbinganSubmenu)
