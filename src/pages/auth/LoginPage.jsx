@@ -1,15 +1,7 @@
 import { useState } from "react";
 import {
-  Box,
-  Button,
-  Divider,
-  IconButton,
-  InputAdornment,
-  Paper,
-  TextField,
-  Typography,
-  Alert,
-  Modal,
+  Box, Button, Divider, IconButton, InputAdornment,
+  Paper, TextField, Typography, Alert, Modal,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
@@ -18,10 +10,20 @@ import Swal from "sweetalert2";
 import loginBg from "../../assets/images/login-bg.jpg";
 import { loginUser } from "../../api/auth";
 import { useAuthStore } from "../../store/authStore";
+import { setAccessToken } from "../../api/axios";
 
 const roundedField = {
   mb: 2,
   "& .MuiOutlinedInput-root": { borderRadius: "15px" },
+};
+
+const roleRouteMap = {
+  admin: "/admin/verifikasi",
+  "super admin": "/admin/verifikasi",
+  mahasiswa: "/mahasiswa/biodata",
+  dosen: "/dosen/biodata",
+  reviewer: "/reviewer/penugasan",
+  juri: "/juri/penugasan",
 };
 
 export default function LoginPage() {
@@ -30,12 +32,7 @@ export default function LoginPage() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [openRegisterModal, setOpenRegisterModal] = useState(false);
-
-  const [form, setForm] = useState({
-    email: "",
-    password: "",
-  });
-
+  const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [alert, setAlert] = useState("");
   const [loading, setLoading] = useState(false);
@@ -62,19 +59,15 @@ export default function LoginPage() {
     setAlert("");
     try {
       const res = await loginUser({ email: form.email, password: form.password });
-      setAuth({ token: res.data.token, user: res.data.user });
+      setAccessToken(res.data.token);
+      setAuth({ user: res.data.user, refreshToken: res.data.refresh_token });
       await Swal.fire({
         icon: "success", title: "Login berhasil",
         timer: 1500, timerProgressBar: true,
         showConfirmButton: false, allowOutsideClick: false,
       });
-      const roleId = res.data.user.id_role;
-      if (roleId === 2) navigate("/admin/verifikasi");
-      else if (roleId === 1) navigate("/mahasiswa/biodata");
-      else if (roleId === 3) navigate("/dosen/biodata");
-      else if (roleId === 4) navigate("/reviewer/penugasan");
-      else if (roleId === 5) navigate("/juri/penugasan");
-      else navigate("/");
+      const route = roleRouteMap[res.data.user.role] || "/";
+      navigate(route);
     } catch (err) {
       setAlert(err.response?.data?.message || "Login gagal. Coba lagi.");
     } finally {
@@ -82,7 +75,7 @@ export default function LoginPage() {
     }
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyDown = (e) => {
     if (e.key === "Enter") handleLogin();
   };
 
@@ -94,7 +87,6 @@ export default function LoginPage() {
 
   return (
     <Box sx={{ minHeight: "100vh", display: "flex" }}>
-      {/* Left panel */}
       <Box sx={{
         flex: 1, position: "relative",
         display: { xs: "none", md: "block" },
@@ -107,7 +99,6 @@ export default function LoginPage() {
         </Box>
       </Box>
 
-      {/* Right panel — form */}
       <Box sx={{
         flex: 1, display: "flex", justifyContent: "center", alignItems: "center",
         px: 2, backgroundColor: "#fff",
@@ -126,7 +117,7 @@ export default function LoginPage() {
           <TextField
             fullWidth placeholder="Masukkan email Anda"
             value={form.email} onChange={(e) => handleChange("email", e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             error={!!errors.email} helperText={errors.email}
             disabled={loading} sx={roundedField}
           />
@@ -137,7 +128,7 @@ export default function LoginPage() {
             type={showPassword ? "text" : "password"}
             placeholder="Masukkan password Anda"
             value={form.password} onChange={(e) => handleChange("password", e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             error={!!errors.password} helperText={errors.password}
             disabled={loading}
             sx={{ ...roundedField, mb: 0 }}
@@ -153,16 +144,15 @@ export default function LoginPage() {
           />
 
           <Box sx={{ textAlign: "right", mt: 1, mb: 3 }}>
-            <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#0D59F2", cursor: "pointer" }}>
-              Lupa Password ?
+            <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#bbb" }}>
+              Lupa Password?
             </Typography>
           </Box>
 
           <Button
             fullWidth variant="contained" onClick={handleLogin} disabled={loading}
             sx={{
-              py: 1.4, borderRadius: "15px", fontWeight: 700,
-              textTransform: "none",
+              py: 1.4, borderRadius: "15px", fontWeight: 700, textTransform: "none",
               backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" },
             }}
           >
@@ -181,7 +171,6 @@ export default function LoginPage() {
         </Paper>
       </Box>
 
-      {/* Register modal */}
       <Modal open={openRegisterModal} onClose={() => !loading && setOpenRegisterModal(false)}>
         <Box sx={{
           position: "absolute", top: "50%", left: "50%",
@@ -207,7 +196,6 @@ export default function LoginPage() {
             >
               Mahasiswa
             </Button>
-
             <Button
               fullWidth variant="outlined"
               onClick={() => handleRegisterChoice("dosen")} disabled={loading}
