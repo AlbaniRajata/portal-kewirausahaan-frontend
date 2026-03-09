@@ -11,7 +11,7 @@ const roleHomeMap = {
   juri: "/juri/penugasan",
 };
 
-export default function NotFoundPage() {
+export default function UnauthorizedPage() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
 
@@ -30,14 +30,14 @@ export default function NotFoundPage() {
         px: 3,
       }}
     >
-      <Typography variant="h1" fontWeight="bold" color="primary">
-        404
+      <Typography variant="h1" fontWeight="bold" color="error">
+        403
       </Typography>
       <Typography variant="h5" fontWeight="medium">
-        Halaman Tidak Ditemukan
+        Akses Ditolak
       </Typography>
       <Typography variant="body1" color="text.secondary">
-        Halaman yang Anda cari tidak ada atau telah dipindahkan.
+        Anda tidak memiliki izin untuk mengakses halaman ini.
       </Typography>
       <Button variant="contained" onClick={() => navigate(homePath)}>
         Kembali ke Halaman Saya

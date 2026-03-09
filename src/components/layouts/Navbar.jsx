@@ -7,10 +7,12 @@ import MenuIcon from "@mui/icons-material/Menu";
 import { useAuthStore } from "../../store/authStore";
 import { useNavigate } from "react-router-dom";
 import { getProfile } from "../../api/public";
+import { logoutUser } from "../../api/auth";
+import { setAccessToken } from "../../api/axios";
 
 export default function Navbar({ onToggleSidebar, sidebarCollapsed }) {
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const { user, logout, refreshToken } = useAuthStore();
   const [anchorEl, setAnchorEl] = useState(false);
   const [profile, setProfile] = useState(null);
   const [scrolled, setScrolled] = useState(false);
@@ -21,8 +23,8 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed }) {
       try {
         const res = await getProfile();
         if (active && res.success) setProfile(res.data);
-      } catch (error) {
-        console.error("Gagal mengambil profil:", error);
+      } catch {
+        // profil gagal dimuat, tampilkan data dari store saja
       }
     })();
     return () => { active = false; };
@@ -38,6 +40,18 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed }) {
   const displayName = profile?.nama_lengkap || user?.nama_lengkap || "User";
   const displayRole = profile?.keterangan || "User";
   const photoUrl = profile?.foto ? `${baseUrl}/uploads/profil/${profile.foto}` : null;
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser(refreshToken);
+    } catch {
+      // tetap logout meski API gagal
+    } finally {
+      logout();
+      setAccessToken(null);
+      navigate("/login");
+    }
+  };
 
   return (
     <Box
@@ -173,7 +187,7 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed }) {
           }}
         >
           <Box
-            onClick={() => { logout(); navigate("/login"); }}
+            onClick={handleLogout}
             sx={{
               display: "flex",
               alignItems: "center",

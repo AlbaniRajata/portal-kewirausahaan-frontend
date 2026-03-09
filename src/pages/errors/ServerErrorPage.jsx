@@ -1,36 +1,39 @@
-import { Box, Button, Typography, Container } from "@mui/material";
+import { Box, Typography, Button } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 export default function ServerErrorPage() {
+  const navigate = useNavigate();
+
   return (
-    <Container maxWidth="sm">
-      <Box
-        sx={{
-          minHeight: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          textAlign: "center",
-          gap: 2,
-        }}
-      >
-        <Typography variant="h3" fontWeight={700}>
-          500
-        </Typography>
-
-        <Typography variant="h6" color="text.secondary">
-          Server sedang bermasalah
-        </Typography>
-
-        <Button
-          variant="contained"
-          size="large"
-          onClick={() => window.location.reload()}
-          sx={{ mt: 2, borderRadius: 2 }}
-        >
-          Refresh Halaman
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "100vh",
+        gap: 2,
+        textAlign: "center",
+        px: 3,
+      }}
+    >
+      <Typography variant="h1" fontWeight="bold" color="error">
+        500
+      </Typography>
+      <Typography variant="h5" fontWeight="medium">
+        Terjadi Kesalahan Server
+      </Typography>
+      <Typography variant="body1" color="text.secondary">
+        Maaf, terjadi kesalahan pada server. Silakan coba beberapa saat lagi.
+      </Typography>
+      <Box sx={{ display: "flex", gap: 2 }}>
+        <Button variant="outlined" onClick={() => window.location.reload()}>
+          Muat Ulang
+        </Button>
+        <Button variant="contained" onClick={() => navigate(-1)}>
+          Kembali
         </Button>
       </Box>
-    </Container>
+    </Box>
   );
 }
