@@ -8,7 +8,6 @@ import {
   Avatar,
   Autocomplete,
   CircularProgress,
-  Alert,
   InputAdornment,
   IconButton,
 } from "@mui/material";
@@ -16,6 +15,7 @@ import { Visibility, VisibilityOff, PhotoCamera } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import DosenSidebar from "../../components/layouts/DosenSidebar";
+import PageTransition from "../../components/PageTransition";
 import { getProfile, updateProfile, updatePassword } from "../../api/dosen";
 import { getAllJurusan } from "../../api/jurusan";
 import { getAllProdi } from "../../api/public";
@@ -61,7 +61,6 @@ export default function BiodataDosenPage() {
   });
 
   const [errors, setErrors] = useState({});
-  const [alert, setAlert] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
 
   useEffect(() => {
@@ -94,9 +93,8 @@ export default function BiodataDosenPage() {
         const baseUrl = import.meta.env.VITE_API_URL.replace("/api", "");
         setImagePreview(`${baseUrl}/uploads/profil/${response.data.foto}`);
       }
-    } catch (err) {
-      console.error("Error fetching profile:", err);
-      setAlert("Gagal memuat profil. Silakan refresh halaman.");
+    } catch {
+      Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat profil. Silakan refresh halaman.", confirmButtonText: "OK" });
     } finally {
       setLoading(false);
     }
@@ -109,8 +107,8 @@ export default function BiodataDosenPage() {
       if (response.success) {
         setJurusanOptions(response.data.map((item) => ({ label: item.nama_jurusan, id: item.id_jurusan })));
       }
-    } catch (err) {
-      console.error("Error fetching jurusan:", err);
+    } catch {
+      setJurusanOptions([]);
     } finally {
       setLoadingJurusan(false);
     }
@@ -121,13 +119,15 @@ export default function BiodataDosenPage() {
       setLoadingProdi(true);
       const response = await getAllProdi();
       if (response.success) {
-        setProdiOptions(response.data.map((item) => ({
-          label: `${item.jenjang} ${item.nama_prodi} - ${item.nama_jurusan} (${item.nama_kampus})`,
-          id: item.id_prodi,
-        })));
+        setProdiOptions(
+          response.data.map((item) => ({
+            label: `${item.jenjang} ${item.nama_prodi} - ${item.nama_jurusan} (${item.nama_kampus})`,
+            id: item.id_prodi,
+          }))
+        );
       }
-    } catch (err) {
-      console.error("Error fetching prodi:", err);
+    } catch {
+      setProdiOptions([]);
     } finally {
       setLoadingProdi(false);
     }
@@ -136,13 +136,11 @@ export default function BiodataDosenPage() {
   const handleChangeBiodata = (field, value) => {
     setFormBiodata((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: "" }));
-    setAlert("");
   };
 
   const handleChangePassword = (field, value) => {
     setFormPassword((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: "" }));
-    setAlert("");
   };
 
   const handleFileChange = (e) => {
@@ -178,14 +176,15 @@ export default function BiodataDosenPage() {
     if (!formPassword.new_password) newErrors.new_password = "Password baru wajib diisi";
     else if (formPassword.new_password.length < 8) newErrors.new_password = "Password minimal 8 karakter";
     if (!formPassword.confirm_password) newErrors.confirm_password = "Konfirmasi password wajib diisi";
-    else if (formPassword.new_password !== formPassword.confirm_password) newErrors.confirm_password = "Password tidak cocok";
+    else if (formPassword.new_password !== formPassword.confirm_password)
+      newErrors.confirm_password = "Password tidak cocok";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmitBiodata = async () => {
-    if (!validateBiodata()) { setAlert("Mohon lengkapi semua field yang wajib diisi"); return; }
-    setSubmitting(true); setAlert("");
+    if (!validateBiodata()) return;
+    setSubmitting(true);
     try {
       const formData = new FormData();
       formData.append("nama_lengkap", formBiodata.nama_lengkap);
@@ -198,14 +197,15 @@ export default function BiodataDosenPage() {
       fetchProfile();
     } catch (err) {
       const errorMessage = err.response?.data?.message || "Gagal memperbarui biodata";
-      setAlert(errorMessage);
       await Swal.fire({ icon: "error", title: "Gagal", text: errorMessage, confirmButtonText: "OK" });
-    } finally { setSubmitting(false); }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleSubmitPassword = async () => {
-    if (!validatePassword()) { setAlert("Mohon lengkapi form password dengan benar"); return; }
-    setSubmittingPassword(true); setAlert("");
+    if (!validatePassword()) return;
+    setSubmittingPassword(true);
     try {
       const response = await updatePassword({
         current_password: formPassword.current_password,
@@ -216,9 +216,10 @@ export default function BiodataDosenPage() {
       setFormPassword({ current_password: "", new_password: "", confirm_password: "" });
     } catch (err) {
       const errorMessage = err.response?.data?.message || "Gagal mengubah password";
-      setAlert(errorMessage);
       await Swal.fire({ icon: "error", title: "Gagal", text: errorMessage, confirmButtonText: "OK" });
-    } finally { setSubmittingPassword(false); }
+    } finally {
+      setSubmittingPassword(false);
+    }
   };
 
   if (loading) {
@@ -233,247 +234,247 @@ export default function BiodataDosenPage() {
 
   return (
     <BodyLayout Sidebar={DosenSidebar}>
-      <Box>
-        <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Biodata Anda</Typography>
-        <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>Lengkapi form biodata di bawah ini</Typography>
+      <PageTransition>
+        <Box>
+          <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Biodata Anda</Typography>
+          <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>Lengkapi form biodata di bawah ini</Typography>
 
-        {alert && <Alert severity="error" sx={{ mb: 3 }}>{alert}</Alert>}
+          <Paper sx={{ p: 4, mb: 3, borderRadius: 5 }}>
+            <Typography sx={{ fontSize: 20, fontWeight: 700, mb: 3 }}>Informasi Pribadi</Typography>
 
-        <Paper sx={{ p: 4, mb: 3, borderRadius: 5 }}>
-          <Typography sx={{ fontSize: 20, fontWeight: 700, mb: 3 }}>Informasi Pribadi</Typography>
-
-          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, mb: 3 }}>
-            <Box>
-              <Typography sx={{ fontWeight: 600, mb: 1 }}>Nama Lengkap</Typography>
-              <TextField
-                fullWidth
-                placeholder="Masukkan nama lengkap Anda"
-                value={formBiodata.nama_lengkap}
-                onChange={(e) => handleChangeBiodata("nama_lengkap", e.target.value)}
-                error={!!errors.nama_lengkap}
-                helperText={errors.nama_lengkap}
-                disabled={submitting}
-                sx={roundedField}
-              />
-            </Box>
-            <Box>
-              <Typography sx={{ fontWeight: 600, mb: 1 }}>Email</Typography>
-              <TextField fullWidth value={formBiodata.email} disabled sx={roundedField} />
-            </Box>
-          </Box>
-
-          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, mb: 3 }}>
-            <Box>
-              <Typography sx={{ fontWeight: 600, mb: 1 }}>NIP</Typography>
-              <TextField fullWidth value={formBiodata.nip} disabled sx={roundedField} />
-            </Box>
-            <Box>
-              <Typography sx={{ fontWeight: 600, mb: 1 }}>Nomor WhatsApp</Typography>
-              <TextField
-                fullWidth
-                placeholder="Masukkan nomor WhatsApp Anda"
-                value={formBiodata.no_hp}
-                onChange={(e) => handleChangeBiodata("no_hp", e.target.value)}
-                error={!!errors.no_hp}
-                helperText={errors.no_hp}
-                disabled={submitting}
-                sx={roundedField}
-              />
-            </Box>
-          </Box>
-
-          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, mb: 3 }}>
-            <Box>
-              <Typography sx={{ fontWeight: 600, mb: 1 }}>Jurusan</Typography>
-              {loadingJurusan ? (
-                <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}><CircularProgress size={24} /></Box>
-              ) : (
-                <Autocomplete
-                  options={jurusanOptions}
-                  value={formBiodata.id_jurusan}
-                  onChange={(e, value) => handleChangeBiodata("id_jurusan", value)}
-                  getOptionLabel={(option) => option.label || ""}
-                  isOptionEqualToValue={(option, value) => option.id === value.id}
-                  disabled
-                  renderInput={(params) => (
-                    <TextField {...params} placeholder="Pilih jurusan" error={!!errors.id_jurusan} helperText={errors.id_jurusan} sx={roundedField} />
-                  )}
-                />
-              )}
-            </Box>
-            <Box>
-              <Typography sx={{ fontWeight: 600, mb: 1 }}>Program Studi</Typography>
-              {loadingProdi ? (
-                <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}><CircularProgress size={24} /></Box>
-              ) : (
-                <Autocomplete
-                  options={prodiOptions}
-                  value={formBiodata.id_prodi}
-                  onChange={(e, value) => handleChangeBiodata("id_prodi", value)}
-                  getOptionLabel={(option) => option.label || ""}
-                  isOptionEqualToValue={(option, value) => option.id === value.id}
-                  disabled
-                  renderInput={(params) => (
-                    <TextField {...params} placeholder="Pilih program studi" error={!!errors.id_prodi} helperText={errors.id_prodi} sx={roundedField} />
-                  )}
-                />
-              )}
-            </Box>
-          </Box>
-
-          <Box sx={{ mb: 3 }}>
-            <Typography sx={{ fontWeight: 600, mb: 1 }}>Bidang Keahlian</Typography>
-            <TextField
-              fullWidth
-              multiline
-              rows={2}
-              placeholder="Masukkan bidang keahlian Anda..."
-              value={formBiodata.bidang_keahlian}
-              onChange={(e) => handleChangeBiodata("bidang_keahlian", e.target.value)}
-              disabled={submitting}
-              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
-            />
-          </Box>
-
-          <Box sx={{ mb: 4 }}>
-            <Typography sx={{ fontWeight: 600, mb: 1 }}>Alamat</Typography>
-            <TextField
-              fullWidth
-              multiline
-              rows={3}
-              placeholder="Masukkan alamat Anda..."
-              value={formBiodata.alamat}
-              onChange={(e) => handleChangeBiodata("alamat", e.target.value)}
-              disabled={submitting}
-              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
-            />
-          </Box>
-
-          <Box sx={{ mb: 3 }}>
-            <Typography sx={{ fontWeight: 600, mb: 2 }}>Upload Foto Profil</Typography>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
-              <Avatar
-                src={imagePreview || ""}
-                sx={{ width: 120, height: 120, backgroundColor: "#f5f5f5", border: "2px solid #e0e0e0" }}
-              >
-                {!imagePreview && <PhotoCamera sx={{ fontSize: 40, color: "#999" }} />}
-              </Avatar>
-              <input type="file" hidden id="foto-upload" accept="image/jpeg,image/jpg,image/png" onChange={handleFileChange} />
+            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, mb: 3 }}>
               <Box>
-                <Button
-                  component="label"
-                  htmlFor="foto-upload"
-                  variant="contained"
+                <Typography sx={{ fontWeight: 600, mb: 1 }}>Nama Lengkap</Typography>
+                <TextField
+                  fullWidth
+                  placeholder="Masukkan nama lengkap Anda"
+                  value={formBiodata.nama_lengkap}
+                  onChange={(e) => handleChangeBiodata("nama_lengkap", e.target.value)}
+                  error={!!errors.nama_lengkap}
+                  helperText={errors.nama_lengkap}
                   disabled={submitting}
-                  sx={{ textTransform: "none", borderRadius: "15px", backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" } }}
-                >
-                  Choose File
-                </Button>
-                <Typography sx={{ fontSize: 12, color: "#666", mt: 1 }}>PNG, JPG, up to 10MB.</Typography>
-                {errors.foto && <Typography sx={{ fontSize: 12, color: "#d32f2f", mt: 0.5 }}>{errors.foto}</Typography>}
+                  sx={roundedField}
+                />
+              </Box>
+              <Box>
+                <Typography sx={{ fontWeight: 600, mb: 1 }}>Email</Typography>
+                <TextField fullWidth value={formBiodata.email} disabled sx={roundedField} />
               </Box>
             </Box>
-          </Box>
 
-          <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-            <Button
-              variant="contained"
-              onClick={handleSubmitBiodata}
-              disabled={submitting}
-              sx={{ px: 4, py: 1.2, textTransform: "none", fontWeight: 600, borderRadius: "15px", backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" } }}
-            >
-              {submitting ? "Menyimpan..." : "Simpan Perubahan"}
-            </Button>
-          </Box>
-        </Paper>
+            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, mb: 3 }}>
+              <Box>
+                <Typography sx={{ fontWeight: 600, mb: 1 }}>NIP</Typography>
+                <TextField fullWidth value={formBiodata.nip} disabled sx={roundedField} />
+              </Box>
+              <Box>
+                <Typography sx={{ fontWeight: 600, mb: 1 }}>Nomor WhatsApp</Typography>
+                <TextField
+                  fullWidth
+                  placeholder="Masukkan nomor WhatsApp Anda"
+                  value={formBiodata.no_hp}
+                  onChange={(e) => handleChangeBiodata("no_hp", e.target.value)}
+                  error={!!errors.no_hp}
+                  helperText={errors.no_hp}
+                  disabled={submitting}
+                  sx={roundedField}
+                />
+              </Box>
+            </Box>
 
-        <Paper sx={{ p: 4, borderRadius: 5 }}>
-          <Typography sx={{ fontSize: 20, fontWeight: 700, mb: 3 }}>Ganti Password</Typography>
+            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, mb: 3 }}>
+              <Box>
+                <Typography sx={{ fontWeight: 600, mb: 1 }}>Jurusan</Typography>
+                {loadingJurusan ? (
+                  <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}><CircularProgress size={24} /></Box>
+                ) : (
+                  <Autocomplete
+                    options={jurusanOptions}
+                    value={formBiodata.id_jurusan}
+                    onChange={(e, value) => handleChangeBiodata("id_jurusan", value)}
+                    getOptionLabel={(option) => option.label || ""}
+                    isOptionEqualToValue={(option, value) => option.id === value.id}
+                    disabled
+                    renderInput={(params) => (
+                      <TextField {...params} placeholder="Pilih jurusan" error={!!errors.id_jurusan} helperText={errors.id_jurusan} sx={roundedField} />
+                    )}
+                  />
+                )}
+              </Box>
+              <Box>
+                <Typography sx={{ fontWeight: 600, mb: 1 }}>Program Studi</Typography>
+                {loadingProdi ? (
+                  <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}><CircularProgress size={24} /></Box>
+                ) : (
+                  <Autocomplete
+                    options={prodiOptions}
+                    value={formBiodata.id_prodi}
+                    onChange={(e, value) => handleChangeBiodata("id_prodi", value)}
+                    getOptionLabel={(option) => option.label || ""}
+                    isOptionEqualToValue={(option, value) => option.id === value.id}
+                    disabled
+                    renderInput={(params) => (
+                      <TextField {...params} placeholder="Pilih program studi" error={!!errors.id_prodi} helperText={errors.id_prodi} sx={roundedField} />
+                    )}
+                  />
+                )}
+              </Box>
+            </Box>
 
-          <Box sx={{ mb: 2 }}>
-            <Typography sx={{ fontWeight: 600, mb: 1 }}>Password Lama</Typography>
-            <TextField
-              fullWidth
-              type={showPassword.current ? "text" : "password"}
-              placeholder="****************"
-              value={formPassword.current_password}
-              onChange={(e) => handleChangePassword("current_password", e.target.value)}
-              error={!!errors.current_password}
-              helperText={errors.current_password}
-              disabled={submittingPassword}
-              sx={roundedField}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton onClick={() => setShowPassword((prev) => ({ ...prev, current: !prev.current }))} edge="end">
-                      {showPassword.current ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Box>
+            <Box sx={{ mb: 3 }}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Bidang Keahlian</Typography>
+              <TextField
+                fullWidth
+                multiline
+                rows={2}
+                placeholder="Masukkan bidang keahlian Anda..."
+                value={formBiodata.bidang_keahlian}
+                onChange={(e) => handleChangeBiodata("bidang_keahlian", e.target.value)}
+                disabled={submitting}
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
+              />
+            </Box>
 
-          <Box sx={{ mb: 2 }}>
-            <Typography sx={{ fontWeight: 600, mb: 1 }}>Password Baru</Typography>
-            <TextField
-              fullWidth
-              type={showPassword.new ? "text" : "password"}
-              placeholder="Masukkan password baru Anda"
-              value={formPassword.new_password}
-              onChange={(e) => handleChangePassword("new_password", e.target.value)}
-              error={!!errors.new_password}
-              helperText={errors.new_password}
-              disabled={submittingPassword}
-              sx={roundedField}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton onClick={() => setShowPassword((prev) => ({ ...prev, new: !prev.new }))} edge="end">
-                      {showPassword.new ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Box>
+            <Box sx={{ mb: 4 }}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Alamat</Typography>
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                placeholder="Masukkan alamat Anda..."
+                value={formBiodata.alamat}
+                onChange={(e) => handleChangeBiodata("alamat", e.target.value)}
+                disabled={submitting}
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
+              />
+            </Box>
 
-          <Box sx={{ mb: 3 }}>
-            <Typography sx={{ fontWeight: 600, mb: 1 }}>Konfirmasi Password Baru</Typography>
-            <TextField
-              fullWidth
-              type={showPassword.confirm ? "text" : "password"}
-              placeholder="Konfirmasi password baru Anda"
-              value={formPassword.confirm_password}
-              onChange={(e) => handleChangePassword("confirm_password", e.target.value)}
-              error={!!errors.confirm_password}
-              helperText={errors.confirm_password}
-              disabled={submittingPassword}
-              sx={roundedField}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton onClick={() => setShowPassword((prev) => ({ ...prev, confirm: !prev.confirm }))} edge="end">
-                      {showPassword.confirm ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Box>
+            <Box sx={{ mb: 3 }}>
+              <Typography sx={{ fontWeight: 600, mb: 2 }}>Upload Foto Profil</Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
+                <Avatar
+                  src={imagePreview || ""}
+                  sx={{ width: 120, height: 120, backgroundColor: "#f5f5f5", border: "2px solid #e0e0e0" }}
+                >
+                  {!imagePreview && <PhotoCamera sx={{ fontSize: 40, color: "#999" }} />}
+                </Avatar>
+                <input type="file" hidden id="foto-upload" accept="image/jpeg,image/jpg,image/png" onChange={handleFileChange} />
+                <Box>
+                  <Button
+                    component="label"
+                    htmlFor="foto-upload"
+                    variant="contained"
+                    disabled={submitting}
+                    sx={{ textTransform: "none", borderRadius: "15px", backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" } }}
+                  >
+                    Choose File
+                  </Button>
+                  <Typography sx={{ fontSize: 12, color: "#666", mt: 1 }}>PNG, JPG, up to 10MB.</Typography>
+                  {errors.foto && <Typography sx={{ fontSize: 12, color: "#d32f2f", mt: 0.5 }}>{errors.foto}</Typography>}
+                </Box>
+              </Box>
+            </Box>
 
-          <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-            <Button
-              variant="contained"
-              onClick={handleSubmitPassword}
-              disabled={submittingPassword}
-              sx={{ px: 4, py: 1.2, textTransform: "none", fontWeight: 600, borderRadius: "15px", backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" } }}
-            >
-              {submittingPassword ? "Mengubah..." : "Ubah Password"}
-            </Button>
-          </Box>
-        </Paper>
-      </Box>
+            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+              <Button
+                variant="contained"
+                onClick={handleSubmitBiodata}
+                disabled={submitting}
+                sx={{ px: 4, py: 1.2, textTransform: "none", fontWeight: 600, borderRadius: "15px", backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" } }}
+              >
+                {submitting ? "Menyimpan..." : "Simpan Perubahan"}
+              </Button>
+            </Box>
+          </Paper>
+
+          <Paper sx={{ p: 4, borderRadius: 5 }}>
+            <Typography sx={{ fontSize: 20, fontWeight: 700, mb: 3 }}>Ganti Password</Typography>
+
+            <Box sx={{ mb: 2 }}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Password Lama</Typography>
+              <TextField
+                fullWidth
+                type={showPassword.current ? "text" : "password"}
+                placeholder="****************"
+                value={formPassword.current_password}
+                onChange={(e) => handleChangePassword("current_password", e.target.value)}
+                error={!!errors.current_password}
+                helperText={errors.current_password}
+                disabled={submittingPassword}
+                sx={roundedField}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowPassword((prev) => ({ ...prev, current: !prev.current }))} edge="end">
+                        {showPassword.current ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Box>
+
+            <Box sx={{ mb: 2 }}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Password Baru</Typography>
+              <TextField
+                fullWidth
+                type={showPassword.new ? "text" : "password"}
+                placeholder="Masukkan password baru Anda"
+                value={formPassword.new_password}
+                onChange={(e) => handleChangePassword("new_password", e.target.value)}
+                error={!!errors.new_password}
+                helperText={errors.new_password}
+                disabled={submittingPassword}
+                sx={roundedField}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowPassword((prev) => ({ ...prev, new: !prev.new }))} edge="end">
+                        {showPassword.new ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Box>
+
+            <Box sx={{ mb: 3 }}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Konfirmasi Password Baru</Typography>
+              <TextField
+                fullWidth
+                type={showPassword.confirm ? "text" : "password"}
+                placeholder="Konfirmasi password baru Anda"
+                value={formPassword.confirm_password}
+                onChange={(e) => handleChangePassword("confirm_password", e.target.value)}
+                error={!!errors.confirm_password}
+                helperText={errors.confirm_password}
+                disabled={submittingPassword}
+                sx={roundedField}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowPassword((prev) => ({ ...prev, confirm: !prev.confirm }))} edge="end">
+                        {showPassword.confirm ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Box>
+
+            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+              <Button
+                variant="contained"
+                onClick={handleSubmitPassword}
+                disabled={submittingPassword}
+                sx={{ px: 4, py: 1.2, textTransform: "none", fontWeight: 600, borderRadius: "15px", backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" } }}
+              >
+                {submittingPassword ? "Mengubah..." : "Ubah Password"}
+              </Button>
+            </Box>
+          </Paper>
+        </Box>
+      </PageTransition>
     </BodyLayout>
   );
 }

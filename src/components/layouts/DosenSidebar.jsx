@@ -44,7 +44,7 @@ export default function DosenSidebar({ collapsed }) {
     {
       text: "Dashboard",
       icon: <DashboardIcon />,
-      path: "/dashboard/dosen",
+      path: "/dosen/dashboard",
     },
     {
       text: "Biodata",
