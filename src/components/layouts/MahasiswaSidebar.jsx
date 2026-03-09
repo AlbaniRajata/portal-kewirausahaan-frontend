@@ -62,7 +62,7 @@ export default function SidebarMahasiswa({ collapsed }) {
     {
       text: "Dashboard",
       icon: <DashboardIcon />,
-      path: "/dashboard/mahasiswa",
+      path: "/mahasiswa/dashboard",
     },
     {
       text: "Biodata",

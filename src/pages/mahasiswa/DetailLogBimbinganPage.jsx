@@ -1,43 +1,34 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Box, Typography, Paper, Button,
-  CircularProgress, Alert, Divider, TextField,
+  CircularProgress, Divider, TextField,
 } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom";
+import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
+import PageTransition from "../../components/PageTransition";
 import { getDetailBimbingan } from "../../api/mahasiswa";
 
 const roundedField = {
   "& .MuiOutlinedInput-root": { borderRadius: "12px" },
 };
 
-const StatusPill = ({ label, bg, color }) => (
-  <Box
-    sx={{
-      display: "inline-flex",
-      alignItems: "center",
-      justifyContent: "center",
-      px: 2.5,
-      py: 0.8,
-      borderRadius: "999px",
-      backgroundColor: bg,
-      color,
-      fontSize: 14,
-      fontWeight: 700,
-      whiteSpace: "nowrap",
-      minHeight: 32,
-    }}
-  >
+const StatusPill = ({ label, backgroundColor }) => (
+  <Box sx={{
+    display: "inline-flex", alignItems: "center", justifyContent: "center",
+    px: 2.5, py: 0.8, borderRadius: "999px",
+    backgroundColor, color: "#fff",
+    fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", minHeight: 32,
+  }}>
     {label}
   </Box>
 );
 
-
 const METODE_PILL = {
-  1: { label: "Online",  color: "#e3f2fd", bg: "#1565c0" },
-  2: { label: "Offline", color: "#f5f5f5", bg: "#555" },
+  1: { label: "Online",  backgroundColor: "#1565c0" },
+  2: { label: "Offline", backgroundColor: "#555" },
 };
 
 const formatDate = (dateString) => {
@@ -51,23 +42,34 @@ const formatDate = (dateString) => {
 export default function DetailLogBimbinganPage() {
   const navigate = useNavigate();
   const { id_bimbingan } = useParams();
-
   const [loading, setLoading] = useState(true);
   const [bimbingan, setBimbingan] = useState(null);
-  const [alertMsg, setAlertMsg] = useState("");
 
   const fetchDetail = useCallback(async () => {
     try {
       setLoading(true);
       const res = await getDetailBimbingan(id_bimbingan);
-      if (res.success) setBimbingan(res.data);
-      else setAlertMsg(res.message || "Gagal memuat detail bimbingan");
+      if (res.success) {
+        setBimbingan(res.data);
+      } else {
+        await Swal.fire({
+          icon: "error", title: "Gagal Memuat",
+          text: res.message || "Gagal memuat detail bimbingan",
+          confirmButtonText: "OK",
+        });
+        navigate("/mahasiswa/bimbingan");
+      }
     } catch (err) {
-      setAlertMsg(err.response?.data?.message || "Gagal memuat detail bimbingan");
+      await Swal.fire({
+        icon: "error", title: "Gagal Memuat",
+        text: err.response?.data?.message || "Gagal memuat detail bimbingan",
+        confirmButtonText: "OK",
+      });
+      navigate("/mahasiswa/bimbingan");
     } finally {
       setLoading(false);
     }
-  }, [id_bimbingan]);
+  }, [id_bimbingan, navigate]);
 
   useEffect(() => { fetchDetail(); }, [fetchDetail]);
 
@@ -81,110 +83,108 @@ export default function DetailLogBimbinganPage() {
     );
   }
 
-  if (!bimbingan) {
-    return (
-      <BodyLayout Sidebar={SidebarMahasiswa}>
-        <Alert severity="error" sx={{ borderRadius: "12px" }}>{alertMsg || "Data bimbingan tidak ditemukan"}</Alert>
-      </BodyLayout>
-    );
-  }
+  if (!bimbingan) return null;
 
   const metodeInfo = METODE_PILL[bimbingan.metode];
 
   return (
     <BodyLayout Sidebar={SidebarMahasiswa}>
-      <Box>
-        <Box sx={{ mb: 4 }}>
-          <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Detail Bimbingan</Typography>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+      <PageTransition>
+        <Box>
+          <Button
+            startIcon={<ArrowBack sx={{ fontSize: 16 }} />}
+            onClick={() => navigate("/mahasiswa/bimbingan")}
+            sx={{
+              textTransform: "none", color: "#777", fontSize: 13,
+              fontWeight: 500, p: 0, mb: 2, minWidth: 0,
+              "&:hover": { backgroundColor: "transparent", color: "#0D59F2" },
+            }}
+          >
+            Kembali ke Log Bimbingan
+          </Button>
+
+          <Box sx={{ mb: 4 }}>
+            <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Detail Bimbingan</Typography>
             <Typography sx={{ fontSize: 14, color: "#777" }}>
               Diajukan pada {formatDate(bimbingan.created_at)}
             </Typography>
-            </Box>
-        </Box>
-
-        {alertMsg && (
-          <Alert severity="error" sx={{ mb: 3, borderRadius: "12px" }} onClose={() => setAlertMsg("")}>
-            {alertMsg}
-          </Alert>
-        )}
-
-        <Paper sx={{ p: 4, mb: 3, borderRadius: "16px", border: "1px solid #f0f0f0" }}>
-          <Typography sx={{ fontSize: 20, fontWeight: 700, mb: 3 }}>Informasi Bimbingan</Typography>
-          <Divider sx={{ mb: 3 }} />
-
-          <Box sx={{ mb: 3 }}>
-            <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>Topik Bimbingan</Typography>
-            <TextField fullWidth value={bimbingan.topik} disabled multiline rows={2} sx={roundedField} />
           </Box>
 
-          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, mb: 3 }}>
-            <Box>
-              <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>Tanggal Bimbingan</Typography>
-              <TextField fullWidth value={formatDate(bimbingan.tanggal_bimbingan)} disabled sx={roundedField} />
-            </Box>
-            <Box>
-              <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>Metode</Typography>
-                <StatusPill
-                  label={metodeInfo?.label || bimbingan.metode}
-                  bg={metodeInfo?.bg || "#f5f5f5"}
-                  color={metodeInfo?.color || "#555"}
-                />
-            </Box>
-          </Box>
-
-          {bimbingan.deskripsi && (
-            <Box sx={{ mb: 3 }}>
-              <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>Deskripsi</Typography>
-              <TextField fullWidth value={bimbingan.deskripsi} disabled multiline rows={4} sx={roundedField} />
-            </Box>
-          )}
-
-          <Box sx={{ mb: 3 }}>
-            <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>Judul Proposal</Typography>
-            <TextField fullWidth value={bimbingan.judul_proposal} disabled multiline rows={2} sx={roundedField} />
-          </Box>
-
-          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3 }}>
-            <Box>
-              <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>Dosen Pembimbing</Typography>
-              <TextField fullWidth value={bimbingan.nama_dosen} disabled sx={roundedField} />
-            </Box>
-            <Box>
-              <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>NIP</Typography>
-              <TextField fullWidth value={bimbingan.nip || "-"} disabled sx={roundedField} />
-            </Box>
-          </Box>
-        </Paper>
-
-        {bimbingan.catatan_dosen && (
           <Paper sx={{ p: 4, mb: 3, borderRadius: "16px", border: "1px solid #f0f0f0" }}>
-            <Typography sx={{ fontSize: 20, fontWeight: 700, mb: 3 }}>Catatan Dosen</Typography>
+            <Typography sx={{ fontSize: 20, fontWeight: 700, mb: 3 }}>Informasi Bimbingan</Typography>
             <Divider sx={{ mb: 3 }} />
-            <Box sx={{ p: 2.5, backgroundColor: "#fff8e1", borderRadius: "12px", border: "1px solid #ffe082" }}>
-              <Typography sx={{ fontSize: 12, color: "#f57f17", fontWeight: 700, mb: 1 }}>Catatan</Typography>
-              <Typography sx={{ fontSize: 14, lineHeight: 1.7 }}>{bimbingan.catatan_dosen}</Typography>
+
+            <Box sx={{ mb: 3 }}>
+              <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>Topik Bimbingan</Typography>
+              <TextField fullWidth value={bimbingan.topik} disabled multiline rows={2} sx={roundedField} />
+            </Box>
+
+            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, mb: 3 }}>
+              <Box>
+                <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>Tanggal Bimbingan</Typography>
+                <TextField fullWidth value={formatDate(bimbingan.tanggal_bimbingan)} disabled sx={roundedField} />
+              </Box>
+              <Box>
+                <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>Metode</Typography>
+                <Box sx={{ pt: 0.5 }}>
+                  <StatusPill
+                    label={metodeInfo?.label || bimbingan.metode}
+                    backgroundColor={metodeInfo?.backgroundColor || "#666"}
+                  />
+                </Box>
+              </Box>
+            </Box>
+
+            {bimbingan.deskripsi && (
+              <Box sx={{ mb: 3 }}>
+                <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>Deskripsi</Typography>
+                <TextField fullWidth value={bimbingan.deskripsi} disabled multiline rows={4} sx={roundedField} />
+              </Box>
+            )}
+
+            <Box sx={{ mb: 3 }}>
+              <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>Judul Proposal</Typography>
+              <TextField fullWidth value={bimbingan.judul_proposal} disabled multiline rows={2} sx={roundedField} />
+            </Box>
+
+            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3 }}>
+              <Box>
+                <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>Dosen Pembimbing</Typography>
+                <TextField fullWidth value={bimbingan.nama_dosen} disabled sx={roundedField} />
+              </Box>
+              <Box>
+                <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>NIP</Typography>
+                <TextField fullWidth value={bimbingan.nip || "-"} disabled sx={roundedField} />
+              </Box>
             </Box>
           </Paper>
-        )}
 
-        <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-          <Button
-            variant="contained"
-            startIcon={<ArrowBack />}
-            onClick={() => navigate("/mahasiswa/bimbingan")}
-            sx={{
-              textTransform: "none",
-              borderRadius: "50px",
-              px: 4, py: 1.2, fontWeight: 600,
-              backgroundColor: "#FDB022",
-              "&:hover": { backgroundColor: "#e09a1a" },
-            }}
-          >
-            Kembali
-          </Button>
+          {bimbingan.catatan_dosen && (
+            <Paper sx={{ p: 4, mb: 3, borderRadius: "16px", border: "1px solid #f0f0f0" }}>
+              <Typography sx={{ fontSize: 20, fontWeight: 700, mb: 3 }}>Catatan Dosen</Typography>
+              <Divider sx={{ mb: 3 }} />
+              <Box sx={{ p: 2.5, backgroundColor: "#fff8e1", borderRadius: "12px", border: "1px solid #ffe082" }}>
+                <Typography sx={{ fontSize: 12, color: "#f57f17", fontWeight: 700, mb: 1 }}>Catatan</Typography>
+                <Typography sx={{ fontSize: 14, lineHeight: 1.7 }}>{bimbingan.catatan_dosen}</Typography>
+              </Box>
+            </Paper>
+          )}
+
+          <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+            <Button
+              variant="contained"
+              onClick={() => navigate("/mahasiswa/bimbingan")}
+              sx={{
+                textTransform: "none", borderRadius: "50px",
+                px: 4, py: 1.2, fontWeight: 600,
+                backgroundColor: "#FDB022", "&:hover": { backgroundColor: "#e09a1a" },
+              }}
+            >
+              Kembali
+            </Button>
+          </Box>
         </Box>
-      </Box>
+      </PageTransition>
     </BodyLayout>
   );
 }

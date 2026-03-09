@@ -1,30 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  Box,
-  Typography,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Button,
-  CircularProgress,
-  Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  MenuItem,
-  IconButton,
+  Box, Typography, Paper, Table, TableBody, TableCell,
+  TableContainer, TableHead, TableRow, Button, CircularProgress,
+  Dialog, DialogTitle, DialogContent, DialogActions,
+  TextField, MenuItem, IconButton,
 } from "@mui/material";
 import { Add, Close, BookOutlined, Visibility } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
+import PageTransition from "../../components/PageTransition";
 import { getListBimbingan, ajukanBimbingan } from "../../api/mahasiswa";
 
 const roundedField = {
@@ -32,32 +18,35 @@ const roundedField = {
 };
 
 const tableHeadCell = {
-  fontWeight: 700,
-  fontSize: 13,
-  color: "#000",
-  backgroundColor: "#fafafa",
-  borderBottom: "2px solid #f0f0f0",
-  py: 2,
+  fontWeight: 700, fontSize: 13, color: "#000",
+  backgroundColor: "#fafafa", borderBottom: "2px solid #f0f0f0", py: 2,
 };
 
 const tableBodyRow = {
   "& td": { borderBottom: "1px solid #f5f5f5", py: 2 },
 };
 
-const StatusPill = ({ label, bg, color }) => (
+const StatusPill = ({ label, backgroundColor }) => (
   <Box sx={{
     display: "inline-flex", alignItems: "center",
     px: 1.5, py: 0.4, borderRadius: "50px",
-    backgroundColor: bg, color, fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
+    backgroundColor, color: "#fff",
+    fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
   }}>
     {label}
   </Box>
 );
 
+const InfoBox = ({ children, color, borderColor, bgColor }) => (
+  <Box sx={{ mb: 3, p: 2, borderRadius: "12px", backgroundColor: bgColor, border: `1px solid ${borderColor}` }}>
+    <Typography sx={{ fontSize: 14, color, fontWeight: 500 }}>{children}</Typography>
+  </Box>
+);
+
 const STATUS_BIMBINGAN = {
-  0: { label: "Menunggu Konfirmasi", color: "#fff8e1",  bg: "#f57f17" },
-  1: { label: "Disetujui",           color: "#e8f5e9",  bg: "#2e7d32" },
-  2: { label: "Ditolak",             color: "#fce4ec",  bg: "#c62828" },
+  0: { label: "Menunggu Konfirmasi", backgroundColor: "#f57f17" },
+  1: { label: "Disetujui",           backgroundColor: "#2e7d32" },
+  2: { label: "Ditolak",             backgroundColor: "#c62828" },
 };
 
 const METODE_OPTIONS = [
@@ -66,8 +55,8 @@ const METODE_OPTIONS = [
 ];
 
 const METODE_PILL = {
-  1: { label: "Online",  color: "#e3f2fd", bg: "#1565c0" },
-  2: { label: "Offline", color: "#f5f5f5", bg: "#555" },
+  1: { label: "Online",  backgroundColor: "#1565c0" },
+  2: { label: "Offline", backgroundColor: "#555" },
 };
 
 const formatDate = (dateString) => {
@@ -98,11 +87,8 @@ export default function LogBimbinganPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [bimbinganList, setBimbinganList] = useState([]);
-  const [alertMsg, setAlertMsg] = useState("");
-  const [alertType, setAlertType] = useState("error");
   const [canAjukan, setCanAjukan] = useState(false);
   const [isKetua, setIsKetua] = useState(false);
-
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState({});
@@ -113,18 +99,23 @@ export default function LogBimbinganPage() {
       setLoading(true);
       const res = await getListBimbingan();
       if (res.success) {
-        const list = res.data || [];
+        const list = res.data?.bimbingan || [];
         setBimbinganList(list);
         setCanAjukan(!list.some((b) => b.status === 0));
-        setIsKetua(res.is_ketua || false);
+        setIsKetua(res.data?.is_ketua || false);
       } else {
-        setAlertMsg(res.message || "Gagal memuat data bimbingan");
-        setAlertType("warning");
+        await Swal.fire({
+          icon: "warning", title: "Peringatan",
+          text: res.message || "Gagal memuat data bimbingan",
+          confirmButtonText: "OK",
+        });
       }
-    } catch (err) {
-      const msg = err.response?.data?.message || "Gagal memuat data bimbingan";
-      setAlertMsg(msg);
-      setAlertType("error");
+    } catch {
+      await Swal.fire({
+        icon: "error", title: "Gagal Memuat",
+        text: "Gagal memuat data bimbingan. Silakan refresh halaman.",
+        confirmButtonText: "OK",
+      });
     } finally {
       setLoading(false);
     }
@@ -158,12 +149,9 @@ export default function LogBimbinganPage() {
       ...swalOptions,
       title: "Ajukan Bimbingan?",
       html: `Topik: <b>${form.topik}</b><br/>Tanggal: <b>${formatDateDisplay(form.tanggal_bimbingan)}</b><br/>Metode: <b>${metodeLabel}</b><br/><br/>Lanjutkan?`,
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonColor: "#0D59F2",
-      cancelButtonColor: "#666",
-      confirmButtonText: "Ya, Ajukan",
-      cancelButtonText: "Batal",
+      icon: "question", showCancelButton: true,
+      confirmButtonColor: "#0D59F2", cancelButtonColor: "#666",
+      confirmButtonText: "Ya, Ajukan", cancelButtonText: "Batal",
     });
     if (!result.isConfirmed) return;
 
@@ -177,14 +165,20 @@ export default function LogBimbinganPage() {
         deskripsi: form.deskripsi || undefined,
       });
       if (res.success) {
-        await Swal.fire({ ...swalOptions, icon: "success", title: "Berhasil", text: res.message || "Pengajuan bimbingan berhasil dikirim", timer: 2000, timerProgressBar: true, showConfirmButton: false });
+        await Swal.fire({
+          ...swalOptions, icon: "success", title: "Berhasil",
+          text: res.message || "Pengajuan bimbingan berhasil dikirim",
+          timer: 2000, timerProgressBar: true, showConfirmButton: false,
+        });
         fetchBimbingan();
       } else {
         await Swal.fire({ ...swalOptions, icon: "error", title: "Gagal", text: res.message || "Terjadi kesalahan" });
       }
     } catch (err) {
-      const msg = err.response?.data?.message || "Gagal mengajukan bimbingan";
-      await Swal.fire({ ...swalOptions, icon: "error", title: "Gagal", text: msg });
+      await Swal.fire({
+        ...swalOptions, icon: "error", title: "Gagal",
+        text: err.response?.data?.message || "Gagal mengajukan bimbingan",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -192,65 +186,78 @@ export default function LogBimbinganPage() {
 
   return (
     <BodyLayout Sidebar={SidebarMahasiswa}>
-      <Box>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", mb: 4 }}>
-          <Box>
-            <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Log Bimbingan</Typography>
-            <Typography sx={{ fontSize: 14, color: "#777" }}>Riwayat dan pengajuan sesi bimbingan dengan dosen pembimbing</Typography>
-          </Box>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={handleOpenDialog}
-            disabled={!canAjukan || !isKetua}
-            sx={{
-              textTransform: "none",
-              borderRadius: "50px",
-              backgroundColor: "#0D59F2",
-              "&:hover": { backgroundColor: "#0846c7" },
-              px: 3, py: 1.2, fontWeight: 600,
-            }}
-          >
-            Ajukan Bimbingan
-          </Button>
-        </Box>
-
-        {alertMsg && <Alert severity={alertType} sx={{ mb: 3, borderRadius: "12px" }} onClose={() => setAlertMsg("")}>{alertMsg}</Alert>}
-        {!isKetua && <Alert severity="info" sx={{ mb: 3, borderRadius: "12px" }}>Hanya ketua tim yang dapat mengajukan bimbingan.</Alert>}
-        {!loading && bimbinganList.some((b) => b.status === 0) && isKetua && (
-          <Alert severity="info" sx={{ mb: 3, borderRadius: "12px" }}>Ada pengajuan bimbingan yang sedang menunggu konfirmasi dosen. Anda dapat mengajukan bimbingan baru setelah dosen merespons.</Alert>
-        )}
-
-        <Paper sx={{ overflow: "hidden", borderRadius: "16px", border: "1px solid #f0f0f0" }}>
-          {loading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
-          ) : bimbinganList.length === 0 ? (
-            <Box sx={{ py: 10, textAlign: "center" }}>
-              <Box sx={{ width: 100, height: 100, borderRadius: "50%", backgroundColor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 3 }}>
-                <BookOutlined sx={{ fontSize: 48, color: "#ccc" }} />
-              </Box>
-              <Typography sx={{ fontSize: 20, fontWeight: 700, color: "#444", mb: 1 }}>Belum Ada Riwayat Bimbingan</Typography>
-              <Typography sx={{ fontSize: 14, color: "#999" }}>
-                {isKetua ? "Silakan ajukan sesi bimbingan terlebih dahulu." : "Riwayat bimbingan akan muncul di sini setelah ketua tim mengajukan."}
+      <PageTransition>
+        <Box>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", mb: 4 }}>
+            <Box>
+              <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Log Bimbingan</Typography>
+              <Typography sx={{ fontSize: 14, color: "#777" }}>
+                Riwayat dan pengajuan sesi bimbingan dengan dosen pembimbing
               </Typography>
             </Box>
-          ) : (
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    {["Topik", "Tanggal Bimbingan", "Metode", "Dosen", "Diajukan Oleh", "Status", "Aksi"].map((h, i) => (
-                      <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 6 && { textAlign: "center" }) }}>
-                        {h}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {bimbinganList.map((b) => {
-                    const s = STATUS_BIMBINGAN[b.status];
-                    const m = METODE_PILL[b.metode];
-                    return (
+            <Button
+              variant="contained" startIcon={<Add />}
+              onClick={handleOpenDialog}
+              disabled={!canAjukan || !isKetua}
+              sx={{
+                textTransform: "none", borderRadius: "50px",
+                backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" },
+                px: 3, py: 1.2, fontWeight: 600,
+              }}
+            >
+              Ajukan Bimbingan
+            </Button>
+          </Box>
+
+          {!isKetua && !loading && (
+            <InfoBox color="#1565c0" borderColor="#90caf9" bgColor="#e3f2fd">
+              Hanya ketua tim yang dapat mengajukan bimbingan.
+            </InfoBox>
+          )}
+          {!loading && bimbinganList.some((b) => b.status === 0) && isKetua && (
+            <InfoBox color="#1565c0" borderColor="#90caf9" bgColor="#e3f2fd">
+              Ada pengajuan bimbingan yang sedang menunggu konfirmasi dosen. Anda dapat mengajukan bimbingan baru setelah dosen merespons.
+            </InfoBox>
+          )}
+
+          <Paper sx={{ overflow: "hidden", borderRadius: "16px", border: "1px solid #f0f0f0" }}>
+            {loading ? (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+                <CircularProgress />
+              </Box>
+            ) : bimbinganList.length === 0 ? (
+              <Box sx={{ py: 10, textAlign: "center" }}>
+                <Box sx={{
+                  width: 100, height: 100, borderRadius: "50%",
+                  backgroundColor: "#f5f5f5",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  mx: "auto", mb: 3,
+                }}>
+                  <BookOutlined sx={{ fontSize: 48, color: "#ccc" }} />
+                </Box>
+                <Typography sx={{ fontSize: 20, fontWeight: 700, color: "#444", mb: 1 }}>
+                  Belum Ada Riwayat Bimbingan
+                </Typography>
+                <Typography sx={{ fontSize: 14, color: "#999" }}>
+                  {isKetua
+                    ? "Silakan ajukan sesi bimbingan terlebih dahulu."
+                    : "Riwayat bimbingan akan muncul di sini setelah ketua tim mengajukan."}
+                </Typography>
+              </Box>
+            ) : (
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      {["Topik", "Tanggal Bimbingan", "Metode", "Dosen", "Diajukan Oleh", "Status", "Aksi"].map((h, i) => (
+                        <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 6 && { textAlign: "center" }) }}>
+                          {h}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {bimbinganList.map((b) => (
                       <TableRow key={b.id_bimbingan} sx={tableBodyRow}>
                         <TableCell>
                           <Typography sx={{ fontWeight: 600, fontSize: 14, maxWidth: 200 }}>{b.topik}</Typography>
@@ -259,7 +266,10 @@ export default function LogBimbinganPage() {
                           <Typography sx={{ fontSize: 13 }}>{formatDate(b.tanggal_bimbingan)}</Typography>
                         </TableCell>
                         <TableCell>
-                          <StatusPill label={m?.label || b.metode} bg={m?.bg || "#f5f5f5"} color={m?.color || "#555"} />
+                          <StatusPill
+                            label={METODE_PILL[b.metode]?.label || b.metode}
+                            backgroundColor={METODE_PILL[b.metode]?.backgroundColor || "#666"}
+                          />
                         </TableCell>
                         <TableCell>
                           <Typography sx={{ fontSize: 13 }}>{b.nama_dosen}</Typography>
@@ -268,22 +278,20 @@ export default function LogBimbinganPage() {
                           <Typography sx={{ fontSize: 13 }}>{b.nama_pengaju}</Typography>
                         </TableCell>
                         <TableCell>
-                          <StatusPill label={s?.label || "-"} bg={s?.bg || "#f5f5f5"} color={s?.color || "#666"} />
+                          <StatusPill
+                            label={STATUS_BIMBINGAN[b.status]?.label || "-"}
+                            backgroundColor={STATUS_BIMBINGAN[b.status]?.backgroundColor || "#666"}
+                          />
                         </TableCell>
                         <TableCell align="center">
                           <Button
-                            size="small"
-                            variant="outlined"
+                            size="small" variant="outlined"
                             startIcon={<Visibility sx={{ fontSize: 14 }} />}
                             onClick={() => navigate(`/mahasiswa/bimbingan/${b.id_bimbingan}`)}
                             sx={{
-                              textTransform: "none",
-                              borderRadius: "50px",
-                              fontSize: 12,
-                              fontWeight: 600,
-                              px: 2,
-                              borderColor: "#0D59F2",
-                              color: "#0D59F2",
+                              textTransform: "none", borderRadius: "50px",
+                              fontSize: 12, fontWeight: 600, px: 2,
+                              borderColor: "#0D59F2", color: "#0D59F2",
                               "&:hover": { backgroundColor: "#f0f4ff" },
                             }}
                           >
@@ -291,14 +299,14 @@ export default function LogBimbinganPage() {
                           </Button>
                         </TableCell>
                       </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </Paper>
-      </Box>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+          </Paper>
+        </Box>
+      </PageTransition>
 
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth
         PaperProps={{ sx: { borderRadius: "16px" } }}>
@@ -316,29 +324,22 @@ export default function LogBimbinganPage() {
                 Tanggal Bimbingan <span style={{ color: "#ef5350" }}>*</span>
               </Typography>
               <TextField
-                fullWidth size="small"
-                type="datetime-local"
-                name="tanggal_bimbingan"
-                value={form.tanggal_bimbingan}
+                fullWidth size="small" type="datetime-local"
+                name="tanggal_bimbingan" value={form.tanggal_bimbingan}
                 onChange={handleFormChange}
-                error={!!formError.tanggal_bimbingan}
-                helperText={formError.tanggal_bimbingan}
-                InputLabelProps={{ shrink: true }}
-                sx={roundedField}
+                error={!!formError.tanggal_bimbingan} helperText={formError.tanggal_bimbingan}
+                InputLabelProps={{ shrink: true }} sx={roundedField}
               />
             </Box>
-
             <Box>
               <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>
                 Metode <span style={{ color: "#ef5350" }}>*</span>
               </Typography>
               <TextField
                 fullWidth select size="small"
-                name="metode"
-                value={form.metode}
+                name="metode" value={form.metode}
                 onChange={handleFormChange}
-                error={!!formError.metode}
-                helperText={formError.metode}
+                error={!!formError.metode} helperText={formError.metode}
                 sx={roundedField}
               >
                 <MenuItem value="" disabled>Pilih metode bimbingan</MenuItem>
@@ -347,29 +348,24 @@ export default function LogBimbinganPage() {
                 ))}
               </TextField>
             </Box>
-
             <Box>
               <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>
                 Topik Bimbingan <span style={{ color: "#ef5350" }}>*</span>
               </Typography>
               <TextField
                 fullWidth size="small"
-                name="topik"
-                value={form.topik}
+                name="topik" value={form.topik}
                 onChange={handleFormChange}
-                error={!!formError.topik}
-                helperText={formError.topik}
+                error={!!formError.topik} helperText={formError.topik}
                 placeholder="Contoh: Revisi BAB 2 - Tinjauan Pustaka"
                 sx={roundedField}
               />
             </Box>
-
             <Box>
               <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Deskripsi / Catatan</Typography>
               <TextField
                 fullWidth multiline rows={3} size="small"
-                name="deskripsi"
-                value={form.deskripsi}
+                name="deskripsi" value={form.deskripsi}
                 onChange={handleFormChange}
                 placeholder="Opsional — tuliskan detail topik atau hal yang ingin didiskusikan"
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
