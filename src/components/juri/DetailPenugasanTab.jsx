@@ -1,36 +1,21 @@
 import { useState } from "react";
 import {
-  Box,
-  Typography,
-  Button,
-  Divider,
-  Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  IconButton,
+  Box, Typography, Button, Divider, Dialog, DialogTitle,
+  DialogContent, DialogActions, TextField, IconButton,
 } from "@mui/material";
-import {
-  CheckCircle,
-  Cancel,
-  Download,
-  AttachFile,
-  Close,
-  ArrowBack,
-} from "@mui/icons-material";
+import { CheckCircle, Cancel, Download, AttachFile, Close } from "@mui/icons-material";
 import Swal from "sweetalert2";
 
 const roundedField = {
-  "& .MuiOutlinedInput-root": { borderRadius: "15px" },
+  "& .MuiOutlinedInput-root": { borderRadius: "12px" },
 };
 
-const StatusPill = ({ label, bg, color }) => (
+const StatusPill = ({ label, backgroundColor }) => (
   <Box sx={{
     display: "inline-flex", alignItems: "center",
     px: 1.5, py: 0.4, borderRadius: "50px",
-    backgroundColor: bg, color, fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
+    backgroundColor, color: "#fff",
+    fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
   }}>
     {label}
   </Box>
@@ -38,13 +23,13 @@ const StatusPill = ({ label, bg, color }) => (
 
 const getStatusInfo = (status) => {
   const map = {
-    0: { label: "Menunggu Response", color: "#fff8e1",  bg: "#f57f17" },
-    1: { label: "Disetujui",         color: "#e8f5e9",  bg: "#2e7d32" },
-    2: { label: "Ditolak",           color: "#fce4ec",  bg: "#c62828" },
-    3: { label: "Draft Penilaian",   color: "#e3f2fd",  bg: "#1565c0" },
-    4: { label: "Selesai Dinilai",   color: "#f3e5f5",  bg: "#6a1b9a" },
+    0: { label: "Menunggu Response", backgroundColor: "#f57f17" },
+    1: { label: "Disetujui",         backgroundColor: "#2e7d32" },
+    2: { label: "Ditolak",           backgroundColor: "#c62828" },
+    3: { label: "Draft Penilaian",   backgroundColor: "#1565c0" },
+    4: { label: "Selesai Dinilai",   backgroundColor: "#6a1b9a" },
   };
-  return map[status] || { label: "Unknown", bg: "#f5f5f5", color: "#666" };
+  return map[status] || { label: "Unknown", backgroundColor: "#757575" };
 };
 
 const formatRupiah = (value) => {
@@ -77,8 +62,7 @@ export default function DetailPenugasanTab({ penugasan, onAccept, onReject, subm
     const result = await Swal.fire({
       title: "Konfirmasi",
       html: `Tolak penugasan untuk proposal:<br/><br/><b>${penugasan.judul}</b>?`,
-      icon: "warning",
-      showCancelButton: true,
+      icon: "warning", showCancelButton: true,
       confirmButtonColor: "#d33", cancelButtonColor: "#666",
       confirmButtonText: "Ya, Tolak", cancelButtonText: "Batal",
     });
@@ -115,17 +99,18 @@ export default function DetailPenugasanTab({ penugasan, onAccept, onReject, subm
         </Box>
         <Box>
           <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>Modal Diajukan</Typography>
-          <TextField
-            fullWidth value={formatRupiah(penugasan.modal_diajukan)} disabled sx={roundedField}
-            InputProps={{ startAdornment: <Typography sx={{ mr: 1, color: "#555" }}>Rp</Typography> }}
-          />
+          <TextField fullWidth value={formatRupiah(penugasan.modal_diajukan)} disabled sx={roundedField} />
         </Box>
       </Box>
 
       <Box sx={{ mb: 3 }}>
         <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>File Proposal</Typography>
         {penugasan.file_proposal ? (
-          <Box sx={{ border: "1.5px solid #f0f0f0", borderRadius: "12px", p: 2, display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "#fafafa" }}>
+          <Box sx={{
+            border: "1.5px solid #f0f0f0", borderRadius: "12px", p: 2,
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            backgroundColor: "#fafafa",
+          }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
               <Box sx={{ width: 36, height: 36, borderRadius: "8px", backgroundColor: "#e3f2fd", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <AttachFile sx={{ color: "#1565c0", fontSize: 18 }} />
@@ -171,7 +156,7 @@ export default function DetailPenugasanTab({ penugasan, onAccept, onReject, subm
         </Box>
         <Box>
           <Typography sx={{ fontWeight: 600, mb: 2, fontSize: 14 }}>Status</Typography>
-          <StatusPill label={si.label} bg={si.bg} color={si.color} />
+          <StatusPill label={si.label} backgroundColor={si.backgroundColor} />
         </Box>
       </Box>
 
@@ -193,12 +178,8 @@ export default function DetailPenugasanTab({ penugasan, onAccept, onReject, subm
           <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>Timeline Penilaian</Typography>
           <Box sx={{ p: 2.5, backgroundColor: "#e3f2fd", borderRadius: "12px", border: "1px solid #90caf9" }}>
             <Typography sx={{ fontSize: 12, color: "#1565c0", fontWeight: 700, mb: 1 }}>Periode Penilaian</Typography>
-            <Typography sx={{ fontSize: 14 }}>
-              <strong>Mulai:</strong> {formatDate(penugasan.penilaian_mulai)}
-            </Typography>
-            <Typography sx={{ fontSize: 14, mt: 0.5 }}>
-              <strong>Selesai:</strong> {formatDate(penugasan.penilaian_selesai)}
-            </Typography>
+            <Typography sx={{ fontSize: 14 }}><strong>Mulai:</strong> {formatDate(penugasan.penilaian_mulai)}</Typography>
+            <Typography sx={{ fontSize: 14, mt: 0.5 }}><strong>Selesai:</strong> {formatDate(penugasan.penilaian_selesai)}</Typography>
           </Box>
         </Box>
       )}
@@ -256,13 +237,11 @@ export default function DetailPenugasanTab({ penugasan, onAccept, onReject, subm
             <Close />
           </IconButton>
         </DialogTitle>
-
         <DialogContent dividers sx={{ px: 3, py: 3 }}>
           <Box sx={{ p: 2.5, backgroundColor: "#fce4ec", borderRadius: "12px", border: "1px solid #ef9a9a", mb: 3 }}>
             <Typography sx={{ fontSize: 12, color: "#c62828", fontWeight: 700, mb: 0.5 }}>Proposal yang akan ditolak</Typography>
             <Typography sx={{ fontSize: 14, fontWeight: 600 }}>{penugasan.judul}</Typography>
           </Box>
-
           <Box>
             <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>
               Catatan Penolakan <span style={{ color: "#ef5350" }}>*</span>
@@ -272,13 +251,11 @@ export default function DetailPenugasanTab({ penugasan, onAccept, onReject, subm
               placeholder="Masukkan alasan penolakan (minimal 10 karakter)..."
               value={catatan}
               onChange={(e) => { setCatatan(e.target.value); setErrors({}); }}
-              error={!!errors.catatan}
-              helperText={errors.catatan}
+              error={!!errors.catatan} helperText={errors.catatan}
               sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
             />
           </Box>
         </DialogContent>
-
         <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
           <Button onClick={handleCloseReject}
             sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, color: "#666", border: "1.5px solid #e0e0e0", "&:hover": { backgroundColor: "#f5f5f5" } }}>

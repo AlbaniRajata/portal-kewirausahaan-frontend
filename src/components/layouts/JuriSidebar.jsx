@@ -9,6 +9,7 @@ import {
 } from "@mui/material";
 import { useNavigate, useLocation } from "react-router-dom";
 import DashboardIcon from "@mui/icons-material/Dashboard";
+import PersonIcon from "@mui/icons-material/Person";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 
@@ -27,6 +28,11 @@ export default function JuriSidebar({ collapsed }) {
       text: "Dashboard",
       icon: <DashboardIcon />,
       path: "/juri/dashboard",
+    },
+    {
+      text: "Biodata",
+      icon: <PersonIcon />,
+      path: "/juri/biodata",
     },
     {
       text: "Penugasan Saya",

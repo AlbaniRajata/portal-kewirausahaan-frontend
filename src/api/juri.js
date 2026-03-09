@@ -1,11 +1,27 @@
 import api from "./axios";
 
+export const getProfile = async () => {
+  const res = await api.get("/juri/profile");
+  return res.data;
+};
+
+export const updateProfile = async (formData) => {
+  const res = await api.patch("/juri/profile", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data;
+};
+
+export const updatePassword = async (payload) => {
+  const res = await api.put("/juri/password", payload);
+  return res.data;
+};
+
 export const getListPenugasan = async (status = null) => {
   const params = new URLSearchParams();
   if (status !== null && status !== '') {
     params.append('status', status);
   }
-  
   const res = await api.get(`/juri/penugasan?${params.toString()}`);
   return res.data;
 };

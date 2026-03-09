@@ -1,0 +1,379 @@
+import { useState, useEffect } from "react";
+import {
+  Box, Paper, Typography, TextField, Button, Avatar,
+  CircularProgress, InputAdornment, IconButton,
+} from "@mui/material";
+import { Visibility, VisibilityOff, PhotoCamera } from "@mui/icons-material";
+import Swal from "sweetalert2";
+import BodyLayout from "../../components/layouts/BodyLayout";
+import JuriSidebar from "../../components/layouts/JuriSidebar";
+import PageTransition from "../../components/PageTransition";
+import { getProfile, updateProfile, updatePassword } from "../../api/juri";
+
+const roundedField = {
+  "& .MuiOutlinedInput-root": { borderRadius: "15px" },
+};
+
+export default function BiodataJuriPage() {
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [submittingPassword, setSubmittingPassword] = useState(false);
+
+  const [formBiodata, setFormBiodata] = useState({
+    nama_lengkap: "",
+    email: "",
+    no_hp: "",
+    institusi: "",
+    bidang_keahlian: "",
+    alamat: "",
+    foto: null,
+  });
+
+  const [formPassword, setFormPassword] = useState({
+    current_password: "",
+    new_password: "",
+    confirm_password: "",
+  });
+
+  const [showPassword, setShowPassword] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
+
+  const [errors, setErrors] = useState({});
+  const [imagePreview, setImagePreview] = useState(null);
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      setLoading(true);
+      const response = await getProfile();
+      setFormBiodata({
+        nama_lengkap: response.data.nama_lengkap || "",
+        email: response.data.email || "",
+        no_hp: response.data.no_hp || "",
+        institusi: response.data.institusi || "",
+        bidang_keahlian: response.data.bidang_keahlian || "",
+        alamat: response.data.alamat || "",
+        foto: null,
+      });
+      if (response.data.foto) {
+        const baseUrl = import.meta.env.VITE_API_URL.replace("/api", "");
+        setImagePreview(`${baseUrl}/uploads/profil/${response.data.foto}`);
+      }
+    } catch {
+      await Swal.fire({
+        icon: "error",
+        title: "Gagal Memuat",
+        text: "Gagal memuat profil. Silakan refresh halaman.",
+        confirmButtonText: "OK",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChangeBiodata = (field, value) => {
+    setFormBiodata((prev) => ({ ...prev, [field]: value }));
+    setErrors((prev) => ({ ...prev, [field]: "" }));
+  };
+
+  const handleChangePassword = (field, value) => {
+    setFormPassword((prev) => ({ ...prev, [field]: value }));
+    setErrors((prev) => ({ ...prev, [field]: "" }));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const allowedFormats = ["image/jpeg", "image/jpg", "image/png"];
+    if (!allowedFormats.includes(file.type)) {
+      setErrors((prev) => ({ ...prev, foto: "Format file harus JPG, JPEG, atau PNG" }));
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setErrors((prev) => ({ ...prev, foto: "Ukuran file maksimal 10MB" }));
+      return;
+    }
+    handleChangeBiodata("foto", file);
+    const reader = new FileReader();
+    reader.onloadend = () => setImagePreview(reader.result);
+    reader.readAsDataURL(file);
+  };
+
+  const validateBiodata = () => {
+    const newErrors = {};
+    if (!formBiodata.nama_lengkap) newErrors.nama_lengkap = "Nama lengkap wajib diisi";
+    if (!formBiodata.no_hp) newErrors.no_hp = "Nomor WhatsApp wajib diisi";
+    else if (!/^08[0-9]{8,11}$/.test(formBiodata.no_hp)) newErrors.no_hp = "Format nomor tidak valid (08xxxxxxxxxx)";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validatePassword = () => {
+    const newErrors = {};
+    if (!formPassword.current_password) newErrors.current_password = "Password lama wajib diisi";
+    if (!formPassword.new_password) newErrors.new_password = "Password baru wajib diisi";
+    else if (formPassword.new_password.length < 8) newErrors.new_password = "Password minimal 8 karakter";
+    if (!formPassword.confirm_password) newErrors.confirm_password = "Konfirmasi password wajib diisi";
+    else if (formPassword.new_password !== formPassword.confirm_password) newErrors.confirm_password = "Password tidak cocok";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmitBiodata = async () => {
+    if (!validateBiodata()) return;
+    setSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append("nama_lengkap", formBiodata.nama_lengkap);
+      formData.append("no_hp", formBiodata.no_hp);
+      formData.append("alamat", formBiodata.alamat);
+      formData.append("institusi", formBiodata.institusi);
+      formData.append("bidang_keahlian", formBiodata.bidang_keahlian);
+      if (formBiodata.foto) formData.append("foto", formBiodata.foto);
+      const response = await updateProfile(formData);
+      await Swal.fire({
+        icon: "success", title: "Berhasil",
+        text: response.message || "Biodata berhasil diperbarui",
+        timer: 2000, timerProgressBar: true, showConfirmButton: false,
+      });
+      fetchProfile();
+    } catch (err) {
+      await Swal.fire({
+        icon: "error", title: "Gagal",
+        text: err.response?.data?.message || "Gagal memperbarui biodata",
+        confirmButtonText: "OK",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSubmitPassword = async () => {
+    if (!validatePassword()) return;
+    setSubmittingPassword(true);
+    try {
+      const response = await updatePassword({
+        current_password: formPassword.current_password,
+        new_password: formPassword.new_password,
+        confirm_password: formPassword.confirm_password,
+      });
+      await Swal.fire({
+        icon: "success", title: "Berhasil",
+        text: response.message || "Password berhasil diubah",
+        timer: 2000, timerProgressBar: true, showConfirmButton: false,
+      });
+      setFormPassword({ current_password: "", new_password: "", confirm_password: "" });
+    } catch (err) {
+      await Swal.fire({
+        icon: "error", title: "Gagal",
+        text: err.response?.data?.message || "Gagal mengubah password",
+        confirmButtonText: "OK",
+      });
+    } finally {
+      setSubmittingPassword(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <BodyLayout Sidebar={JuriSidebar}>
+        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
+          <CircularProgress />
+        </Box>
+      </BodyLayout>
+    );
+  }
+
+  return (
+    <BodyLayout Sidebar={JuriSidebar}>
+      <PageTransition>
+        <Box>
+          <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Biodata Anda</Typography>
+          <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>Lengkapi form biodata di bawah ini</Typography>
+
+          <Paper sx={{ p: 4, mb: 3, borderRadius: 5 }}>
+            <Typography sx={{ fontSize: 20, fontWeight: 700, mb: 3 }}>Informasi Pribadi</Typography>
+
+            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, mb: 3 }}>
+              <Box>
+                <Typography sx={{ fontWeight: 600, mb: 1 }}>Nama Lengkap</Typography>
+                <TextField
+                  fullWidth placeholder="Masukkan nama lengkap Anda"
+                  value={formBiodata.nama_lengkap}
+                  onChange={(e) => handleChangeBiodata("nama_lengkap", e.target.value)}
+                  error={!!errors.nama_lengkap} helperText={errors.nama_lengkap}
+                  disabled={submitting} sx={roundedField}
+                />
+              </Box>
+              <Box>
+                <Typography sx={{ fontWeight: 600, mb: 1 }}>Email</Typography>
+                <TextField fullWidth value={formBiodata.email} disabled sx={roundedField} />
+              </Box>
+            </Box>
+
+            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, mb: 3 }}>
+              <Box>
+                <Typography sx={{ fontWeight: 600, mb: 1 }}>Nomor WhatsApp</Typography>
+                <TextField
+                  fullWidth placeholder="Masukkan nomor WhatsApp Anda"
+                  value={formBiodata.no_hp}
+                  onChange={(e) => handleChangeBiodata("no_hp", e.target.value)}
+                  error={!!errors.no_hp} helperText={errors.no_hp}
+                  disabled={submitting} sx={roundedField}
+                />
+              </Box>
+              <Box>
+                <Typography sx={{ fontWeight: 600, mb: 1 }}>Institusi</Typography>
+                <TextField
+                  fullWidth placeholder="Masukkan nama institusi Anda"
+                  value={formBiodata.institusi}
+                  onChange={(e) => handleChangeBiodata("institusi", e.target.value)}
+                  disabled={submitting} sx={roundedField}
+                />
+              </Box>
+            </Box>
+
+            <Box sx={{ mb: 3 }}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Bidang Keahlian</Typography>
+              <TextField
+                fullWidth multiline rows={2}
+                placeholder="Masukkan bidang keahlian Anda..."
+                value={formBiodata.bidang_keahlian}
+                onChange={(e) => handleChangeBiodata("bidang_keahlian", e.target.value)}
+                disabled={submitting}
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
+              />
+            </Box>
+
+            <Box sx={{ mb: 4 }}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Alamat</Typography>
+              <TextField
+                fullWidth multiline rows={3}
+                placeholder="Masukkan alamat Anda..."
+                value={formBiodata.alamat}
+                onChange={(e) => handleChangeBiodata("alamat", e.target.value)}
+                disabled={submitting}
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
+              />
+            </Box>
+
+            <Box sx={{ mb: 3 }}>
+              <Typography sx={{ fontWeight: 600, mb: 2 }}>Upload Foto Profil</Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
+                <Avatar
+                  src={imagePreview || ""}
+                  sx={{ width: 120, height: 120, backgroundColor: "#f5f5f5", border: "2px solid #e0e0e0" }}
+                >
+                  {!imagePreview && <PhotoCamera sx={{ fontSize: 40, color: "#999" }} />}
+                </Avatar>
+                <input type="file" hidden id="foto-upload" accept="image/jpeg,image/jpg,image/png" onChange={handleFileChange} />
+                <Box>
+                  <Button
+                    component="label" htmlFor="foto-upload" variant="contained"
+                    disabled={submitting}
+                    sx={{ textTransform: "none", borderRadius: "15px", backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" } }}
+                  >
+                    Choose File
+                  </Button>
+                  <Typography sx={{ fontSize: 12, color: "#666", mt: 1 }}>PNG, JPG, up to 10MB.</Typography>
+                  {errors.foto && <Typography sx={{ fontSize: 12, color: "#d32f2f", mt: 0.5 }}>{errors.foto}</Typography>}
+                </Box>
+              </Box>
+            </Box>
+
+            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+              <Button
+                variant="contained" onClick={handleSubmitBiodata} disabled={submitting}
+                sx={{ px: 4, py: 1.2, textTransform: "none", fontWeight: 600, borderRadius: "15px", backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" } }}
+              >
+                {submitting ? "Menyimpan..." : "Simpan Perubahan"}
+              </Button>
+            </Box>
+          </Paper>
+
+          <Paper sx={{ p: 4, borderRadius: 5 }}>
+            <Typography sx={{ fontSize: 20, fontWeight: 700, mb: 3 }}>Ganti Password</Typography>
+
+            <Box sx={{ mb: 2 }}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Password Lama</Typography>
+              <TextField
+                fullWidth type={showPassword.current ? "text" : "password"}
+                placeholder="****************"
+                value={formPassword.current_password}
+                onChange={(e) => handleChangePassword("current_password", e.target.value)}
+                error={!!errors.current_password} helperText={errors.current_password}
+                disabled={submittingPassword} sx={roundedField}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowPassword((prev) => ({ ...prev, current: !prev.current }))} edge="end">
+                        {showPassword.current ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Box>
+
+            <Box sx={{ mb: 2 }}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Password Baru</Typography>
+              <TextField
+                fullWidth type={showPassword.new ? "text" : "password"}
+                placeholder="Masukkan password baru Anda"
+                value={formPassword.new_password}
+                onChange={(e) => handleChangePassword("new_password", e.target.value)}
+                error={!!errors.new_password} helperText={errors.new_password}
+                disabled={submittingPassword} sx={roundedField}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowPassword((prev) => ({ ...prev, new: !prev.new }))} edge="end">
+                        {showPassword.new ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Box>
+
+            <Box sx={{ mb: 3 }}>
+              <Typography sx={{ fontWeight: 600, mb: 1 }}>Konfirmasi Password Baru</Typography>
+              <TextField
+                fullWidth type={showPassword.confirm ? "text" : "password"}
+                placeholder="Konfirmasi password baru Anda"
+                value={formPassword.confirm_password}
+                onChange={(e) => handleChangePassword("confirm_password", e.target.value)}
+                error={!!errors.confirm_password} helperText={errors.confirm_password}
+                disabled={submittingPassword} sx={roundedField}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowPassword((prev) => ({ ...prev, confirm: !prev.confirm }))} edge="end">
+                        {showPassword.confirm ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Box>
+
+            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+              <Button
+                variant="contained" onClick={handleSubmitPassword} disabled={submittingPassword}
+                sx={{ px: 4, py: 1.2, textTransform: "none", fontWeight: 600, borderRadius: "15px", backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" } }}
+              >
+                {submittingPassword ? "Mengubah..." : "Ubah Password"}
+              </Button>
+            </Box>
+          </Paper>
+        </Box>
+      </PageTransition>
+    </BodyLayout>
+  );
+}

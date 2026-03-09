@@ -32,12 +32,17 @@ const PengajuanPembimbingPage = lazy(() => import("../pages/mahasiswa/PengajuanP
 const LogBimbinganPage = lazy(() => import("../pages/mahasiswa/LogBimbinganPage"));
 const DetailLogBimbinganPage = lazy(() => import("../pages/mahasiswa/DetailLogBimbinganPage"));
 
+const DashboardReviewerPage = lazy(() => import("../pages/reviewer/DashboardReviewerPage"));
+const BiodataReviewerPage = lazy(() => import("../pages/reviewer/BiodataReviewerPage"));
 const PenugasanPage = lazy(() => import("../pages/reviewer/PenugasanPage"));
 const PenugasanDetailPage = lazy(() => import("../pages/reviewer/PenugasanDetailPage"));
 
+const DashboardJuriPage = lazy(() => import("../pages/juri/DashboardJuriPage"));
+const BiodataJuriPage = lazy(() => import("../pages/juri/BiodataJuriPage"));
 const JuriPenugasanPage = lazy(() => import("../pages/juri/PenugasanPage"));
 const JuriDetailPenugasanPage = lazy(() => import("../pages/juri/PenugasanDetailPage"));
 
+const DashboardDosenPage = lazy(() => import("../pages/dosen/DashboardDosenPage")); 
 const BiodataDosenPage = lazy(() => import("../pages/dosen/BiodataDosenPage"));
 const DaftarPengajuanPembimbingPage = lazy(() => import("../pages/dosen/DaftarPengajuanPembimbingPage"));
 const DetailPengajuanPembimbingPage = lazy(() => import("../pages/dosen/DetailPengajuanPembimbingPage"));
@@ -93,16 +98,21 @@ export default function AppRoutes() {
         </Route>
 
         <Route path="/reviewer" element={<PrivateRoute allowedRoles={["reviewer"]} />}>
+          <Route path="dashboard" element={<DashboardReviewerPage />} />
+          <Route path="biodata" element={<BiodataReviewerPage />} />
           <Route path="penugasan" element={<PenugasanPage />} />
           <Route path="penugasan/:id_distribusi" element={<PenugasanDetailPage />} />
         </Route>
 
         <Route path="/juri" element={<PrivateRoute allowedRoles={["juri"]} />}>
+          <Route path="dashboard" element={<DashboardJuriPage />} />
+          <Route path="biodata" element={<BiodataJuriPage />} />
           <Route path="penugasan" element={<JuriPenugasanPage />} />
           <Route path="penugasan/:id_distribusi" element={<JuriDetailPenugasanPage />} />
         </Route>
 
         <Route path="/dosen" element={<PrivateRoute allowedRoles={["dosen"]} />}>
+          <Route path="dashboard" element={<DashboardDosenPage />} />
           <Route path="biodata" element={<BiodataDosenPage />} />
           <Route path="pembimbing/pengajuan" element={<DaftarPengajuanPembimbingPage />} />
           <Route path="pembimbing/pengajuan/:id_pengajuan" element={<DetailPengajuanPembimbingPage />} />
