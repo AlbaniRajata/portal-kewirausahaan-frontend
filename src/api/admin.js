@@ -111,7 +111,7 @@ export const executeBulkDistribusi = async (id_program, tahap, payload) => {
 };
 
 export const getReviewerList = async () => {
-  const res = await api.get("/admin/reviewer");
+  const res = await api.get("/admin/pengguna/reviewer");
   return res.data;
 };
 
@@ -146,7 +146,7 @@ export const executeManualDistribusiTahap2 = async (id_program, payload) => {
 };
 
 export const getJuriList = async () => {
-  const res = await api.get("/admin/juri");
+  const res = await api.get("/admin/pengguna/juri");
   return res.data;
 };
 
@@ -408,5 +408,62 @@ export const getPesertaList = async (params = {}) => {
 
 export const getPesertaDetail = async (id_user, id_program) => {
   const res = await api.get(`/admin/tim-peserta/peserta/${id_user}/${id_program}`);
+  return res.data;
+};
+
+export const getBeritaListAdmin = async (filters = {}) => {
+  const params = new URLSearchParams();
+  if (filters.search) params.append("search", filters.search);
+  if (filters.status !== undefined && filters.status !== "") params.append("status", filters.status);
+  const res = await api.get(`/admin/berita?${params.toString()}`);
+  return res.data;
+};
+
+export const getBeritaDetailAdmin = async (id_berita) => {
+  const res = await api.get(`/admin/berita/${id_berita}`);
+  return res.data;
+};
+
+export const createBerita = async (formData) => {
+  const res = await api.post("/admin/berita", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data;
+};
+
+export const updateBerita = async (id_berita, formData) => {
+  const res = await api.patch(`/admin/berita/${id_berita}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data;
+};
+
+export const deleteBerita = async (id_berita) => {
+  const res = await api.delete(`/admin/berita/${id_berita}`);
+  return res.data;
+};
+
+export const getHistoryPenilaianTahap1 = async (id_program) => {
+  const res = await api.get(`/admin/program/${id_program}/history-penilaian/tahap1`);
+  return res.data;
+};
+
+export const getHistoryPenilaianTahap2 = async (id_program) => {
+  const res = await api.get(`/admin/program/${id_program}/history-penilaian/tahap2`);
+  return res.data;
+};
+
+export const getHistoryDetailTahap1 = async (id_program, id_proposal) => {
+  const res = await api.get(`/admin/program/${id_program}/proposal/${id_proposal}/history-penilaian/tahap1`);
+  return res.data;
+};
+
+export const getHistoryDetailTahap2 = async (id_program, id_proposal) => {
+  const res = await api.get(`/admin/program/${id_program}/proposal/${id_proposal}/history-penilaian/tahap2`);
+  return res.data;
+};
+
+export const getDashboardAdmin = async (id_program) => {
+  const res = await api.get(`/admin/program/${id_program}/dashboard`);
   return res.data;
 };

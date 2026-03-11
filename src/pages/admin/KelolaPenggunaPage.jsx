@@ -3,7 +3,7 @@ import {
   Box, Paper, Typography, Tabs, Tab, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Button, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, MenuItem, CircularProgress,
-  Alert, IconButton, Pagination, Tooltip, InputAdornment, Divider,
+  IconButton, Pagination, Tooltip, InputAdornment, Divider,
 } from "@mui/material";
 import {
   Add, Edit, Close, PersonAdd, ToggleOn, ToggleOff,
@@ -12,26 +12,30 @@ import {
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
+import PageTransition from "../../components/PageTransition";
 import {
   getMahasiswaList, createMahasiswa, updateMahasiswa,
   getDosenList, createDosen, updateDosen,
   getReviewerListKelola, createReviewer, updateReviewer,
   getJuriListKelola, createJuri, updateJuri,
-  toggleUserActive, resetPassword,
+  toggleUserActive, resetPassword, getProdi,
 } from "../../api/admin";
-import { getProdi } from "../../api/admin";
 
 const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "15px" } };
+
 const tableHeadCell = {
   fontWeight: 700, fontSize: 13, color: "#000",
   backgroundColor: "#fafafa", borderBottom: "2px solid #f0f0f0", py: 2,
 };
+
 const tableBodyRow = { "& td": { borderBottom: "1px solid #f5f5f5", py: 2 } };
+
 const stickyAksiHead = {
   ...tableHeadCell, textAlign: "center",
   position: "sticky", right: 0, backgroundColor: "#fafafa",
   zIndex: 2, boxShadow: "-2px 0 6px rgba(0,0,0,0.04)",
 };
+
 const stickyAksiCell = {
   position: "sticky", right: 0, backgroundColor: "#fff", zIndex: 1,
   boxShadow: "-2px 0 6px rgba(0,0,0,0.04)", borderBottom: "1px solid #f5f5f5", py: 2,
@@ -42,8 +46,7 @@ const StatusPill = ({ active }) => (
     display: "inline-flex", alignItems: "center",
     px: 1.5, py: 0.4, borderRadius: "50px",
     backgroundColor: active ? "#2e7d32" : "#757575",
-    color: active ? "#e8f5e9" : "#f5f5f5",
-    fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
+    color: "#fff", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
   }}>
     {active ? "Aktif" : "Nonaktif"}
   </Box>
@@ -78,7 +81,6 @@ export default function KelolaPenggunaPage() {
   const [lists, setLists] = useState({ mahasiswa: [], dosen: [], reviewer: [], juri: [] });
   const [prodiList, setProdiList] = useState([]);
   const [jurusanList, setJurusanList] = useState([]);
-  const [globalAlert, setGlobalAlert] = useState("");
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
 
@@ -109,11 +111,9 @@ export default function KelolaPenggunaPage() {
       else if (role === "reviewer") res = await getReviewerListKelola(params);
       else res = await getJuriListKelola(params);
 
-      if (res.success) setLists((prev) => ({ ...prev, [role]: res.data || [] }));
-      else setGlobalAlert(res.message);
-    } catch (err) {
-      console.error("Gagal memuat data pengguna:", err);
-      setGlobalAlert("Gagal memuat data");
+      setLists((prev) => ({ ...prev, [role]: res.data || [] }));
+    } catch {
+      Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat data pengguna", confirmButtonColor: "#0D59F2" });
     } finally {
       setLoading(false);
     }
@@ -125,28 +125,19 @@ export default function KelolaPenggunaPage() {
   }, [tabKey, filters, fetchData]);
 
   useEffect(() => {
-    const loadMeta = async () => {
-      try {
-        const rProdi = await getProdi();
-        if (rProdi.success) {
-          const prodi = rProdi.data || [];
-          setProdiList(prodi);
-
-          const seen = new Set();
-          const uniqueJurusan = [];
-          prodi.forEach((p) => {
-            if (p.id_jurusan && !seen.has(p.id_jurusan)) {
-              seen.add(p.id_jurusan);
-              uniqueJurusan.push({ id_jurusan: p.id_jurusan, nama_jurusan: p.nama_jurusan });
-            }
-          });
-          setJurusanList(uniqueJurusan);
+    getProdi().then((res) => {
+      const prodi = res.data || [];
+      setProdiList(prodi);
+      const seen = new Set();
+      const uniqueJurusan = [];
+      prodi.forEach((p) => {
+        if (p.id_jurusan && !seen.has(p.id_jurusan)) {
+          seen.add(p.id_jurusan);
+          uniqueJurusan.push({ id_jurusan: p.id_jurusan, nama_jurusan: p.nama_jurusan });
         }
-      } catch (err) {
-        console.error("Gagal memuat prodi:", err);
-      }
-    };
-    loadMeta();
+      });
+      setJurusanList(uniqueJurusan);
+    }).catch(() => {});
   }, []);
 
   const setFilter = useCallback((key, val) => {
@@ -229,42 +220,33 @@ export default function KelolaPenggunaPage() {
       text: cur.mode === "create" ? `Tambah ${cur.role} baru?` : `Simpan perubahan data ${cur.role}?`,
       icon: "question",
       showCancelButton: true,
-      confirmButtonColor: "#0D59F2",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Ya, Simpan",
-      cancelButtonText: "Tidak",
+      confirmButtonColor: "#0D59F2", cancelButtonColor: "#d33",
+      confirmButtonText: "Ya, Simpan", cancelButtonText: "Tidak",
     });
 
     if (!result.isConfirmed) { setDialog({ ...cur, open: true }); setForm(curForm); return; }
 
     try {
       setSubmitting(true);
-      let res;
-
       if (cur.mode === "create") {
-        if (curTabKey === "mahasiswa") res = await createMahasiswa(curForm);
-        else if (curTabKey === "dosen") res = await createDosen(curForm);
-        else if (curTabKey === "reviewer") res = await createReviewer(curForm);
-        else res = await createJuri(curForm);
+        if (curTabKey === "mahasiswa") await createMahasiswa(curForm);
+        else if (curTabKey === "dosen") await createDosen(curForm);
+        else if (curTabKey === "reviewer") await createReviewer(curForm);
+        else await createJuri(curForm);
       } else {
-        if (curTabKey === "mahasiswa") res = await updateMahasiswa(cur.data.id_user, curForm);
-        else if (curTabKey === "dosen") res = await updateDosen(cur.data.id_user, curForm);
-        else if (curTabKey === "reviewer") res = await updateReviewer(cur.data.id_user, curForm);
-        else res = await updateJuri(cur.data.id_user, curForm);
+        if (curTabKey === "mahasiswa") await updateMahasiswa(cur.data.id_user, curForm);
+        else if (curTabKey === "dosen") await updateDosen(cur.data.id_user, curForm);
+        else if (curTabKey === "reviewer") await updateReviewer(cur.data.id_user, curForm);
+        else await updateJuri(cur.data.id_user, curForm);
 
-        if (res.success && curForm.new_password) {
+        if (curForm.new_password) {
           await resetPassword(cur.data.id_user, { password: curForm.new_password });
         }
       }
-
-      if (res.success) {
-        await Swal.fire({ icon: "success", title: "Berhasil", text: res.message, timer: 2000, timerProgressBar: true, showConfirmButton: false });
-        fetchData(curTabKey, filters);
-      } else {
-        Swal.fire({ icon: "error", title: "Gagal", text: res.message });
-      }
+      await Swal.fire({ icon: "success", title: "Berhasil", text: cur.mode === "create" ? `${curTabKey} berhasil ditambahkan` : `Data ${curTabKey} berhasil diperbarui`, timer: 2000, timerProgressBar: true, showConfirmButton: false });
+      fetchData(curTabKey, filters);
     } catch (err) {
-      Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Terjadi kesalahan" });
+      Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Terjadi kesalahan", confirmButtonColor: "#0D59F2" });
     } finally {
       setSubmitting(false);
     }
@@ -279,20 +261,15 @@ export default function KelolaPenggunaPage() {
       showCancelButton: true,
       confirmButtonColor: newStatus ? "#2e7d32" : "#d33",
       cancelButtonColor: "#666",
-      confirmButtonText: "Ya",
-      cancelButtonText: "Batal",
+      confirmButtonText: "Ya", cancelButtonText: "Batal",
     });
     if (!result.isConfirmed) return;
     try {
-      const res = await toggleUserActive(user.id_user, newStatus);
-      if (res.success) {
-        await Swal.fire({ icon: "success", title: "Berhasil", text: res.message, timer: 2000, timerProgressBar: true, showConfirmButton: false });
-        fetchData(tabKey, filters);
-      } else {
-        Swal.fire({ icon: "error", title: "Gagal", text: res.message });
-      }
+      await toggleUserActive(user.id_user, newStatus);
+      await Swal.fire({ icon: "success", title: "Berhasil", text: `Pengguna berhasil ${newStatus ? "diaktifkan" : "dinonaktifkan"}`, timer: 2000, timerProgressBar: true, showConfirmButton: false });
+      fetchData(tabKey, filters);
     } catch (err) {
-      Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Terjadi kesalahan" });
+      Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Terjadi kesalahan", confirmButtonColor: "#0D59F2" });
     }
   };
 
@@ -470,6 +447,7 @@ export default function KelolaPenggunaPage() {
           </Box>
         )}
       </Box>
+
       {(currentTabKey === "mahasiswa" || currentTabKey === "dosen") && (
         <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
           <Box>
@@ -502,6 +480,7 @@ export default function KelolaPenggunaPage() {
           )}
         </Box>
       )}
+
       {(currentTabKey === "reviewer" || currentTabKey === "juri") && (
         <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
           <Box>
@@ -520,6 +499,7 @@ export default function KelolaPenggunaPage() {
           </Box>
         </Box>
       )}
+
       <Box>
         <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Alamat</Typography>
         <TextField fullWidth multiline rows={2} placeholder="Alamat lengkap (opsional)"
@@ -548,125 +528,119 @@ export default function KelolaPenggunaPage() {
 
   return (
     <BodyLayout Sidebar={AdminSidebar}>
-      <Box>
-        <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Kelola Pengguna</Typography>
-        <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>Manajemen akun mahasiswa, dosen, reviewer, dan juri</Typography>
+      <PageTransition>
+        <Box>
+          <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Kelola Pengguna</Typography>
+          <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>Manajemen akun mahasiswa, dosen, reviewer, dan juri</Typography>
 
-        {globalAlert && (
-          <Alert severity="error" sx={{ mb: 3, borderRadius: "12px" }} onClose={() => setGlobalAlert("")}>
-            {globalAlert}
-          </Alert>
-        )}
+          <Paper sx={{ borderRadius: "16px", border: "1px solid #f0f0f0", overflow: "hidden" }}>
+            <Box sx={{ borderBottom: "1px solid #f0f0f0" }}>
+              <Tabs
+                value={activeTab}
+                onChange={(e, v) => { setActiveTab(v); setPage(1); }}
+                sx={{
+                  px: 2,
+                  "& .MuiTab-root": {
+                    textTransform: "none", fontSize: 14, fontWeight: 500,
+                    color: "#888", minHeight: 52,
+                    "&.Mui-selected": { fontWeight: 700, color: "#0D59F2" },
+                  },
+                  "& .MuiTabs-indicator": { backgroundColor: "#0D59F2", height: 3, borderRadius: "3px 3px 0 0" },
+                }}
+              >
+                {TABS.map((t, i) => <Tab key={i} label={t.label} />)}
+              </Tabs>
+            </Box>
 
-        <Paper sx={{ borderRadius: "16px", border: "1px solid #f0f0f0", overflow: "hidden" }}>
-          <Box sx={{ borderBottom: "1px solid #f0f0f0" }}>
-            <Tabs
-              value={activeTab}
-              onChange={(e, v) => { setActiveTab(v); setPage(1); }}
-              sx={{
-                px: 2,
-                "& .MuiTab-root": {
-                  textTransform: "none", fontSize: 14, fontWeight: 500,
-                  color: "#888", minHeight: 52,
-                  "&.Mui-selected": { fontWeight: 700, color: "#0D59F2" },
-                },
-                "& .MuiTabs-indicator": { backgroundColor: "#0D59F2", height: 3, borderRadius: "3px 3px 0 0" },
-              }}
-            >
-              {TABS.map((t, i) => (
-                <Tab key={i} label={t.label} />
-              ))}
-            </Tabs>
-          </Box>
+            <Box sx={{ p: 3 }}>
+              {renderFilters()}
 
-          <Box sx={{ p: 3 }}>
-            {renderFilters()}
-
-            {loading ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
-            ) : paginatedList.length === 0 ? (
-              <Box sx={{ textAlign: "center", py: 10 }}>
-                <Box sx={{ width: 100, height: 100, borderRadius: "50%", backgroundColor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 3 }}>
-                  <PersonAdd sx={{ fontSize: 48, color: "#ccc" }} />
+              {loading ? (
+                <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
+              ) : paginatedList.length === 0 ? (
+                <Box sx={{ textAlign: "center", py: 10 }}>
+                  <Box sx={{ width: 100, height: 100, borderRadius: "50%", backgroundColor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 3 }}>
+                    <PersonAdd sx={{ fontSize: 48, color: "#ccc" }} />
+                  </Box>
+                  <Typography sx={{ fontSize: 20, fontWeight: 700, color: "#444", mb: 1 }}>Belum ada {TABS[activeTab].label}</Typography>
+                  <Typography sx={{ fontSize: 14, color: "#999" }}>Klik Tambah {TABS[activeTab].label} untuk menambahkan data</Typography>
                 </Box>
-                <Typography sx={{ fontSize: 20, fontWeight: 700, color: "#444", mb: 1 }}>Belum ada {TABS[activeTab].label}</Typography>
-                <Typography sx={{ fontSize: 14, color: "#999" }}>Klik "Tambah {TABS[activeTab].label}" untuk menambahkan data</Typography>
-              </Box>
-            ) : (
-              <>
-                <TableContainer sx={{ borderRadius: "12px", border: "1px solid #f0f0f0", overflow: "auto", mb: 3 }}>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        {renderColumns().map((h, i) => (
-                          <TableCell key={i} sx={tableHeadCell}>{h}</TableCell>
-                        ))}
-                        <TableCell sx={stickyAksiHead}>Aksi</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {paginatedList.map((user) => (
-                        <TableRow key={user.id_user} sx={tableBodyRow}>
-                          {renderRow(user)}
-                          <TableCell sx={stickyAksiCell}>
-                            <Box sx={{ display: "flex", gap: 1, justifyContent: "center", flexWrap: "nowrap" }}>
-                              <Tooltip title="Edit">
-                                <Button size="small" variant="outlined" startIcon={<Edit fontSize="small" />} onClick={() => handleOpenEdit(user)}
-                                  sx={{ textTransform: "none", color: "#0D59F2", borderColor: "#e3f2fd", borderRadius: "8px", "&:hover": { backgroundColor: "#f0f4ff", borderColor: "#0D59F2" } }}>
-                                  Edit
-                                </Button>
-                              </Tooltip>
-                              <Tooltip title={user.is_active ? "Nonaktifkan" : "Aktifkan"}>
-                                <Button size="small" variant="outlined"
-                                  startIcon={user.is_active ? <ToggleOff fontSize="small" /> : <ToggleOn fontSize="small" />}
-                                  onClick={() => handleToggleActive(user)}
-                                  sx={{ textTransform: "none", borderRadius: "8px", color: user.is_active ? "#c62828" : "#2e7d32", borderColor: user.is_active ? "#fce4ec" : "#e8f5e9", "&:hover": { backgroundColor: user.is_active ? "rgba(198,40,40,0.05)" : "rgba(46,125,50,0.05)" } }}>
-                                  {user.is_active ? "Nonaktifkan" : "Aktifkan"}
-                                </Button>
-                              </Tooltip>
-                            </Box>
-                          </TableCell>
+              ) : (
+                <>
+                  <TableContainer sx={{ borderRadius: "12px", border: "1px solid #f0f0f0", overflow: "auto", mb: 3 }}>
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          {renderColumns().map((h, i) => (
+                            <TableCell key={i} sx={tableHeadCell}>{h}</TableCell>
+                          ))}
+                          <TableCell sx={stickyAksiHead}>Aksi</TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                      </TableHead>
+                      <TableBody>
+                        {paginatedList.map((user) => (
+                          <TableRow key={user.id_user} sx={tableBodyRow}>
+                            {renderRow(user)}
+                            <TableCell sx={stickyAksiCell}>
+                              <Box sx={{ display: "flex", gap: 1, justifyContent: "center", flexWrap: "nowrap" }}>
+                                <Tooltip title="Edit">
+                                  <Button size="small" variant="outlined" startIcon={<Edit fontSize="small" />} onClick={() => handleOpenEdit(user)}
+                                    sx={{ textTransform: "none", color: "#0D59F2", borderColor: "#e3f2fd", borderRadius: "8px", "&:hover": { backgroundColor: "#f0f4ff", borderColor: "#0D59F2" } }}>
+                                    Edit
+                                  </Button>
+                                </Tooltip>
+                                <Tooltip title={user.is_active ? "Nonaktifkan" : "Aktifkan"}>
+                                  <Button size="small" variant="outlined"
+                                    startIcon={user.is_active ? <ToggleOff fontSize="small" /> : <ToggleOn fontSize="small" />}
+                                    onClick={() => handleToggleActive(user)}
+                                    sx={{ textTransform: "none", borderRadius: "8px", color: user.is_active ? "#c62828" : "#2e7d32", borderColor: user.is_active ? "#fce4ec" : "#e8f5e9", "&:hover": { backgroundColor: user.is_active ? "rgba(198,40,40,0.05)" : "rgba(46,125,50,0.05)" } }}>
+                                    {user.is_active ? "Nonaktifkan" : "Aktifkan"}
+                                  </Button>
+                                </Tooltip>
+                              </Box>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
 
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <Typography sx={{ fontSize: 13, color: "#777" }}>
-                    Menampilkan {((page - 1) * rowsPerPage) + 1}–{Math.min(page * rowsPerPage, currentList.length)} dari {currentList.length} data
-                  </Typography>
-                  <Pagination count={totalPages} page={page} onChange={(e, v) => setPage(v)} color="primary" shape="rounded" showFirstButton showLastButton />
-                </Box>
-              </>
-            )}
-          </Box>
-        </Paper>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Typography sx={{ fontSize: 13, color: "#777" }}>
+                      Menampilkan {((page - 1) * rowsPerPage) + 1}–{Math.min(page * rowsPerPage, currentList.length)} dari {currentList.length} data
+                    </Typography>
+                    <Pagination count={totalPages} page={page} onChange={(e, v) => setPage(v)} color="primary" shape="rounded" showFirstButton showLastButton />
+                  </Box>
+                </>
+              )}
+            </Box>
+          </Paper>
 
-        <Dialog open={dialog.open} onClose={handleCloseDialog} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: "16px" } }}>
-          <DialogTitle sx={{ pb: 1 }}>
-            <Typography sx={{ fontWeight: 700, fontSize: 16 }}>
-              {dialog.mode === "create" ? `Tambah ${TABS[activeTab].label}` : `Edit ${TABS[activeTab].label}`}
-            </Typography>
-            <IconButton onClick={handleCloseDialog} sx={{ position: "absolute", right: 12, top: 8, color: "#888" }}>
-              <Close />
-            </IconButton>
-          </DialogTitle>
-          <DialogContent dividers sx={{ px: 3, py: 3 }}>
-            {renderFormFields(dialog, form, tabKey)}
-          </DialogContent>
-          <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-            <Button onClick={handleCloseDialog} disabled={submitting}
-              sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, color: "#666", border: "1.5px solid #e0e0e0", "&:hover": { backgroundColor: "#f5f5f5" } }}>
-              Batal
-            </Button>
-            <Button variant="contained" onClick={handleSave} disabled={submitting}
-              sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}>
-              {submitting ? "Menyimpan..." : "Simpan"}
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </Box>
+          <Dialog open={dialog.open} onClose={handleCloseDialog} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: "16px" } }}>
+            <DialogTitle sx={{ pb: 1 }}>
+              <Typography sx={{ fontWeight: 700, fontSize: 16 }}>
+                {dialog.mode === "create" ? `Tambah ${TABS[activeTab].label}` : `Edit ${TABS[activeTab].label}`}
+              </Typography>
+              <IconButton onClick={handleCloseDialog} sx={{ position: "absolute", right: 12, top: 8, color: "#888" }}>
+                <Close />
+              </IconButton>
+            </DialogTitle>
+            <DialogContent dividers sx={{ px: 3, py: 3 }}>
+              {renderFormFields(dialog, form, tabKey)}
+            </DialogContent>
+            <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
+              <Button onClick={handleCloseDialog} disabled={submitting}
+                sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, color: "#666", border: "1.5px solid #e0e0e0", "&:hover": { backgroundColor: "#f5f5f5" } }}>
+                Batal
+              </Button>
+              <Button variant="contained" onClick={handleSave} disabled={submitting}
+                sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}>
+                {submitting ? "Menyimpan..." : "Simpan"}
+              </Button>
+            </DialogActions>
+          </Dialog>
+        </Box>
+      </PageTransition>
     </BodyLayout>
   );
 }

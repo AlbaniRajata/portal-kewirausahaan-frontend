@@ -21,3 +21,17 @@ export const getAllKategori = async () => {
   const res = await api.get("/public/kategori");
   return res.data;
 };
+
+export const getBeritaPublik = async (filters = {}) => {
+  const params = new URLSearchParams();
+  if (filters.search) params.append("search", filters.search);
+  if (filters.page) params.append("page", filters.page);
+  if (filters.limit) params.append("limit", filters.limit);
+  const res = await api.get(`/berita?${params.toString()}`);
+  return res.data;
+};
+
+export const getBeritaBySlug = async (slug) => {
+  const res = await api.get(`/berita/${slug}`);
+  return res.data;
+};

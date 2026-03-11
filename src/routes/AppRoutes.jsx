@@ -4,10 +4,12 @@ import { CircularProgress, Box } from "@mui/material";
 import PrivateRoute from "../components/PrivateRoute";
 
 const LandingPage = lazy(() => import("../pages/public/LandingPage"));
+const BeritaDetailPage = lazy(() => import("../pages/public/BeritaDetailPage"));
 const LoginPage = lazy(() => import("../pages/auth/LoginPage"));
 const RegisterMahasiswaPage = lazy(() => import("../pages/auth/RegisterMahasiswaPage"));
 const RegisterDosenPage = lazy(() => import("../pages/auth/RegisterDosenPage"));
 
+const DashboardAdminPage = lazy(() => import("../pages/admin/DashboardAdminPage"));
 const VerifikasiPage = lazy(() => import("../pages/admin/VerifikasiPage"));
 const ProgramPage = lazy(() => import("../pages/admin/ProgramPage"));
 const ProposalListPage = lazy(() => import("../pages/admin/ProposalListPage"));
@@ -21,6 +23,8 @@ const JurusanPage = lazy(() => import("../pages/admin/JurusanPage"));
 const ProdiPage = lazy(() => import("../pages/admin/ProdiPage"));
 const KelolaPenggunaPage = lazy(() => import("../pages/admin/KelolaPenggunaPage"));
 const TimPesertaPage = lazy(() => import("../pages/admin/TimPesertaPage"));
+const BeritaPage = lazy(() => import("../pages/admin/BeritaPage"));
+const FormBeritaPage = lazy(() => import("../pages/admin/FormBeritaPage"));
 
 const DashboardMahasiswaPage = lazy(() => import("../pages/mahasiswa/DashboardMahasiswaPage"));
 const BiodataMahasiswaPage = lazy(() => import("../pages/mahasiswa/BiodataMahasiswaPage"));
@@ -49,7 +53,7 @@ const DetailPengajuanPembimbingPage = lazy(() => import("../pages/dosen/DetailPe
 const DaftarBimbinganPage = lazy(() => import("../pages/dosen/DaftarBimbinganPage"));
 const DetailBimbinganPage = lazy(() => import("../pages/dosen/DetailBimbinganPage"));
 
-const NotFoundPage = lazy(() => import("../pages/errors/UnauthorizedPage"));
+const NotFoundPage = lazy(() => import("../pages/errors/NotFoundPage"));
 const ServerErrorPage = lazy(() => import("../components/ErrorBoundary"));
 const UnauthorizedPage = lazy(() => import("../pages/errors/UnauthorizedPage"));
 
@@ -64,12 +68,14 @@ export default function AppRoutes() {
     <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/berita/:slug" element={<BeritaDetailPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/daftar/mahasiswa" element={<RegisterMahasiswaPage />} />
         <Route path="/daftar/dosen" element={<RegisterDosenPage />} />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
         <Route path="/admin" element={<PrivateRoute allowedRoles={["admin", "super admin"]} />}>
+          <Route path="dashboard" element={<DashboardAdminPage />} />
           <Route path="verifikasi" element={<VerifikasiPage />} />
           <Route path="program" element={<ProgramPage />} />
           <Route path="proposal" element={<ProposalListPage />} />
@@ -83,6 +89,9 @@ export default function AppRoutes() {
           <Route path="prodi" element={<ProdiPage />} />
           <Route path="pengguna" element={<KelolaPenggunaPage />} />
           <Route path="tim-peserta" element={<TimPesertaPage />} />
+          <Route path="berita" element={<BeritaPage />} />
+          <Route path="berita/tambah" element={<FormBeritaPage />} />
+          <Route path="berita/:id_berita" element={<FormBeritaPage />} />
         </Route>
 
         <Route path="/mahasiswa" element={<PrivateRoute allowedRoles={["mahasiswa"]} />}>

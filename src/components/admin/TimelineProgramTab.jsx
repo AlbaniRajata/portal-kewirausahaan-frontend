@@ -1,29 +1,19 @@
 import { useState } from "react";
 import {
-  Box,
-  Typography,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Alert,
-  IconButton,
+  Box, Typography, Button, Dialog, DialogTitle, DialogContent,
+  DialogActions, TextField, IconButton,
 } from "@mui/material";
 import { Edit, CalendarMonth, Close } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import { setProgramTimeline } from "../../api/admin";
 
-const roundedField = {
-  "& .MuiOutlinedInput-root": { borderRadius: "15px" },
-};
+const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "15px" } };
 
-const StatusPill = ({ label, bg, color }) => (
+const StatusPill = ({ label, backgroundColor }) => (
   <Box sx={{
     display: "inline-flex", alignItems: "center",
     px: 1.5, py: 0.4, borderRadius: "50px",
-    backgroundColor: bg, color, fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
+    backgroundColor, color: "#fff", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
   }}>
     {label}
   </Box>
@@ -37,42 +27,41 @@ const formatDate = (dateString) => {
   });
 };
 
+const getTimelineStatus = (prog) => {
+  if (!prog.pendaftaran_mulai || !prog.pendaftaran_selesai) {
+    return { label: "Belum Diatur", backgroundColor: "#bdbdbd" };
+  }
+  const now = new Date();
+  const mulai = new Date(prog.pendaftaran_mulai);
+  const selesai = new Date(prog.pendaftaran_selesai);
+  if (now < mulai) return { label: "Belum Dimulai", backgroundColor: "#1565c0" };
+  if (now >= mulai && now <= selesai) return { label: "Sedang Berjalan", backgroundColor: "#2e7d32" };
+  return { label: "Sudah Ditutup", backgroundColor: "#c62828" };
+};
+
 export default function TimelineProgramTab({ program, onUpdate }) {
   const [openDialog, setOpenDialog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [alert, setAlert] = useState("");
   const [form, setForm] = useState({ pendaftaran_mulai: "", pendaftaran_selesai: "" });
   const [errors, setErrors] = useState({});
 
-  const getTimelineStatus = (prog) => {
-    if (!prog.pendaftaran_mulai || !prog.pendaftaran_selesai) {
-      return { label: "Belum Diatur", color: "#666", bg: "#f5f5f5" };
-    }
-    const now = new Date();
-    const mulai = new Date(prog.pendaftaran_mulai);
-    const selesai = new Date(prog.pendaftaran_selesai);
-    if (now < mulai) return { label: "Belum Dimulai", bg: "#1565c0", color: "#e3f2fd" };
-    if (now >= mulai && now <= selesai) return { label: "Sedang Berjalan", bg: "#2e7d32", color: "#e8f5e9" };
-    return { label: "Sudah Ditutup", bg: "#c62828", color: "#fce4ec" };
-  };
-
-  const isOngoing = getTimelineStatus(program).label === "Sedang Berjalan";
   const status = getTimelineStatus(program);
+  const isOngoing = status.label === "Sedang Berjalan";
 
   const handleOpenDialog = () => {
     setForm({
-      pendaftaran_mulai: program.pendaftaran_mulai ? new Date(program.pendaftaran_mulai).toISOString().slice(0, 16) : "",
-      pendaftaran_selesai: program.pendaftaran_selesai ? new Date(program.pendaftaran_selesai).toISOString().slice(0, 16) : "",
+      pendaftaran_mulai: program.pendaftaran_mulai
+        ? new Date(program.pendaftaran_mulai).toISOString().slice(0, 16) : "",
+      pendaftaran_selesai: program.pendaftaran_selesai
+        ? new Date(program.pendaftaran_selesai).toISOString().slice(0, 16) : "",
     });
     setErrors({});
-    setAlert("");
     setOpenDialog(true);
   };
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setErrors({});
-    setAlert("");
   };
 
   const validate = () => {
@@ -91,6 +80,7 @@ export default function TimelineProgramTab({ program, onUpdate }) {
   const handleSave = async () => {
     if (!validate()) return;
     setOpenDialog(false);
+
     const result = await Swal.fire({
       title: "Konfirmasi",
       text: "Simpan timeline pendaftaran?",
@@ -99,25 +89,20 @@ export default function TimelineProgramTab({ program, onUpdate }) {
       confirmButtonColor: "#0D59F2", cancelButtonColor: "#d33",
       confirmButtonText: "Ya, Simpan", cancelButtonText: "Batal",
     });
+
     if (!result.isConfirmed) { setOpenDialog(true); return; }
+
     try {
       setSubmitting(true);
-      const response = await setProgramTimeline(program.id_program, {
+      await setProgramTimeline(program.id_program, {
         pendaftaran_mulai: form.pendaftaran_mulai,
         pendaftaran_selesai: form.pendaftaran_selesai,
       });
-      if (response.success) {
-        await Swal.fire({ icon: "success", title: "Berhasil", text: response.message, timer: 2000, timerProgressBar: true, showConfirmButton: false });
-        handleCloseDialog();
-        onUpdate();
-      } else {
-        Swal.fire({ icon: "error", title: "Gagal", text: response.message });
-        setOpenDialog(true);
-      }
+      await Swal.fire({ icon: "success", title: "Berhasil", text: "Timeline berhasil disimpan", timer: 2000, timerProgressBar: true, showConfirmButton: false });
+      handleCloseDialog();
+      onUpdate();
     } catch (err) {
-      const msg = err.response?.data?.message || "Gagal menyimpan timeline";
-      Swal.fire({ icon: "error", title: "Gagal", text: msg });
-      setAlert(msg);
+      Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Gagal menyimpan timeline", confirmButtonColor: "#0D59F2" });
       setOpenDialog(true);
     } finally {
       setSubmitting(false);
@@ -132,11 +117,7 @@ export default function TimelineProgramTab({ program, onUpdate }) {
           variant="contained"
           startIcon={<Edit sx={{ fontSize: 14 }} />}
           onClick={handleOpenDialog}
-          sx={{
-            textTransform: "none", borderRadius: "50px",
-            px: 3, py: 1.2, fontWeight: 600,
-            backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" },
-          }}
+          sx={{ textTransform: "none", borderRadius: "50px", px: 3, py: 1.2, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}
         >
           Edit Timeline
         </Button>
@@ -158,13 +139,12 @@ export default function TimelineProgramTab({ program, onUpdate }) {
           </Box>
           <Box>
             <Typography sx={{ fontSize: 12, color: "#888", mb: 0.75 }}>Status</Typography>
-            <StatusPill label={status.label} bg={status.bg} color={status.color} />
+            <StatusPill label={status.label} backgroundColor={status.backgroundColor} />
           </Box>
         </Box>
       </Box>
 
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth
-        PaperProps={{ sx: { borderRadius: "16px" } }}>
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: "16px" } }}>
         <DialogTitle sx={{ pb: 1 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <CalendarMonth sx={{ color: "#0D59F2" }} />
@@ -176,16 +156,12 @@ export default function TimelineProgramTab({ program, onUpdate }) {
         </DialogTitle>
 
         <DialogContent dividers sx={{ px: 3, py: 3 }}>
-          {alert && (
-            <Alert severity="error" sx={{ mb: 3, borderRadius: "12px" }} onClose={() => setAlert("")}>
-              {alert}
-            </Alert>
-          )}
-
           {isOngoing && (
-            <Alert severity="info" sx={{ mb: 3, borderRadius: "12px" }}>
-              Pendaftaran sedang berjalan. Hanya tanggal selesai yang bisa diubah.
-            </Alert>
+            <Box sx={{ p: 2, mb: 3, borderRadius: "10px", backgroundColor: "#e3f2fd", border: "1px solid #90caf9" }}>
+              <Typography sx={{ fontSize: 13, color: "#1565c0" }}>
+                Pendaftaran sedang berjalan. Hanya tanggal selesai yang bisa diubah.
+              </Typography>
+            </Box>
           )}
 
           <Box sx={{ mb: 3 }}>

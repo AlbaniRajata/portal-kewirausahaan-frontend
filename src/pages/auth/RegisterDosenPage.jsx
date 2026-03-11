@@ -1,16 +1,7 @@
 import { useState, useEffect } from "react";
 import {
-  Box,
-  Button,
-  Divider,
-  Paper,
-  TextField,
-  Typography,
-  Autocomplete,
-  Alert,
-  CircularProgress,
-  IconButton,
-  InputAdornment,
+  Box, Divider, Paper, TextField, Typography,
+  Autocomplete, CircularProgress, IconButton, InputAdornment,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
@@ -19,6 +10,8 @@ import Swal from "sweetalert2";
 import loginBg from "../../assets/images/login-bg.jpg";
 import { registerDosen } from "../../api/auth";
 import api from "../../api/axios";
+
+const poppins = "'Poppins', sans-serif";
 
 const roundedField = {
   mb: 2,
@@ -29,24 +22,25 @@ export default function RegisterDosenPage() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
-    username: "",
-    nip: "",
-    email: "",
-    id_prodi: null,
-    password: "",
+    username: "", nip: "", email: "",
+    id_prodi: null, password: "",
   });
 
   const [errors, setErrors] = useState({});
-  const [alert, setAlert] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingProdi, setLoadingProdi] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [prodiOptions, setProdiOptions] = useState([]);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 50);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     const fetchProdi = async () => {
       try {
-        setLoadingProdi(true);
         const response = await api.get("/public/prodi");
         if (response.data.success) {
           setProdiOptions(response.data.data.map((prodi) => ({
@@ -58,9 +52,12 @@ export default function RegisterDosenPage() {
             nama_kampus: prodi.nama_kampus,
           })));
         }
-      } catch (err) {
-        console.error("Error fetching prodi:", err);
-        setAlert("Gagal memuat data program studi. Silakan refresh halaman.");
+      } catch {
+        await Swal.fire({
+          icon: "error", title: "Gagal Memuat Data",
+          text: "Gagal memuat data program studi. Silakan refresh halaman.",
+          confirmButtonColor: "#0D59F2",
+        });
       } finally {
         setLoadingProdi(false);
       }
@@ -71,7 +68,6 @@ export default function RegisterDosenPage() {
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: "" }));
-    setAlert("");
   };
 
   const validate = () => {
@@ -91,8 +87,7 @@ export default function RegisterDosenPage() {
     try {
       const response = await api.get(`/auth/verify-email?token=${token}`);
       await Swal.fire({
-        icon: "success",
-        title: "Email Berhasil Diverifikasi",
+        icon: "success", title: "Email Berhasil Diverifikasi",
         text: response.data.message || "Email Anda telah berhasil diverifikasi. Silakan tunggu verifikasi dari admin.",
         timer: 3000, timerProgressBar: true,
         showConfirmButton: true, confirmButtonText: "Menuju Login", allowOutsideClick: false,
@@ -100,17 +95,16 @@ export default function RegisterDosenPage() {
       navigate("/login");
     } catch (err) {
       await Swal.fire({
-        icon: "error",
-        title: "Verifikasi Gagal",
+        icon: "error", title: "Verifikasi Gagal",
         text: err.response?.data?.message || "Token tidak valid atau sudah kadaluarsa",
-        confirmButtonText: "OK",
+        confirmButtonColor: "#0D59F2", confirmButtonText: "OK",
       });
     }
   };
 
   const handleSubmit = async () => {
-    if (!validate()) { setAlert("Mohon lengkapi semua field yang wajib diisi"); return; }
-    setLoading(true); setAlert("");
+    if (!validate()) return;
+    setLoading(true);
     try {
       const payload = {
         username: form.username,
@@ -122,40 +116,109 @@ export default function RegisterDosenPage() {
 
       const response = await registerDosen(payload);
       if (response.success) {
-        const verificationLink = response.data.verification_link;
-        const token = verificationLink ? new URL(verificationLink).searchParams.get("token") : null;
+        const token = response.data.verification_link
+          ? new URL(response.data.verification_link).searchParams.get("token")
+          : null;
         const result = await Swal.fire({
           icon: "success", title: "Registrasi Berhasil",
           html: `<p>Akun Anda telah berhasil didaftarkan.</p><p style="color:#666;font-size:14px;">Silakan verifikasi email Anda terlebih dahulu.</p>`,
-          showCancelButton: false, confirmButtonText: "Verifikasi Email", allowOutsideClick: false,
+          showCancelButton: false, confirmButtonText: "Verifikasi Email",
+          confirmButtonColor: "#0D59F2", allowOutsideClick: false,
         });
         if (result.isConfirmed && token) await handleVerifyEmail(token);
       }
     } catch (err) {
-      console.error("Error registrasi:", err);
       const errorMessage = err.response?.data?.message || "Registrasi gagal. Silakan coba lagi.";
-      setAlert(errorMessage);
-      await Swal.fire({ icon: "error", title: "Registrasi Gagal", text: errorMessage, confirmButtonText: "OK" });
+      await Swal.fire({
+        icon: "error", title: "Registrasi Gagal",
+        text: errorMessage, confirmButtonColor: "#0D59F2", confirmButtonText: "OK",
+      });
     } finally {
       setLoading(false);
     }
   };
 
+  const pillStyle = (delay) => ({
+    display: "inline-flex", alignItems: "center", gap: 1,
+    mt: 2, px: 2, py: 0.8,
+    background: "rgba(255,255,255,0.1)",
+    border: "1px solid rgba(255,255,255,0.2)",
+    borderRadius: "50px", width: "fit-content",
+    transform: mounted ? "translateX(0)" : "translateX(-20px)",
+    opacity: mounted ? 1 : 0,
+    transition: `transform 0.8s ease ${delay}, opacity 0.8s ease ${delay}`,
+  });
+
   return (
-    <Box sx={{ minHeight: "100vh", display: "flex" }}>
+    <Box sx={{ minHeight: "100vh", display: "flex", overflow: "hidden" }}>
+
       <Box sx={{
         flex: 1, position: "sticky", top: 0, height: "100vh",
-        display: { xs: "none", md: "block" },
-        backgroundImage: `url(${loginBg})`, backgroundSize: "cover", backgroundPosition: "center",
+        display: { xs: "none", md: "flex" }, flexDirection: "column",
+        backgroundImage: `url(${loginBg})`,
+        backgroundSize: "cover", backgroundPosition: "center",
+        transform: mounted ? "translateX(0)" : "translateX(-40px)",
+        opacity: mounted ? 1 : 0,
+        transition: "transform 0.7s cubic-bezier(0.22,1,0.36,1), opacity 0.7s ease",
       }}>
-        <Box sx={{ position: "absolute", inset: 0, backgroundColor: "rgba(13, 89, 242, 0.65)" }} />
-        <Box sx={{ position: "absolute", top: 30, left: 30, zIndex: 2, display: "flex", alignItems: "center", gap: 2 }}>
-          <Box sx={{ width: 55, height: 55, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.25)" }} />
-          <Typography sx={{ fontWeight: 700, fontSize: 18, color: "white" }}>UPA PKK POLINEMA</Typography>
+        <Box sx={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(2,13,36,0.85) 0%, rgba(13,89,242,0.7) 100%)" }} />
+
+        <Box sx={{ position: "absolute", top: 32, left: 32, zIndex: 2, display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Box sx={{
+            width: 40, height: 40, borderRadius: "10px",
+            background: "linear-gradient(135deg, #0D59F2, #1e40af)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 20, fontWeight: 900, color: "#fff", fontFamily: poppins,
+          }}>P</Box>
+          <Typography sx={{ fontFamily: poppins, fontWeight: 700, fontSize: 16, color: "white" }}>
+            UPA PKK POLINEMA
+          </Typography>
         </Box>
-        <Box sx={{ position: "absolute", bottom: 40, left: 30, zIndex: 2 }}>
-          <Typography sx={{ color: "white", fontSize: 18, mb: 0.5 }}>Selamat datang, anda daftar sebagai</Typography>
-          <Typography sx={{ color: "white", fontSize: 40, fontWeight: 700 }}>Dosen</Typography>
+
+        <Box sx={{
+          position: "absolute", inset: 0, zIndex: 2,
+          display: "flex", flexDirection: "column",
+          justifyContent: "center", px: 6,
+        }}>
+          <Typography sx={{
+            fontFamily: poppins, fontSize: 15,
+            color: "rgba(255,255,255,0.65)", mb: 1,
+            transform: mounted ? "translateY(0)" : "translateY(20px)",
+            opacity: mounted ? 1 : 0,
+            transition: "transform 0.8s ease 0.2s, opacity 0.8s ease 0.2s",
+          }}>
+            Selamat datang, Anda mendaftar sebagai
+          </Typography>
+          <Typography sx={{
+            fontFamily: poppins, fontSize: 42, fontWeight: 700,
+            color: "#fff", lineHeight: 1.15, mb: 2,
+            transform: mounted ? "translateY(0)" : "translateY(20px)",
+            opacity: mounted ? 1 : 0,
+            transition: "transform 0.8s ease 0.3s, opacity 0.8s ease 0.3s",
+          }}>
+            Dosen
+          </Typography>
+          <Typography sx={{
+            fontFamily: poppins, fontSize: 15,
+            color: "rgba(255,255,255,0.65)", lineHeight: 1.8, maxWidth: 340,
+            transform: mounted ? "translateY(0)" : "translateY(20px)",
+            opacity: mounted ? 1 : 0,
+            transition: "transform 0.8s ease 0.4s, opacity 0.8s ease 0.4s",
+          }}>
+            Daftarkan diri Anda sebagai pembimbing dan mendampingi mahasiswa dalam perjalanan wirausaha mereka.
+          </Typography>
+
+          {[
+            { label: "Pembimbing Mahasiswa Wirausaha", delay: "0.55s" },
+            { label: "Mentor Inkubator Bisnis", delay: "0.7s" },
+          ].map((p) => (
+            <Box key={p.label} sx={pillStyle(p.delay)}>
+              <Box sx={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#60a5fa" }} />
+              <Typography sx={{ fontFamily: poppins, fontSize: 13, color: "rgba(255,255,255,0.8)", fontWeight: 500 }}>
+                {p.label}
+              </Typography>
+            </Box>
+          ))}
         </Box>
       </Box>
 
@@ -163,108 +226,145 @@ export default function RegisterDosenPage() {
         flex: 1, height: "100vh", overflowY: "auto",
         display: "flex", justifyContent: "center", alignItems: "flex-start",
         px: 2, py: 5, backgroundColor: "#fff",
+        transform: mounted ? "translateX(0)" : "translateX(40px)",
+        opacity: mounted ? 1 : 0,
+        transition: "transform 0.7s cubic-bezier(0.22,1,0.36,1), opacity 0.7s ease",
       }}>
-        <Paper elevation={0} sx={{ width: "100%", maxWidth: 540, p: 4 }}>
-          <Typography align="center" sx={{ fontSize: 26, fontWeight: 700, mb: 1 }}>Registrasi Dosen</Typography>
-          <Typography align="center" sx={{ fontSize: 14, color: "#777", mb: 4 }}>Lengkapi data berikut untuk membuat akun baru</Typography>
+        <Paper elevation={0} sx={{ width: "100%", maxWidth: 540, p: { xs: 3, md: 4 } }}>
 
-          {alert && <Alert severity="error" sx={{ mb: 2, borderRadius: "12px" }}>{alert}</Alert>}
+          <Box sx={{
+            transform: mounted ? "translateY(0)" : "translateY(20px)",
+            opacity: mounted ? 1 : 0,
+            transition: "transform 0.6s ease 0.15s, opacity 0.6s ease 0.15s",
+          }}>
+            <Typography align="center" sx={{ fontFamily: poppins, fontSize: 26, fontWeight: 800, mb: 1, color: "#0a0a0a" }}>
+              Registrasi Dosen
+            </Typography>
+            <Typography align="center" sx={{ fontFamily: poppins, fontSize: 14, color: "#999", mb: 4 }}>
+              Lengkapi data berikut untuk membuat akun baru
+            </Typography>
+          </Box>
 
-          <Typography fontWeight={600} sx={{ mb: 1 }}>Username</Typography>
-          <TextField
-            fullWidth placeholder="Masukkan username"
-            value={form.username} onChange={(e) => handleChange("username", e.target.value)}
-            error={!!errors.username} helperText={errors.username}
-            disabled={loading} sx={roundedField}
-          />
-
-          <Typography fontWeight={600} sx={{ mb: 1 }}>NIP</Typography>
-          <TextField
-            fullWidth placeholder="Masukkan NIP"
-            value={form.nip} onChange={(e) => handleChange("nip", e.target.value)}
-            error={!!errors.nip} helperText={errors.nip}
-            disabled={loading} sx={roundedField}
-          />
-
-          <Typography fontWeight={600} sx={{ mb: 1 }}>Email</Typography>
-          <TextField
-            fullWidth placeholder="Masukkan email"
-            value={form.email} onChange={(e) => handleChange("email", e.target.value)}
-            error={!!errors.email} helperText={errors.email}
-            disabled={loading} sx={roundedField}
-          />
-
-          <Typography fontWeight={600} sx={{ mb: 1 }}>Program Studi</Typography>
-          {loadingProdi ? (
-            <Box sx={{ display: "flex", justifyContent: "center", mb: 2, py: 2 }}><CircularProgress size={24} /></Box>
-          ) : (
-            <Autocomplete
-              options={prodiOptions}
-              value={form.id_prodi}
-              onChange={(e, value) => handleChange("id_prodi", value)}
-              getOptionLabel={(option) => option.label || ""}
-              isOptionEqualToValue={(option, value) => option.id === value.id}
-              disabled={loading}
-              filterOptions={(options, { inputValue }) => {
-                if (!inputValue) return options;
-                const s = inputValue.toLowerCase();
-                return options.filter((o) =>
-                  o.nama_prodi.toLowerCase().includes(s) ||
-                  o.jenjang.toLowerCase().includes(s) ||
-                  o.nama_jurusan.toLowerCase().includes(s) ||
-                  o.nama_kampus.toLowerCase().includes(s) ||
-                  o.label.toLowerCase().includes(s)
-                );
-              }}
-              renderInput={(params) => (
+          <Box sx={{
+            transform: mounted ? "translateY(0)" : "translateY(20px)",
+            opacity: mounted ? 1 : 0,
+            transition: "transform 0.6s ease 0.25s, opacity 0.6s ease 0.25s",
+          }}>
+            {[
+              { label: "Username", field: "username", placeholder: "Masukkan username" },
+              { label: "NIP", field: "nip", placeholder: "Masukkan NIP" },
+              { label: "Email", field: "email", placeholder: "Masukkan email" },
+            ].map(({ label, field, placeholder }) => (
+              <Box key={field}>
+                <Typography fontWeight={600} sx={{ fontFamily: poppins, mb: 1, fontSize: 14 }}>{label}</Typography>
                 <TextField
-                  {...params} placeholder="Ketik atau pilih prodi"
-                  error={!!errors.id_prodi} helperText={errors.id_prodi}
-                  sx={roundedField}
+                  fullWidth placeholder={placeholder}
+                  value={form[field]} onChange={(e) => handleChange(field, e.target.value)}
+                  error={!!errors[field]} helperText={errors[field]}
+                  disabled={loading} sx={roundedField}
                 />
-              )}
+              </Box>
+            ))}
+
+            <Typography fontWeight={600} sx={{ fontFamily: poppins, mb: 1, fontSize: 14 }}>Program Studi</Typography>
+            {loadingProdi ? (
+              <Box sx={{ display: "flex", justifyContent: "center", mb: 2, py: 2 }}>
+                <CircularProgress size={24} sx={{ color: "#0D59F2" }} />
+              </Box>
+            ) : (
+              <Autocomplete
+                options={prodiOptions}
+                value={form.id_prodi}
+                onChange={(e, value) => handleChange("id_prodi", value)}
+                getOptionLabel={(option) => option.label || ""}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                disabled={loading}
+                filterOptions={(options, { inputValue }) => {
+                  if (!inputValue) return options;
+                  const s = inputValue.toLowerCase();
+                  return options.filter((o) =>
+                    o.nama_prodi.toLowerCase().includes(s) ||
+                    o.jenjang.toLowerCase().includes(s) ||
+                    o.nama_jurusan.toLowerCase().includes(s) ||
+                    o.nama_kampus.toLowerCase().includes(s)
+                  );
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params} placeholder="Ketik atau pilih prodi"
+                    error={!!errors.id_prodi} helperText={errors.id_prodi}
+                    sx={roundedField}
+                  />
+                )}
+              />
+            )}
+
+            <Typography fontWeight={600} sx={{ fontFamily: poppins, mb: 1, fontSize: 14 }}>Password</Typography>
+            <TextField
+              fullWidth
+              type={showPassword ? "text" : "password"}
+              placeholder="Masukkan password"
+              value={form.password} onChange={(e) => handleChange("password", e.target.value)}
+              error={!!errors.password} helperText={errors.password}
+              disabled={loading} sx={roundedField}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
-          )}
 
-          <Typography fontWeight={600} sx={{ mb: 1 }}>Password</Typography>
-          <TextField
-            fullWidth
-            type={showPassword ? "text" : "password"}
-            placeholder="Masukkan password"
-            value={form.password} onChange={(e) => handleChange("password", e.target.value)}
-            error={!!errors.password} helperText={errors.password}
-            disabled={loading} sx={roundedField}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
+            <Box
+              component="button"
+              onClick={handleSubmit}
+              disabled={loading}
+              sx={{
+                width: "100%", py: 1.6, mt: 1, borderRadius: "15px",
+                fontWeight: 700, fontSize: 15, border: "none",
+                fontFamily: poppins,
+                backgroundColor: loading ? "#93b8fa" : "#0D59F2",
+                color: "#fff", cursor: loading ? "not-allowed" : "pointer",
+                transition: "all 0.25s ease",
+                "&:hover": !loading ? {
+                  backgroundColor: "#0846c7",
+                  transform: "translateY(-2px)",
+                  boxShadow: "0 8px 24px rgba(13,89,242,0.35)",
+                } : {},
+                "&:active": !loading ? { transform: "translateY(0)" } : {},
+              }}
+            >
+              {loading ? "Memproses..." : "Daftar"}
+            </Box>
 
-          <Button
-            fullWidth variant="contained" onClick={handleSubmit} disabled={loading}
-            sx={{
-              py: 1.4, borderRadius: "15px", fontWeight: 700,
-              textTransform: "none", mt: 1,
-              backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" },
-            }}
-          >
-            {loading ? "Memproses..." : "Daftar"}
-          </Button>
+            <Divider sx={{ my: 3 }}>
+              <Typography sx={{ fontFamily: poppins, fontSize: 13, color: "#bbb", px: 1 }}>Atau</Typography>
+            </Divider>
 
-          <Divider sx={{ my: 3 }}>Atau</Divider>
-
-          <Button
-            fullWidth variant="outlined" disabled={loading}
-            onClick={() => navigate("/login")}
-            sx={{ py: 1.4, borderRadius: "15px", fontWeight: 700, borderColor: "#ccc", color: "black", textTransform: "none" }}
-          >
-            Sudah punya akun? Masuk
-          </Button>
+            <Box
+              component="button"
+              onClick={() => navigate("/login")}
+              disabled={loading}
+              sx={{
+                width: "100%", py: 1.6, borderRadius: "15px",
+                fontWeight: 700, fontSize: 15,
+                fontFamily: poppins,
+                border: "1.5px solid #e0e0e0",
+                backgroundColor: "transparent", color: "#0a0a0a",
+                cursor: loading ? "not-allowed" : "pointer",
+                transition: "all 0.25s ease",
+                "&:hover": !loading ? {
+                  borderColor: "#0D59F2", color: "#0D59F2",
+                  backgroundColor: "rgba(13,89,242,0.04)",
+                } : {},
+              }}
+            >
+              Sudah punya akun? Masuk
+            </Box>
+          </Box>
         </Paper>
       </Box>
     </Box>
