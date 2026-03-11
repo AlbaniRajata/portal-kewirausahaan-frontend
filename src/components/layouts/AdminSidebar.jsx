@@ -67,6 +67,7 @@ export default function AdminSidebar({ collapsed }) {
   const isActive = (path) => {
     if (location.pathname === path) return true;
     if (path === "/admin/proposal" && location.pathname.startsWith("/admin/proposal/")) return true;
+    if (path === "/admin/distribusi-penilai" && location.pathname.startsWith("/admin/program/") && location.pathname.includes("/distribusi/reviewer/tahap/")) return true;
     return false;
   };
 

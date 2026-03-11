@@ -132,17 +132,37 @@ export default function PengajuanPembimbingTab() {
         </TableContainer>
       )}
 
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: "16px" } }}>
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: "16px" } }}
+      >
         <DialogTitle sx={{ pb: 1 }}>
-          <Typography sx={{ fontWeight: 700, fontSize: 16 }}>Detail Pengajuan Pembimbing</Typography>
-          <IconButton onClick={() => setDialogOpen(false)} sx={{ position: "absolute", right: 12, top: 8, color: "#888" }}><Close /></IconButton>
+          <Box sx={{ pr: 4 }}>
+            <Typography sx={{ fontWeight: 700, fontSize: 16 }}>Detail Pengajuan Pembimbing</Typography>
+            {selectedItem && (
+              <Typography sx={{ fontSize: 13, color: "#777", mt: 0.5 }}>{selectedItem.nama_tim}</Typography>
+            )}
+          </Box>
+          <IconButton
+            onClick={() => setDialogOpen(false)}
+            sx={{ position: "absolute", right: 12, top: 8, color: "#888" }}
+          >
+            <Close />
+          </IconButton>
         </DialogTitle>
+
         <DialogContent dividers sx={{ px: 3, py: 3 }}>
           {selectedItem && (
             <Box>
               <Box sx={{ mb: 3 }}>
                 <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Status</Typography>
-                <StatusPill label={STATUS_PILL[selectedItem.status]?.label || "-"} backgroundColor={STATUS_PILL[selectedItem.status]?.backgroundColor || "#757575"} />
+                <StatusPill
+                  label={STATUS_PILL[selectedItem.status]?.label || "-"}
+                  backgroundColor={STATUS_PILL[selectedItem.status]?.backgroundColor || "#757575"}
+                />
               </Box>
               <Divider sx={{ my: 2 }} />
               <DetailRow label="Tim" value={selectedItem.nama_tim} />
@@ -177,9 +197,17 @@ export default function PengajuanPembimbingTab() {
             </Box>
           )}
         </DialogContent>
+
         <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={() => setDialogOpen(false)}
-            sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, color: "#666", border: "1.5px solid #e0e0e0", "&:hover": { backgroundColor: "#f5f5f5" } }}>
+          <Button
+            onClick={() => setDialogOpen(false)}
+            variant="contained"
+            sx={{
+              textTransform: "none", borderRadius: "50px", px: 4,
+              fontWeight: 600, backgroundColor: "#FDB022",
+              "&:hover": { backgroundColor: "#e09a1a" },
+            }}
+          >
             Tutup
           </Button>
         </DialogActions>

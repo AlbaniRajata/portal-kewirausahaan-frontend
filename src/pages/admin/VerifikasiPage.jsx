@@ -1,36 +1,78 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  Box, Paper, Typography, Tabs, Tab, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, Button, Dialog, DialogTitle,
-  DialogContent, DialogActions, TextField, MenuItem, CircularProgress,
-  IconButton, Pagination,
+  Box,
+  Paper,
+  Typography,
+  Tabs,
+  Tab,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  MenuItem,
+  CircularProgress,
+  IconButton,
+  Pagination,
 } from "@mui/material";
-import { CheckCircle, Cancel, Visibility, Close, PersonAdd } from "@mui/icons-material";
+import {
+  CheckCircle,
+  Cancel,
+  Visibility,
+  Close,
+  PersonAdd,
+} from "@mui/icons-material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
 import PageTransition from "../../components/PageTransition";
 import {
-  getPendingMahasiswa, getDetailMahasiswa, approveMahasiswa, rejectMahasiswa,
-  getPendingDosen, getDetailDosen, approveDosen, rejectDosen,
+  getPendingMahasiswa,
+  getDetailMahasiswa,
+  approveMahasiswa,
+  rejectMahasiswa,
+  getPendingDosen,
+  getDetailDosen,
+  approveDosen,
+  rejectDosen,
 } from "../../api/admin";
 import { getAllProdi } from "../../api/public";
 
 const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "15px" } };
 
 const tableHeadCell = {
-  fontWeight: 700, fontSize: 13, color: "#000",
-  backgroundColor: "#fafafa", borderBottom: "2px solid #f0f0f0", py: 2,
+  fontWeight: 700,
+  fontSize: 13,
+  color: "#000",
+  backgroundColor: "#fafafa",
+  borderBottom: "2px solid #f0f0f0",
+  py: 2,
 };
 
 const tableBodyRow = { "& td": { borderBottom: "1px solid #f5f5f5", py: 2 } };
 
 const StatusPill = ({ label, backgroundColor }) => (
-  <Box sx={{
-    display: "inline-flex", alignItems: "center",
-    px: 1.5, py: 0.4, borderRadius: "50px",
-    backgroundColor, color: "#fff", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
-  }}>
+  <Box
+    sx={{
+      display: "inline-flex",
+      alignItems: "center",
+      px: 1.5,
+      py: 0.4,
+      borderRadius: "50px",
+      backgroundColor,
+      color: "#fff",
+      fontSize: 12,
+      fontWeight: 700,
+      whiteSpace: "nowrap",
+    }}
+  >
     {label}
   </Box>
 );
@@ -38,7 +80,9 @@ const StatusPill = ({ label, backgroundColor }) => (
 const formatDate = (dateString) => {
   if (!dateString) return "-";
   return new Date(dateString).toLocaleDateString("id-ID", {
-    day: "2-digit", month: "short", year: "numeric",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
   });
 };
 
@@ -48,7 +92,8 @@ const STATUS_MAP = {
   2: { label: "Ditolak", backgroundColor: "#c62828" },
 };
 
-const getStatusInfo = (status) => STATUS_MAP[status] || { label: "Unknown", backgroundColor: "#bdbdbd" };
+const getStatusInfo = (status) =>
+  STATUS_MAP[status] || { label: "Unknown", backgroundColor: "#bdbdbd" };
 
 export default function VerifikasiPage() {
   const [activeTab, setActiveTab] = useState(0);
@@ -75,15 +120,23 @@ export default function VerifikasiPage() {
   });
 
   useEffect(() => {
-    getAllProdi().then((res) => { setProdiOptions(res.data || []); }).catch(() => {});
+    getAllProdi()
+      .then((res) => {
+        setProdiOptions(res.data || []);
+      })
+      .catch(() => {});
   }, []);
 
   const fetchMahasiswa = useCallback(async () => {
     try {
       setLoading(true);
       const res = await getPendingMahasiswa({
-        status_verifikasi: filters.status_verifikasi !== "" ? filters.status_verifikasi : undefined,
-        email_verified: filters.email_verified !== "" ? filters.email_verified : undefined,
+        status_verifikasi:
+          filters.status_verifikasi !== ""
+            ? filters.status_verifikasi
+            : undefined,
+        email_verified:
+          filters.email_verified !== "" ? filters.email_verified : undefined,
         id_prodi: filters.id_prodi || undefined,
         tanggal_dari: filters.tanggal_dari || undefined,
         tanggal_sampai: filters.tanggal_sampai || undefined,
@@ -91,18 +144,33 @@ export default function VerifikasiPage() {
       setMahasiswaList(res.data?.mahasiswa || []);
       setPage(1);
     } catch {
-      Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat data mahasiswa", confirmButtonColor: "#0D59F2" });
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: "Gagal memuat data mahasiswa",
+        confirmButtonColor: "#0D59F2",
+      });
     } finally {
       setLoading(false);
     }
-  }, [filters.status_verifikasi, filters.email_verified, filters.id_prodi, filters.tanggal_dari, filters.tanggal_sampai]);
+  }, [
+    filters.status_verifikasi,
+    filters.email_verified,
+    filters.id_prodi,
+    filters.tanggal_dari,
+    filters.tanggal_sampai,
+  ]);
 
   const fetchDosen = useCallback(async () => {
     try {
       setLoading(true);
       const res = await getPendingDosen({
-        status_verifikasi: filters.status_verifikasi !== "" ? filters.status_verifikasi : undefined,
-        email_verified: filters.email_verified !== "" ? filters.email_verified : undefined,
+        status_verifikasi:
+          filters.status_verifikasi !== ""
+            ? filters.status_verifikasi
+            : undefined,
+        email_verified:
+          filters.email_verified !== "" ? filters.email_verified : undefined,
         id_prodi: filters.id_prodi || undefined,
         tanggal_dari: filters.tanggal_dari || undefined,
         tanggal_sampai: filters.tanggal_sampai || undefined,
@@ -110,11 +178,22 @@ export default function VerifikasiPage() {
       setDosenList(res.data?.dosen || []);
       setPage(1);
     } catch {
-      Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat data dosen", confirmButtonColor: "#0D59F2" });
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: "Gagal memuat data dosen",
+        confirmButtonColor: "#0D59F2",
+      });
     } finally {
       setLoading(false);
     }
-  }, [filters.status_verifikasi, filters.email_verified, filters.id_prodi, filters.tanggal_dari, filters.tanggal_sampai]);
+  }, [
+    filters.status_verifikasi,
+    filters.email_verified,
+    filters.id_prodi,
+    filters.tanggal_dari,
+    filters.tanggal_sampai,
+  ]);
 
   useEffect(() => {
     if (activeTab === 0) fetchMahasiswa();
@@ -129,13 +208,18 @@ export default function VerifikasiPage() {
     try {
       if (activeTab === 0) {
         const res = await getDetailMahasiswa(user.id_user);
-        setDetailData(res.data?.mahasiswa);
+        setDetailData(res.data);
       } else {
         const res = await getDetailDosen(user.id_user);
-        setDetailData(res.data?.dosen);
+        setDetailData(res.data);
       }
     } catch {
-      Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat detail pengguna", confirmButtonColor: "#0D59F2" });
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: "Gagal memuat detail pengguna",
+        confirmButtonColor: "#0D59F2",
+      });
       setOpenDetail(false);
     } finally {
       setLoadingDetail(false);
@@ -149,18 +233,35 @@ export default function VerifikasiPage() {
       text: `Setujui ${activeTab === 0 ? "mahasiswa" : "dosen"} ${selectedUser?.nama_lengkap || selectedUser?.username}?`,
       icon: "question",
       showCancelButton: true,
-      confirmButtonColor: "#2e7d32", cancelButtonColor: "#666",
-      confirmButtonText: "Ya, Setujui", cancelButtonText: "Batal",
+      confirmButtonColor: "#2e7d32",
+      cancelButtonColor: "#666",
+      confirmButtonText: "Ya, Setujui",
+      cancelButtonText: "Batal",
     });
-    if (!result.isConfirmed) { setOpenDetail(true); return; }
+    if (!result.isConfirmed) {
+      setOpenDetail(true);
+      return;
+    }
     try {
       if (activeTab === 0) await approveMahasiswa(selectedUser.id_user);
       else await approveDosen(selectedUser.id_user);
-      await Swal.fire({ icon: "success", title: "Berhasil", text: `${activeTab === 0 ? "Mahasiswa" : "Dosen"} berhasil disetujui`, timer: 2000, timerProgressBar: true, showConfirmButton: false });
+      await Swal.fire({
+        icon: "success",
+        title: "Berhasil",
+        text: `${activeTab === 0 ? "Mahasiswa" : "Dosen"} berhasil disetujui`,
+        timer: 2000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+      });
       if (activeTab === 0) fetchMahasiswa();
       else fetchDosen();
     } catch (err) {
-      Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Gagal menyetujui pengguna", confirmButtonColor: "#0D59F2" });
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: err.response?.data?.message || "Gagal menyetujui pengguna",
+        confirmButtonColor: "#0D59F2",
+      });
       setOpenDetail(true);
     }
   };
@@ -190,48 +291,89 @@ export default function VerifikasiPage() {
       text: `Tolak ${activeTab === 0 ? "mahasiswa" : "dosen"} ${selectedUser?.nama_lengkap || selectedUser?.username}?`,
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d33", cancelButtonColor: "#666",
-      confirmButtonText: "Ya, Tolak", cancelButtonText: "Batal",
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#666",
+      confirmButtonText: "Ya, Tolak",
+      cancelButtonText: "Batal",
     });
-    if (!result.isConfirmed) { setOpenReject(true); return; }
+    if (!result.isConfirmed) {
+      setOpenReject(true);
+      return;
+    }
     try {
-      if (activeTab === 0) await rejectMahasiswa(selectedUser.id_user, catatan.trim());
+      if (activeTab === 0)
+        await rejectMahasiswa(selectedUser.id_user, catatan.trim());
       else await rejectDosen(selectedUser.id_user, catatan.trim());
-      await Swal.fire({ icon: "success", title: "Berhasil", text: `${activeTab === 0 ? "Mahasiswa" : "Dosen"} berhasil ditolak`, timer: 2000, timerProgressBar: true, showConfirmButton: false });
+      await Swal.fire({
+        icon: "success",
+        title: "Berhasil",
+        text: `${activeTab === 0 ? "Mahasiswa" : "Dosen"} berhasil ditolak`,
+        timer: 2000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+      });
       setCatatan("");
       setErrors({});
       if (activeTab === 0) fetchMahasiswa();
       else fetchDosen();
     } catch (err) {
-      Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Gagal menolak pengguna", confirmButtonColor: "#0D59F2" });
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: err.response?.data?.message || "Gagal menolak pengguna",
+        confirmButtonColor: "#0D59F2",
+      });
       setOpenReject(true);
     }
   };
 
   const currentList = activeTab === 0 ? mahasiswaList : dosenList;
   const totalPages = Math.ceil(currentList.length / rowsPerPage);
-  const paginatedList = currentList.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+  const paginatedList = currentList.slice(
+    (page - 1) * rowsPerPage,
+    page * rowsPerPage,
+  );
 
   return (
     <BodyLayout Sidebar={AdminSidebar}>
       <PageTransition>
         <Box>
-          <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Verifikasi Pengguna</Typography>
-          <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>Kelola verifikasi mahasiswa dan dosen</Typography>
+          <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>
+            Verifikasi Pengguna
+          </Typography>
+          <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>
+            Kelola verifikasi mahasiswa dan dosen
+          </Typography>
 
-          <Paper sx={{ borderRadius: "16px", border: "1px solid #f0f0f0", overflow: "hidden" }}>
+          <Paper
+            sx={{
+              borderRadius: "16px",
+              border: "1px solid #f0f0f0",
+              overflow: "hidden",
+            }}
+          >
             <Box sx={{ borderBottom: "1px solid #f0f0f0" }}>
               <Tabs
                 value={activeTab}
-                onChange={(e, v) => { setActiveTab(v); setPage(1); }}
+                onChange={(e, v) => {
+                  setActiveTab(v);
+                  setPage(1);
+                }}
                 sx={{
                   px: 2,
                   "& .MuiTab-root": {
-                    textTransform: "none", fontSize: 14, fontWeight: 500,
-                    color: "#888", minHeight: 52,
+                    textTransform: "none",
+                    fontSize: 14,
+                    fontWeight: 500,
+                    color: "#888",
+                    minHeight: 52,
                     "&.Mui-selected": { fontWeight: 700, color: "#0D59F2" },
                   },
-                  "& .MuiTabs-indicator": { backgroundColor: "#0D59F2", height: 3, borderRadius: "3px 3px 0 0" },
+                  "& .MuiTabs-indicator": {
+                    backgroundColor: "#0D59F2",
+                    height: 3,
+                    borderRadius: "3px 3px 0 0",
+                  },
                 }}
               >
                 <Tab label="Mahasiswa" />
@@ -242,9 +384,17 @@ export default function VerifikasiPage() {
             <Box sx={{ p: 3 }}>
               <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
                 <TextField
-                  select fullWidth size="small" label="Status Verifikasi"
+                  select
+                  fullWidth
+                  size="small"
+                  label="Status Verifikasi"
                   value={filters.status_verifikasi}
-                  onChange={(e) => setFilters({ ...filters, status_verifikasi: e.target.value })}
+                  onChange={(e) =>
+                    setFilters({
+                      ...filters,
+                      status_verifikasi: e.target.value,
+                    })
+                  }
                   InputLabelProps={{ shrink: true }}
                   sx={{ ...roundedField, minWidth: 160, flex: "1 1 160px" }}
                 >
@@ -254,9 +404,14 @@ export default function VerifikasiPage() {
                   <MenuItem value={2}>Ditolak</MenuItem>
                 </TextField>
                 <TextField
-                  select fullWidth size="small" label="Email Verified"
+                  select
+                  fullWidth
+                  size="small"
+                  label="Email Verified"
                   value={filters.email_verified}
-                  onChange={(e) => setFilters({ ...filters, email_verified: e.target.value })}
+                  onChange={(e) =>
+                    setFilters({ ...filters, email_verified: e.target.value })
+                  }
                   InputLabelProps={{ shrink: true }}
                   sx={{ ...roundedField, minWidth: 160, flex: "1 1 160px" }}
                 >
@@ -265,9 +420,14 @@ export default function VerifikasiPage() {
                   <MenuItem value="false">Belum Verified</MenuItem>
                 </TextField>
                 <TextField
-                  select fullWidth size="small" label="Program Studi"
+                  select
+                  fullWidth
+                  size="small"
+                  label="Program Studi"
                   value={filters.id_prodi}
-                  onChange={(e) => setFilters({ ...filters, id_prodi: e.target.value })}
+                  onChange={(e) =>
+                    setFilters({ ...filters, id_prodi: e.target.value })
+                  }
                   InputLabelProps={{ shrink: true }}
                   sx={{ ...roundedField, minWidth: 200, flex: "1 1 200px" }}
                 >
@@ -279,41 +439,92 @@ export default function VerifikasiPage() {
                   ))}
                 </TextField>
                 <TextField
-                  fullWidth type="date" size="small" label="Tanggal Dari"
+                  fullWidth
+                  type="date"
+                  size="small"
+                  label="Tanggal Dari"
                   value={filters.tanggal_dari}
-                  onChange={(e) => setFilters({ ...filters, tanggal_dari: e.target.value })}
+                  onChange={(e) =>
+                    setFilters({ ...filters, tanggal_dari: e.target.value })
+                  }
                   InputLabelProps={{ shrink: true }}
                   sx={{ ...roundedField, minWidth: 150, flex: "1 1 150px" }}
                 />
                 <TextField
-                  fullWidth type="date" size="small" label="Tanggal Sampai"
+                  fullWidth
+                  type="date"
+                  size="small"
+                  label="Tanggal Sampai"
                   value={filters.tanggal_sampai}
-                  onChange={(e) => setFilters({ ...filters, tanggal_sampai: e.target.value })}
+                  onChange={(e) =>
+                    setFilters({ ...filters, tanggal_sampai: e.target.value })
+                  }
                   InputLabelProps={{ shrink: true }}
                   sx={{ ...roundedField, minWidth: 150, flex: "1 1 150px" }}
                 />
               </Box>
 
               {loading ? (
-                <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
+                <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+                  <CircularProgress />
+                </Box>
               ) : paginatedList.length === 0 ? (
                 <Box sx={{ textAlign: "center", py: 10 }}>
-                  <Box sx={{ width: 100, height: 100, borderRadius: "50%", backgroundColor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 3 }}>
+                  <Box
+                    sx={{
+                      width: 100,
+                      height: 100,
+                      borderRadius: "50%",
+                      backgroundColor: "#f5f5f5",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      mx: "auto",
+                      mb: 3,
+                    }}
+                  >
                     <PersonAdd sx={{ fontSize: 48, color: "#ccc" }} />
                   </Box>
-                  <Typography sx={{ fontSize: 20, fontWeight: 700, color: "#444", mb: 1 }}>
+                  <Typography
+                    sx={{ fontSize: 20, fontWeight: 700, color: "#444", mb: 1 }}
+                  >
                     Tidak ada data {activeTab === 0 ? "mahasiswa" : "dosen"}
                   </Typography>
-                  <Typography sx={{ fontSize: 14, color: "#999" }}>Data verifikasi akan muncul di sini</Typography>
+                  <Typography sx={{ fontSize: 14, color: "#999" }}>
+                    Data verifikasi akan muncul di sini
+                  </Typography>
                 </Box>
               ) : (
                 <>
-                  <TableContainer sx={{ borderRadius: "12px", border: "1px solid #f0f0f0", overflow: "hidden", mb: 3 }}>
+                  <TableContainer
+                    sx={{
+                      borderRadius: "12px",
+                      border: "1px solid #f0f0f0",
+                      overflow: "hidden",
+                      mb: 3,
+                    }}
+                  >
                     <Table>
                       <TableHead>
                         <TableRow>
-                          {["Nama Lengkap", activeTab === 0 ? "NIM" : "NIP", "Email", "Prodi", "Tanggal Daftar", "Status", "Aksi"].map((h, i) => (
-                            <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 6 && { textAlign: "center" }) }}>{h}</TableCell>
+                          {[
+                            "Nama Lengkap",
+                            activeTab === 0 ? "NIM" : "NIP",
+                            "Email",
+                            "Prodi",
+                            "Tanggal Daftar",
+                            "Status",
+                            "Aksi",
+                          ].map((h, i) => (
+                            <TableCell
+                              key={i}
+                              sx={{
+                                ...tableHeadCell,
+                                ...(i === 6 && { textAlign: "center" }),
+                              }}
+                            >
+                              {h}
+                            </TableCell>
                           ))}
                         </TableRow>
                       </TableHead>
@@ -323,29 +534,56 @@ export default function VerifikasiPage() {
                           return (
                             <TableRow key={user.id_user} sx={tableBodyRow}>
                               <TableCell>
-                                <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{user.nama_lengkap || user.username}</Typography>
+                                <Typography
+                                  sx={{ fontWeight: 700, fontSize: 14 }}
+                                >
+                                  {user.nama_lengkap || user.username}
+                                </Typography>
                               </TableCell>
                               <TableCell>
-                                <Typography sx={{ fontSize: 13 }}>{activeTab === 0 ? user.nim : user.nip}</Typography>
+                                <Typography sx={{ fontSize: 13 }}>
+                                  {activeTab === 0 ? user.nim : user.nip}
+                                </Typography>
                               </TableCell>
                               <TableCell>
-                                <Typography sx={{ fontSize: 13 }}>{user.email}</Typography>
+                                <Typography sx={{ fontSize: 13 }}>
+                                  {user.email}
+                                </Typography>
                               </TableCell>
                               <TableCell>
-                                <Typography sx={{ fontSize: 13 }}>{user.jenjang} {user.nama_prodi}</Typography>
+                                <Typography sx={{ fontSize: 13 }}>
+                                  {user.jenjang} {user.nama_prodi}
+                                </Typography>
                               </TableCell>
                               <TableCell>
-                                <Typography sx={{ fontSize: 13 }}>{formatDate(user.created_at)}</Typography>
+                                <Typography sx={{ fontSize: 13 }}>
+                                  {formatDate(user.created_at)}
+                                </Typography>
                               </TableCell>
                               <TableCell>
-                                <StatusPill label={si.label} backgroundColor={si.backgroundColor} />
+                                <StatusPill
+                                  label={si.label}
+                                  backgroundColor={si.backgroundColor}
+                                />
                               </TableCell>
                               <TableCell align="center">
                                 <Button
-                                  size="small" variant="outlined"
-                                  startIcon={<Visibility sx={{ fontSize: 14 }} />}
+                                  size="small"
+                                  variant="outlined"
+                                  startIcon={
+                                    <Visibility sx={{ fontSize: 14 }} />
+                                  }
                                   onClick={() => handleViewDetail(user)}
-                                  sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12, fontWeight: 600, px: 2, borderColor: "#0D59F2", color: "#0D59F2", "&:hover": { backgroundColor: "#f0f4ff" } }}
+                                  sx={{
+                                    textTransform: "none",
+                                    borderRadius: "50px",
+                                    fontSize: 12,
+                                    fontWeight: 600,
+                                    px: 2,
+                                    borderColor: "#0D59F2",
+                                    color: "#0D59F2",
+                                    "&:hover": { backgroundColor: "#f0f4ff" },
+                                  }}
                                 >
                                   Detail
                                 </Button>
@@ -357,107 +595,235 @@ export default function VerifikasiPage() {
                     </Table>
                   </TableContainer>
 
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
                     <Typography sx={{ fontSize: 13, color: "#777" }}>
-                      Menampilkan {((page - 1) * rowsPerPage) + 1}–{Math.min(page * rowsPerPage, currentList.length)} dari {currentList.length} data
+                      Menampilkan {(page - 1) * rowsPerPage + 1}–
+                      {Math.min(page * rowsPerPage, currentList.length)} dari{" "}
+                      {currentList.length} data
                     </Typography>
-                    <Pagination count={totalPages} page={page} onChange={(e, v) => setPage(v)} color="primary" shape="rounded" showFirstButton showLastButton />
+                    <Pagination
+                      count={totalPages}
+                      page={page}
+                      onChange={(e, v) => setPage(v)}
+                      color="primary"
+                      shape="rounded"
+                      showFirstButton
+                      showLastButton
+                    />
                   </Box>
                 </>
               )}
             </Box>
           </Paper>
 
-          <Dialog open={openDetail} onClose={() => setOpenDetail(false)} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: "16px" } }}>
+          <Dialog
+            open={openDetail}
+            onClose={() => setOpenDetail(false)}
+            maxWidth="md"
+            fullWidth
+            PaperProps={{ sx: { borderRadius: "16px" } }}
+          >
             <DialogTitle sx={{ pb: 1 }}>
-              <Typography sx={{ fontWeight: 700, fontSize: 16 }}>Detail {activeTab === 0 ? "Mahasiswa" : "Dosen"}</Typography>
-              <IconButton onClick={() => setOpenDetail(false)} sx={{ position: "absolute", right: 12, top: 8, color: "#888" }}>
+              <Box sx={{ pr: 4 }}>
+                <Typography sx={{ fontWeight: 700, fontSize: 16 }}>
+                  Detail {activeTab === 0 ? "Mahasiswa" : "Dosen"}
+                </Typography>
+                {selectedUser && (
+                  <Typography sx={{ fontSize: 13, color: "#777", mt: 0.5 }}>
+                    {selectedUser.nama_lengkap || selectedUser.username}
+                  </Typography>
+                )}
+              </Box>
+              <IconButton
+                onClick={() => setOpenDetail(false)}
+                sx={{ position: "absolute", right: 12, top: 8, color: "#888" }}
+              >
                 <Close />
               </IconButton>
             </DialogTitle>
             <DialogContent dividers sx={{ px: 3, py: 3 }}>
               {loadingDetail ? (
-                <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}><CircularProgress /></Box>
+                <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
+                  <CircularProgress />
+                </Box>
               ) : detailData ? (
-                <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3 }}>
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 3,
+                  }}
+                >
                   <Box>
-                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Nama Lengkap</Typography>
-                    <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{detailData.nama_lengkap || "-"}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Username</Typography>
-                    <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{detailData.username}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Email</Typography>
-                    <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{detailData.email}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>{activeTab === 0 ? "NIM" : "NIP"}</Typography>
-                    <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{activeTab === 0 ? detailData.nim : detailData.nip}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Program Studi</Typography>
-                    <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{detailData.jenjang} {detailData.nama_prodi}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Jurusan</Typography>
-                    <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{detailData.nama_jurusan || "-"}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Kampus</Typography>
-                    <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{detailData.nama_kampus || "-"}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>{activeTab === 0 ? "Tahun Masuk" : "Bidang Keahlian"}</Typography>
+                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>
+                      Nama Lengkap
+                    </Typography>
                     <Typography sx={{ fontWeight: 600, fontSize: 14 }}>
-                      {activeTab === 0 ? detailData.tahun_masuk : (detailData.bidang_keahlian || "-")}
+                      {detailData.nama_lengkap || "-"}
                     </Typography>
                   </Box>
                   <Box>
-                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>No. HP</Typography>
-                    <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{detailData.no_hp || "-"}</Typography>
+                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>
+                      Username
+                    </Typography>
+                    <Typography sx={{ fontWeight: 600, fontSize: 14 }}>
+                      {detailData.username}
+                    </Typography>
                   </Box>
                   <Box>
-                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Email Verified</Typography>
+                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>
+                      Email
+                    </Typography>
+                    <Typography sx={{ fontWeight: 600, fontSize: 14 }}>
+                      {detailData.email}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>
+                      {activeTab === 0 ? "NIM" : "NIP"}
+                    </Typography>
+                    <Typography sx={{ fontWeight: 600, fontSize: 14 }}>
+                      {activeTab === 0 ? detailData.nim : detailData.nip}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>
+                      Program Studi
+                    </Typography>
+                    <Typography sx={{ fontWeight: 600, fontSize: 14 }}>
+                      {detailData.jenjang} {detailData.nama_prodi}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>
+                      Jurusan
+                    </Typography>
+                    <Typography sx={{ fontWeight: 600, fontSize: 14 }}>
+                      {detailData.nama_jurusan || "-"}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>
+                      Kampus
+                    </Typography>
+                    <Typography sx={{ fontWeight: 600, fontSize: 14 }}>
+                      {detailData.nama_kampus || "-"}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>
+                      {activeTab === 0 ? "Tahun Masuk" : "Bidang Keahlian"}
+                    </Typography>
+                    <Typography sx={{ fontWeight: 600, fontSize: 14 }}>
+                      {activeTab === 0
+                        ? detailData.tahun_masuk
+                        : detailData.bidang_keahlian || "-"}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>
+                      No. HP
+                    </Typography>
+                    <Typography sx={{ fontWeight: 600, fontSize: 14 }}>
+                      {detailData.no_hp || "-"}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>
+                      Email Verified
+                    </Typography>
                     <StatusPill
                       label={detailData.email_verified_at ? "Sudah" : "Belum"}
-                      backgroundColor={detailData.email_verified_at ? "#2e7d32" : "#c62828"}
+                      backgroundColor={
+                        detailData.email_verified_at ? "#2e7d32" : "#c62828"
+                      }
                     />
                   </Box>
                   <Box sx={{ gridColumn: "1 / -1" }}>
-                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Alamat</Typography>
-                    <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{detailData.alamat || "-"}</Typography>
+                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>
+                      Alamat
+                    </Typography>
+                    <Typography sx={{ fontWeight: 600, fontSize: 14 }}>
+                      {detailData.alamat || "-"}
+                    </Typography>
                   </Box>
                   <Box>
-                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Status Verifikasi</Typography>
+                    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>
+                      Status Verifikasi
+                    </Typography>
                     <StatusPill
                       label={getStatusInfo(detailData.status_verifikasi).label}
-                      backgroundColor={getStatusInfo(detailData.status_verifikasi).backgroundColor}
+                      backgroundColor={
+                        getStatusInfo(detailData.status_verifikasi)
+                          .backgroundColor
+                      }
                     />
                   </Box>
                   {activeTab === 0 && detailData.foto_ktm && (
                     <Box sx={{ gridColumn: "1 / -1" }}>
-                      <Typography sx={{ fontSize: 12, color: "#888", mb: 1 }}>Foto KTM</Typography>
+                      <Typography sx={{ fontSize: 12, color: "#888", mb: 1 }}>
+                        Foto KTM
+                      </Typography>
                       <img
                         src={`${import.meta.env.VITE_API_URL.replace("/api", "")}/uploads/ktm/${detailData.foto_ktm}`}
                         alt="KTM"
-                        style={{ maxWidth: "100%", maxHeight: 400, objectFit: "contain", border: "1px solid #e0e0e0", borderRadius: 12 }}
+                        style={{
+                          maxWidth: "100%",
+                          maxHeight: 400,
+                          objectFit: "contain",
+                          border: "1px solid #e0e0e0",
+                          borderRadius: 12,
+                        }}
                       />
                     </Box>
                   )}
                   {detailData.catatan && (
-                    <Box sx={{ gridColumn: "1 / -1", p: 2.5, backgroundColor: "#fce4ec", borderRadius: "12px", border: "1px solid #ef9a9a" }}>
-                      <Typography sx={{ fontSize: 12, color: "#c62828", fontWeight: 700, mb: 0.5 }}>Catatan Penolakan</Typography>
-                      <Typography sx={{ fontSize: 14 }}>{detailData.catatan}</Typography>
+                    <Box
+                      sx={{
+                        gridColumn: "1 / -1",
+                        p: 2.5,
+                        backgroundColor: "#fce4ec",
+                        borderRadius: "12px",
+                        border: "1px solid #ef9a9a",
+                      }}
+                    >
+                      <Typography
+                        sx={{
+                          fontSize: 12,
+                          color: "#c62828",
+                          fontWeight: 700,
+                          mb: 0.5,
+                        }}
+                      >
+                        Catatan Penolakan
+                      </Typography>
+                      <Typography sx={{ fontSize: 14 }}>
+                        {detailData.catatan}
+                      </Typography>
                     </Box>
                   )}
                 </Box>
               ) : null}
             </DialogContent>
             <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-              <Button onClick={() => setOpenDetail(false)}
-                sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, color: "#666", border: "1.5px solid #e0e0e0", "&:hover": { backgroundColor: "#f5f5f5" } }}>
+              <Button
+                onClick={() => setOpenDetail(false)}
+                variant="contained"
+                sx={{
+                  textTransform: "none",
+                  borderRadius: "50px",
+                  px: 4,
+                  fontWeight: 600,
+                  backgroundColor: "#FDB022",
+                  "&:hover": { backgroundColor: "#e09a1a" },
+                }}
+              >
                 Tutup
               </Button>
               {detailData?.status_verifikasi === 0 && (
@@ -466,7 +832,16 @@ export default function VerifikasiPage() {
                     variant="outlined"
                     startIcon={<Cancel sx={{ fontSize: 14 }} />}
                     onClick={handleOpenReject}
-                    sx={{ textTransform: "none", borderRadius: "50px", px: 3, py: 1, fontWeight: 600, borderColor: "#e53935", color: "#e53935", "&:hover": { backgroundColor: "rgba(229,57,53,0.06)" } }}
+                    sx={{
+                      textTransform: "none",
+                      borderRadius: "50px",
+                      px: 3,
+                      py: 1,
+                      fontWeight: 600,
+                      borderColor: "#e53935",
+                      color: "#e53935",
+                      "&:hover": { backgroundColor: "rgba(229,57,53,0.06)" },
+                    }}
                   >
                     Tolak
                   </Button>
@@ -474,7 +849,15 @@ export default function VerifikasiPage() {
                     variant="contained"
                     startIcon={<CheckCircle sx={{ fontSize: 14 }} />}
                     onClick={handleApprove}
-                    sx={{ textTransform: "none", borderRadius: "50px", px: 3, py: 1, fontWeight: 600, backgroundColor: "#2e7d32", "&:hover": { backgroundColor: "#1b5e20" } }}
+                    sx={{
+                      textTransform: "none",
+                      borderRadius: "50px",
+                      px: 3,
+                      py: 1,
+                      fontWeight: 600,
+                      backgroundColor: "#2e7d32",
+                      "&:hover": { backgroundColor: "#1b5e20" },
+                    }}
                   >
                     Setujui
                   </Button>
@@ -483,29 +866,69 @@ export default function VerifikasiPage() {
             </DialogActions>
           </Dialog>
 
-          <Dialog open={openReject} onClose={handleCloseReject} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: "16px" } }}>
+          <Dialog
+            open={openReject}
+            onClose={handleCloseReject}
+            maxWidth="sm"
+            fullWidth
+            PaperProps={{ sx: { borderRadius: "16px" } }}
+          >
             <DialogTitle sx={{ pb: 1 }}>
-              <Typography sx={{ fontWeight: 700, fontSize: 16 }}>Tolak {activeTab === 0 ? "Mahasiswa" : "Dosen"}</Typography>
-              <IconButton onClick={handleCloseReject} sx={{ position: "absolute", right: 12, top: 8, color: "#888" }}>
+              <Box sx={{ pr: 4 }}>
+                <Typography sx={{ fontWeight: 700, fontSize: 16 }}>
+                  Tolak {activeTab === 0 ? "Mahasiswa" : "Dosen"}
+                </Typography>
+                {selectedUser && (
+                  <Typography sx={{ fontSize: 13, color: "#777", mt: 0.5 }}>
+                    {selectedUser.nama_lengkap || selectedUser.username}
+                  </Typography>
+                )}
+              </Box>
+              <IconButton
+                onClick={handleCloseReject}
+                sx={{ position: "absolute", right: 12, top: 8, color: "#888" }}
+              >
                 <Close />
               </IconButton>
             </DialogTitle>
             <DialogContent dividers sx={{ px: 3, py: 3 }}>
-              <Box sx={{ p: 2.5, backgroundColor: "#fce4ec", borderRadius: "12px", border: "1px solid #ef9a9a", mb: 3 }}>
-                <Typography sx={{ fontSize: 12, color: "#c62828", fontWeight: 700, mb: 0.5 }}>
+              <Box
+                sx={{
+                  p: 2.5,
+                  backgroundColor: "#fce4ec",
+                  borderRadius: "12px",
+                  border: "1px solid #ef9a9a",
+                  mb: 3,
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: 12,
+                    color: "#c62828",
+                    fontWeight: 700,
+                    mb: 0.5,
+                  }}
+                >
                   {activeTab === 0 ? "Mahasiswa" : "Dosen"} yang akan ditolak
                 </Typography>
-                <Typography sx={{ fontSize: 14, fontWeight: 600 }}>{selectedUser?.nama_lengkap || selectedUser?.username}</Typography>
+                <Typography sx={{ fontSize: 14, fontWeight: 600 }}>
+                  {selectedUser?.nama_lengkap || selectedUser?.username}
+                </Typography>
               </Box>
               <Box>
                 <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>
                   Catatan Penolakan <span style={{ color: "#ef5350" }}>*</span>
                 </Typography>
                 <TextField
-                  fullWidth multiline rows={4}
+                  fullWidth
+                  multiline
+                  rows={4}
                   placeholder="Masukkan alasan penolakan (minimal 10 karakter)..."
                   value={catatan}
-                  onChange={(e) => { setCatatan(e.target.value); setErrors({}); }}
+                  onChange={(e) => {
+                    setCatatan(e.target.value);
+                    setErrors({});
+                  }}
                   error={!!errors.catatan}
                   helperText={errors.catatan}
                   sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
@@ -513,12 +936,32 @@ export default function VerifikasiPage() {
               </Box>
             </DialogContent>
             <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-              <Button onClick={handleCloseReject}
-                sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, color: "#666", border: "1.5px solid #e0e0e0", "&:hover": { backgroundColor: "#f5f5f5" } }}>
+              <Button
+                onClick={handleCloseReject}
+                variant="contained"
+                sx={{
+                  textTransform: "none",
+                  borderRadius: "50px",
+                  px: 4,
+                  fontWeight: 600,
+                  backgroundColor: "#FDB022",
+                  "&:hover": { backgroundColor: "#e09a1a" },
+                }}
+              >
                 Batal
               </Button>
-              <Button variant="contained" onClick={handleReject}
-                sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, backgroundColor: "#e53935", "&:hover": { backgroundColor: "#c62828" } }}>
+              <Button
+                variant="contained"
+                onClick={handleReject}
+                sx={{
+                  textTransform: "none",
+                  borderRadius: "50px",
+                  px: 3,
+                  fontWeight: 600,
+                  backgroundColor: "#e53935",
+                  "&:hover": { backgroundColor: "#c62828" },
+                }}
+              >
                 Tolak
               </Button>
             </DialogActions>

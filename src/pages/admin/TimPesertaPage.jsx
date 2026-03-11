@@ -510,14 +510,22 @@ export default function TimPesertaPage() {
             </Box>
           </Paper>
 
+          {/* ── Dialog: style konsisten dengan DetailRekapDialog ── */}
           <Dialog open={openDetail} onClose={() => setOpenDetail(false)} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: "16px" } }}>
             <DialogTitle sx={{ pb: 1 }}>
-              <Typography sx={{ fontWeight: 700, fontSize: 16 }}>
-                {activeTab === 0
-                  ? `Detail Tim — ${selectedItem?.nama_tim || ""}`
-                  : `Detail Peserta — ${selectedItem?.nama_lengkap || selectedItem?.username || ""}`
-                }
-              </Typography>
+              <Box sx={{ pr: 4 }}>
+                <Typography sx={{ fontWeight: 700, fontSize: 16 }}>
+                  {activeTab === 0 ? "Detail Tim" : "Detail Peserta"}
+                </Typography>
+                {selectedItem && (
+                  <Typography sx={{ fontSize: 13, color: "#777", mt: 0.5 }}>
+                    {activeTab === 0
+                      ? selectedItem.nama_tim
+                      : (selectedItem.nama_lengkap || selectedItem.username)
+                    }
+                  </Typography>
+                )}
+              </Box>
               <IconButton onClick={() => setOpenDetail(false)} sx={{ position: "absolute", right: 12, top: 8, color: "#888" }}>
                 <Close />
               </IconButton>
@@ -529,8 +537,15 @@ export default function TimPesertaPage() {
               }
             </DialogContent>
             <DialogActions sx={{ px: 3, py: 2 }}>
-              <Button onClick={() => setOpenDetail(false)}
-                sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, color: "#666", border: "1.5px solid #e0e0e0", "&:hover": { backgroundColor: "#f5f5f5" } }}>
+              <Button
+                onClick={() => setOpenDetail(false)}
+                variant="contained"
+                sx={{
+                  textTransform: "none", borderRadius: "50px", px: 4,
+                  fontWeight: 600, backgroundColor: "#FDB022",
+                  "&:hover": { backgroundColor: "#e09a1a" },
+                }}
+              >
                 Tutup
               </Button>
             </DialogActions>

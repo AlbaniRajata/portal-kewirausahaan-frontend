@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  Box, Typography, Button, CircularProgress, TextField, MenuItem,
-  Checkbox, FormControlLabel, Chip, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, Autocomplete, Radio,
+  Box, Typography, Button, CircularProgress, TextField,
+  Checkbox, FormControlLabel, Table, TableBody, TableCell,
+  TableContainer, TableHead, TableRow, Autocomplete, Radio, Chip,
 } from "@mui/material";
 import { Assignment, Visibility } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
@@ -12,17 +12,34 @@ import {
   getJuriList, executeManualDistribusiTahap2,
 } from "../../api/admin";
 
+const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "15px" } };
+
+const tableHeadCell = {
+  fontWeight: 700, fontSize: 13, color: "#000",
+  backgroundColor: "#fafafa", borderBottom: "2px solid #f0f0f0", py: 2,
+};
+const tableBodyRow = { "& td": { borderBottom: "1px solid #f5f5f5", py: 2 } };
+
 const formatRupiah = (value) => {
   if (!value) return "Rp 0";
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(value);
 };
+
+const PersonOption = ({ nama, institusi, keahlian }) => (
+  <Box>
+    <Typography sx={{ fontWeight: 600, fontSize: 14, lineHeight: 1.4 }}>{nama}</Typography>
+    <Typography sx={{ fontSize: 12, color: "#888" }}>
+      {institusi || "-"}{keahlian ? ` • ${keahlian}` : ""}
+    </Typography>
+  </Box>
+);
 
 export default function DistribusiManualTab({ id_program, tahap, onSuccess, onError }) {
   const navigate = useNavigate();
   const [reviewers, setReviewers] = useState([]);
   const [juries, setJuries] = useState([]);
   const [proposals, setProposals] = useState([]);
-  const [selectedReviewer, setSelectedReviewer] = useState("");
+  const [selectedReviewer, setSelectedReviewer] = useState(null);
   const [selectedProposals, setSelectedProposals] = useState([]);
   const [selectedReviewers, setSelectedReviewers] = useState([]);
   const [selectedJuries, setSelectedJuries] = useState([]);
@@ -37,11 +54,8 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
       setLoadingReviewers(true);
       const res = await getReviewerList();
       setReviewers(res.data || []);
-    } catch {
-      onError("Gagal memuat daftar reviewer");
-    } finally {
-      setLoadingReviewers(false);
-    }
+    } catch { onError("Gagal memuat daftar reviewer"); }
+    finally { setLoadingReviewers(false); }
   }, [onError]);
 
   const fetchJuries = useCallback(async () => {
@@ -50,11 +64,8 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
       setLoadingJuries(true);
       const res = await getJuriList();
       setJuries(res.data || []);
-    } catch {
-      onError("Gagal memuat daftar juri");
-    } finally {
-      setLoadingJuries(false);
-    }
+    } catch { onError("Gagal memuat daftar juri"); }
+    finally { setLoadingJuries(false); }
   }, [tahap, onError]);
 
   const fetchProposals = useCallback(async () => {
@@ -63,11 +74,8 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
       setLoadingProposals(true);
       const res = await getProposalList({ id_program, status: tahap === 1 ? 1 : 4 });
       setProposals(res.data || []);
-    } catch {
-      onError("Gagal memuat daftar proposal");
-    } finally {
-      setLoadingProposals(false);
-    }
+    } catch { onError("Gagal memuat daftar proposal"); }
+    finally { setLoadingProposals(false); }
   }, [id_program, tahap, onError]);
 
   useEffect(() => { fetchReviewers(); }, [fetchReviewers]);
@@ -76,7 +84,7 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
     if (id_program) {
       fetchProposals();
       setSelectedProposals([]);
-      setSelectedReviewer("");
+      setSelectedReviewer(null);
       setSelectedReviewers([]);
       setSelectedJuries([]);
       setSelectedProposal(null);
@@ -92,22 +100,18 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
       Swal.fire({ icon: "warning", title: "Perhatian", text: "Silakan pilih minimal 1 proposal", confirmButtonColor: "#0D59F2" });
       return;
     }
-
-    const reviewer = reviewers.find((r) => r.id_user === selectedReviewer);
     const result = await Swal.fire({
       title: "Konfirmasi Distribusi",
-      html: `Assign <b>${selectedProposals.length}</b> proposal ke:<br/><br/><b>${reviewer?.nama_lengkap}</b><br/>${reviewer?.institusi || ""}<br/><br/>Lanjutkan?`,
+      html: `Assign <b>${selectedProposals.length}</b> proposal ke:<br/><br/><b>${selectedReviewer.nama_lengkap}</b><br/>${selectedReviewer.institusi || ""}<br/><br/>Lanjutkan?`,
       icon: "question", showCancelButton: true,
       confirmButtonColor: "#0D59F2", cancelButtonColor: "#d33",
       confirmButtonText: "Ya, Assign", cancelButtonText: "Batal",
     });
-
     if (!result.isConfirmed) return;
-
     try {
       setAssigning(true);
       const res = await executeBulkDistribusi(id_program, tahap, {
-        id_reviewer: selectedReviewer,
+        id_reviewer: selectedReviewer.id_user,
         id_proposal_list: selectedProposals,
       });
       const { total_assigned, total_failed } = res.data;
@@ -122,10 +126,7 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
       fetchProposals();
     } catch (err) {
       Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Terjadi kesalahan saat assign proposal", confirmButtonColor: "#0D59F2" });
-      onError(err.response?.data?.message || "Terjadi kesalahan");
-    } finally {
-      setAssigning(false);
-    }
+    } finally { setAssigning(false); }
   };
 
   const handleAssignTahap2 = async () => {
@@ -141,7 +142,6 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
       Swal.fire({ icon: "warning", title: "Perhatian", text: "Silakan pilih 1 proposal", confirmButtonColor: "#0D59F2" });
       return;
     }
-
     const proposal = proposals.find((p) => p.id_proposal === selectedProposal);
     const result = await Swal.fire({
       title: "Konfirmasi Distribusi Panel",
@@ -150,9 +150,7 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
       confirmButtonColor: "#0D59F2", cancelButtonColor: "#d33",
       confirmButtonText: "Ya, Assign", cancelButtonText: "Batal",
     });
-
     if (!result.isConfirmed) return;
-
     try {
       setAssigning(true);
       const res = await executeManualDistribusiTahap2(id_program, {
@@ -168,10 +166,7 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
       fetchProposals();
     } catch (err) {
       Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Terjadi kesalahan saat assign panel", confirmButtonColor: "#0D59F2" });
-      onError(err.response?.data?.message || "Terjadi kesalahan");
-    } finally {
-      setAssigning(false);
-    }
+    } finally { setAssigning(false); }
   };
 
   if (tahap === 1) {
@@ -201,37 +196,55 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
 }
 
 function ProposalTable({ proposals, loading, renderSelector, navigate }) {
-  if (loading) return <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}><CircularProgress /></Box>;
-  if (proposals.length === 0) return (
-    <Box sx={{ textAlign: "center", py: 5 }}>
-      <Typography sx={{ fontSize: 14, color: "#999" }}>Tidak ada proposal siap distribusi</Typography>
-    </Box>
-  );
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+  if (proposals.length === 0) {
+    return (
+      <Box sx={{ textAlign: "center", py: 5 }}>
+        <Typography sx={{ fontSize: 14, color: "#999" }}>Tidak ada proposal siap distribusi</Typography>
+      </Box>
+    );
+  }
   return (
-    <TableContainer>
+    <TableContainer sx={{ borderRadius: "12px", border: "1px solid #f0f0f0", overflow: "auto" }}>
       <Table>
         <TableHead>
-          <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-            <TableCell padding="checkbox" />
-            <TableCell sx={{ fontWeight: 700 }}>ID</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Judul Proposal</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Tim</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Modal</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Aksi</TableCell>
+          <TableRow>
+            <TableCell padding="checkbox" sx={{ ...tableHeadCell, width: 48 }} />
+            <TableCell sx={{ ...tableHeadCell, width: 60 }}>ID</TableCell>
+            <TableCell sx={tableHeadCell}>Judul Proposal</TableCell>
+            <TableCell sx={tableHeadCell}>Tim</TableCell>
+            <TableCell sx={tableHeadCell}>Modal</TableCell>
+            <TableCell sx={{ ...tableHeadCell, width: 90 }}>Aksi</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {proposals.map((p) => (
-            <TableRow key={p.id_proposal} hover>
+            <TableRow key={p.id_proposal} sx={tableBodyRow}>
               <TableCell padding="checkbox">{renderSelector(p)}</TableCell>
-              <TableCell><Chip label={`#${p.id_proposal}`} size="small" color="primary" variant="outlined" /></TableCell>
-              <TableCell><Typography sx={{ fontSize: 13, maxWidth: 300 }}>{p.judul}</Typography></TableCell>
-              <TableCell><Typography sx={{ fontSize: 13 }}>{p.nama_tim}</Typography></TableCell>
-              <TableCell><Typography sx={{ fontSize: 13 }}>{formatRupiah(p.modal_diajukan)}</Typography></TableCell>
+              <TableCell>
+                <Chip label={`#${p.id_proposal}`} size="small" color="primary" variant="outlined" />
+              </TableCell>
+              <TableCell>
+                <Typography sx={{ fontSize: 13, maxWidth: 300 }}>{p.judul}</Typography>
+              </TableCell>
+              <TableCell>
+                <Typography sx={{ fontSize: 13 }}>{p.nama_tim}</Typography>
+              </TableCell>
+              <TableCell>
+                <Typography sx={{ fontSize: 13 }}>{formatRupiah(p.modal_diajukan)}</Typography>
+              </TableCell>
               <TableCell>
                 <Button size="small" variant="outlined" startIcon={<Visibility />}
                   onClick={() => navigate(`/admin/proposal/${p.id_proposal}`)}
-                  sx={{ textTransform: "none" }}>Detail</Button>
+                  sx={{ textTransform: "none", fontSize: 12, borderRadius: "8px" }}>
+                  Detail
+                </Button>
               </TableCell>
             </TableRow>
           ))}
@@ -255,27 +268,44 @@ function DistribusiManualTahap1({
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      <Typography sx={{ fontSize: 15, fontWeight: 600 }}>1. Pilih Reviewer</Typography>
+      <Typography sx={{...roundedField, fontSize: 15, fontWeight: 700, color: "#1a1a1a" }}>1. Pilih Reviewer</Typography>
 
-      <TextField select fullWidth label="Reviewer" value={selectedReviewer}
-        onChange={(e) => setSelectedReviewer(e.target.value)} disabled={loadingReviewers}>
-        <MenuItem value="">Pilih Reviewer</MenuItem>
-        {reviewers.map((r) => (
-          <MenuItem key={r.id_user} value={r.id_user}>
-            <Box>
-              <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{r.nama_lengkap}</Typography>
-              <Typography sx={{ fontSize: 12, color: "#888" }}>{r.institusi || "-"}{r.bidang_keahlian ? ` • ${r.bidang_keahlian}` : ""}</Typography>
-            </Box>
-          </MenuItem>
-        ))}
-      </TextField>
+      <Autocomplete
+        options={reviewers}
+        value={selectedReviewer}
+        onChange={(_, v) => setSelectedReviewer(v)}
+        getOptionLabel={(o) => o.nama_lengkap || ""}
+        isOptionEqualToValue={(o, v) => o.id_user === v.id_user}
+        disabled={loadingReviewers}
+        loading={loadingReviewers}
+        renderOption={(props, option) => (
+          <Box component="li" {...props} key={option.id_user}>
+            <PersonOption
+              nama={option.nama_lengkap}
+              institusi={option.institusi}
+              keahlian={option.bidang_keahlian}
+            />
+          </Box>
+        )}
+        renderInput={(params) => (
+          <TextField {...params} label="Reviewer" placeholder="Cari atau pilih reviewer" sx={roundedField} />
+        )}
+      />
 
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Typography sx={{ fontSize: 15, fontWeight: 600 }}>2. Pilih Proposal ({selectedProposals.length} terpilih)</Typography>
+        <Typography sx={{ fontSize: 15, fontWeight: 700, color: "#1a1a1a" }}>
+          2. Pilih Proposal ({selectedProposals.length} terpilih)
+        </Typography>
         {proposals.length > 0 && (
           <FormControlLabel
-            control={<Checkbox checked={proposals.length > 0 && selectedProposals.length === proposals.length} indeterminate={selectedProposals.length > 0 && selectedProposals.length < proposals.length} onChange={handleSelectAll} />}
-            label="Pilih Semua"
+            control={
+              <Checkbox
+                checked={proposals.length > 0 && selectedProposals.length === proposals.length}
+                indeterminate={selectedProposals.length > 0 && selectedProposals.length < proposals.length}
+                onChange={handleSelectAll}
+              />
+            }
+            label={<Typography sx={{ fontSize: 13 }}>Pilih Semua</Typography>}
           />
         )}
       </Box>
@@ -283,14 +313,21 @@ function DistribusiManualTahap1({
       <ProposalTable
         proposals={proposals} loading={loadingProposals} navigate={navigate}
         renderSelector={(p) => (
-          <Checkbox checked={selectedProposals.includes(p.id_proposal)} onChange={() => handleToggle(p.id_proposal)} />
+          <Checkbox
+            checked={selectedProposals.includes(p.id_proposal)}
+            onChange={() => handleToggle(p.id_proposal)}
+          />
         )}
       />
 
       <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-        <Button variant="contained" startIcon={assigning ? <CircularProgress size={18} color="inherit" /> : <Assignment />}
-          onClick={handleAssign} disabled={assigning || selectedProposals.length === 0}
-          sx={{ textTransform: "none", backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}>
+        <Button
+          variant="contained"
+          startIcon={assigning ? <CircularProgress size={18} color="inherit" /> : <Assignment />}
+          onClick={handleAssign}
+          disabled={assigning || selectedProposals.length === 0 || !selectedReviewer}
+          sx={{ textTransform: "none", borderRadius: "50px", px: 3, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}
+        >
           {assigning ? "Memproses..." : `Assign ${selectedProposals.length} Proposal`}
         </Button>
       </Box>
@@ -308,44 +345,92 @@ function DistribusiManualTahap2({
 }) {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      <Typography sx={{ fontSize: 15, fontWeight: 600 }}>1. Pilih Reviewer ({selectedReviewers.length} terpilih)</Typography>
+      <Typography sx={{...roundedField, fontSize: 15, fontWeight: 700, color: "#1a1a1a" }}>
+        1. Pilih Reviewer ({selectedReviewers.length} terpilih)
+      </Typography>
 
-      <Autocomplete multiple options={reviewers}
+      <Autocomplete
+        multiple
+        options={reviewers}
         value={reviewers.filter((r) => selectedReviewers.includes(r.id_user))}
         onChange={(_, v) => setSelectedReviewers(v.map((x) => x.id_user))}
-        getOptionLabel={(o) => o.nama_lengkap}
+        getOptionLabel={(o) => o.nama_lengkap || ""}
         isOptionEqualToValue={(o, v) => o.id_user === v.id_user}
         disabled={loadingReviewers}
-        renderInput={(params) => <TextField {...params} label="Reviewer" placeholder="Pilih reviewer" />}
-        renderTags={(value, getTagProps) => value.map((o, i) => <Chip key={i} label={o.nama_lengkap} {...getTagProps({ index: i })} size="small" />)}
+        loading={loadingReviewers}
+        renderOption={(props, option) => (
+          <Box component="li" {...props} key={option.id_user}>
+            <PersonOption
+              nama={option.nama_lengkap}
+              institusi={option.institusi}
+              keahlian={option.bidang_keahlian}
+            />
+          </Box>
+        )}
+        renderTags={(value, getTagProps) =>
+          value.map((o, i) => (
+            <Chip key={i} label={o.nama_lengkap} {...getTagProps({ index: i })} size="small" />
+          ))
+        }
+        renderInput={(params) => (
+          <TextField {...params} label="Reviewer" placeholder="Cari atau pilih reviewer" sx={roundedField} />
+        )}
       />
 
-      <Typography sx={{ fontSize: 15, fontWeight: 600 }}>2. Pilih Juri ({selectedJuries.length} terpilih)</Typography>
+      <Typography sx={{...roundedField, fontSize: 15, fontWeight: 700, color: "#1a1a1a" }}>
+        2. Pilih Juri ({selectedJuries.length} terpilih)
+      </Typography>
 
-      <Autocomplete multiple options={juries}
+      <Autocomplete
+        multiple
+        options={juries}
         value={juries.filter((j) => selectedJuries.includes(j.id_user))}
         onChange={(_, v) => setSelectedJuries(v.map((x) => x.id_user))}
-        getOptionLabel={(o) => o.nama_lengkap}
+        getOptionLabel={(o) => o.nama_lengkap || ""}
         isOptionEqualToValue={(o, v) => o.id_user === v.id_user}
         disabled={loadingJuries}
-        renderInput={(params) => <TextField {...params} label="Juri" placeholder="Pilih juri" />}
-        renderTags={(value, getTagProps) => value.map((o, i) => <Chip key={i} label={o.nama_lengkap} {...getTagProps({ index: i })} size="small" />)}
+        loading={loadingJuries}
+        renderOption={(props, option) => (
+          <Box component="li" {...props} key={option.id_user}>
+            <PersonOption
+              nama={option.nama_lengkap}
+              institusi={option.institusi}
+              keahlian={option.bidang_keahlian}
+            />
+          </Box>
+        )}
+        renderTags={(value, getTagProps) =>
+          value.map((o, i) => (
+            <Chip key={i} label={o.nama_lengkap} {...getTagProps({ index: i })} size="small" />
+          ))
+        }
+        renderInput={(params) => (
+          <TextField {...params} label="Juri" placeholder="Cari atau pilih juri" sx={roundedField} />
+        )}
       />
 
-      <Typography sx={{ fontSize: 15, fontWeight: 600 }}>3. Pilih Proposal (1 proposal)</Typography>
+      <Typography sx={{ fontSize: 15, fontWeight: 700, color: "#1a1a1a" }}>
+        3. Pilih Proposal (1 proposal)
+      </Typography>
 
       <ProposalTable
         proposals={proposals} loading={loadingProposals} navigate={navigate}
         renderSelector={(p) => (
-          <Radio checked={selectedProposal === p.id_proposal} onChange={() => setSelectedProposal(p.id_proposal)} />
+          <Radio
+            checked={selectedProposal === p.id_proposal}
+            onChange={() => setSelectedProposal(p.id_proposal)}
+          />
         )}
       />
 
       <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-        <Button variant="contained" startIcon={assigning ? <CircularProgress size={18} color="inherit" /> : <Assignment />}
+        <Button
+          variant="contained"
+          startIcon={assigning ? <CircularProgress size={18} color="inherit" /> : <Assignment />}
           onClick={handleAssign}
           disabled={assigning || selectedReviewers.length === 0 || selectedJuries.length === 0 || !selectedProposal}
-          sx={{ textTransform: "none", backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}>
+          sx={{ textTransform: "none", borderRadius: "50px", px: 3, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}
+        >
           {assigning ? "Memproses..." : "Assign Panel ke Proposal"}
         </Button>
       </Box>
