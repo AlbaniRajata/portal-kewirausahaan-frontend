@@ -508,7 +508,7 @@ export default function VerifikasiPage() {
                       <TableHead>
                         <TableRow>
                           {[
-                            "Nama Lengkap",
+                            "Username",
                             activeTab === 0 ? "NIM" : "NIP",
                             "Email",
                             "Prodi",

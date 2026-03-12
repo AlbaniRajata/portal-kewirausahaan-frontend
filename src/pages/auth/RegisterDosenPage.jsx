@@ -116,16 +116,34 @@ export default function RegisterDosenPage() {
 
       const response = await registerDosen(payload);
       if (response.success) {
-        const token = response.data.verification_link
-          ? new URL(response.data.verification_link).searchParams.get("token")
-          : null;
-        const result = await Swal.fire({
-          icon: "success", title: "Registrasi Berhasil",
-          html: `<p>Akun Anda telah berhasil didaftarkan.</p><p style="color:#666;font-size:14px;">Silakan verifikasi email Anda terlebih dahulu.</p>`,
-          showCancelButton: false, confirmButtonText: "Verifikasi Email",
-          confirmButtonColor: "#0D59F2", allowOutsideClick: false,
-        });
-        if (result.isConfirmed && token) await handleVerifyEmail(token);
+        let token = null;
+        try {
+          const verificationLink = response.data?.verification_link;
+          if (verificationLink) {
+            token = new URL(verificationLink).searchParams.get("token");
+          }
+        } catch {
+          token = null;
+        }
+
+        if (token) {
+          const result = await Swal.fire({
+            icon: "success", title: "Registrasi Berhasil",
+            html: `<p>Akun Anda telah berhasil didaftarkan.</p><p style="color:#666;font-size:14px;">Silakan verifikasi email Anda terlebih dahulu.</p>`,
+            showCancelButton: false, confirmButtonText: "Verifikasi Email",
+            confirmButtonColor: "#0D59F2", allowOutsideClick: false,
+          });
+          if (result.isConfirmed) await handleVerifyEmail(token);
+        } else {
+          await Swal.fire({
+            icon: "success", title: "Registrasi Berhasil",
+            html: `<p>Akun Anda telah berhasil didaftarkan.</p><p style="color:#666;font-size:14px;">Silakan cek email Anda untuk melakukan verifikasi.</p>`,
+            confirmButtonText: "Menuju Login",
+            confirmButtonColor: "#0D59F2", allowOutsideClick: false,
+            timer: 5000, timerProgressBar: true,
+          });
+          navigate("/login");
+        }
       }
     } catch (err) {
       const errorMessage = err.response?.data?.message || "Registrasi gagal. Silakan coba lagi.";
