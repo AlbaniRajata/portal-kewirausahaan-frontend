@@ -87,37 +87,66 @@ export default function DosenSidebar({ collapsed }) {
     <Box
       sx={{
         width: collapsed ? 70 : 250,
-        height: "100vh",
-        backgroundColor: "#fff",
-        borderRight: "1px solid #e0e0e0",
+        height: "calc(100vh - 24px)",
+        background: "linear-gradient(135deg, #0D59F2 0%, #1e40af 100%)",
+        border: "1px solid rgba(255,255,255,0.16)",
+        borderLeft: "none",
+        borderTopRightRadius: 24,
+        borderBottomRightRadius: 24,
+        boxShadow: "0 10px 30px rgba(13,89,242,0.22)",
+        overflow: "hidden",
         display: "flex",
         flexDirection: "column",
         position: "fixed",
         left: 0,
-        top: 0,
+        top: 12,
         transition: "width 0.3s ease",
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          top: -42,
+          right: -46,
+          width: 210,
+          height: 210,
+          borderRadius: "50%",
+          backgroundColor: "rgba(255,255,255,0.07)",
+          pointerEvents: "none",
+        },
+        "&::after": {
+          content: '""',
+          position: "absolute",
+          bottom: -34,
+          left: -76,
+          width: 182,
+          height: 182,
+          borderRadius: "50%",
+          backgroundColor: "rgba(255,255,255,0.055)",
+          boxShadow: "94px -54px 0 18px rgba(255,255,255,0.04)",
+          pointerEvents: "none",
+        },
       }}
     >
       <Box
         sx={{
+          position: "relative",
+          zIndex: 1,
           p: 2,
           display: "flex",
           alignItems: "center",
           gap: 1.5,
-          borderBottom: "1px solid #e0e0e0",
           minHeight: 73,
           justifyContent: "center",
         }}
       >
-        <AccountBalanceIcon sx={{ fontSize: 32, color: "#0D59F2" }} />
+        <AccountBalanceIcon sx={{ fontSize: 32, color: "#ffffff" }} />
         {!collapsed && (
-          <Box sx={{ fontWeight: 700, fontSize: 13, whiteSpace: "nowrap" }}>
+          <Box sx={{ fontWeight: 700, fontSize: 13, whiteSpace: "nowrap", color: "#ffffff" }}>
             UPA PKK POLINEMA
           </Box>
         )}
       </Box>
       
-      <List sx={{ px: collapsed ? 1 : 2, py: 2, flex: 1 }}>
+      <List sx={{ px: collapsed ? 1 : 2, py: 2, flex: 1, position: "relative", zIndex: 1 }}>
         {menuItems.map((item, index) => {
           const isParentActive =
             item.hasSubmenu && isInBimbinganSubmenu;
@@ -132,13 +161,13 @@ export default function DosenSidebar({ collapsed }) {
                       borderRadius: 50,
                       backgroundColor:
                         isActive(item.path) || isParentActive
-                          ? "#F0F4FF"
+                          ? "rgba(255,255,255,0.18)"
                           : "transparent",
                       "&:hover": {
                         backgroundColor:
                           isActive(item.path) || isParentActive
-                            ? "#F0F4FF"
-                            : "#f5f5f5",
+                            ? "rgba(255,255,255,0.22)"
+                            : "rgba(255,255,255,0.12)",
                       },
                       justifyContent: collapsed ? "center" : "flex-start",
                       px: collapsed ? 1 : 2,
@@ -150,8 +179,8 @@ export default function DosenSidebar({ collapsed }) {
                         minWidth: collapsed ? "auto" : 40,
                         color:
                           isActive(item.path) || isParentActive
-                            ? "#0D59F2"
-                            : "#666",
+                            ? "#ffffff"
+                            : "rgba(255,255,255,0.88)",
                         justifyContent: "center",
                       }}
                     >
@@ -170,12 +199,15 @@ export default function DosenSidebar({ collapsed }) {
                                 : 500,
                             color:
                               isActive(item.path) || isParentActive
-                                ? "#0D59F2"
-                                : "#333",
+                                ? "#ffffff"
+                                : "rgba(255,255,255,0.92)",
                           }}
                         />
-                        {item.hasSubmenu &&
-                          (openBimbingan ? <ExpandLess /> : <ExpandMore />)}
+                        {item.hasSubmenu && (
+                          <Box sx={{ color: "rgba(255,255,255,0.92)", display: "flex", alignItems: "center" }}>
+                            {openBimbingan ? <ExpandLess /> : <ExpandMore />}
+                          </Box>
+                        )}
                       </>
                     )}
                   </ListItemButton>
@@ -198,19 +230,19 @@ export default function DosenSidebar({ collapsed }) {
                               pl: 4,
                               borderRadius: 50,
                               backgroundColor: subActive
-                                ? "#E8F0FE"
+                                ? "rgba(255,255,255,0.18)"
                                 : "transparent",
                               "&:hover": {
                                 backgroundColor: subActive
-                                  ? "#E8F0FE"
-                                  : "#f5f5f5",
+                                  ? "rgba(255,255,255,0.22)"
+                                  : "rgba(255,255,255,0.12)",
                               },
                             }}
                           >
                             <ListItemIcon
                               sx={{
                                 minWidth: 36,
-                                color: subActive ? "#0D59F2" : "#666",
+                                color: subActive ? "#ffffff" : "rgba(255,255,255,0.88)",
                               }}
                             >
                               {sub.icon}
@@ -220,7 +252,7 @@ export default function DosenSidebar({ collapsed }) {
                               primaryTypographyProps={{
                                 fontSize: 14,
                                 fontWeight: subActive ? 600 : 500,
-                                color: subActive ? "#0D59F2" : "#333",
+                                color: subActive ? "#ffffff" : "rgba(255,255,255,0.92)",
                               }}
                             />
                           </ListItemButton>

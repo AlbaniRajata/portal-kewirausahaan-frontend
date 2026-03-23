@@ -6,11 +6,6 @@ import {
   Button,
   CircularProgress,
   TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
   Table,
   TableBody,
   TableCell,
@@ -19,11 +14,6 @@ import {
   TableRow,
 } from "@mui/material";
 import {
-  ArrowBack,
-  CheckCircle,
-  Cancel,
-  Close,
-  Download,
   AttachFile,
 } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom";
@@ -31,7 +21,7 @@ import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import DosenSidebar from "../../components/layouts/DosenSidebar";
 import PageTransition from "../../components/PageTransition";
-import { getDetailPengajuan, approvePengajuan, rejectPengajuan } from "../../api/dosen";
+import { getDetailPengajuan } from "../../api/dosen";
 
 const roundedField = {
   "& .MuiOutlinedInput-root": { borderRadius: "15px" },
@@ -85,24 +75,12 @@ const formatRupiah = (value) => {
   return "Rp " + new Intl.NumberFormat("id-ID").format(value);
 };
 
-const swalOptions = {
-  customClass: { container: "swal-over-dialog" },
-  didOpen: () => {
-    const container = document.querySelector(".swal-over-dialog");
-    if (container) container.style.zIndex = "99999";
-  },
-};
-
 export default function DetailPengajuanPembimbingPage() {
   const navigate = useNavigate();
   const { id_pengajuan } = useParams();
 
   const [loading, setLoading] = useState(true);
   const [detail, setDetail] = useState(null);
-  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
-  const [catatan, setCatatan] = useState("");
-  const [errors, setErrors] = useState({});
-  const [submitting, setSubmitting] = useState(false);
 
   const fetchDetail = useCallback(async () => {
     try {
@@ -118,75 +96,6 @@ export default function DetailPengajuanPembimbingPage() {
 
   useEffect(() => { fetchDetail(); }, [fetchDetail]);
 
-  const handleApprove = async () => {
-    const result = await Swal.fire({
-      ...swalOptions,
-      title: "Setujui Pengajuan?",
-      html: `Anda akan menyetujui pengajuan pembimbing dari tim <b>${detail?.tim?.nama_tim}</b>.<br/><br/>Lanjutkan?`,
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonColor: "#2e7d32",
-      cancelButtonColor: "#666",
-      confirmButtonText: "Ya, Setujui",
-      cancelButtonText: "Batal",
-    });
-    if (!result.isConfirmed) return;
-    try {
-      setSubmitting(true);
-      const res = await approvePengajuan(id_pengajuan);
-      await Swal.fire({ ...swalOptions, icon: "success", title: "Berhasil", text: res.message || "Pengajuan pembimbing disetujui", timer: 2000, timerProgressBar: true, showConfirmButton: false });
-      fetchDetail();
-    } catch (err) {
-      await Swal.fire({ ...swalOptions, icon: "error", title: "Gagal", text: err.response?.data?.message || "Gagal menyetujui pengajuan", confirmButtonText: "OK" });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleOpenReject = () => {
-    setCatatan("");
-    setErrors({});
-    setRejectDialogOpen(true);
-  };
-
-  const handleCloseReject = () => {
-    setRejectDialogOpen(false);
-    setCatatan("");
-    setErrors({});
-  };
-
-  const handleReject = async () => {
-    if (!catatan || catatan.trim().length < 10) {
-      setErrors({ catatan: "Catatan penolakan minimal 10 karakter" });
-      return;
-    }
-    setRejectDialogOpen(false);
-    const result = await Swal.fire({
-      ...swalOptions,
-      title: "Tolak Pengajuan?",
-      html: `Anda akan menolak pengajuan pembimbing dari tim <b>${detail?.tim?.nama_tim}</b>.<br/><br/>Lanjutkan?`,
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#c62828",
-      cancelButtonColor: "#666",
-      confirmButtonText: "Ya, Tolak",
-      cancelButtonText: "Batal",
-    });
-    if (!result.isConfirmed) {
-      setRejectDialogOpen(true);
-      return;
-    }
-    try {
-      setSubmitting(true);
-      const res = await rejectPengajuan(id_pengajuan, catatan.trim());
-      await Swal.fire({ ...swalOptions, icon: "success", title: "Pengajuan Ditolak", text: res.message || "Pengajuan pembimbing ditolak", timer: 2000, timerProgressBar: true, showConfirmButton: false });
-      fetchDetail();
-    } catch (err) {
-      await Swal.fire({ ...swalOptions, icon: "error", title: "Gagal", text: err.response?.data?.message || "Gagal menolak pengajuan", confirmButtonText: "OK" });
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -209,7 +118,6 @@ export default function DetailPengajuanPembimbingPage() {
   }
 
   const { pengajuan, proposal, tim } = detail;
-  const sudahDirespon = pengajuan.status !== 0;
   const si = STATUS_PENGAJUAN[pengajuan.status];
 
   return (
@@ -217,9 +125,8 @@ export default function DetailPengajuanPembimbingPage() {
       <PageTransition>
         <Box>
           <Button
-            startIcon={<ArrowBack sx={{ fontSize: 16 }} />}
             onClick={() => navigate("/dosen/pembimbing/pengajuan")}
-            sx={{ textTransform: "none", color: "#777", fontSize: 13, fontWeight: 500, p: 0, mb: 2, minWidth: 0, "&:hover": { backgroundColor: "transparent", color: "#0D59F2" } }}
+            sx={{ textTransform: "none", borderRadius: "50px", color: "#777", fontSize: 13, fontWeight: 500, p: 0, mb: 2, minWidth: 0, "&:hover": { backgroundColor: "transparent", color: "#0D59F2" } }}
           >
             Kembali ke Daftar Pengajuan
           </Button>
@@ -309,7 +216,6 @@ export default function DetailPengajuanPembimbingPage() {
                         </Box>
                       </Box>
                       <Button
-                        startIcon={<Download sx={{ fontSize: 16 }} />}
                         component="a"
                         href={`${import.meta.env.VITE_API_URL.replace("/api", "")}/uploads/proposal/${proposal.file_proposal}`}
                         target="_blank"
@@ -351,28 +257,6 @@ export default function DetailPengajuanPembimbingPage() {
           )}
 
           <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
-            {!sudahDirespon && (
-              <>
-                <Button
-                  variant="outlined"
-                  startIcon={<Cancel sx={{ fontSize: 14 }} />}
-                  onClick={handleOpenReject}
-                  disabled={submitting}
-                  sx={{ textTransform: "none", borderRadius: "50px", px: 3, py: 1.2, fontWeight: 600, borderColor: "#e53935", color: "#e53935", "&:hover": { backgroundColor: "rgba(229,57,53,0.06)", borderColor: "#e53935" } }}
-                >
-                  Tolak
-                </Button>
-                <Button
-                  variant="contained"
-                  startIcon={<CheckCircle sx={{ fontSize: 14 }} />}
-                  onClick={handleApprove}
-                  disabled={submitting}
-                  sx={{ textTransform: "none", borderRadius: "50px", px: 3, py: 1.2, fontWeight: 600, backgroundColor: "#2e7d32", "&:hover": { backgroundColor: "#1b5e20" } }}
-                >
-                  {submitting ? "Memproses..." : "Terima"}
-                </Button>
-              </>
-            )}
             <Button
               variant="contained"
               onClick={() => navigate("/dosen/pembimbing/pengajuan")}
@@ -383,56 +267,6 @@ export default function DetailPengajuanPembimbingPage() {
           </Box>
         </Box>
       </PageTransition>
-
-      <Dialog open={rejectDialogOpen} onClose={handleCloseReject} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: "16px" } }}>
-        <DialogTitle sx={{ pb: 1 }}>
-          <Typography sx={{ fontWeight: 700, fontSize: 16 }}>Tolak Pengajuan Pembimbing</Typography>
-          <IconButton onClick={handleCloseReject} sx={{ position: "absolute", right: 12, top: 8, color: "#888" }}>
-            <Close />
-          </IconButton>
-        </DialogTitle>
-
-        <DialogContent dividers sx={{ px: 3, py: 3 }}>
-          <Box sx={{ p: 2.5, backgroundColor: "#fce4ec", borderRadius: "12px", border: "1px solid #ef9a9a", mb: 3 }}>
-            <Typography sx={{ fontSize: 12, color: "#c62828", fontWeight: 700, mb: 0.5 }}>Tim yang akan ditolak</Typography>
-            <Typography sx={{ fontSize: 14, fontWeight: 600 }}>{tim?.nama_tim}</Typography>
-          </Box>
-
-          <Box>
-            <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>
-              Catatan Penolakan <span style={{ color: "#ef5350" }}>*</span>
-            </Typography>
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              placeholder="Masukkan alasan penolakan (minimal 10 karakter)..."
-              value={catatan}
-              onChange={(e) => { setCatatan(e.target.value); setErrors({}); }}
-              error={!!errors.catatan}
-              helperText={errors.catatan}
-              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
-            />
-          </Box>
-        </DialogContent>
-
-        <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-          <Button
-            onClick={handleCloseReject}
-            sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, color: "#666", border: "1.5px solid #e0e0e0", "&:hover": { backgroundColor: "#f5f5f5" } }}
-          >
-            Batal
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleReject}
-            disabled={submitting}
-            sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, backgroundColor: "#e53935", "&:hover": { backgroundColor: "#c62828" } }}
-          >
-            {submitting ? "Memproses..." : "Tolak Pengajuan"}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </BodyLayout>
   );
 }

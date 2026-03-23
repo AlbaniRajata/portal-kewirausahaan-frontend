@@ -3,14 +3,15 @@ import {
   Box, Typography, Paper, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Button,
   CircularProgress, TextField, InputAdornment,
+  Dialog, DialogTitle, DialogContent, DialogActions, IconButton,
 } from "@mui/material";
-import { Search, Inbox, Visibility } from "@mui/icons-material";
+import { Search, Inbox, Close } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import DosenSidebar from "../../components/layouts/DosenSidebar";
 import PageTransition from "../../components/PageTransition";
-import { getPengajuanMasuk } from "../../api/dosen";
+import { getPengajuanMasuk, approvePengajuan, rejectPengajuan } from "../../api/dosen";
 
 const roundedField = {
   "& .MuiOutlinedInput-root": { borderRadius: "15px" },
@@ -58,6 +59,11 @@ export default function DaftarPengajuanPembimbingPage() {
   const [loading, setLoading] = useState(true);
   const [pengajuanList, setPengajuanList] = useState([]);
   const [search, setSearch] = useState("");
+  const [submittingId, setSubmittingId] = useState(null);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [selectedPengajuan, setSelectedPengajuan] = useState(null);
+  const [catatan, setCatatan] = useState("");
+  const [errors, setErrors] = useState({});
 
   const fetchPengajuan = useCallback(async () => {
     try {
@@ -75,11 +81,87 @@ export default function DaftarPengajuanPembimbingPage() {
 
   const filtered = pengajuanList.filter((p) =>
     (p.nama_tim || "").toLowerCase().includes(search.toLowerCase()) ||
-    (p.nama_program || "").toLowerCase().includes(search.toLowerCase()) ||
+    (p.keterangan || "").toLowerCase().includes(search.toLowerCase()) ||
     (p.mahasiswa_pengaju || "").toLowerCase().includes(search.toLowerCase())
   );
 
   const pending = pengajuanList.filter((p) => p.status === 0).length;
+
+  const handleApprove = async (p) => {
+    const result = await Swal.fire({
+      title: "Setujui Pengajuan?",
+      html: `Anda akan menyetujui pengajuan pembimbing dari tim <b>${p.nama_tim}</b>.<br/><br/>Lanjutkan?`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#2e7d32",
+      cancelButtonColor: "#666",
+      confirmButtonText: "Ya, Setujui",
+      cancelButtonText: "Batal",
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      setSubmittingId(p.id_pengajuan);
+      const res = await approvePengajuan(p.id_pengajuan);
+      await Swal.fire({ icon: "success", title: "Berhasil", text: res.message || "Pengajuan pembimbing disetujui", timer: 2000, timerProgressBar: true, showConfirmButton: false });
+      fetchPengajuan();
+    } catch (err) {
+      await Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Gagal menyetujui pengajuan", confirmButtonText: "OK" });
+    } finally {
+      setSubmittingId(null);
+    }
+  };
+
+  const handleOpenReject = (p) => {
+    setSelectedPengajuan(p);
+    setCatatan("");
+    setErrors({});
+    setRejectDialogOpen(true);
+  };
+
+  const handleCloseReject = () => {
+    setRejectDialogOpen(false);
+    setSelectedPengajuan(null);
+    setCatatan("");
+    setErrors({});
+  };
+
+  const handleReject = async () => {
+    if (!catatan || catatan.trim().length < 10) {
+      setErrors({ catatan: "Catatan penolakan minimal 10 karakter" });
+      return;
+    }
+
+    setRejectDialogOpen(false);
+    const result = await Swal.fire({
+      title: "Tolak Pengajuan?",
+      html: `Anda akan menolak pengajuan pembimbing dari tim <b>${selectedPengajuan?.nama_tim}</b>.<br/><br/>Lanjutkan?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#c62828",
+      cancelButtonColor: "#666",
+      confirmButtonText: "Ya, Tolak",
+      cancelButtonText: "Batal",
+    });
+
+    if (!result.isConfirmed) {
+      setRejectDialogOpen(true);
+      return;
+    }
+
+    try {
+      setSubmittingId(selectedPengajuan?.id_pengajuan);
+      const res = await rejectPengajuan(selectedPengajuan?.id_pengajuan, catatan.trim());
+      await Swal.fire({ icon: "success", title: "Pengajuan Ditolak", text: res.message || "Pengajuan pembimbing ditolak", timer: 2000, timerProgressBar: true, showConfirmButton: false });
+      fetchPengajuan();
+      setSelectedPengajuan(null);
+      setCatatan("");
+    } catch (err) {
+      await Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Gagal menolak pengajuan", confirmButtonText: "OK" });
+    } finally {
+      setSubmittingId(null);
+    }
+  };
 
   return (
     <BodyLayout Sidebar={DosenSidebar}>
@@ -151,7 +233,7 @@ export default function DaftarPengajuanPembimbingPage() {
                             <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{p.nama_tim}</Typography>
                           </TableCell>
                           <TableCell>
-                            <Typography sx={{ fontSize: 13 }}>{p.nama_program}</Typography>
+                            <Typography sx={{ fontSize: 13 }}>{p.keterangan || "-"}</Typography>
                           </TableCell>
                           <TableCell>
                             <Typography sx={{ fontSize: 13 }}>{p.mahasiswa_pengaju}</Typography>
@@ -163,20 +245,51 @@ export default function DaftarPengajuanPembimbingPage() {
                             <StatusPill label={si?.label || "-"} backgroundColor={si?.backgroundColor || "#9e9e9e"} />
                           </TableCell>
                           <TableCell align="center">
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              startIcon={<Visibility sx={{ fontSize: 14 }} />}
-                              onClick={() => navigate(`/dosen/pembimbing/pengajuan/${p.id_pengajuan}`)}
-                              sx={{
-                                textTransform: "none", borderRadius: "50px",
-                                fontSize: 12, fontWeight: 600, px: 2,
-                                borderColor: "#0D59F2", color: "#0D59F2",
-                                "&:hover": { backgroundColor: "#f0f4ff" },
-                              }}
-                            >
-                              Detail
-                            </Button>
+                            <Box sx={{ display: "inline-flex", gap: 1, flexWrap: "wrap", justifyContent: "center" }}>
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                onClick={() => navigate(`/dosen/pembimbing/pengajuan/${p.id_pengajuan}`)}
+                                sx={{
+                                  textTransform: "none", borderRadius: "50px",
+                                  fontSize: 12, fontWeight: 600, px: 2,
+                                  borderColor: "#0D59F2", color: "#0D59F2",
+                                  "&:hover": { backgroundColor: "#f0f4ff" },
+                                }}
+                              >
+                                Detail
+                              </Button>
+                              {p.status === 0 && (
+                                <>
+                                  <Button
+                                    size="small"
+                                    variant="contained"
+                                    onClick={() => handleOpenReject(p)}
+                                    disabled={submittingId === p.id_pengajuan}
+                                    sx={{
+                                      textTransform: "none", borderRadius: "50px",
+                                      fontSize: 12, fontWeight: 600, px: 2,
+                                      backgroundColor: "#e53935", "&:hover": { backgroundColor: "#c62828" },
+                                    }}
+                                  >
+                                    Tolak
+                                  </Button>
+                                  <Button
+                                    size="small"
+                                    variant="contained"
+                                    onClick={() => handleApprove(p)}
+                                    disabled={submittingId === p.id_pengajuan}
+                                    sx={{
+                                      textTransform: "none", borderRadius: "50px",
+                                      fontSize: 12, fontWeight: 600, px: 2,
+                                      backgroundColor: "#2e7d32", "&:hover": { backgroundColor: "#1b5e20" },
+                                    }}
+                                  >
+                                    {submittingId === p.id_pengajuan ? "Memproses..." : "Terima"}
+                                  </Button>
+                                </>
+                              )}
+                            </Box>
                           </TableCell>
                         </TableRow>
                       );
@@ -186,6 +299,56 @@ export default function DaftarPengajuanPembimbingPage() {
               </TableContainer>
             )}
           </Paper>
+
+          <Dialog open={rejectDialogOpen} onClose={handleCloseReject} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: "16px" } }}>
+            <DialogTitle sx={{ pb: 1 }}>
+              <Typography sx={{ fontWeight: 700, fontSize: 16 }}>Tolak Pengajuan Pembimbing</Typography>
+              <IconButton onClick={handleCloseReject} sx={{ position: "absolute", right: 12, top: 8, color: "#888" }}>
+                <Close />
+              </IconButton>
+            </DialogTitle>
+
+            <DialogContent dividers sx={{ px: 3, py: 3 }}>
+              <Box sx={{ p: 2.5, backgroundColor: "#fce4ec", borderRadius: "12px", border: "1px solid #ef9a9a", mb: 3 }}>
+                <Typography sx={{ fontSize: 12, color: "#c62828", fontWeight: 700, mb: 0.5 }}>Tim yang akan ditolak</Typography>
+                <Typography sx={{ fontSize: 14, fontWeight: 600 }}>{selectedPengajuan?.nama_tim || "-"}</Typography>
+              </Box>
+
+              <Box>
+                <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>
+                  Catatan Penolakan <span style={{ color: "#ef5350" }}>*</span>
+                </Typography>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={4}
+                  placeholder="Masukkan alasan penolakan (minimal 10 karakter)..."
+                  value={catatan}
+                  onChange={(e) => { setCatatan(e.target.value); setErrors({}); }}
+                  error={!!errors.catatan}
+                  helperText={errors.catatan}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
+                />
+              </Box>
+            </DialogContent>
+
+            <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
+              <Button
+                onClick={handleCloseReject}
+                sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, color: "#666", border: "1.5px solid #e0e0e0", "&:hover": { backgroundColor: "#f5f5f5" } }}
+              >
+                Batal
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleReject}
+                disabled={!!submittingId}
+                sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, backgroundColor: "#e53935", "&:hover": { backgroundColor: "#c62828" } }}
+              >
+                {submittingId ? "Memproses..." : "Tolak Pengajuan"}
+              </Button>
+            </DialogActions>
+          </Dialog>
         </Box>
       </PageTransition>
     </BodyLayout>
