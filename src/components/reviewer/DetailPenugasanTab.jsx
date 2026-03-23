@@ -3,7 +3,7 @@ import {
   Box, Typography, Button, Divider, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, IconButton,
 } from "@mui/material";
-import { CheckCircle, Cancel, Download, AttachFile, Close } from "@mui/icons-material";
+import { AttachFile, Close } from "@mui/icons-material";
 import Swal from "sweetalert2";
 
 const roundedField = {
@@ -121,7 +121,6 @@ export default function DetailPenugasanTab({ penugasan, onAccept, onReject, subm
               </Box>
             </Box>
             <Button
-              startIcon={<Download sx={{ fontSize: 16 }} />}
               component="a"
               href={`${import.meta.env.VITE_API_URL.replace("/api", "")}/uploads/proposal/${penugasan.file_proposal}`}
               target="_blank"
@@ -200,7 +199,6 @@ export default function DetailPenugasanTab({ penugasan, onAccept, onReject, subm
           <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
             <Button
               variant="outlined"
-              startIcon={<Cancel sx={{ fontSize: 14 }} />}
               onClick={handleOpenReject}
               disabled={submitting}
               sx={{
@@ -214,7 +212,6 @@ export default function DetailPenugasanTab({ penugasan, onAccept, onReject, subm
             </Button>
             <Button
               variant="contained"
-              startIcon={<CheckCircle sx={{ fontSize: 14 }} />}
               onClick={onAccept}
               disabled={submitting}
               sx={{

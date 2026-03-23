@@ -5,7 +5,7 @@ import {
   Button, CircularProgress, Dialog, DialogTitle, DialogContent,
   DialogActions, IconButton,
 } from "@mui/material";
-import { CheckCircle, Cancel, Visibility, Assignment, Close } from "@mui/icons-material";
+import { Close } from "@mui/icons-material";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
@@ -268,7 +268,6 @@ export default function PenugasanPage() {
                                 <>
                                   <Button
                                     size="small" variant="outlined"
-                                    startIcon={<Cancel sx={{ fontSize: 14 }} />}
                                     onClick={() => handleOpenReject(item)}
                                     disabled={submitting}
                                     sx={{
@@ -282,7 +281,6 @@ export default function PenugasanPage() {
                                   </Button>
                                   <Button
                                     size="small" variant="contained"
-                                    startIcon={<CheckCircle sx={{ fontSize: 14 }} />}
                                     onClick={() => handleAccept(item)}
                                     disabled={submitting}
                                     sx={{
@@ -299,7 +297,6 @@ export default function PenugasanPage() {
                                 <>
                                   <Button
                                     size="small" variant="outlined"
-                                    startIcon={<Visibility sx={{ fontSize: 14 }} />}
                                     onClick={() => navigate(`/reviewer/penugasan/${item.id_distribusi}?tab=0`)}
                                     sx={{
                                       textTransform: "none", borderRadius: "50px",
@@ -312,7 +309,6 @@ export default function PenugasanPage() {
                                   </Button>
                                   <Button
                                     size="small" variant="contained"
-                                    startIcon={<Assignment sx={{ fontSize: 14 }} />}
                                     onClick={() => navigate(`/reviewer/penugasan/${item.id_distribusi}?tab=1`)}
                                     disabled={![1, 3].includes(item.status)}
                                     sx={{

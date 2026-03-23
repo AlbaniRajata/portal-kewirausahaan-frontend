@@ -38,7 +38,8 @@ const STATUS_CONFIG = {
   0: { label: "Menunggu Konfirmasi", backgroundColor: "#f57f17" },
   1: { label: "Diterima",            backgroundColor: "#1565c0" },
   2: { label: "Ditolak",             backgroundColor: "#c62828" },
-  3: { label: "Sudah Dinilai",       backgroundColor: "#2e7d32" },
+  3: { label: "Draft Penilaian",     backgroundColor: "#1565c0" },
+  4: { label: "Selesai Dinilai",     backgroundColor: "#2e7d32" },
 };
 
 const StatCard = ({ icon, label, value, sub, accent, onClick }) => (
@@ -102,7 +103,7 @@ const PenugasanItem = ({ item, onClick }) => {
           {item.nama_tim || item.judul_proposal || "-"}
         </Typography>
         <Typography sx={{ fontSize: 12, color: "#aaa" }}>
-          {tahapLabel} · {formatTime(item.created_at)}
+          {tahapLabel} · {formatTime(item.assigned_at || item.created_at)}
         </Typography>
       </Box>
       <Box sx={{ px: 1.5, py: 0.3, borderRadius: "50px", backgroundColor: si?.backgroundColor || "#9e9e9e", flexShrink: 0 }}>
@@ -159,13 +160,13 @@ export default function DashboardReviewerPage() {
 
   const totalPenugasan     = penugasan.length;
   const menungguKonfirmasi = penugasan.filter((p) => p.status === 0).length;
-  const menungguPenilaian  = penugasan.filter((p) => p.status === 1).length;
-  const sudahDinilai       = penugasan.filter((p) => p.status === 3).length;
+  const menungguPenilaian  = penugasan.filter((p) => p.status === 1 || p.status === 3).length;
+  const sudahDinilai       = penugasan.filter((p) => p.status === 4).length;
   const ditolak            = penugasan.filter((p) => p.status === 2).length;
 
   const perluTindaklanjut = penugasan
-    .filter((p) => p.status === 0 || p.status === 1)
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .filter((p) => p.status === 0 || p.status === 1 || p.status === 3)
+    .sort((a, b) => new Date(b.assigned_at || b.created_at) - new Date(a.assigned_at || a.created_at))
     .slice(0, 5);
 
   const statCards = [
