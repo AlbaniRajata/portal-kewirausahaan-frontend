@@ -5,7 +5,7 @@ import {
   TextField, MenuItem, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, IconButton,
 } from "@mui/material";
-import { CloudUpload, Send, Save, Download, Close, AttachFile, ArrowBack } from "@mui/icons-material";
+import { CloudUpload, Send, Save, Close, AttachFile } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
@@ -14,6 +14,27 @@ import {
   getProposalStatus, createProposal, updateProposal, submitProposal,
 } from "../../api/mahasiswa";
 import { getAllKategori } from "../../api/public";
+
+const validateProposalFilename = (filename) => {
+  const nameWithoutExt = filename.replace(/\.pdf$/i, "");
+  const parts = nameWithoutExt.split("_");
+  if (parts.length !== 3) {
+    return {
+      valid: false,
+      message: 'Format nama file tidak valid. Gunakan format: "Program_Nama Tim_Judul Proposal.pdf" (dipisahkan dengan underscore). Contoh: "PMW_Tim Inovasi_Alat Pembersih Otomatis.pdf"',
+    };
+  }
+  const labels = ["Program", "Nama Tim", "Judul Proposal"];
+  for (let i = 0; i < parts.length; i++) {
+    if (parts[i].trim() === "") {
+      return {
+        valid: false,
+        message: `Bagian "${labels[i]}" pada nama file tidak boleh kosong. Format: "Program_Nama Tim_Judul Proposal.pdf"`,
+      };
+    }
+  }
+  return { valid: true };
+};
 
 const roundedField = {
   "& .MuiOutlinedInput-root": { borderRadius: "12px" },
@@ -97,9 +118,9 @@ const MemberTable = ({ members, showStatus = false }) => (
 
 const BackButton = ({ navigate }) => (
   <Button
-    startIcon={<ArrowBack sx={{ fontSize: 16 }} />}
     onClick={() => navigate("/mahasiswa/proposal")}
     sx={{
+      borderRadius: "50px",
       textTransform: "none", color: "#777", fontSize: 13,
       fontWeight: 500, p: 0, mb: 2, minWidth: 0,
       "&:hover": { backgroundColor: "transparent", color: "#0D59F2" },
@@ -117,6 +138,7 @@ export default function ProposalFormPage() {
   const [kategoriOptions, setKategoriOptions] = useState([]);
   const [file, setFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
+  const [fileNameError, setFileNameError] = useState("");
   const [form, setForm] = useState({ judul: "", id_kategori: "", modal_diajukan: "" });
   const [errors, setErrors] = useState({});
 
@@ -165,6 +187,8 @@ export default function ProposalFormPage() {
       e.target.value = "";
       return;
     }
+    const nameValidation = validateProposalFilename(selectedFile.name);
+    setFileNameError(nameValidation.valid ? "" : nameValidation.message);
     setFile(selectedFile);
     setFilePreview({ name: selectedFile.name, isExisting: false });
     setErrors({ ...errors, file: "" });
@@ -173,6 +197,7 @@ export default function ProposalFormPage() {
   const handleRemoveFile = () => {
     setFile(null);
     setFilePreview(null);
+    setFileNameError("");
     const el = document.getElementById("file-upload");
     if (el) el.value = "";
   };
@@ -184,6 +209,7 @@ export default function ProposalFormPage() {
     if (!form.id_kategori) newErrors.id_kategori = "Kategori usaha wajib dipilih";
     if (!form.modal_diajukan || form.modal_diajukan <= 0) newErrors.modal_diajukan = "Anggaran dana wajib diisi";
     if (!status?.data?.proposal && !file) newErrors.file = "File proposal wajib diunggah";
+    if (file && fileNameError) newErrors.file = "Perbaiki nama file sebelum menyimpan";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -270,7 +296,6 @@ export default function ProposalFormPage() {
       <Box sx={{ display: "flex", gap: 1 }}>
         {showDownload && (
           <Button
-            startIcon={<Download sx={{ fontSize: 16 }} />}
             component="a"
             href={`${import.meta.env.VITE_API_URL.replace("/api", "")}/uploads/proposal/${fileName}`}
             target="_blank" size="small"
@@ -520,6 +545,12 @@ export default function ProposalFormPage() {
               ) : filePreview ? (
                 <>
                   <FileBox fileName={filePreview.name} isExisting={filePreview.isExisting} canRemove={canEdit && !submitting} />
+                  {fileNameError && !filePreview.isExisting && (
+                    <Box sx={{ mt: 1.5, p: 1.5, borderRadius: "10px", backgroundColor: "#fce4ec", border: "1px solid #ef9a9a" }}>
+                      <Typography sx={{ fontSize: 12, color: "#c62828", fontWeight: 700, mb: 0.5 }}>Format Nama File Tidak Valid</Typography>
+                      <Typography sx={{ fontSize: 12, color: "#c62828" }}>{fileNameError}</Typography>
+                    </Box>
+                  )}
                   {errors.file && <Typography sx={{ color: "error.main", fontSize: 12, mt: 1 }}>{errors.file}</Typography>}
                 </>
               ) : (
@@ -542,7 +573,10 @@ export default function ProposalFormPage() {
                       <CloudUpload sx={{ fontSize: 28, color: "#1565c0" }} />
                     </Box>
                     <Typography sx={{ color: "#444", fontWeight: 600, mb: 0.5 }}>Klik atau seret file PDF ke sini</Typography>
-                    <Typography sx={{ fontSize: 12, color: "#999" }}>Maksimal 10 MB</Typography>
+                    <Typography sx={{ fontSize: 12, color: "#999" }}>Maksimal 10 MB · Format PDF</Typography>
+                    <Typography sx={{ fontSize: 11, color: "#aaa", mt: 0.5 }}>
+                      Nama file: <strong>Program_Nama Tim_Judul Proposal.pdf</strong>
+                    </Typography>
                   </Box>
                   {errors.file && <Typography sx={{ color: "error.main", fontSize: 12, mt: 1 }}>{errors.file}</Typography>}
                 </>
@@ -573,7 +607,7 @@ export default function ProposalFormPage() {
             {canEdit && (
               <>
                 <Button
-                  variant="contained" startIcon={<Save />}
+                  variant="contained"
                   onClick={handleSave} disabled={submitting}
                   sx={{ textTransform: "none", borderRadius: "50px", px: 4, py: 1.2, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" } }}
                 >
@@ -581,7 +615,7 @@ export default function ProposalFormPage() {
                 </Button>
                 {isDraft && status?.data?.proposal && (
                   <Button
-                    variant="contained" startIcon={<Send />}
+                    variant="contained"
                     onClick={handleSubmit} disabled={submitting}
                     sx={{ textTransform: "none", borderRadius: "50px", px: 4, py: 1.2, fontWeight: 600, backgroundColor: "#2e7d32", "&:hover": { backgroundColor: "#1b5e20" } }}
                   >

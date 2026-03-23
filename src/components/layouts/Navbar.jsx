@@ -38,8 +38,11 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed }) {
 
   const baseUrl = import.meta.env.VITE_API_URL.replace("/api", "");
   const displayName = profile?.nama_lengkap || user?.nama_lengkap || "User";
-  const displayRole = profile?.keterangan || "User";
   const photoUrl = profile?.foto ? `${baseUrl}/uploads/profil/${profile.foto}` : null;
+  const currentProgram = profile?.current_program?.trim() || "";
+  const roleName = profile?.nama_role?.trim() || "";
+  const navbarTitle = currentProgram;
+  const displaySubtitle = profile?.keterangan?.trim() || roleName || "";
 
   const handleLogout = async () => {
     try {
@@ -58,18 +61,21 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed }) {
       sx={{
         height: 73,
         position: "fixed",
-        top: 0,
-        left: sidebarCollapsed ? 70 : 250,
-        right: 0,
+        top: scrolled ? 12 : 0,
+        left: scrolled ? (sidebarCollapsed ? 94 : 274) : (sidebarCollapsed ? 70 : 250),
+        right: scrolled ? 24 : 0,
         zIndex: 100,
         px: 3,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
         backgroundColor: scrolled ? "#ffffff" : "transparent",
-        boxShadow: scrolled ? "0px 2px 8px -2px rgba(0,0,0,0.10)" : "none",
-        borderBottom: scrolled ? "1px solid #e0e0e0" : "none",
-        transition: "left 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease",
+        boxShadow: scrolled ? "0px 4px 16px -4px rgba(0,0,0,0.12)" : "none",
+        border: scrolled ? "1.5px solid rgba(0,0,0,0.10)" : "1.5px solid transparent",
+        borderRadius: scrolled ? "24px" : 0,
+        paddingLeft: scrolled ? 3 : 3,
+        paddingRight: scrolled ? 3 : 3,
+        transition: "left 0.3s ease, right 0.3s ease, top 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease, border-radius 0.3s ease, border-color 0.3s ease",
       }}
     >
       <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -79,9 +85,9 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed }) {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            height: scrolled ? "auto" : 46,
+            height: scrolled ? 46 : 46,
             px: scrolled ? 0 : 1.5,
-            borderRadius: "50px",
+            borderRadius: scrolled ? "50px" : "18px",
             border: scrolled ? "1.5px solid transparent" : "1.5px solid rgba(0,0,0,0.12)",
             backgroundColor: scrolled ? "transparent" : "#ffffff",
             boxShadow: scrolled ? "none" : "0 1px 4px rgba(0,0,0,0.06)",
@@ -99,9 +105,9 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed }) {
           sx={{
             display: "flex",
             alignItems: "center",
-            height: scrolled ? "auto" : 46,
+            minHeight: 46,
             px: scrolled ? 0 : 2,
-            borderRadius: "50px",
+            borderRadius: scrolled ? "50px" : "18px",
             border: scrolled ? "1.5px solid transparent" : "1.5px solid rgba(0,0,0,0.12)",
             backgroundColor: scrolled ? "transparent" : "#ffffff",
             boxShadow: scrolled ? "none" : "0 1px 4px rgba(0,0,0,0.06)",
@@ -117,7 +123,7 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed }) {
               letterSpacing: "-0.01em",
             }}
           >
-            Program Mahasiswa Wirausaha
+            {navbarTitle}
           </Typography>
         </Box>
       </Box>
@@ -132,12 +138,12 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed }) {
             cursor: "pointer",
             px: scrolled ? 0 : 1.5,
             py: scrolled ? 0 : 0.6,
-            borderRadius: "50px",
+            borderRadius: scrolled ? "50px" : "18px",
             border: scrolled ? "1.5px solid transparent" : "1.5px solid rgba(0,0,0,0.12)",
             backgroundColor: scrolled ? "transparent" : "#ffffff",
             boxShadow: scrolled ? "none" : "0 1px 4px rgba(0,0,0,0.06)",
             transition: "all 0.3s ease",
-            "&:hover": { backgroundColor: scrolled ? "transparent" : "rgba(0,0,0,0.015)" },
+            "&:hover": { backgroundColor: scrolled ? "rgba(0,0,0,0.015)" : "rgba(0,0,0,0.015)" },
           }}
         >
           <Avatar
@@ -154,9 +160,11 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed }) {
             <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#1a1a2e", lineHeight: 1.3 }}>
               {displayName}
             </Typography>
-            <Typography sx={{ fontSize: 11, color: "#888", lineHeight: 1.2 }}>
-              {displayRole}
-            </Typography>
+            {displaySubtitle && (
+              <Typography sx={{ fontSize: 11, color: "#888", lineHeight: 1.2 }}>
+                {displaySubtitle}
+              </Typography>
+            )}
           </Box>
 
           <KeyboardArrowDownIcon

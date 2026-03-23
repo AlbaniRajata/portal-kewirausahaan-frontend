@@ -115,25 +115,54 @@ export default function SidebarMahasiswa({ collapsed }) {
     <Box
       sx={{
         width: collapsed ? 70 : 250,
-        height: "100vh",
-        backgroundColor: "#fff",
-        borderRight: "1px solid #e0e0e0",
+        height: "calc(100vh - 24px)",
+        background: "linear-gradient(135deg, #0D59F2 0%, #1e40af 100%)",
+        border: "1px solid rgba(255,255,255,0.16)",
+        borderLeft: "none",
+        borderTopRightRadius: 24,
+        borderBottomRightRadius: 24,
+        boxShadow: "0 10px 30px rgba(13,89,242,0.22)",
+        overflow: "hidden",
         display: "flex",
         flexDirection: "column",
         position: "fixed",
         left: 0,
-        top: 0,
+        top: 12,
         transition: "width 0.3s ease",
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          top: -42,
+          right: -46,
+          width: 210,
+          height: 210,
+          borderRadius: "50%",
+          backgroundColor: "rgba(255,255,255,0.07)",
+          pointerEvents: "none",
+        },
+        "&::after": {
+          content: '""',
+          position: "absolute",
+          bottom: -34,
+          left: -76,
+          width: 182,
+          height: 182,
+          borderRadius: "50%",
+          backgroundColor: "rgba(255,255,255,0.055)",
+          boxShadow: "94px -54px 0 18px rgba(255,255,255,0.04)",
+          pointerEvents: "none",
+        },
       }}
     >
       <Box
         sx={{
+          position: "relative",
+          zIndex: 1,
           p: 2,
           display: "flex",
           flexDirection: "row",
           alignItems: "center",
           gap: 1.5,
-          borderBottom: "1px solid #e0e0e0",
           minHeight: 73,
           justifyContent: collapsed ? "center" : "center",
         }}
@@ -141,7 +170,7 @@ export default function SidebarMahasiswa({ collapsed }) {
         <AccountBalanceIcon
           sx={{
             fontSize: 32,
-            color: "#0D59F2",
+            color: "#ffffff",
             transition: "font-size 0.3s ease",
           }}
         />
@@ -151,7 +180,7 @@ export default function SidebarMahasiswa({ collapsed }) {
             sx={{
               fontWeight: 700,
               fontSize: 13,
-              color: "#000",
+              color: "#ffffff",
               lineHeight: 1.2,
               whiteSpace: "nowrap",
             }}
@@ -161,7 +190,7 @@ export default function SidebarMahasiswa({ collapsed }) {
         )}
       </Box>
 
-      <List sx={{ px: collapsed ? 1 : 2, py: 2, flex: 1 }}>
+      <List sx={{ px: collapsed ? 1 : 2, py: 2, flex: 1, position: "relative", zIndex: 1 }}>
         {menuItems.map((item, index) => (
           <Box key={index}>
             <ListItem disablePadding sx={{ mb: 0.5 }}>
@@ -173,14 +202,14 @@ export default function SidebarMahasiswa({ collapsed }) {
                     backgroundColor:
                       isActive(item.path) ||
                       (item.hasSubmenu && isInBimbinganSubmenu)
-                        ? "#F0F4FF"
+                        ? "rgba(255,255,255,0.18)"
                         : "transparent",
                     "&:hover": {
                       backgroundColor:
                         isActive(item.path) ||
                         (item.hasSubmenu && isInBimbinganSubmenu)
-                          ? "#F0F4FF"
-                          : "#f5f5f5",
+                          ? "rgba(255,255,255,0.22)"
+                          : "rgba(255,255,255,0.12)",
                     },
                     justifyContent: collapsed ? "center" : "flex-start",
                     px: collapsed ? 1 : 2,
@@ -193,8 +222,8 @@ export default function SidebarMahasiswa({ collapsed }) {
                       color:
                         isActive(item.path) ||
                         (item.hasSubmenu && isInBimbinganSubmenu)
-                          ? "#0D59F2"
-                          : "#666",
+                          ? "#ffffff"
+                          : "rgba(255,255,255,0.88)",
                       justifyContent: "center",
                       display: "flex",
                       alignItems: "center",
@@ -216,12 +245,12 @@ export default function SidebarMahasiswa({ collapsed }) {
                           color:
                             isActive(item.path) ||
                             (item.hasSubmenu && isInBimbinganSubmenu)
-                              ? "#0D59F2"
-                              : "#333",
+                              ? "#ffffff"
+                              : "rgba(255,255,255,0.92)",
                         }}
                       />
                       {item.hasSubmenu && (
-                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <Box sx={{ display: "flex", alignItems: "center", color: "rgba(255,255,255,0.92)" }}>
                           {openBimbingan ? <ExpandLess /> : <ExpandMore />}
                         </Box>
                       )}
@@ -243,12 +272,12 @@ export default function SidebarMahasiswa({ collapsed }) {
                           pr: 2,
                           borderRadius: 5,
                           backgroundColor: isActive(subItem.path)
-                            ? "#E8F0FE"
+                            ? "rgba(255,255,255,0.18)"
                             : "transparent",
                           "&:hover": {
                             backgroundColor: isActive(subItem.path)
-                              ? "#E8F0FE"
-                              : "#f5f5f5",
+                              ? "rgba(255,255,255,0.22)"
+                              : "rgba(255,255,255,0.12)",
                           },
                           minHeight: 40,
                           display: "flex",
@@ -258,7 +287,7 @@ export default function SidebarMahasiswa({ collapsed }) {
                         <ListItemIcon
                           sx={{
                             minWidth: 36,
-                            color: isActive(subItem.path) ? "#0D59F2" : "#666",
+                            color: isActive(subItem.path) ? "#ffffff" : "rgba(255,255,255,0.88)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -272,7 +301,7 @@ export default function SidebarMahasiswa({ collapsed }) {
                           primaryTypographyProps={{
                             fontSize: 14,
                             fontWeight: isActive(subItem.path) ? 600 : 500,
-                            color: isActive(subItem.path) ? "#0D59F2" : "#333",
+                            color: isActive(subItem.path) ? "#ffffff" : "rgba(255,255,255,0.92)",
                           }}
                         />
                       </ListItemButton>

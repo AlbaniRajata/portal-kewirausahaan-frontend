@@ -5,7 +5,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, MenuItem, IconButton,
 } from "@mui/material";
-import { Add, Close, BookOutlined, Visibility } from "@mui/icons-material";
+import { Close, BookOutlined } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
@@ -87,8 +87,8 @@ export default function LogBimbinganPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [bimbinganList, setBimbinganList] = useState([]);
-  const [canAjukan, setCanAjukan] = useState(false);
   const [isKetua, setIsKetua] = useState(false);
+  const [statusMessage, setStatusMessage] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState({});
@@ -101,21 +101,13 @@ export default function LogBimbinganPage() {
       if (res.success) {
         const list = res.data?.bimbingan || [];
         setBimbinganList(list);
-        setCanAjukan(!list.some((b) => b.status === 0));
         setIsKetua(res.data?.is_ketua || false);
+        setStatusMessage(null);
       } else {
-        await Swal.fire({
-          icon: "warning", title: "Peringatan",
-          text: res.message || "Gagal memuat data bimbingan",
-          confirmButtonText: "OK",
-        });
+        setStatusMessage(res.message || "Gagal memuat data bimbingan");
       }
-    } catch {
-      await Swal.fire({
-        icon: "error", title: "Gagal Memuat",
-        text: "Gagal memuat data bimbingan. Silakan refresh halaman.",
-        confirmButtonText: "OK",
-      });
+    } catch (err) {
+      setStatusMessage(err.response?.data?.message || "Gagal memuat data bimbingan. Silakan refresh halaman.");
     } finally {
       setLoading(false);
     }
@@ -196,9 +188,9 @@ export default function LogBimbinganPage() {
               </Typography>
             </Box>
             <Button
-              variant="contained" startIcon={<Add />}
+              variant="contained"
               onClick={handleOpenDialog}
-              disabled={!canAjukan || !isKetua}
+              disabled={!isKetua}
               sx={{
                 textTransform: "none", borderRadius: "50px",
                 backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" },
@@ -209,14 +201,15 @@ export default function LogBimbinganPage() {
             </Button>
           </Box>
 
-          {!isKetua && !loading && (
-            <InfoBox color="#1565c0" borderColor="#90caf9" bgColor="#e3f2fd">
-              Hanya ketua tim yang dapat mengajukan bimbingan.
+          {statusMessage && !loading && (
+            <InfoBox color="#f57f17" borderColor="#ffe082" bgColor="#fff8e1">
+              {statusMessage}
             </InfoBox>
           )}
-          {!loading && bimbinganList.some((b) => b.status === 0) && isKetua && (
+
+          {!isKetua && !loading && !statusMessage && (
             <InfoBox color="#1565c0" borderColor="#90caf9" bgColor="#e3f2fd">
-              Ada pengajuan bimbingan yang sedang menunggu konfirmasi dosen. Anda dapat mengajukan bimbingan baru setelah dosen merespons.
+              Hanya ketua tim yang dapat mengajukan bimbingan.
             </InfoBox>
           )}
 
@@ -286,7 +279,6 @@ export default function LogBimbinganPage() {
                         <TableCell align="center">
                           <Button
                             size="small" variant="outlined"
-                            startIcon={<Visibility sx={{ fontSize: 14 }} />}
                             onClick={() => navigate(`/mahasiswa/bimbingan/${b.id_bimbingan}`)}
                             sx={{
                               textTransform: "none", borderRadius: "50px",
@@ -367,7 +359,7 @@ export default function LogBimbinganPage() {
                 fullWidth multiline rows={3} size="small"
                 name="deskripsi" value={form.deskripsi}
                 onChange={handleFormChange}
-                placeholder="Opsional — tuliskan detail topik atau hal yang ingin didiskusikan"
+                placeholder="Opsional - tuliskan detail topik atau hal yang ingin didiskusikan"
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
               />
             </Box>

@@ -4,16 +4,35 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead,
   TableRow, TextField, Divider,
 } from "@mui/material";
-import { Add, Visibility, Edit, Description } from "@mui/icons-material";
+import { Description } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
 import PageTransition from "../../components/PageTransition";
 import { getProposalStatus } from "../../api/mahasiswa";
+import { getAllProgram } from "../../api/public";
 
 const roundedField = {
   "& .MuiOutlinedInput-root": { borderRadius: "15px" },
+};
+
+const getProgramStatus = (item) => {
+  if (!item.pendaftaran_mulai || !item.pendaftaran_selesai)
+    return { label: "Belum Diatur", color: "#6d4c41", bgColor: "#efebe9", borderColor: "#bcaaa4" };
+  const now = new Date();
+  const mulai = new Date(item.pendaftaran_mulai);
+  const selesai = new Date(item.pendaftaran_selesai);
+  if (now < mulai)   return { label: "Belum Dibuka",   color: "#1565c0", bgColor: "#e3f2fd", borderColor: "#90caf9" };
+  if (now <= selesai) return { label: "Sedang Dibuka",  color: "#2e7d32", bgColor: "#e8f5e9", borderColor: "#a5d6a7" };
+  return               { label: "Sudah Ditutup",  color: "#c62828", bgColor: "#ffebee", borderColor: "#ef9a9a" };
+};
+
+const formatDate = (dateString) => {
+  if (!dateString) return "-";
+  return new Date(dateString).toLocaleDateString("id-ID", {
+    day: "2-digit", month: "long", year: "numeric",
+  });
 };
 
 const tableHeadCell = {
@@ -52,8 +71,16 @@ export default function DaftarProposalPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState(null);
+  const [programs, setPrograms] = useState([]);
 
-  useEffect(() => { fetchStatus(); }, []);
+  useEffect(() => { fetchStatus(); fetchPrograms(); }, []);
+
+  const fetchPrograms = async () => {
+    try {
+      const res = await getAllProgram();
+      if (res.success) setPrograms(res.data || []);
+    } catch { /* biarkan kosong */ }
+  };
 
   const fetchStatus = async () => {
     try {
@@ -76,7 +103,7 @@ export default function DaftarProposalPage() {
     return "Rp " + new Intl.NumberFormat("id-ID").format(value);
   };
 
-  const formatDate = (dateString) => {
+  const formatDateInline = (dateString) => {
     if (!dateString) return "-";
     return new Date(dateString).toLocaleDateString("id-ID", {
       day: "2-digit", month: "long", year: "numeric",
@@ -95,6 +122,11 @@ export default function DaftarProposalPage() {
 
   const proposal = status?.data?.proposal;
   const statusInfo = proposal ? getStatusInfo(proposal.status) : null;
+  const anyProgramOpen = programs.some((p) => {
+    if (!p.pendaftaran_mulai || !p.pendaftaran_selesai) return false;
+    const now = new Date();
+    return now >= new Date(p.pendaftaran_mulai) && now <= new Date(p.pendaftaran_selesai);
+  });
 
   return (
     <BodyLayout Sidebar={SidebarMahasiswa}>
@@ -107,7 +139,7 @@ export default function DaftarProposalPage() {
             </Box>
             {status?.isKetua && status?.data?.anggota?.all_accepted && !status?.data?.proposal && (
               <Button
-                variant="contained" startIcon={<Add />}
+                variant="contained"
                 onClick={() => navigate("/mahasiswa/proposal/form")}
                 sx={{
                   textTransform: "none", borderRadius: "50px",
@@ -121,12 +153,29 @@ export default function DaftarProposalPage() {
           </Box>
 
           {!status?.hasTim && (
-            <Box sx={{ mb: 3, p: 2, borderRadius: "12px", backgroundColor: "#fff8e1", border: "1px solid #ffe082" }}>
+            <Box sx={{ mb: 2, p: 2, borderRadius: "12px", backgroundColor: "#fff8e1", border: "1px solid #ffe082" }}>
               <Typography sx={{ fontSize: 14, color: "#f57f17", fontWeight: 500 }}>
                 Anda belum terdaftar dalam tim. Silakan ajukan anggota tim terlebih dahulu.
               </Typography>
             </Box>
           )}
+
+          {!anyProgramOpen && programs.map((prog) => {
+            const ps = getProgramStatus(prog);
+            return (
+              <Box key={prog.id_program} sx={{ mb: 2, p: 2, borderRadius: "12px", backgroundColor: ps.bgColor, border: `1px solid ${ps.borderColor}` }}>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
+                  <Typography sx={{ fontSize: 14, fontWeight: 700, color: ps.color }}>{prog.keterangan}</Typography>
+                  <Box sx={{ px: 1.5, py: 0.3, borderRadius: "50px", backgroundColor: ps.color + "18", border: `1px solid ${ps.borderColor}` }}>
+                    <Typography sx={{ fontSize: 11, fontWeight: 700, color: ps.color }}>{ps.label}</Typography>
+                  </Box>
+                </Box>
+                <Typography sx={{ fontSize: 12, color: ps.color }}>
+                  Pendaftaran: {formatDate(prog.pendaftaran_mulai)} — {formatDate(prog.pendaftaran_selesai)}
+                </Typography>
+              </Box>
+            );
+          })}
           {status?.hasTim && !status?.isKetua && (
             <Box sx={{ mb: 3, p: 2, borderRadius: "12px", backgroundColor: "#e3f2fd", border: "1px solid #90caf9" }}>
               <Typography sx={{ fontSize: 14, color: "#1565c0", fontWeight: 500 }}>
@@ -174,7 +223,7 @@ export default function DaftarProposalPage() {
                         </Typography>
                       </TableCell>
                       <TableCell>
-                        <Typography sx={{ fontSize: 13, color: "#555" }}>{formatDate(proposal.tanggal_submit)}</Typography>
+                        <Typography sx={{ fontSize: 13, color: "#555" }}>{formatDateInline(proposal.tanggal_submit)}</Typography>
                       </TableCell>
                       <TableCell>
                         <StatusPill label={statusInfo.label} backgroundColor={statusInfo.backgroundColor} />
@@ -184,7 +233,6 @@ export default function DaftarProposalPage() {
                           <Button
                             size="small"
                             variant={proposal.status === 0 ? "contained" : "outlined"}
-                            startIcon={proposal.status === 0 ? <Edit sx={{ fontSize: 15 }} /> : <Visibility sx={{ fontSize: 15 }} />}
                             onClick={() => navigate("/mahasiswa/proposal/form")}
                             sx={{
                               textTransform: "none", borderRadius: "50px",

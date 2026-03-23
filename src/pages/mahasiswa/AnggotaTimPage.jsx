@@ -1,21 +1,34 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box, Paper, Typography, TextField, Button, Autocomplete,
   CircularProgress, Alert, IconButton, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow,
 } from "@mui/material";
-import { Add, Delete, Search } from "@mui/icons-material";
+import { Add, Delete, Search, PersonAdd, RestartAlt } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
 import PageTransition from "../../components/PageTransition";
 import {
   getTimStatus, getTimDetail, createTim, searchMahasiswa,
+  addAnggotaTim, resetTim,
 } from "../../api/mahasiswa";
 import { getAllProgram } from "../../api/public";
 
 const roundedField = {
   "& .MuiOutlinedInput-root": { borderRadius: "15px" },
+};
+
+const getProgramStatus = (item) => {
+  if (!item.pendaftaran_mulai || !item.pendaftaran_selesai)
+    return { label: "Belum Diatur", color: "#bdbdbd", open: false };
+  const now = new Date();
+  const mulai = new Date(item.pendaftaran_mulai);
+  const selesai = new Date(item.pendaftaran_selesai);
+  if (now < mulai) return { label: "Belum Dibuka", color: "#1565c0", open: false };
+  if (now >= mulai && now <= selesai) return { label: "Dibuka", color: "#2e7d32", open: true };
+  return { label: "Sudah Ditutup", color: "#c62828", open: false };
 };
 
 const tableHeadCell = {
@@ -59,6 +72,7 @@ const getPeranInfo = (peran) => {
 };
 
 export default function AnggotaTimPage() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [loadingProgram, setLoadingProgram] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -67,15 +81,26 @@ export default function AnggotaTimPage() {
   const [timStatus, setTimStatus] = useState(null);
   const [timDetail, setTimDetail] = useState(null);
   const [programOptions, setProgramOptions] = useState([]);
-  const [searchResults, setSearchResults] = useState([]);
+  const [nimResults, setNimResults] = useState({});
+  const [namaResults, setNamaResults] = useState({});
 
   const [formTim, setFormTim] = useState({
     nama_tim: "",
     id_program: null,
-    anggota: [{ nim: "", nama_lengkap: "", id_user: null }],
+    anggota: [
+      { nim: "", nama_lengkap: "", id_user: null },
+      { nim: "", nama_lengkap: "", id_user: null },
+    ],
   });
 
   const [errors, setErrors] = useState({});
+
+  const [showAddAnggota, setShowAddAnggota] = useState(false);
+  const [newAnggota, setNewAnggota] = useState({ nim: "", nama_lengkap: "", id_user: null });
+  const [newNimOptions, setNewNimOptions] = useState([]);
+  const [newNamaOptions, setNewNamaOptions] = useState([]);
+  const [addingAnggota, setAddingAnggota] = useState(false);
+  const [addAnggotaError, setAddAnggotaError] = useState("");
 
   useEffect(() => {
     fetchTimStatus();
@@ -87,7 +112,11 @@ export default function AnggotaTimPage() {
       setLoading(true);
       const response = await getTimStatus();
       setTimStatus(response.data);
-      if (response.data.hasTim) {
+      const willRedirect =
+        response.data.hasTim &&
+        response.data.isAnggota &&
+        response.data.statusAnggota === 0;
+      if (response.data.hasTim && !willRedirect) {
         const detail = await getTimDetail();
         setTimDetail(detail.data);
       }
@@ -107,9 +136,14 @@ export default function AnggotaTimPage() {
       setLoadingProgram(true);
       const response = await getAllProgram();
       if (response.success) {
-        setProgramOptions(response.data.map((item) => ({
-          label: item.keterangan, id: item.id_program,
-        })));
+        setProgramOptions(response.data.map((item) => {
+          const status = getProgramStatus(item);
+          return {
+            label: item.keterangan,
+            id: item.id_program,
+            status,
+          };
+        }));
       }
     } catch {
       // program gagal dimuat, dropdown kosong
@@ -118,14 +152,27 @@ export default function AnggotaTimPage() {
     }
   };
 
-  const handleSearchMahasiswa = async (index, nim) => {
-    if (!nim || nim.length < 3) { setSearchResults([]); return; }
+  const handleSearchByNim = async (index, query) => {
+    if (!query || query.length < 3) { setNimResults((p) => ({ ...p, [index]: [] })); return; }
     try {
       setSearching(true);
-      const response = await searchMahasiswa(nim);
-      setSearchResults(response.data || []);
+      const response = await searchMahasiswa(query);
+      setNimResults((p) => ({ ...p, [index]: response.data || [] }));
     } catch {
-      setSearchResults([]);
+      setNimResults((p) => ({ ...p, [index]: [] }));
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleSearchByNama = async (index, query) => {
+    if (!query || query.length < 3) { setNamaResults((p) => ({ ...p, [index]: [] })); return; }
+    try {
+      setSearching(true);
+      const response = await searchMahasiswa(query);
+      setNamaResults((p) => ({ ...p, [index]: response.data || [] }));
+    } catch {
+      setNamaResults((p) => ({ ...p, [index]: [] }));
     } finally {
       setSearching(false);
     }
@@ -139,7 +186,8 @@ export default function AnggotaTimPage() {
       id_user: mahasiswa.id_user,
     };
     setFormTim({ ...formTim, anggota: newAnggota });
-    setSearchResults([]);
+    setNimResults((p) => ({ ...p, [index]: [] }));
+    setNamaResults((p) => ({ ...p, [index]: [] }));
     setErrors((prev) => ({ ...prev, [`anggota_${index}`]: "" }));
   };
 
@@ -159,7 +207,7 @@ export default function AnggotaTimPage() {
     const newErrors = {};
     if (!formTim.nama_tim?.trim()) newErrors.nama_tim = "Nama tim wajib diisi";
     if (!formTim.id_program) newErrors.id_program = "Program wajib dipilih";
-    if (formTim.anggota.length < 2) newErrors.anggota = "Minimal 2 anggota harus ditambahkan";
+    if (formTim.anggota.length < 2) newErrors.anggota = "Minimal 2 anggota harus ditambahkan (total 3 termasuk ketua)";
     const nimSet = new Set();
     formTim.anggota.forEach((item, index) => {
       if (!item.nim || !item.id_user) newErrors[`anggota_${index}`] = "Mahasiswa belum dipilih";
@@ -172,6 +220,14 @@ export default function AnggotaTimPage() {
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
+    const result = await Swal.fire({
+      title: "Konfirmasi Pengajuan",
+      text: "Pastikan data anggota tim sudah benar. Ajukan sekarang?",
+      icon: "question", showCancelButton: true,
+      confirmButtonColor: "#0D59F2", cancelButtonColor: "#d33",
+      confirmButtonText: "Ya, Ajukan", cancelButtonText: "Batal",
+    });
+    if (!result.isConfirmed) return;
     setSubmitting(true);
     try {
       const payload = {
@@ -197,6 +253,100 @@ export default function AnggotaTimPage() {
     }
   };
 
+  const handleSearchNewNim = async (query) => {
+    if (!query || query.length < 3) { setNewNimOptions([]); return; }
+    try {
+      setSearching(true);
+      const response = await searchMahasiswa(query);
+      setNewNimOptions(response.data || []);
+    } catch {
+      setNewNimOptions([]);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleSearchNewNama = async (query) => {
+    if (!query || query.length < 3) { setNewNamaOptions([]); return; }
+    try {
+      setSearching(true);
+      const response = await searchMahasiswa(query);
+      setNewNamaOptions(response.data || []);
+    } catch {
+      setNewNamaOptions([]);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleSelectNewMahasiswa = (mahasiswa) => {
+    setNewAnggota({ nim: mahasiswa.nim, nama_lengkap: mahasiswa.nama_lengkap, id_user: mahasiswa.id_user });
+    setNewNimOptions([]);
+    setNewNamaOptions([]);
+    setAddAnggotaError("");
+  };
+
+  const handleUndangAnggota = async () => {
+    if (!newAnggota.id_user) {
+      setAddAnggotaError("Pilih mahasiswa dari hasil pencarian");
+      return;
+    }
+    const result = await Swal.fire({
+      title: "Konfirmasi",
+      text: `Kirim undangan ke "${newAnggota.nama_lengkap}"?`,
+      icon: "question", showCancelButton: true,
+      confirmButtonColor: "#0D59F2", cancelButtonColor: "#d33",
+      confirmButtonText: "Ya, Undang", cancelButtonText: "Batal",
+    });
+    if (!result.isConfirmed) return;
+    setAddingAnggota(true);
+    try {
+      await addAnggotaTim({ nim: newAnggota.nim });
+      await Swal.fire({
+        icon: "success", title: "Berhasil",
+        text: "Undangan berhasil dikirim",
+        timer: 2000, timerProgressBar: true, showConfirmButton: false,
+      });
+      setShowAddAnggota(false);
+      setNewAnggota({ nim: "", nama_lengkap: "", id_user: null });
+      fetchTimStatus();
+    } catch (err) {
+      await Swal.fire({
+        icon: "error", title: "Gagal",
+        text: err.response?.data?.message || "Gagal kirim undangan",
+        confirmButtonText: "OK",
+      });
+    } finally {
+      setAddingAnggota(false);
+    }
+  };
+
+  const handleResetTim = async () => {
+    const result = await Swal.fire({
+      title: "Reset Tim?",
+      html: "Tim akan <strong>dihapus permanen</strong> dan Anda dapat membuat tim baru.<br/>Data yang sudah ada akan hilang.",
+      icon: "warning", showCancelButton: true,
+      confirmButtonColor: "#d33", cancelButtonColor: "#666",
+      confirmButtonText: "Ya, Reset", cancelButtonText: "Batal",
+    });
+    if (!result.isConfirmed) return;
+    try {
+      await resetTim();
+      await Swal.fire({
+        icon: "success", title: "Tim Direset",
+        text: "Anda dapat mengajukan tim baru sekarang.",
+        timer: 2000, timerProgressBar: true, showConfirmButton: false,
+      });
+      fetchTimStatus();
+    } catch (err) {
+      await Swal.fire({
+        icon: "error", title: "Gagal",
+        text: err.response?.data?.message || "Gagal reset tim",
+        confirmButtonText: "OK",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <BodyLayout Sidebar={SidebarMahasiswa}>
@@ -208,12 +358,13 @@ export default function AnggotaTimPage() {
   }
 
   if (timStatus?.hasTim && timStatus?.isAnggota && timStatus?.statusAnggota === 0) {
-    window.location.href = "/mahasiswa/undangan-anggota";
+    navigate("/mahasiswa/undangan-anggota", { replace: true });
     return null;
   }
 
   if (timStatus?.hasTim && (timStatus?.isKetua || (timStatus?.isAnggota && timStatus?.statusAnggota === 1))) {
     const allApproved = timDetail?.anggota?.every((item) => item.peran === 1 || item.status === 1);
+    const hasRejected = timDetail?.anggota?.some((item) => item.peran === 2 && item.status === 2);
 
     return (
       <BodyLayout Sidebar={SidebarMahasiswa}>
@@ -227,15 +378,122 @@ export default function AnggotaTimPage() {
                 Semua anggota telah menyetujui undangan. Tim Anda sudah lengkap.
               </Alert>
             )}
-            {timStatus?.isKetua && !allApproved && (
+            {timStatus?.isKetua && !allApproved && !hasRejected && (
               <Alert severity="info" sx={{ mb: 3, borderRadius: "12px" }}>
                 Anda sudah mengajukan anggota tim. Menunggu persetujuan anggota.
               </Alert>
+            )}
+            {timStatus?.isKetua && hasRejected && (
+              <Box sx={{ mb: 3, p: 2.5, borderRadius: "12px", backgroundColor: "#fce4ec", border: "1px solid #ef9a9a" }}>
+                <Typography sx={{ fontSize: 14, fontWeight: 700, color: "#c62828", mb: 1 }}>
+                  Ada anggota yang menolak undangan
+                </Typography>
+                <Typography sx={{ fontSize: 13, color: "#c62828", mb: 2 }}>
+                  Anda dapat mengundang anggota baru sebagai pengganti, atau mengajukan ulang tim dari awal.
+                </Typography>
+                <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
+                  <Button
+                    size="small" variant="contained"
+                    onClick={() => setShowAddAnggota((v) => !v)}
+                    sx={{ textTransform: "none", borderRadius: "50px", fontWeight: 600, fontSize: 13, px: 2.5,
+                      backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" } }}
+                  >
+                    {showAddAnggota ? "Tutup Form" : "Undang Anggota Baru"}
+                  </Button>
+                  <Button
+                    size="small" variant="outlined"
+                    onClick={handleResetTim}
+                    sx={{ textTransform: "none", borderRadius: "50px", fontWeight: 600, fontSize: 13, px: 2.5,
+                      borderColor: "#d33", color: "#d33", "&:hover": { backgroundColor: "rgba(211,51,51,0.06)", borderColor: "#d33" } }}
+                  >
+                    Ajukan Ulang Tim
+                  </Button>
+                </Box>
+              </Box>
             )}
             {timStatus?.isAnggota && (
               <Alert severity="success" sx={{ mb: 3, borderRadius: "12px" }}>
                 Anda adalah anggota dari tim ini.
               </Alert>
+            )}
+
+            {showAddAnggota && (
+              <Paper sx={{ p: 3, mb: 3, borderRadius: "16px", border: "1.5px solid #90caf9", backgroundColor: "#f5faff" }}>
+                <Typography sx={{ fontWeight: 700, fontSize: 15, mb: 0.5 }}>Undang Anggota Baru</Typography>
+                <Typography sx={{ fontSize: 13, color: "#777", mb: 2.5 }}>Cari mahasiswa dan kirim undangan untuk menggantikan anggota yang ditolak.</Typography>
+                <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2, mb: 2 }}>
+                  <Box>
+                    <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 1 }}>NIM</Typography>
+                    <Autocomplete
+                      freeSolo filterOptions={(x) => x}
+                      options={newNimOptions}
+                      getOptionLabel={(option) => typeof option === "string" ? option : option.nim || ""}
+                      getOptionDisabled={(option) => !!option.sudah_punya_tim}
+                      onInputChange={(e, value) => handleSearchNewNim(value)}
+                      onChange={(e, value) => { if (value && typeof value === "object") handleSelectNewMahasiswa(value); }}
+                      value={newAnggota.nim} disabled={addingAnggota} loading={searching}
+                      renderInput={(params) => (
+                        <TextField {...params} placeholder="Cari berdasarkan NIM"
+                          error={!!addAnggotaError} sx={roundedField}
+                          InputProps={{ ...params.InputProps, endAdornment: (<>{searching ? <CircularProgress size={20} /> : <Search sx={{ color: "#bbb", fontSize: 20 }} />}{params.InputProps.endAdornment}</>) }}
+                        />
+                      )}
+                      renderOption={(props, option) => (
+                        <li {...props} style={{ ...props.style, opacity: 1 }}>
+                          <Box sx={{ py: 0.5 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{option.nim}</Typography>
+                              {option.sudah_punya_tim && <Box sx={{ px: 1, py: 0.2, borderRadius: "50px", backgroundColor: "#fbe9e7", border: "1px solid #ef9a9a" }}><Typography sx={{ fontSize: 10, color: "#c62828", fontWeight: 700 }}>Sudah dalam tim lain</Typography></Box>}
+                            </Box>
+                            <Typography sx={{ fontSize: 12, color: "#555" }}>{option.nama_lengkap}</Typography>
+                            <Typography sx={{ fontSize: 11, color: "#999" }}>{option.jenjang} {option.nama_prodi}</Typography>
+                          </Box>
+                        </li>
+                      )}
+                    />
+                  </Box>
+                  <Box>
+                    <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 1 }}>Nama Lengkap</Typography>
+                    <Autocomplete
+                      freeSolo filterOptions={(x) => x}
+                      options={newNamaOptions}
+                      getOptionLabel={(option) => typeof option === "string" ? option : option.nama_lengkap || ""}
+                      getOptionDisabled={(option) => !!option.sudah_punya_tim}
+                      onInputChange={(e, value) => handleSearchNewNama(value)}
+                      onChange={(e, value) => { if (value && typeof value === "object") handleSelectNewMahasiswa(value); }}
+                      value={newAnggota.nama_lengkap} disabled={addingAnggota} loading={searching}
+                      renderInput={(params) => (
+                        <TextField {...params} placeholder="Cari berdasarkan nama" sx={roundedField}
+                          InputProps={{ ...params.InputProps, endAdornment: (<>{searching ? <CircularProgress size={20} /> : <Search sx={{ color: "#bbb", fontSize: 20 }} />}{params.InputProps.endAdornment}</>) }}
+                        />
+                      )}
+                      renderOption={(props, option) => (
+                        <li {...props} style={{ ...props.style, opacity: 1 }}>
+                          <Box sx={{ py: 0.5 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{option.nama_lengkap}</Typography>
+                              {option.sudah_punya_tim && <Box sx={{ px: 1, py: 0.2, borderRadius: "50px", backgroundColor: "#fbe9e7", border: "1px solid #ef9a9a" }}><Typography sx={{ fontSize: 10, color: "#c62828", fontWeight: 700 }}>Sudah dalam tim lain</Typography></Box>}
+                            </Box>
+                            <Typography sx={{ fontSize: 12, color: "#555" }}>{option.nim}</Typography>
+                            <Typography sx={{ fontSize: 11, color: "#999" }}>{option.jenjang} {option.nama_prodi}</Typography>
+                          </Box>
+                        </li>
+                      )}
+                    />
+                  </Box>
+                </Box>
+                {addAnggotaError && <Typography sx={{ color: "error.main", fontSize: 12, mb: 1.5 }}>{addAnggotaError}</Typography>}
+                <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1.5 }}>
+                  <Button onClick={() => { setShowAddAnggota(false); setNewAnggota({ nim: "", nama_lengkap: "", id_user: null }); setAddAnggotaError(""); }}
+                    sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, color: "#666", border: "1.5px solid #e0e0e0", "&:hover": { backgroundColor: "#f5f5f5" } }}>
+                    Batal
+                  </Button>
+                  <Button variant="contained" onClick={handleUndangAnggota} disabled={addingAnggota}
+                    sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" } }}>
+                    {addingAnggota ? "Mengirim..." : "Kirim Undangan"}
+                  </Button>
+                </Box>
+              </Paper>
             )}
 
             <Paper sx={{ p: 4, borderRadius: "16px", border: "1px solid #f0f0f0" }}>
@@ -336,8 +594,19 @@ export default function AnggotaTimPage() {
                       setErrors((prev) => ({ ...prev, id_program: "" }));
                     }}
                     getOptionLabel={(option) => option.label || ""}
+                    getOptionDisabled={(option) => !option.status?.open}
                     isOptionEqualToValue={(option, value) => option.id === value.id}
                     disabled={submitting}
+                    renderOption={(props, option) => (
+                      <li {...props} style={{ ...props.style, opacity: 1 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", gap: 1 }}>
+                          <Typography sx={{ fontSize: 14 }}>{option.label}</Typography>
+                          <Box sx={{ px: 1, py: 0.2, borderRadius: "50px", backgroundColor: option.status?.color + "18", border: `1px solid ${option.status?.color}40`, flexShrink: 0 }}>
+                            <Typography sx={{ fontSize: 10, fontWeight: 700, color: option.status?.color }}>{option.status?.label}</Typography>
+                          </Box>
+                        </Box>
+                      </li>
+                    )}
                     renderInput={(params) => (
                       <TextField {...params} placeholder="Pilih program"
                         error={!!errors.id_program} helperText={errors.id_program} sx={roundedField} />
@@ -349,13 +618,22 @@ export default function AnggotaTimPage() {
 
             <Typography sx={{ fontWeight: 700, fontSize: 15, mb: 2 }}>Daftar Anggota</Typography>
 
-            {formTim.anggota.map((item, index) => (
+            {formTim.anggota.map((item, index) => {
+              const selectedIds = new Set(
+                formTim.anggota
+                  .filter((_, i) => i !== index)
+                  .map((a) => a.id_user)
+                  .filter(Boolean)
+              );
+              const filteredNimOptions = (nimResults[index] || []).filter((o) => !selectedIds.has(o.id_user));
+              const filteredNamaOptions = (namaResults[index] || []).filter((o) => !selectedIds.has(o.id_user));
+              return (
               <Box key={index} sx={{ mb: 2, p: 2.5, border: "1.5px solid #f0f0f0", borderRadius: "14px", backgroundColor: "#fafafa" }}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                   <Typography sx={{ fontWeight: 700, fontSize: 14, color: "#444" }}>
                     Anggota {index + 1}
                   </Typography>
-                  {formTim.anggota.length > 1 && (
+                  {formTim.anggota.length > 2 && (
                     <IconButton
                       size="small" onClick={() => handleRemoveAnggota(index)} disabled={submitting}
                       sx={{ color: "#e53935", backgroundColor: "rgba(229,57,53,0.06)", borderRadius: "8px", "&:hover": { backgroundColor: "rgba(229,57,53,0.12)" } }}
@@ -369,13 +647,16 @@ export default function AnggotaTimPage() {
                   <Box>
                     <Typography sx={{ fontSize: 14, fontWeight: 600, mb: 1 }}>NIM</Typography>
                     <Autocomplete
-                      freeSolo options={searchResults}
+                      freeSolo
+                      filterOptions={(x) => x}
+                      options={filteredNimOptions}
                       getOptionLabel={(option) => typeof option === "string" ? option : option.nim || ""}
-                      onInputChange={(e, value) => handleSearchMahasiswa(index, value)}
+                      getOptionDisabled={(option) => !!option.sudah_punya_tim}
+                      onInputChange={(e, value) => handleSearchByNim(index, value)}
                       onChange={(e, value) => { if (value && typeof value === "object") handleSelectMahasiswa(index, value); }}
                       value={item.nim} disabled={submitting} loading={searching}
                       renderInput={(params) => (
-                        <TextField {...params} placeholder="Masukkan NIM anggota"
+                        <TextField {...params} placeholder="Cari berdasarkan NIM"
                           error={!!errors[`anggota_${index}`]} helperText={errors[`anggota_${index}`]}
                           sx={roundedField}
                           InputProps={{
@@ -390,9 +671,16 @@ export default function AnggotaTimPage() {
                         />
                       )}
                       renderOption={(props, option) => (
-                        <li {...props}>
+                        <li {...props} style={{ ...props.style, opacity: 1 }}>
                           <Box sx={{ py: 0.5 }}>
-                            <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{option.nim}</Typography>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{option.nim}</Typography>
+                              {option.sudah_punya_tim && (
+                                <Box sx={{ px: 1, py: 0.2, borderRadius: "50px", backgroundColor: "#fbe9e7", border: "1px solid #ef9a9a" }}>
+                                  <Typography sx={{ fontSize: 10, color: "#c62828", fontWeight: 700 }}>Sudah dalam tim lain</Typography>
+                                </Box>
+                              )}
+                            </Box>
                             <Typography sx={{ fontSize: 12, color: "#555" }}>{option.nama_lengkap}</Typography>
                             <Typography sx={{ fontSize: 11, color: "#999" }}>{option.jenjang} {option.nama_prodi}</Typography>
                           </Box>
@@ -402,15 +690,55 @@ export default function AnggotaTimPage() {
                   </Box>
                   <Box>
                     <Typography sx={{ fontSize: 14, fontWeight: 600, mb: 1 }}>Nama Lengkap</Typography>
-                    <TextField fullWidth value={item.nama_lengkap} disabled placeholder="Akan otomatis terisi" sx={roundedField} />
+                    <Autocomplete
+                      freeSolo
+                      filterOptions={(x) => x}
+                      options={filteredNamaOptions}
+                      getOptionLabel={(option) => typeof option === "string" ? option : option.nama_lengkap || ""}
+                      getOptionDisabled={(option) => !!option.sudah_punya_tim}
+                      onInputChange={(e, value) => handleSearchByNama(index, value)}
+                      onChange={(e, value) => { if (value && typeof value === "object") handleSelectMahasiswa(index, value); }}
+                      value={item.nama_lengkap} disabled={submitting} loading={searching}
+                      renderInput={(params) => (
+                        <TextField {...params} placeholder="Cari berdasarkan nama"
+                          sx={roundedField}
+                          InputProps={{
+                            ...params.InputProps,
+                            endAdornment: (
+                              <>
+                                {searching ? <CircularProgress size={20} /> : <Search sx={{ color: "#bbb", fontSize: 20 }} />}
+                                {params.InputProps.endAdornment}
+                              </>
+                            ),
+                          }}
+                        />
+                      )}
+                      renderOption={(props, option) => (
+                        <li {...props} style={{ ...props.style, opacity: 1 }}>
+                          <Box sx={{ py: 0.5 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{option.nama_lengkap}</Typography>
+                              {option.sudah_punya_tim && (
+                                <Box sx={{ px: 1, py: 0.2, borderRadius: "50px", backgroundColor: "#fbe9e7", border: "1px solid #ef9a9a" }}>
+                                  <Typography sx={{ fontSize: 10, color: "#c62828", fontWeight: 700 }}>Sudah dalam tim lain</Typography>
+                                </Box>
+                              )}
+                            </Box>
+                            <Typography sx={{ fontSize: 12, color: "#555" }}>{option.nim}</Typography>
+                            <Typography sx={{ fontSize: 11, color: "#999" }}>{option.jenjang} {option.nama_prodi}</Typography>
+                          </Box>
+                        </li>
+                      )}
+                    />
                   </Box>
                 </Box>
               </Box>
-            ))}
+              );
+            })}
 
             {formTim.anggota.length < 4 && (
               <Button
-                startIcon={<Add />} onClick={handleAddAnggota} disabled={submitting}
+                onClick={handleAddAnggota} disabled={submitting}
                 sx={{
                   mb: 3, textTransform: "none", borderRadius: "50px",
                   color: "#0D59F2", border: "1.5px dashed rgba(13,89,242,0.3)",

@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box, Paper, Typography, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Button, Dialog,
   DialogTitle, DialogContent, DialogActions, TextField,
   CircularProgress, IconButton,
 } from "@mui/material";
-import { CheckCircle, Cancel, Close, MailOutline } from "@mui/icons-material";
+import { Close, MailOutline } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
@@ -42,6 +43,7 @@ const getStatusInfo = (status) => {
 };
 
 export default function UndanganAnggotaPage() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [timDetail, setTimDetail] = useState(null);
@@ -86,7 +88,7 @@ export default function UndanganAnggotaPage() {
         text: "Undangan berhasil diterima",
         timer: 2000, timerProgressBar: true, showConfirmButton: false,
       });
-      window.location.href = "/mahasiswa/anggota-tim";
+      navigate("/mahasiswa/anggota-tim", { replace: true });
     } catch (err) {
       await Swal.fire({
         icon: "error", title: "Gagal",
@@ -130,7 +132,7 @@ export default function UndanganAnggotaPage() {
         timer: 2000, timerProgressBar: true, showConfirmButton: false,
       });
       handleCloseReject();
-      window.location.href = "/mahasiswa/anggota-tim";
+      navigate("/mahasiswa/anggota-tim", { replace: true });
     } catch (err) {
       await Swal.fire({
         icon: "error", title: "Gagal",
@@ -223,7 +225,6 @@ export default function UndanganAnggotaPage() {
                       <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
                         <Button
                           size="small" variant="outlined"
-                          startIcon={<Cancel sx={{ fontSize: 14 }} />}
                           onClick={() => handleOpenReject(timDetail)}
                           disabled={submitting}
                           sx={{
@@ -237,7 +238,6 @@ export default function UndanganAnggotaPage() {
                         </Button>
                         <Button
                           size="small" variant="contained"
-                          startIcon={<CheckCircle sx={{ fontSize: 14 }} />}
                           onClick={() => handleAccept(timDetail)}
                           disabled={submitting}
                           sx={{

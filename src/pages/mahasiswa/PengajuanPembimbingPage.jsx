@@ -5,7 +5,7 @@ import {
   TextField, InputAdornment, Dialog, DialogTitle, DialogContent,
   DialogActions, IconButton, Divider,
 } from "@mui/material";
-import { Search, Close, Visibility } from "@mui/icons-material";
+import { Search, Close } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import MahasiswaSidebar from "../../components/layouts/MahasiswaSidebar";
@@ -316,7 +316,7 @@ export default function PengajuanPembimbingPage() {
                                 </Button>
                               )}
                               {!pengajuanDosenIni && (!bisaAjukan || !isKetua) && (
-                                <Button size="small" startIcon={<Visibility sx={{ fontSize: 14 }} />} variant="outlined"
+                                <Button size="small" variant="outlined"
                                   onClick={() => handleOpenDetail(dosen)}
                                   sx={{ textTransform: "none", borderRadius: "50px", fontWeight: 600, fontSize: 12, px: 2, borderColor: "#0D59F2", color: "#0D59F2", "&:hover": { backgroundColor: "#f0f4ff" } }}>
                                   Lihat

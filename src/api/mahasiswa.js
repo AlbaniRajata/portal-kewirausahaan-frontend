@@ -34,8 +34,8 @@ export const createTim = async (payload) => {
   return res.data;
 };
 
-export const searchMahasiswa = async (nim) => {
-  const res = await api.get(`/mahasiswa/search-mahasiswa?nim=${nim}`);
+export const searchMahasiswa = async (query) => {
+  const res = await api.get(`/mahasiswa/search-mahasiswa?query=${query}`);
   return res.data;
 };
 
@@ -46,6 +46,16 @@ export const acceptInvite = async (id_tim) => {
 
 export const rejectInvite = async (id_tim, catatan) => {
   const res = await api.post(`/mahasiswa/tim/${id_tim}/reject`, { catatan });
+  return res.data;
+};
+
+export const addAnggotaTim = async (payload) => {
+  const res = await api.post("/mahasiswa/tim/anggota", payload);
+  return res.data;
+};
+
+export const resetTim = async () => {
+  const res = await api.delete("/mahasiswa/tim");
   return res.data;
 };
 
