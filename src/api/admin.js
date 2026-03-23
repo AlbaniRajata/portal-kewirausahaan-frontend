@@ -160,6 +160,16 @@ export const getDistribusiJuriHistoryTahap2 = async (id_program) => {
   return res.data;
 };
 
+export const reassignReviewerTahap2 = async (id_program, id_distribusi, id_reviewer_baru) => {
+  const res = await api.post(`/admin/program/${id_program}/panel/tahap2/reviewer/${id_distribusi}/reassign`, { id_reviewer_baru });
+  return res.data;
+};
+
+export const reassignJuriTahap2 = async (id_program, id_distribusi, id_juri_baru) => {
+  const res = await api.post(`/admin/program/${id_program}/panel/tahap2/juri/${id_distribusi}/reassign`, { id_juri_baru });
+  return res.data;
+};
+
 export const getListProposalRekapTahap1 = async (id_program) => {
   const res = await api.get(`/admin/program/${id_program}/rekap-tahap1/list`);
   return res.data;

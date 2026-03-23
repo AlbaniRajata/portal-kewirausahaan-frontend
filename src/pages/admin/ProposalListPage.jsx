@@ -4,7 +4,7 @@ import {
   TableContainer, TableHead, TableRow, Button, CircularProgress,
   TextField, MenuItem, Autocomplete, Pagination,
 } from "@mui/material";
-import { Visibility, Description } from "@mui/icons-material";
+import { Description } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
@@ -196,7 +196,6 @@ export default function ProposalListPage() {
                             </TableCell>
                             <TableCell align="center">
                               <Button size="small" variant="outlined"
-                                startIcon={<Visibility sx={{ fontSize: 14 }} />}
                                 onClick={() => navigate(`/admin/proposal/${proposal.id_proposal}`)}
                                 sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12, fontWeight: 600, px: 2, borderColor: "#0D59F2", color: "#0D59F2", "&:hover": { backgroundColor: "#f0f4ff" } }}
                               >

@@ -3,7 +3,6 @@ import {
   Box, Typography, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Checkbox, Button, Chip, CircularProgress, Tooltip, Pagination,
 } from "@mui/material";
-import { Visibility } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import { getListProposalRekapTahap2, finalisasiWawancaraBatch } from "../../api/admin";
 import DetailRekapDialog from "./DetailRekapDialog";
@@ -158,10 +157,10 @@ export default function RekapTahap2Tab({ id_program }) {
                       <TableCell sx={{ textAlign: "center" }}>
                         <Tooltip title="Detail Rekap">
                           <span>
-                            <Button size="small" variant="outlined" startIcon={<Visibility fontSize="small" />}
+                            <Button size="small" variant="outlined"
                               onClick={() => { setSelectedProposal(p); setDialogOpen(true); }}
                               disabled={p.total_submit === 0}
-                              sx={{ textTransform: "none", borderRadius: "8px" }}>Detail</Button>
+                              sx={{ textTransform: "none", borderRadius: "50px" }}>Detail</Button>
                           </span>
                         </Tooltip>
                       </TableCell>

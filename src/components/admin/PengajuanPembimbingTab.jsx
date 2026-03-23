@@ -5,7 +5,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, IconButton, Divider,
 } from "@mui/material";
-import { Close, Visibility } from "@mui/icons-material";
+import { Close } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import { getDashboardPengajuanPembimbing } from "../../api/admin";
 
@@ -117,7 +117,7 @@ export default function PengajuanPembimbingTab() {
                     <TableCell><Typography sx={{ fontSize: 13 }}>{formatDate(item.created_at)}</Typography></TableCell>
                     <TableCell><StatusPill label={sp.label} backgroundColor={sp.backgroundColor} /></TableCell>
                     <TableCell align="center">
-                      <Button size="small" variant="outlined" startIcon={<Visibility sx={{ fontSize: 14 }} />}
+                      <Button size="small" variant="outlined"
                         onClick={() => { setSelectedItem(item); setDialogOpen(true); }}
                         sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12, fontWeight: 600, px: 2, borderColor: "#0D59F2", color: "#0D59F2", "&:hover": { backgroundColor: "#f0f4ff" } }}
                       >

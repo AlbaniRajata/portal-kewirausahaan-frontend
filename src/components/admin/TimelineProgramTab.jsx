@@ -3,7 +3,7 @@ import {
   Box, Typography, Button, Dialog, DialogTitle, DialogContent,
   DialogActions, TextField, IconButton,
 } from "@mui/material";
-import { Edit, CalendarMonth, Close } from "@mui/icons-material";
+import { CalendarMonth, Close } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import { setProgramTimeline } from "../../api/admin";
 
@@ -115,7 +115,6 @@ export default function TimelineProgramTab({ program, onUpdate }) {
         <Typography sx={{ fontSize: 18, fontWeight: 700 }}>Timeline Pendaftaran</Typography>
         <Button
           variant="contained"
-          startIcon={<Edit sx={{ fontSize: 14 }} />}
           onClick={handleOpenDialog}
           sx={{ textTransform: "none", borderRadius: "50px", px: 3, py: 1.2, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}
         >

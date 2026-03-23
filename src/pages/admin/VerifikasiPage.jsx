@@ -23,9 +23,6 @@ import {
   Pagination,
 } from "@mui/material";
 import {
-  CheckCircle,
-  Cancel,
-  Visibility,
   Close,
   PersonAdd,
 } from "@mui/icons-material";
@@ -570,9 +567,6 @@ export default function VerifikasiPage() {
                                 <Button
                                   size="small"
                                   variant="outlined"
-                                  startIcon={
-                                    <Visibility sx={{ fontSize: 14 }} />
-                                  }
                                   onClick={() => handleViewDetail(user)}
                                   sx={{
                                     textTransform: "none",
@@ -830,7 +824,6 @@ export default function VerifikasiPage() {
                 <>
                   <Button
                     variant="outlined"
-                    startIcon={<Cancel sx={{ fontSize: 14 }} />}
                     onClick={handleOpenReject}
                     sx={{
                       textTransform: "none",
@@ -847,7 +840,6 @@ export default function VerifikasiPage() {
                   </Button>
                   <Button
                     variant="contained"
-                    startIcon={<CheckCircle sx={{ fontSize: 14 }} />}
                     onClick={handleApprove}
                     sx={{
                       textTransform: "none",

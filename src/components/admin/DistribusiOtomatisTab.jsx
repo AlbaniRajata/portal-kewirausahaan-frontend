@@ -4,7 +4,6 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Card, CardContent, Paper,
 } from "@mui/material";
-import { Refresh, PlayArrow, ExpandMore, ExpandLess } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import {
   getPreviewDistribusi,
@@ -56,7 +55,7 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
   const handleExecute = async () => {
     const confirmText = tahap === 1
       ? `Anda akan mendistribusikan <b>${preview.total_proposal}</b> proposal ke <b>${preview.total_reviewer}</b> reviewer secara otomatis.<br/><br/>Lanjutkan?`
-      : `Anda akan mendistribusikan <b>${preview.total_proposal}</b> proposal ke:<br/>- <b>${preview.total_reviewer}</b> Reviewer<br/>- <b>${preview.total_juri}</b> Juri<br/><br/>Total: <b>${preview.distribusi_total}</b> distribusi<br/><br/>Lanjutkan?`;
+      : `Anda akan mendistribusikan sisa distribusi untuk <b>${preview.total_proposal}</b> proposal ke:<br/>- Reviewer: <b>${preview.distribusi_sisa_reviewer ?? preview.distribusi_reviewer}</b> sisa<br/>- Juri: <b>${preview.distribusi_sisa_juri ?? preview.distribusi_juri}</b> sisa<br/><br/>Total sisa: <b>${preview.distribusi_sisa_total ?? preview.distribusi_total}</b> distribusi<br/><br/>Lanjutkan?`;
 
     const result = await Swal.fire({
       title: "Konfirmasi Distribusi", html: confirmText, icon: "question",
@@ -89,7 +88,7 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
       <Box sx={{ textAlign: "center", py: 6 }}>
         <Typography sx={{ fontSize: 15, fontWeight: 600, color: "#666", mb: 1 }}>Tidak ada proposal siap distribusi</Typography>
         <Typography sx={{ fontSize: 13, color: "#999", mb: 3 }}>{errorMsg}</Typography>
-        <Button variant="outlined" startIcon={<Refresh />} onClick={fetchPreview} sx={{ textTransform: "none" }}>Refresh Preview</Button>
+        <Button variant="outlined" onClick={fetchPreview} sx={{ textTransform: "none", borderRadius: "50px" }}>Refresh Preview</Button>
       </Box>
     );
   }
@@ -98,7 +97,7 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
     return (
       <Box sx={{ textAlign: "center", py: 6 }}>
         <Typography sx={{ fontSize: 14, color: "#999", mb: 3 }}>Tidak ada data preview</Typography>
-        <Button variant="outlined" startIcon={<Refresh />} onClick={fetchPreview} sx={{ textTransform: "none" }}>Refresh Preview</Button>
+        <Button variant="outlined" onClick={fetchPreview} sx={{ textTransform: "none", borderRadius: "50px" }}>Refresh Preview</Button>
       </Box>
     );
   }
@@ -117,7 +116,7 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
             <StatCard label="Total Proposal" value={preview.total_proposal} color="#0D59F2" bg="#E3F2FD" />
             <StatCard label="Reviewer" value={preview.total_reviewer} color="#9C27B0" bg="#F3E5F5" />
             <StatCard label="Juri" value={preview.total_juri} color="#FF9800" bg="#FFF3E0" />
-            <StatCard label="Total Distribusi" value={preview.distribusi_total} color="#4CAF50" bg="#E8F5E9" />
+            <StatCard label="Sisa Distribusi" value={preview.distribusi_sisa_total ?? preview.distribusi_total} color="#4CAF50" bg="#E8F5E9" />
           </>
         )}
       </Box>
@@ -145,8 +144,7 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
                 <Button
                   size="small"
                   onClick={() => toggleExpand(reviewer.id_reviewer)}
-                  endIcon={expandedReviewer[reviewer.id_reviewer] ? <ExpandLess /> : <ExpandMore />}
-                  sx={{ textTransform: "none", mt: 1 }}
+                  sx={{ textTransform: "none", borderRadius: "50px", mt: 1 }}
                 >
                   {expandedReviewer[reviewer.id_reviewer] ? "Sembunyikan Detail" : "Lihat Detail"}
                 </Button>
@@ -189,24 +187,35 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
           <Typography sx={{ fontSize: 14, color: "#444", mb: 1 }}>
             Sistem akan mendistribusikan <b>{preview.total_proposal}</b> proposal ke:
           </Typography>
-          <Typography sx={{ fontSize: 14, color: "#444" }}>• <b>{preview.total_reviewer}</b> Reviewer → {preview.distribusi_reviewer} distribusi</Typography>
-          <Typography sx={{ fontSize: 14, color: "#444" }}>• <b>{preview.total_juri}</b> Juri → {preview.distribusi_juri} distribusi</Typography>
-          <Typography sx={{ fontSize: 14, fontWeight: 700, mt: 1.5, color: "#0D59F2" }}>Total: {preview.distribusi_total} distribusi</Typography>
+          <Typography sx={{ fontSize: 14, color: "#444" }}>
+            • <b>{preview.total_reviewer}</b> Reviewer → target {preview.distribusi_reviewer} | sudah {preview.distribusi_existing_reviewer ?? 0} | sisa {preview.distribusi_sisa_reviewer ?? preview.distribusi_reviewer}
+          </Typography>
+          <Typography sx={{ fontSize: 14, color: "#444" }}>
+            • <b>{preview.total_juri}</b> Juri → target {preview.distribusi_juri} | sudah {preview.distribusi_existing_juri ?? 0} | sisa {preview.distribusi_sisa_juri ?? preview.distribusi_juri}
+          </Typography>
+          <Typography sx={{ fontSize: 13, color: "#8b0000", mt: 0.75 }}>
+            Ditolak: reviewer {preview.distribusi_rejected_reviewer ?? 0} • juri {preview.distribusi_rejected_juri ?? 0}
+          </Typography>
+          <Typography sx={{ fontSize: 14, fontWeight: 700, mt: 1.5, color: "#0D59F2" }}>
+            Total: target {preview.distribusi_total} | sudah {preview.distribusi_existing_total ?? 0} | sisa {preview.distribusi_sisa_total ?? preview.distribusi_total}
+          </Typography>
+          <Typography sx={{ fontSize: 12, color: "#667085", mt: 1.25 }}>
+            Catatan: penugasan yang ditolak dihitung sebagai sisa dan akan di-reassign ulang saat eksekusi otomatis.
+          </Typography>
         </Box>
       )}
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end", mt: 3 }}>
-        <Button variant="outlined" startIcon={<Refresh />} onClick={fetchPreview} disabled={executing} sx={{ textTransform: "none" }}>
+        <Button variant="outlined" onClick={fetchPreview} disabled={executing} sx={{ textTransform: "none", borderRadius: "50px" }}>
           Refresh Preview
         </Button>
         <Button
           variant="contained"
-          startIcon={executing ? <CircularProgress size={18} color="inherit" /> : <PlayArrow />}
           onClick={handleExecute}
-          disabled={executing}
-          sx={{ textTransform: "none", backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}
+          disabled={executing || (tahap === 2 && (preview.distribusi_sisa_total ?? 0) === 0)}
+          sx={{ textTransform: "none", borderRadius: "50px", backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}
         >
-          {executing ? "Memproses..." : "Eksekusi Distribusi Otomatis"}
+          {executing ? "Memproses..." : tahap === 2 && (preview.distribusi_sisa_total ?? 0) === 0 ? "Sudah Merata" : "Eksekusi Distribusi Otomatis"}
         </Button>
       </Box>
     </Box>

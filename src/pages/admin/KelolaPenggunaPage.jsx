@@ -6,8 +6,7 @@ import {
   IconButton, Pagination, Tooltip, InputAdornment, Divider,
 } from "@mui/material";
 import {
-  Add, Edit, Close, PersonAdd, ToggleOn, ToggleOff,
-  Search, Visibility, VisibilityOff,
+  Close, PersonAdd, Search, Visibility, VisibilityOff,
 } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
@@ -341,7 +340,6 @@ export default function KelolaPenggunaPage() {
       <Box sx={{ flex: 1 }} />
       <Button
         variant="contained"
-        startIcon={<Add sx={{ fontSize: 14 }} />}
         onClick={handleOpenCreate}
         sx={{ textTransform: "none", borderRadius: "50px", px: 3, py: 1.2, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" }, whiteSpace: "nowrap" }}
       >
@@ -584,16 +582,15 @@ export default function KelolaPenggunaPage() {
                             <TableCell sx={stickyAksiCell}>
                               <Box sx={{ display: "flex", gap: 1, justifyContent: "center", flexWrap: "nowrap" }}>
                                 <Tooltip title="Edit">
-                                  <Button size="small" variant="outlined" startIcon={<Edit fontSize="small" />} onClick={() => handleOpenEdit(user)}
-                                    sx={{ textTransform: "none", color: "#0D59F2", borderColor: "#e3f2fd", borderRadius: "8px", "&:hover": { backgroundColor: "#f0f4ff", borderColor: "#0D59F2" } }}>
+                                  <Button size="small" variant="outlined" onClick={() => handleOpenEdit(user)}
+                                    sx={{ textTransform: "none", color: "#0D59F2", borderColor: "#e3f2fd", borderRadius: "50px", "&:hover": { backgroundColor: "#f0f4ff", borderColor: "#0D59F2" } }}>
                                     Edit
                                   </Button>
                                 </Tooltip>
                                 <Tooltip title={user.is_active ? "Nonaktifkan" : "Aktifkan"}>
                                   <Button size="small" variant="outlined"
-                                    startIcon={user.is_active ? <ToggleOff fontSize="small" /> : <ToggleOn fontSize="small" />}
                                     onClick={() => handleToggleActive(user)}
-                                    sx={{ textTransform: "none", borderRadius: "8px", color: user.is_active ? "#c62828" : "#2e7d32", borderColor: user.is_active ? "#fce4ec" : "#e8f5e9", "&:hover": { backgroundColor: user.is_active ? "rgba(198,40,40,0.05)" : "rgba(46,125,50,0.05)" } }}>
+                                    sx={{ textTransform: "none", borderRadius: "50px", color: user.is_active ? "#c62828" : "#2e7d32", borderColor: user.is_active ? "#fce4ec" : "#e8f5e9", "&:hover": { backgroundColor: user.is_active ? "rgba(198,40,40,0.05)" : "rgba(46,125,50,0.05)" } }}>
                                     {user.is_active ? "Nonaktifkan" : "Aktifkan"}
                                   </Button>
                                 </Tooltip>

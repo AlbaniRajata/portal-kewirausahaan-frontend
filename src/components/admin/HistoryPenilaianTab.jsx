@@ -4,7 +4,6 @@ import {
   TableHead, TableRow, Button, Chip, CircularProgress, Tooltip,
   Pagination, TextField, MenuItem,
 } from "@mui/material";
-import { Visibility } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import {
   getHistoryPenilaianTahap1,
@@ -128,7 +127,6 @@ export default function HistoryPenilaianTab({ id_program }) {
                   <TableCell sx={tableHeadCell}>Kategori</TableCell>
                   {tahap === 1 ? (
                     <>
-                      <TableCell sx={tableHeadCell}>Reviewer</TableCell>
                       <TableCell sx={tableHeadCell}>Rata-rata Nilai</TableCell>
                     </>
                   ) : (
@@ -158,11 +156,6 @@ export default function HistoryPenilaianTab({ id_program }) {
 
                     {tahap === 1 ? (
                       <>
-                        <TableCell>
-                          <Typography sx={{ fontSize: 13 }}>
-                            {p.total_submit} / {p.total_reviewer}
-                          </Typography>
-                        </TableCell>
                         <TableCell>
                           <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#0D59F2" }}>
                             {p.rata_rata_nilai ?? "-"}
@@ -199,7 +192,6 @@ export default function HistoryPenilaianTab({ id_program }) {
                       <Tooltip title="Lihat Detail Penilaian">
                         <Button
                           size="small" variant="outlined"
-                          startIcon={<Visibility fontSize="small" />}
                           onClick={() => handleOpenDetail(p)}
                           sx={{ textTransform: "none", borderRadius: "50px" }}
                         >

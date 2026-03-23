@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { Box, Paper, Typography, Button, Chip, CircularProgress, TextField } from "@mui/material";
-import { ArrowBack } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
@@ -14,6 +13,7 @@ const STATUS_CONFIG = {
   2: { label: "Ditolak", color: "error" },
   3: { label: "Draft Penilaian", color: "info" },
   4: { label: "Selesai Dinilai", color: "secondary" },
+  5: { label: "Diganti", color: "default" },
 };
 
 const formatDate = (d) => {
@@ -75,7 +75,7 @@ export default function DistribusiDetailPage() {
             <Typography sx={{ fontSize: 14, color: "#c62828" }}>Distribusi tidak ditemukan</Typography>
           </Box>
           <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-            <Button variant="contained" startIcon={<ArrowBack sx={{ fontSize: 14 }} />}
+            <Button variant="contained"
               onClick={() => navigate(-1)}
               sx={{ textTransform: "none", borderRadius: "50px", px: 4, py: 1.2, fontWeight: 600, backgroundColor: "#FDB022", "&:hover": { backgroundColor: "#e09a1a" } }}>
               Kembali
@@ -93,9 +93,9 @@ export default function DistribusiDetailPage() {
       <PageTransition>
         <Box>
           <Box sx={{ display: "flex", alignItems: "center", mb: 0.5, gap: 1 }}>
-            <Button size="small" startIcon={<ArrowBack sx={{ fontSize: 14 }} />}
+            <Button size="small"
               onClick={() => navigate(-1)}
-              sx={{ textTransform: "none", fontSize: 13, color: "#888", p: 0, minWidth: 0, "&:hover": { backgroundColor: "transparent", color: "#0D59F2" } }}>
+              sx={{ textTransform: "none", borderRadius: "50px", fontSize: 13, color: "#888", p: 0, minWidth: 0, "&:hover": { backgroundColor: "transparent", color: "#0D59F2" } }}>
               Kembali
             </Button>
           </Box>

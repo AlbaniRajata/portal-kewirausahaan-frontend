@@ -4,7 +4,7 @@ import {
   TableContainer, TableHead, TableRow, Button, CircularProgress,
   TextField, MenuItem, Pagination, InputAdornment, Avatar,
 } from "@mui/material";
-import { Add, Edit, Delete, Search, Newspaper } from "@mui/icons-material";
+import { Search, Newspaper } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
@@ -112,7 +112,6 @@ export default function BeritaPage() {
               <Box sx={{ flex: 1 }} />
               <Button
                 variant="contained"
-                startIcon={<Add sx={{ fontSize: 14 }} />}
                 onClick={() => navigate("/admin/berita/tambah")}
                 sx={{ textTransform: "none", borderRadius: "50px", px: 3, py: 1.2, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" }, whiteSpace: "nowrap" }}
               >
@@ -178,16 +177,14 @@ export default function BeritaPage() {
                             <TableCell align="center">
                               <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
                                 <Button size="small" variant="outlined"
-                                  startIcon={<Edit sx={{ fontSize: 13 }} />}
                                   onClick={() => navigate(`/admin/berita/${item.id_berita}`)}
-                                  sx={{ textTransform: "none", borderRadius: "8px", fontSize: 12, fontWeight: 600, color: "#0D59F2", borderColor: "#e3f2fd", "&:hover": { backgroundColor: "#f0f4ff", borderColor: "#0D59F2" } }}
+                                  sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12, fontWeight: 600, color: "#0D59F2", borderColor: "#e3f2fd", "&:hover": { backgroundColor: "#f0f4ff", borderColor: "#0D59F2" } }}
                                 >
                                   Edit
                                 </Button>
                                 <Button size="small" variant="outlined"
-                                  startIcon={<Delete sx={{ fontSize: 13 }} />}
                                   onClick={() => handleDelete(item)}
-                                  sx={{ textTransform: "none", borderRadius: "8px", fontSize: 12, fontWeight: 600, color: "#c62828", borderColor: "#fce4ec", "&:hover": { backgroundColor: "rgba(198,40,40,0.05)" } }}
+                                  sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12, fontWeight: 600, color: "#c62828", borderColor: "#fce4ec", "&:hover": { backgroundColor: "rgba(198,40,40,0.05)" } }}
                                 >
                                   Hapus
                                 </Button>

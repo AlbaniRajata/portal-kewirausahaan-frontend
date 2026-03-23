@@ -5,7 +5,7 @@ import {
   DialogContent, DialogActions, TextField, MenuItem, CircularProgress,
   IconButton, Pagination, InputAdornment, Divider, Chip,
 } from "@mui/material";
-import { Visibility, Close, PersonAdd, Search, Groups } from "@mui/icons-material";
+import { Close, PersonAdd, Search, Groups } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
@@ -21,12 +21,6 @@ const tableHeadCell = {
 };
 
 const tableBodyRow = { "& td": { borderBottom: "1px solid #f5f5f5", py: 2 } };
-
-const TIM_STATUS = {
-  0: { label: "Draft",   backgroundColor: "#757575" },
-  1: { label: "Aktif",   backgroundColor: "#2e7d32" },
-  2: { label: "Selesai", backgroundColor: "#0D59F2" },
-};
 
 const ANGGOTA_STATUS = {
   0: { label: "Menunggu",  backgroundColor: "#f57f17" },
@@ -174,17 +168,12 @@ export default function TimPesertaPage() {
 
   const renderTimDetail = () => {
     if (!detailData) return null;
-    const ts = TIM_STATUS[detailData.status] || TIM_STATUS[0];
     const ps = detailData.proposal ? (PROPOSAL_STATUS[detailData.proposal.status] || PROPOSAL_STATUS[0]) : null;
     return (
       <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
         <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3 }}>
           <DetailRow label="Nama Tim" value={detailData.nama_tim} />
           <DetailRow label="Program" value={detailData.nama_program} />
-          <Box>
-            <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Status Tim</Typography>
-            <StatusPill label={ts.label} backgroundColor={ts.backgroundColor} />
-          </Box>
           <DetailRow label="Tanggal Dibuat" value={formatDate(detailData.created_at)} />
         </Box>
 
@@ -249,7 +238,7 @@ export default function TimPesertaPage() {
                 <Button size="small" variant="outlined"
                   href={`${import.meta.env.VITE_API_URL.replace("/api", "")}/uploads/proposal/${detailData.proposal.file_proposal}`}
                   target="_blank"
-                  sx={{ textTransform: "none", borderRadius: "8px", fontSize: 12, borderColor: "#0D59F2", color: "#0D59F2" }}
+                  sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12, borderColor: "#0D59F2", color: "#0D59F2" }}
                 >
                   Lihat File
                 </Button>
@@ -336,7 +325,7 @@ export default function TimPesertaPage() {
                 <Button size="small" variant="outlined"
                   href={`${import.meta.env.VITE_API_URL.replace("/api", "")}/uploads/proposal/${detailData.proposal.file_proposal}`}
                   target="_blank"
-                  sx={{ textTransform: "none", borderRadius: "8px", fontSize: 12, borderColor: "#0D59F2", color: "#0D59F2" }}
+                  sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12, borderColor: "#0D59F2", color: "#0D59F2" }}
                 >
                   Lihat File
                 </Button>
@@ -419,8 +408,8 @@ export default function TimPesertaPage() {
                       <TableHead>
                         <TableRow>
                           {activeTab === 0
-                            ? ["Nama Tim", "Program", "Ketua", "Anggota", "Proposal", "Status", "Aksi"].map((h, i) => (
-                                <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 6 && { textAlign: "center" }) }}>{h}</TableCell>
+                            ? ["Nama Tim", "Program", "Ketua", "Anggota", "Proposal", "Aksi"].map((h, i) => (
+                                <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 5 && { textAlign: "center" }) }}>{h}</TableCell>
                               ))
                             : ["Nama Peserta", "NIM", "Program", "Tim", "Peran", "Status Lolos", "Aksi"].map((h, i) => (
                                 <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 6 && { textAlign: "center" }) }}>{h}</TableCell>
@@ -431,7 +420,6 @@ export default function TimPesertaPage() {
                       <TableBody>
                         {activeTab === 0
                           ? paginatedList.map((item) => {
-                              const ts = TIM_STATUS[item.status] || TIM_STATUS[0];
                               const proposalStatus = item.id_proposal ? (PROPOSAL_STATUS[item.status_proposal] || PROPOSAL_STATUS[0]) : null;
                               return (
                                 <TableRow key={item.id_tim} sx={tableBodyRow}>
@@ -450,10 +438,8 @@ export default function TimPesertaPage() {
                                       : <Typography sx={{ fontSize: 12, color: "#aaa" }}>Belum ada</Typography>
                                     }
                                   </TableCell>
-                                  <TableCell><StatusPill label={ts.label} backgroundColor={ts.backgroundColor} /></TableCell>
                                   <TableCell align="center">
                                     <Button size="small" variant="outlined"
-                                      startIcon={<Visibility sx={{ fontSize: 14 }} />}
                                       onClick={() => handleViewTimDetail(item)}
                                       sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12, fontWeight: 600, px: 2, borderColor: "#0D59F2", color: "#0D59F2", "&:hover": { backgroundColor: "#f0f4ff" } }}
                                     >
@@ -484,7 +470,6 @@ export default function TimPesertaPage() {
                                   <TableCell><StatusPill label={ls.label} backgroundColor={ls.backgroundColor} /></TableCell>
                                   <TableCell align="center">
                                     <Button size="small" variant="outlined"
-                                      startIcon={<Visibility sx={{ fontSize: 14 }} />}
                                       onClick={() => handleViewPesertaDetail(item)}
                                       sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12, fontWeight: 600, px: 2, borderColor: "#0D59F2", color: "#0D59F2", "&:hover": { backgroundColor: "#f0f4ff" } }}
                                     >

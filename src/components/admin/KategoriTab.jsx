@@ -5,7 +5,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, IconButton, Tooltip,
 } from "@mui/material";
-import { Add, Edit, Delete, Close, Category } from "@mui/icons-material";
+import { Close, Category } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import { getKategori, createKategori, updateKategori, deleteKategori } from "../../api/admin";
 
@@ -146,7 +146,6 @@ export default function KategoriTab() {
         <Typography sx={{ fontSize: 18, fontWeight: 700 }}>Kategori Proposal</Typography>
         <Button
           variant="contained"
-          startIcon={<Add sx={{ fontSize: 14 }} />}
           onClick={handleOpenCreate}
           sx={{ textTransform: "none", borderRadius: "50px", px: 3, py: 1.2, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}
         >
@@ -187,14 +186,14 @@ export default function KategoriTab() {
                   <TableCell sx={stickyAksiCell}>
                     <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
                       <Tooltip title="Edit Kategori">
-                        <Button size="small" variant="outlined" startIcon={<Edit fontSize="small" />} onClick={() => handleOpenEdit(item)}
-                          sx={{ textTransform: "none", color: "#0D59F2", borderColor: "#e3f2fd", borderRadius: "8px", "&:hover": { backgroundColor: "#f0f4ff", borderColor: "#0D59F2" } }}>
+                        <Button size="small" variant="outlined" onClick={() => handleOpenEdit(item)}
+                          sx={{ textTransform: "none", color: "#0D59F2", borderColor: "#e3f2fd", borderRadius: "50px", "&:hover": { backgroundColor: "#f0f4ff", borderColor: "#0D59F2" } }}>
                           Edit
                         </Button>
                       </Tooltip>
                       <Tooltip title="Hapus Kategori">
-                        <Button size="small" variant="outlined" color="error" startIcon={<Delete fontSize="small" />} onClick={() => handleDelete(item)}
-                          sx={{ textTransform: "none", borderColor: "#fce4ec", borderRadius: "8px", "&:hover": { backgroundColor: "rgba(229,57,53,0.06)", borderColor: "#e53935" } }}>
+                        <Button size="small" variant="outlined" color="error" onClick={() => handleDelete(item)}
+                          sx={{ textTransform: "none", borderColor: "#fce4ec", borderRadius: "50px", "&:hover": { backgroundColor: "rgba(229,57,53,0.06)", borderColor: "#e53935" } }}>
                           Hapus
                         </Button>
                       </Tooltip>

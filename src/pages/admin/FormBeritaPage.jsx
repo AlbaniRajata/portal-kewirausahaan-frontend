@@ -3,7 +3,7 @@ import {
   Box, Paper, Typography, Button, TextField, MenuItem,
   CircularProgress, Divider, ToggleButtonGroup, ToggleButton,
 } from "@mui/material";
-import { ArrowBack, Upload, Link as LinkIcon, AttachFile } from "@mui/icons-material";
+import { Upload, Link as LinkIcon, AttachFile } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
@@ -141,9 +141,9 @@ export default function FormBeritaPage() {
     <BodyLayout Sidebar={AdminSidebar}>
       <PageTransition>
         <Box>
-          <Button size="small" startIcon={<ArrowBack sx={{ fontSize: 14 }} />}
+          <Button size="small"
             onClick={() => navigate("/admin/berita")}
-            sx={{ textTransform: "none", fontSize: 13, color: "#888", p: 0, mb: 0.5, minWidth: 0, "&:hover": { backgroundColor: "transparent", color: "#0D59F2" } }}
+            sx={{ textTransform: "none", borderRadius: "50px", fontSize: 13, color: "#888", p: 0, mb: 0.5, minWidth: 0, "&:hover": { backgroundColor: "transparent", color: "#0D59F2" } }}
           >
             Kembali ke Daftar Berita
           </Button>

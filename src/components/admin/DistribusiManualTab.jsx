@@ -4,7 +4,6 @@ import {
   Checkbox, FormControlLabel, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Autocomplete, Radio, Chip,
 } from "@mui/material";
-import { Assignment, Visibility } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import {
@@ -72,8 +71,20 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
     if (!id_program) return;
     try {
       setLoadingProposals(true);
-      const res = await getProposalList({ id_program, status: tahap === 1 ? 1 : 4 });
-      setProposals(res.data || []);
+      if (tahap === 1) {
+        const res = await getProposalList({ id_program, status: 1 });
+        setProposals(res.data || []);
+      } else {
+        const [resStatus4, resStatus5] = await Promise.all([
+          getProposalList({ id_program, status: 4 }),
+          getProposalList({ id_program, status: 5 }),
+        ]);
+        const merged = [...(resStatus4.data || []), ...(resStatus5.data || [])];
+        const uniqueByProposal = merged.filter(
+          (item, index, arr) => arr.findIndex((x) => x.id_proposal === item.id_proposal) === index,
+        );
+        setProposals(uniqueByProposal);
+      }
     } catch { onError("Gagal memuat daftar proposal"); }
     finally { setLoadingProposals(false); }
   }, [id_program, tahap, onError]);
@@ -130,12 +141,8 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
   };
 
   const handleAssignTahap2 = async () => {
-    if (selectedReviewers.length === 0) {
-      Swal.fire({ icon: "warning", title: "Perhatian", text: "Silakan pilih minimal 1 reviewer", confirmButtonColor: "#0D59F2" });
-      return;
-    }
-    if (selectedJuries.length === 0) {
-      Swal.fire({ icon: "warning", title: "Perhatian", text: "Silakan pilih minimal 1 juri", confirmButtonColor: "#0D59F2" });
+    if (selectedReviewers.length === 0 && selectedJuries.length === 0) {
+      Swal.fire({ icon: "warning", title: "Perhatian", text: "Silakan pilih minimal 1 reviewer atau 1 juri", confirmButtonColor: "#0D59F2" });
       return;
     }
     if (!selectedProposal) {
@@ -240,9 +247,9 @@ function ProposalTable({ proposals, loading, renderSelector, navigate }) {
                 <Typography sx={{ fontSize: 13 }}>{formatRupiah(p.modal_diajukan)}</Typography>
               </TableCell>
               <TableCell>
-                <Button size="small" variant="outlined" startIcon={<Visibility />}
+                <Button size="small" variant="outlined"
                   onClick={() => navigate(`/admin/proposal/${p.id_proposal}`)}
-                  sx={{ textTransform: "none", fontSize: 12, borderRadius: "8px" }}>
+                  sx={{ textTransform: "none", fontSize: 12, borderRadius: "50px" }}>
                   Detail
                 </Button>
               </TableCell>
@@ -323,7 +330,6 @@ function DistribusiManualTahap1({
       <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
         <Button
           variant="contained"
-          startIcon={assigning ? <CircularProgress size={18} color="inherit" /> : <Assignment />}
           onClick={handleAssign}
           disabled={assigning || selectedProposals.length === 0 || !selectedReviewer}
           sx={{ textTransform: "none", borderRadius: "50px", px: 3, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}
@@ -426,9 +432,8 @@ function DistribusiManualTahap2({
       <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
         <Button
           variant="contained"
-          startIcon={assigning ? <CircularProgress size={18} color="inherit" /> : <Assignment />}
           onClick={handleAssign}
-          disabled={assigning || selectedReviewers.length === 0 || selectedJuries.length === 0 || !selectedProposal}
+          disabled={assigning || (selectedReviewers.length === 0 && selectedJuries.length === 0) || !selectedProposal}
           sx={{ textTransform: "none", borderRadius: "50px", px: 3, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}
         >
           {assigning ? "Memproses..." : "Assign Panel ke Proposal"}

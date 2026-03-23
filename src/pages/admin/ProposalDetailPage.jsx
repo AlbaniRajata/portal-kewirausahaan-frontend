@@ -3,7 +3,7 @@ import {
   Box, Typography, Button, CircularProgress, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, TextField, Paper,
 } from "@mui/material";
-import { Download, AttachFile, ArrowBack } from "@mui/icons-material";
+import { AttachFile } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
@@ -91,7 +91,7 @@ export default function ProposalDetailPage() {
             <Typography sx={{ fontSize: 14, color: "#c62828" }}>Proposal tidak ditemukan</Typography>
           </Box>
           <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-            <Button variant="contained" startIcon={<ArrowBack sx={{ fontSize: 14 }} />}
+            <Button variant="contained"
               onClick={() => navigate("/admin/proposal")}
               sx={{ textTransform: "none", borderRadius: "50px", px: 4, py: 1.2, fontWeight: 600, backgroundColor: "#FDB022", "&:hover": { backgroundColor: "#e09a1a" } }}
             >
@@ -110,10 +110,9 @@ export default function ProposalDetailPage() {
       <PageTransition>
         <Box>
           <Box sx={{ display: "flex", alignItems: "center", mb: 0.5, gap: 1 }}>
-            <Button size="small" startIcon={<ArrowBack sx={{ fontSize: 14 }} />}
+            <Button size="small"
               onClick={() => navigate("/admin/proposal")}
-              sx={{ textTransform: "none", fontSize: 13, color: "#888", p: 0, minWidth: 0, "&:hover": { backgroundColor: "transparent", color: "#0D59F2" } }}
-            >
+              sx={{ textTransform: "none", borderRadius: "50px", fontSize: 13, color: "#888", p: 0, minWidth: 0, "&:hover": { backgroundColor: "transparent", color: "#0D59F2" } }}>
               Kembali
             </Button>
           </Box>
@@ -169,7 +168,6 @@ export default function ProposalDetailPage() {
                     </Box>
                   </Box>
                   <Button
-                    startIcon={<Download sx={{ fontSize: 16 }} />}
                     component="a"
                     href={`${import.meta.env.VITE_API_URL.replace("/api", "")}/uploads/proposal/${proposal.file_proposal}`}
                     target="_blank"

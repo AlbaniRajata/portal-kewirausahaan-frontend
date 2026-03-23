@@ -5,7 +5,7 @@ import {
   DialogContent, DialogActions, TextField, CircularProgress,
   IconButton, Tooltip,
 } from "@mui/material";
-import { Add, Edit, Delete, Close, Assignment } from "@mui/icons-material";
+import { Close, Assignment } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import {
   getTahapProgram, createTahapProgram, updateTahapProgram, deleteTahapProgram,
@@ -193,7 +193,6 @@ export default function TahapPenilaianTab({ id_program }) {
           <span>
             <Button
               variant="contained"
-              startIcon={<Add sx={{ fontSize: 14 }} />}
               onClick={handleOpenCreate}
               disabled={!canAddTahap}
               sx={{
@@ -266,14 +265,14 @@ export default function TahapPenilaianTab({ id_program }) {
                     <TableCell>
                       <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
                         <Tooltip title="Edit Jadwal">
-                          <Button size="small" variant="outlined" startIcon={<Edit fontSize="small" />} onClick={() => handleOpenEdit(tahap)}
-                            sx={{ textTransform: "none", color: "#0D59F2", borderColor: "#e3f2fd", borderRadius: "8px", "&:hover": { backgroundColor: "#f0f4ff", borderColor: "#0D59F2" } }}>
+                          <Button size="small" variant="outlined" onClick={() => handleOpenEdit(tahap)}
+                            sx={{ textTransform: "none", color: "#0D59F2", borderColor: "#e3f2fd", borderRadius: "50px", "&:hover": { backgroundColor: "#f0f4ff", borderColor: "#0D59F2" } }}>
                             Edit
                           </Button>
                         </Tooltip>
                         <Tooltip title="Hapus Tahap">
-                          <Button size="small" variant="outlined" color="error" startIcon={<Delete fontSize="small" />} onClick={() => handleDelete(tahap)}
-                            sx={{ textTransform: "none", borderColor: "#fce4ec", borderRadius: "8px", "&:hover": { backgroundColor: "rgba(229,57,53,0.06)", borderColor: "#e53935" } }}>
+                          <Button size="small" variant="outlined" color="error" onClick={() => handleDelete(tahap)}
+                            sx={{ textTransform: "none", borderColor: "#fce4ec", borderRadius: "50px", "&:hover": { backgroundColor: "rgba(229,57,53,0.06)", borderColor: "#e53935" } }}>
                             Hapus
                           </Button>
                         </Tooltip>
