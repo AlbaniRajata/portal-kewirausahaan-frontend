@@ -31,8 +31,8 @@ const STATS = [
 const STEPS = [
   { num: "01", title: "Daftar & Lengkapi Biodata", desc: "Buat akun mahasiswa dan isi data diri serta informasi akademik." },
   { num: "02", title: "Bentuk Tim & Ajukan Proposal", desc: "Bentuk tim, tulis proposal bisnis, dan unggah ke portal." },
-  { num: "03", title: "Penilaian Reviewer", desc: "Proposal dievaluasi desk dan wawancara oleh reviewer berpengalaman." },
-  { num: "04", title: "Penilaian Juri & Pendanaan", desc: "Proposal terbaik dipresentasikan ke juri untuk mendapat pendanaan." },
+  { num: "03", title: "Penilaian Tahap 1 (Desk Evaluasi)", desc: "Proposal dievaluasi pada tahap pertama oleh reviewer berpengalaman." },
+  { num: "04", title: "Penilaian Tahap 2 (Wawancara)", desc: "Proposal terbaik dipresentasikan ke juri dan reviewer untuk mendapat pendanaan." },
 ];
 
 function useInView(threshold = 0.15) {
@@ -44,6 +44,25 @@ function useInView(threshold = 0.15) {
     return () => obs.disconnect();
   }, [threshold]);
   return [ref, inView];
+}
+
+function useCountUp(target, inView, duration = 2000) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!inView) return;
+    const numeric = parseFloat(target.replace(/[^0-9.]/g, ""));
+    const start = performance.now();
+    const frame = (now) => {
+      const progress = Math.min((now - start) / duration, 1);
+      const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      setCount(Math.floor(ease * numeric));
+      if (progress < 1) requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  }, [inView, target, duration]);
+
+  return count;
 }
 
 function Reveal({ children, delay = 0, direction = "up" }) {
@@ -60,17 +79,83 @@ function Reveal({ children, delay = 0, direction = "up" }) {
   );
 }
 
-function Navbar({ scrolled }) {
+function StatItem({ value, label, delay }) {
+  const [ref, inView] = useInView(0.3);
+  const suffix = value.replace(/[0-9.]/g, "");
+  const count = useCountUp(value, inView);
+
+  return (
+    <div ref={ref} style={{
+      opacity: inView ? 1 : 0,
+      transform: inView ? "none" : "translateY(40px)",
+      transition: `opacity 0.7s ease ${delay}s, transform 0.7s ease ${delay}s`,
+      textAlign: "center",
+    }}>
+      <div style={{
+        fontFamily: poppins, fontSize: 52, fontWeight: 800,
+        color: "#fff", lineHeight: 1, letterSpacing: "-2px",
+      }}>
+        {count}{suffix}
+      </div>
+      <div style={{
+        fontFamily: poppins, fontSize: 14,
+        color: "rgba(255,255,255,0.7)", marginTop: 8, fontWeight: 500,
+      }}>
+        {label}
+      </div>
+    </div>
+  );
+}
+
+function Bubbles({ colorA = "rgba(13,89,242,0.055)", colorB = "rgba(13,89,242,0.032)", large = 260, small = 182 }) {
+  return (
+    <>
+      <div style={{
+        position: "absolute", top: -large * 0.08, right: -large * 0.38,
+        width: large, height: large, borderRadius: "50%",
+        background: colorA, pointerEvents: "none", zIndex: 0,
+      }} />
+      <div style={{
+        position: "absolute", bottom: -small * 0.14, left: -small * 0.15,
+        width: small, height: small, borderRadius: "50%",
+        background: colorA, pointerEvents: "none", zIndex: 0,
+      }} />
+      <div style={{
+        position: "absolute", bottom: -small * 0.32, left: small * 0.18,
+        width: small * 0.7, height: small * 0.7, borderRadius: "50%",
+        background: colorB, pointerEvents: "none", zIndex: 0,
+      }} />
+    </>
+  );
+}
+
+function Navbar({ scrolled, onRegisterClick }) {
   const navigate = useNavigate();
   return (
     <nav style={{
-      position: "fixed", top: 0, left: 0, right: 0, zIndex: 1000,
-      padding: scrolled ? "12px 40px" : "20px 40px",
-      background: scrolled ? "rgba(255,255,255,0.95)" : "transparent",
+      position: "fixed", top: scrolled ? 12 : 0,
+      left: scrolled ? 80 : 0,
+      right: scrolled ? 80 : 0,
+      zIndex: 1000,
+      padding: "0 28px",
+      height: 64,
+      background: scrolled ? "#ffffff" : "transparent",
       backdropFilter: scrolled ? "blur(12px)" : "none",
-      borderBottom: scrolled ? "1px solid rgba(0,0,0,0.08)" : "none",
+      boxShadow: scrolled
+        ? "0 8px 32px -8px rgba(0,0,0,0.14), 0 2px 8px -2px rgba(0,0,0,0.08)"
+        : "none",
+      border: scrolled ? "1.5px solid rgba(0,0,0,0.08)" : "1.5px solid transparent",
+      borderRadius: scrolled ? "20px" : 0,
       display: "flex", alignItems: "center", justifyContent: "space-between",
-      transition: "all 0.4s ease",
+      transition: [
+        "left 0.35s cubic-bezier(0.4,0,0.2,1)",
+        "right 0.35s cubic-bezier(0.4,0,0.2,1)",
+        "top 0.35s cubic-bezier(0.4,0,0.2,1)",
+        "background-color 0.35s ease",
+        "box-shadow 0.35s ease",
+        "border-radius 0.35s ease",
+        "border-color 0.35s ease",
+      ].join(", "),
       boxSizing: "border-box",
       fontFamily: poppins,
     }}>
@@ -84,7 +169,7 @@ function Navbar({ scrolled }) {
         <span style={{
           fontFamily: poppins, fontSize: 16, fontWeight: 700,
           color: scrolled ? "#0a0a0a" : "#fff",
-          transition: "color 0.4s",
+          transition: "color 0.35s ease",
         }}>PKK Polinema</span>
       </div>
 
@@ -102,7 +187,7 @@ function Navbar({ scrolled }) {
         >
           Masuk
         </button>
-        <button onClick={() => navigate("/daftar/mahasiswa")} style={{
+        <button onClick={onRegisterClick} style={{
           background: scrolled ? "#0D59F2" : "#fff",
           border: "none", color: scrolled ? "#fff" : "#0D59F2",
           padding: "8px 22px", borderRadius: 50, cursor: "pointer",
@@ -126,6 +211,13 @@ export default function LandingPage() {
   const [berita, setBerita] = useState([]);
   const [loadingBerita, setLoadingBerita] = useState(true);
   const [activeStep, setActiveStep] = useState(0);
+  const [openRegisterModal, setOpenRegisterModal] = useState(false);
+
+  const handleRegisterChoice = (type) => {
+    setOpenRegisterModal(false);
+    if (type === "mahasiswa") navigate("/daftar/mahasiswa");
+    else if (type === "dosen") navigate("/daftar/dosen");
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
@@ -168,7 +260,11 @@ export default function LandingPage() {
   };
 
   return (
-    <div style={{ fontFamily: poppins, overflowX: "hidden" }}>
+    <div style={{
+      fontFamily: poppins,
+      overflowX: "hidden",
+      background: "linear-gradient(180deg, #020d24 0%, #0a2168 18%, #1553e6 34%, #4f85ff 56%, #3f74e8 70%, #2f62d3 84%, #1f4dbe 92%, #061228 100%)",
+    }}>
       <style>{`
         @keyframes float { from { transform: translateY(0) rotate(0deg); } to { transform: translateY(-20px) rotate(10deg); } }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: none; } }
@@ -176,11 +272,11 @@ export default function LandingPage() {
         @keyframes skeletonShimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
       `}</style>
 
-      <Navbar scrolled={scrolled} />
+      <Navbar scrolled={scrolled} onRegisterClick={() => setOpenRegisterModal(true)} />
 
       <section style={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg, #020d24 0%, #0a1f5c 40%, #0D59F2 100%)",
+        background: "transparent",
         display: "flex", alignItems: "center", justifyContent: "center",
         position: "relative", overflow: "hidden", padding: "0 24px",
       }}>
@@ -222,7 +318,7 @@ export default function LandingPage() {
               lineHeight: 1.1, letterSpacing: "-2px",
             }}>
               Portal
-              <span style={{ color: "#60a5fa", fontStyle: "italic", fontWeight: 300 }}> Kewirausahaan</span>
+              <span style={{ color: "#dbeafe", fontStyle: "italic", fontWeight: 600, textShadow: "0 2px 12px rgba(3,10,30,0.45)" }}> Kewirausahaan</span>
             </h1>
             <h1 style={{
               fontFamily: poppins, fontSize: "clamp(36px, 6vw, 70px)",
@@ -239,12 +335,12 @@ export default function LandingPage() {
               color: "rgba(255,255,255,0.7)", lineHeight: 1.85,
               margin: "0 auto 40px", maxWidth: 520, fontWeight: 400,
             }}>
-              Wujudkan ide bisnis Anda bersama program PMW & INBIS. Dari proposal hingga pendanaan, kami hadir mendampingi setiap langkah perjalanan wirausaha Anda.
+              Wujudkan ide bisnis Anda bersama Program Mahasiswa Wirausaha & Program Inkubasi Mahasiswa. Dari proposal hingga pendanaan, kami hadir mendampingi setiap langkah perjalanan wirausaha Anda.
             </p>
           </div>
 
           <div style={{ animation: "fadeUp 0.8s ease 0.45s forwards", opacity: 0, display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
-            <button onClick={() => navigate("/daftar/mahasiswa")} style={{
+            <button onClick={() => setOpenRegisterModal(true)} style={{
               padding: "14px 36px", borderRadius: 50, border: "none",
               background: "#fff", color: "#0D59F2",
               fontSize: 14, fontWeight: 700, fontFamily: poppins, cursor: "pointer",
@@ -279,21 +375,17 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section style={{ background: "#0D59F2", padding: "60px 24px" }}>
+      <section style={{ background: "transparent", padding: "60px 24px" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 40 }}>
           {STATS.map((s, i) => (
-            <Reveal key={i} delay={i * 0.1}>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontFamily: poppins, fontSize: 52, fontWeight: 800, color: "#fff", lineHeight: 1, letterSpacing: "-2px" }}>{s.value}</div>
-                <div style={{ fontFamily: poppins, fontSize: 14, color: "rgba(255,255,255,0.7)", marginTop: 8, fontWeight: 500 }}>{s.label}</div>
-              </div>
-            </Reveal>
+            <StatItem key={i} value={s.value} label={s.label} delay={i * 0.1} />
           ))}
         </div>
       </section>
 
-      <section style={{ padding: "100px 24px", background: "#fafafa" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+      <section style={{ padding: "100px 24px", background: "#fafafa", position: "relative", overflow: "visible" }}>
+        <Bubbles colorA="rgba(13,89,242,0.05)" colorB="rgba(13,89,242,0.028)" large={300} small={210} />
+        <div style={{ maxWidth: 1100, margin: "0 auto", position: "relative", zIndex: 1 }}>
           <Reveal>
             <div style={{ marginBottom: 60 }}>
               <span style={{ fontFamily: poppins, fontSize: 12, fontWeight: 700, color: "#0D59F2", letterSpacing: "3px", textTransform: "uppercase" }}>Program Kami</span>
@@ -334,8 +426,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section style={{ padding: "100px 24px", background: "#fff" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "center" }}>
+      <section style={{ padding: "100px 24px", background: "#fff", position: "relative", overflow: "visible" }}>
+        <Bubbles colorA="rgba(13,89,242,0.045)" colorB="rgba(13,89,242,0.024)" large={310} small={200} />
+        <div style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "center", position: "relative", zIndex: 1 }}>
           <Reveal direction="left">
             <span style={{ fontFamily: poppins, fontSize: 12, fontWeight: 700, color: "#0D59F2", letterSpacing: "3px", textTransform: "uppercase" }}>Cara Kerja</span>
             <h2 style={{ fontFamily: poppins, fontSize: "clamp(26px, 3vw, 42px)", fontWeight: 800, color: "#0a0a0a", margin: "12px 0 20px", lineHeight: 1.2, letterSpacing: "-1px" }}>
@@ -345,7 +438,7 @@ export default function LandingPage() {
             <p style={{ fontFamily: poppins, fontSize: 14, color: "#888", lineHeight: 1.85, margin: "0 0 36px" }}>
               Proses terstruktur dari pendaftaran hingga keputusan pendanaan, dirancang untuk memaksimalkan potensi proposal Anda.
             </p>
-            <button onClick={() => navigate("/daftar/mahasiswa")} style={{
+            <button onClick={() => setOpenRegisterModal(true)} style={{
               padding: "13px 32px", borderRadius: 50, border: "none",
               background: "#0D59F2", color: "#fff",
               fontSize: 14, fontWeight: 700, fontFamily: poppins, cursor: "pointer",
@@ -384,8 +477,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section style={{ padding: "100px 24px", background: "#fafafa" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+      <section style={{ padding: "100px 24px", background: "#fafafa", position: "relative", overflow: "visible" }}>
+        <Bubbles colorA="rgba(13,89,242,0.04)" colorB="rgba(13,89,242,0.022)" large={260} small={178} />
+        <div style={{ maxWidth: 1100, margin: "0 auto", position: "relative", zIndex: 1 }}>
           <Reveal>
             <div style={{ marginBottom: 52 }}>
               <span style={{ fontFamily: poppins, fontSize: 12, fontWeight: 700, color: "#0D59F2", letterSpacing: "3px", textTransform: "uppercase" }}>Berita & Informasi</span>
@@ -477,21 +571,24 @@ export default function LandingPage() {
 
       <section style={{
         padding: "100px 24px",
-        background: "linear-gradient(135deg, #020d24 0%, #0a1f5c 60%, #0D59F2 100%)",
-        position: "relative", overflow: "hidden",
+        background: "transparent",
+        position: "relative", overflow: "visible",
       }}>
+        <div style={{ position: "absolute", top: -90, right: -90, width: 320, height: 320, borderRadius: "50%", background: "rgba(255,255,255,0.038)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: -70, left: -46, width: 240, height: 240, borderRadius: "50%", background: "rgba(255,255,255,0.032)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: -90, left: 124, width: 170, height: 170, borderRadius: "50%", background: "rgba(255,255,255,0.022)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", top: "-30%", right: "-10%", width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(13,89,242,0.3) 0%, transparent 70%)", filter: "blur(60px)" }} />
         <Reveal>
           <div style={{ maxWidth: 700, margin: "0 auto", textAlign: "center", position: "relative", zIndex: 1 }}>
             <h2 style={{ fontFamily: poppins, fontSize: "clamp(28px, 4.5vw, 56px)", fontWeight: 800, color: "#fff", margin: "0 0 20px", lineHeight: 1.15, letterSpacing: "-1.5px" }}>
               Siap memulai perjalanan{" "}
-              <span style={{ color: "#60a5fa", fontWeight: 300, fontStyle: "italic" }}>wirausaha</span>{" "}Anda?
+              <span style={{ color: "#dbeafe", fontWeight: 600, fontStyle: "italic", textShadow: "0 2px 12px rgba(3,10,30,0.45)" }}>wirausaha</span>{" "}Anda?
             </h2>
             <p style={{ fontFamily: poppins, fontSize: 15, color: "rgba(255,255,255,0.65)", margin: "0 0 44px", lineHeight: 1.85 }}>
-              Bergabunglah dengan ratusan mahasiswa Polinema yang telah mengembangkan bisnis mereka bersama program PMW & INBIS.
+              Bergabunglah dengan ratusan mahasiswa Polinema yang telah mengembangkan bisnis mereka bersama Program Mahasiswa Wirausaha & Program Inkubasi Mahasiswa.
             </p>
             <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
-              <button onClick={() => navigate("/daftar/mahasiswa")} style={{
+              <button onClick={() => setOpenRegisterModal(true)} style={{
                 padding: "15px 40px", borderRadius: 50, border: "none",
                 background: "#fff", color: "#0D59F2",
                 fontSize: 14, fontWeight: 700, fontFamily: poppins, cursor: "pointer",
@@ -518,7 +615,7 @@ export default function LandingPage() {
         </Reveal>
       </section>
 
-      <footer style={{ background: "#060f24", padding: "40px 24px", textAlign: "center" }}>
+      <footer style={{ background: "transparent", padding: "40px 24px", textAlign: "center" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 16 }}>
           <div style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg, #0D59F2, #1e40af)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 900, color: "#fff", fontFamily: poppins }}>P</div>
           <span style={{ fontFamily: poppins, fontSize: 15, fontWeight: 700, color: "#fff" }}>PKK Polinema</span>
@@ -527,6 +624,125 @@ export default function LandingPage() {
           {new Date().getFullYear()} UPA PKK Politeknik Negeri Malang. Hak cipta dilindungi.
         </p>
       </footer>
+
+      {openRegisterModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setOpenRegisterModal(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(2, 13, 36, 0.55)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+            zIndex: 2000,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "100%",
+              maxWidth: 440,
+              background: "#fff",
+              borderRadius: 20,
+              boxShadow: "0 24px 80px rgba(0,0,0,0.15)",
+              padding: 32,
+            }}
+          >
+            <h3 style={{ fontFamily: poppins, fontSize: 22, fontWeight: 800, color: "#0a0a0a", margin: "0 0 8px", textAlign: "center" }}>
+              Daftar Sebagai
+            </h3>
+            <p style={{ fontFamily: poppins, fontSize: 14, color: "#999", margin: "0 0 32px", textAlign: "center" }}>
+              Pilih jenis akun yang akan didaftarkan
+            </p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <button
+                onClick={() => handleRegisterChoice("mahasiswa")}
+                style={{
+                  padding: "14.4px 16px",
+                  borderRadius: 14,
+                  border: "none",
+                  background: "#0D59F2",
+                  color: "#fff",
+                  fontFamily: poppins,
+                  fontSize: 15,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  transition: "all 0.25s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = "0 8px 24px rgba(13,89,242,0.25)";
+                  e.currentTarget.style.backgroundColor = "#0846c7";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "none";
+                  e.currentTarget.style.boxShadow = "none";
+                  e.currentTarget.style.backgroundColor = "#0D59F2";
+                }}
+              >
+                Mahasiswa
+              </button>
+              <button
+                onClick={() => handleRegisterChoice("dosen")}
+                style={{
+                  padding: "14.4px 16px",
+                  borderRadius: 14,
+                  border: "1.5px solid #0D59F2",
+                  background: "transparent",
+                  color: "#0D59F2",
+                  fontFamily: poppins,
+                  fontSize: 15,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  transition: "all 0.25s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = "0 8px 24px rgba(13,89,242,0.25)";
+                  e.currentTarget.style.backgroundColor = "rgba(13,89,242,0.05)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "none";
+                  e.currentTarget.style.boxShadow = "none";
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
+              >
+                Dosen
+              </button>
+            </div>
+
+            <button
+              onClick={() => setOpenRegisterModal(false)}
+              style={{
+                marginTop: 24,
+                width: "100%",
+                padding: "10px 12px",
+                border: "none",
+                background: "transparent",
+                color: "#999",
+                fontFamily: poppins,
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "color 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "#555";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "#999";
+              }}
+            >
+              Batal
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
