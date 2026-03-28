@@ -117,3 +117,15 @@ export const ajukanBimbingan = async (payload) => {
   const res = await api.post("/mahasiswa/bimbingan/ajukan", payload);
   return res.data;
 };
+
+export const getLuaranMahasiswa = async () => {
+  const res = await api.get("/mahasiswa/monev/luaran");
+  return res.data;
+};
+
+export const submitLuaran = async (id_luaran, formData) => {
+  const res = await api.post(`/mahasiswa/monev/luaran/${id_luaran}/submit`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data;
+};

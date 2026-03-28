@@ -477,3 +477,38 @@ export const getDashboardAdmin = async (id_program) => {
   const res = await api.get(`/admin/program/${id_program}/dashboard`);
   return res.data;
 };
+
+export const getLuaranProgram = async (id_program) => {
+  const res = await api.get(`/admin/program/${id_program}/luaran`);
+  return res.data;
+};
+
+export const createLuaran = async (id_program, payload) => {
+  const res = await api.post(`/admin/program/${id_program}/luaran`, payload);
+  return res.data;
+};
+
+export const updateLuaran = async (id_luaran, payload) => {
+  const res = await api.patch(`/admin/luaran/${id_luaran}`, payload);
+  return res.data;
+};
+
+export const deleteLuaran = async (id_luaran) => {
+  const res = await api.delete(`/admin/luaran/${id_luaran}`);
+  return res.data;
+};
+
+export const getProgressLuaranTim = async (id_program) => {
+  const res = await api.get(`/admin/program/${id_program}/monev/progress`);
+  return res.data;
+};
+
+export const getDetailLuaranTim = async (id_program, id_tim) => {
+  const res = await api.get(`/admin/program/${id_program}/tim/${id_tim}/monev`);
+  return res.data;
+};
+
+export const reviewLuaranTim = async (id_luaran_tim, payload) => {
+  const res = await api.patch(`/admin/monev/luaran-tim/${id_luaran_tim}/review`, payload);
+  return res.data;
+};

@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
-  Box, Typography, TextField, Button,
+  Box, Typography, TextField,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   CircularProgress, Divider,
 } from "@mui/material";
-import { Save, Send, Info, CheckCircle } from "@mui/icons-material";
+import { Info, CheckCircle } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { getFormPenilaian, simpanNilai, submitPenilaian } from "../../api/juri";
@@ -22,7 +22,7 @@ const tableBodyRow = {
   "& td": { borderBottom: "1px solid #f5f5f5", py: 1.5 },
 };
 
-export default function FormPenilaianTab({ id_distribusi }) {
+export default function FormPenilaianTab({ id_distribusi, onActionsChange }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -57,6 +57,22 @@ export default function FormPenilaianTab({ id_distribusi }) {
   }, [id_distribusi]);
 
   useEffect(() => { fetchFormPenilaian(); }, [fetchFormPenilaian]);
+
+  const simpanDraftRef = useRef(null);
+  const submitRef = useRef(null);
+
+  useEffect(() => {
+    if (!onActionsChange) return;
+    if (!data) { onActionsChange(null); return; }
+    const isSubmitted = data.penilaian.status === 1;
+    onActionsChange({
+      handleSimpanDraft: (...args) => simpanDraftRef.current?.(...args),
+      handleSubmit: (...args) => submitRef.current?.(...args),
+      saving,
+      submitting,
+      isSubmitted,
+    });
+  }, [data, saving, submitting, onActionsChange]);
 
   const handleSkorChange = (id_kriteria, value) => {
     setFormData({ ...formData, [id_kriteria]: { ...formData[id_kriteria], skor: value } });
@@ -117,6 +133,7 @@ export default function FormPenilaianTab({ id_distribusi }) {
       setSaving(false);
     }
   };
+  simpanDraftRef.current = handleSimpanDraft;
 
   const handleSubmit = async () => {
     const allFilled = data.kriteria.every((k) => {
@@ -168,6 +185,7 @@ export default function FormPenilaianTab({ id_distribusi }) {
       setSubmitting(false);
     }
   };
+  submitRef.current = handleSubmit;
 
   const formatDate = (dateString) => {
     if (!dateString) return "-";
@@ -352,40 +370,6 @@ export default function FormPenilaianTab({ id_distribusi }) {
         </Table>
       </TableContainer>
 
-      {!isSubmitted && (
-        <>
-          <Divider sx={{ mb: 3 }} />
-          <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
-            <Button
-              variant="outlined"
-              startIcon={<Save sx={{ fontSize: 14 }} />}
-              onClick={handleSimpanDraft}
-              disabled={saving || submitting}
-              sx={{
-                textTransform: "none", borderRadius: "50px",
-                px: 3, py: 1.2, fontWeight: 600,
-                borderColor: "#0D59F2", color: "#0D59F2",
-                "&:hover": { backgroundColor: "#f0f4ff" },
-              }}
-            >
-              {saving ? "Menyimpan..." : "Simpan Draft"}
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<Send sx={{ fontSize: 14 }} />}
-              onClick={handleSubmit}
-              disabled={saving || submitting}
-              sx={{
-                textTransform: "none", borderRadius: "50px",
-                px: 3, py: 1.2, fontWeight: 600,
-                backgroundColor: "#2e7d32", "&:hover": { backgroundColor: "#1b5e20" },
-              }}
-            >
-              {submitting ? "Memproses..." : "Submit Penilaian"}
-            </Button>
-          </Box>
-        </>
-      )}
     </Box>
   );
 }

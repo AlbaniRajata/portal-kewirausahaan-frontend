@@ -37,24 +37,9 @@ export default function SidebarMahasiswa({ collapsed }) {
   const [openBimbingan, setOpenBimbingan] = useState(isInBimbinganSubmenu);
 
   const isActive = (path) => {
-    if (
-      path === "/mahasiswa/proposal" &&
-      location.pathname === "/mahasiswa/proposal/form"
-    ) {
-      return true;
-    }
-    if (
-      path === "/mahasiswa/bimbingan" &&
-      location.pathname.startsWith("/mahasiswa/bimbingan/")
-    ) {
-      return true;
-    }
-    if (
-      path === "/mahasiswa/anggota-tim" &&
-      location.pathname === "/mahasiswa/undangan-anggota"
-    ) {
-      return true;
-    }
+    if (path === "/mahasiswa/proposal" && location.pathname === "/mahasiswa/proposal/form") return true;
+    if (path === "/mahasiswa/bimbingan" && location.pathname.startsWith("/mahasiswa/bimbingan/")) return true;
+    if (path === "/mahasiswa/anggota-tim" && location.pathname === "/mahasiswa/undangan-anggota") return true;
     return location.pathname === path;
   };
 
@@ -99,7 +84,7 @@ export default function SidebarMahasiswa({ collapsed }) {
     {
       text: "Monitoring dan Evaluasi",
       icon: <AssessmentIcon />,
-      path: "/mahasiswa/monitoring",
+      path: "/mahasiswa/monev",
     },
   ];
 

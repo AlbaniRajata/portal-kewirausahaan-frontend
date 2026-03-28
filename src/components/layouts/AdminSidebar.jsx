@@ -27,6 +27,7 @@ import SchoolIcon from "@mui/icons-material/School";
 import ApartmentIcon from "@mui/icons-material/Apartment";
 import BusinessIcon from "@mui/icons-material/Business";
 import GroupsIcon from "@mui/icons-material/Groups";
+import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
 
 export default function AdminSidebar({ collapsed }) {
   const navigate = useNavigate();
@@ -56,7 +57,9 @@ export default function AdminSidebar({ collapsed }) {
       location.pathname === "/admin/distribusi-penilai" ||
       location.pathname.startsWith("/admin/program/") || //distribusi detail
       location.pathname === "/admin/rekap-penilaian" ||
-      location.pathname === "/admin/bimbingan"
+      location.pathname === "/admin/bimbingan" ||
+      location.pathname === "/admin/monev" ||
+      location.pathname.startsWith("/admin/monev/")
     );
   }, [location.pathname]);
 
@@ -68,6 +71,7 @@ export default function AdminSidebar({ collapsed }) {
     if (location.pathname === path) return true;
     if (path === "/admin/proposal" && location.pathname.startsWith("/admin/proposal/")) return true;
     if (path === "/admin/distribusi-penilai" && location.pathname.startsWith("/admin/program/") && location.pathname.includes("/distribusi/reviewer/tahap/")) return true;
+    if (path === "/admin/monev" && location.pathname.startsWith("/admin/monev/")) return true;
     return false;
   };
 
@@ -160,6 +164,11 @@ export default function AdminSidebar({ collapsed }) {
           icon: <MenuBookIcon sx={{ fontSize: 20 }} />,
           path: "/admin/bimbingan",
         },
+        {
+        text: "Monev",
+        icon: <AssignmentTurnedInIcon sx={{ fontSize: 20 }} />,
+        path: "/admin/monev",
+      },
       ],
     },
     {

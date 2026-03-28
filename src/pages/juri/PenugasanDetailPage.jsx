@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { Box, Paper, Tabs, Tab, CircularProgress, Button, Divider } from "@mui/material";
-import { ArrowBack } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import JuriSidebar from "../../components/layouts/JuriSidebar";
@@ -18,6 +17,7 @@ export default function PenugasanDetailPage() {
   const [loading, setLoading] = useState(true);
   const [penugasan, setPenugasan] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [formActions, setFormActions] = useState(null);
 
   const tabParam = searchParams.get("tab");
   const [activeTab, setActiveTab] = useState(parseInt(tabParam) || 0);
@@ -118,9 +118,9 @@ export default function PenugasanDetailPage() {
       <PageTransition>
         <Box>
           <Button
-            startIcon={<ArrowBack sx={{ fontSize: 16 }} />}
             onClick={() => navigate("/juri/penugasan")}
             sx={{
+              borderRadius: "50px",
               textTransform: "none", color: "#777", fontSize: 13,
               fontWeight: 500, p: 0, mb: 2, minWidth: 0,
               "&:hover": { backgroundColor: "transparent", color: "#0D59F2" },
@@ -162,22 +162,64 @@ export default function PenugasanDetailPage() {
                 />
               )}
               {activeTab === 1 && (
-                <FormPenilaianTab id_distribusi={id_distribusi} />
+                <FormPenilaianTab id_distribusi={id_distribusi} onActionsChange={setFormActions} />
               )}
             </Box>
           </Paper>
-          <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
-            <Button
-              variant="contained"
-              onClick={() => navigate("/juri/penugasan")}
-              sx={{
-                textTransform: "none", borderRadius: "50px",
-                px: 4, py: 1.2, fontWeight: 600,
-                backgroundColor: "#FDB022", "&:hover": { backgroundColor: "#e09a1a" },
-              }}
-            >
-              Kembali
-            </Button>
+          <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 3 }}>
+            {activeTab === 1 && formActions && !formActions.isSubmitted && (
+              <>
+                <Button
+                  variant="contained"
+                  onClick={() => navigate("/juri/penugasan")}
+                  sx={{
+                    textTransform: "none", borderRadius: "50px",
+                    px: 4, py: 1.2, fontWeight: 600,
+                    backgroundColor: "#FDB022", "&:hover": { backgroundColor: "#e09a1a" },
+                  }}
+                >
+                  Kembali
+                </Button>
+                <Button
+                  variant="outlined"
+                  onClick={formActions.handleSimpanDraft}
+                  disabled={formActions.saving || formActions.submitting}
+                  sx={{
+                    textTransform: "none", borderRadius: "50px",
+                    px: 3, py: 1.2, fontWeight: 600,
+                    borderColor: "#0D59F2", color: "#0D59F2",
+                    "&:hover": { backgroundColor: "#f0f4ff" },
+                  }}
+                >
+                  {formActions.saving ? "Menyimpan..." : "Simpan Draft"}
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={formActions.handleSubmit}
+                  disabled={formActions.saving || formActions.submitting}
+                  sx={{
+                    textTransform: "none", borderRadius: "50px",
+                    px: 3, py: 1.2, fontWeight: 600,
+                    backgroundColor: "#2e7d32", "&:hover": { backgroundColor: "#1b5e20" },
+                  }}
+                >
+                  {formActions.submitting ? "Memproses..." : "Submit Penilaian"}
+                </Button>
+              </>
+            )}
+            {!(activeTab === 1 && formActions && !formActions.isSubmitted) && (
+              <Button
+                variant="contained"
+                onClick={() => navigate("/juri/penugasan")}
+                sx={{
+                  textTransform: "none", borderRadius: "50px",
+                  px: 4, py: 1.2, fontWeight: 600,
+                  backgroundColor: "#FDB022", "&:hover": { backgroundColor: "#e09a1a" },
+                }}
+              >
+                Kembali
+              </Button>
+            )}
           </Box>
         </Box>
       </PageTransition>

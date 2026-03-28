@@ -25,6 +25,8 @@ const KelolaPenggunaPage = lazy(() => import("../pages/admin/KelolaPenggunaPage"
 const TimPesertaPage = lazy(() => import("../pages/admin/TimPesertaPage"));
 const BeritaPage = lazy(() => import("../pages/admin/BeritaPage"));
 const FormBeritaPage = lazy(() => import("../pages/admin/FormBeritaPage"));
+const MonevPage = lazy(() => import("../pages/admin/MonevPage"));
+const MonevProgressPage = lazy(() => import("../pages/admin/MonevProgressPage"));
 
 const DashboardMahasiswaPage = lazy(() => import("../pages/mahasiswa/DashboardMahasiswaPage"));
 const BiodataMahasiswaPage = lazy(() => import("../pages/mahasiswa/BiodataMahasiswaPage"));
@@ -35,6 +37,7 @@ const FormProposalPage = lazy(() => import("../pages/mahasiswa/FormProposalPage"
 const PengajuanPembimbingPage = lazy(() => import("../pages/mahasiswa/PengajuanPembimbingPage"));
 const LogBimbinganPage = lazy(() => import("../pages/mahasiswa/LogBimbinganPage"));
 const DetailLogBimbinganPage = lazy(() => import("../pages/mahasiswa/DetailLogBimbinganPage"));
+const MonevMahasiswaPage = lazy(() => import("../pages/mahasiswa/MonevPage"));
 
 const DashboardReviewerPage = lazy(() => import("../pages/reviewer/DashboardReviewerPage"));
 const BiodataReviewerPage = lazy(() => import("../pages/reviewer/BiodataReviewerPage"));
@@ -92,6 +95,8 @@ export default function AppRoutes() {
           <Route path="berita" element={<BeritaPage />} />
           <Route path="berita/tambah" element={<FormBeritaPage />} />
           <Route path="berita/:id_berita" element={<FormBeritaPage />} />
+          <Route path="monev" element={<MonevPage />} />
+          <Route path="monev/:id_program/progress" element={<MonevProgressPage />} />
         </Route>
 
         <Route path="/mahasiswa" element={<PrivateRoute allowedRoles={["mahasiswa"]} />}>
@@ -104,6 +109,7 @@ export default function AppRoutes() {
           <Route path="pembimbing/dosen" element={<PengajuanPembimbingPage />} />
           <Route path="bimbingan" element={<LogBimbinganPage />} />
           <Route path="bimbingan/:id_bimbingan" element={<DetailLogBimbinganPage />} />
+          <Route path="monev" element={<MonevMahasiswaPage />} />
         </Route>
 
         <Route path="/reviewer" element={<PrivateRoute allowedRoles={["reviewer"]} />}>

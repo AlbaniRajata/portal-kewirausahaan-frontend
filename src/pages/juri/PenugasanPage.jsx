@@ -5,7 +5,7 @@ import {
   Button, CircularProgress, Dialog, DialogTitle, DialogContent,
   DialogActions, IconButton,
 } from "@mui/material";
-import { CheckCircle, Cancel, Visibility, Assignment, Close } from "@mui/icons-material";
+import { Close } from "@mui/icons-material";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
@@ -196,11 +196,11 @@ export default function PenugasanPage() {
                             <Box sx={{ display: "flex", gap: 1, justifyContent: "center", flexWrap: "wrap" }}>
                               {item.status === 0 && (
                                 <>
-                                  <Button size="small" variant="outlined" startIcon={<Cancel sx={{ fontSize: 14 }} />} onClick={() => handleOpenReject(item)} disabled={submitting}
+                                  <Button size="small" variant="outlined" onClick={() => handleOpenReject(item)} disabled={submitting}
                                     sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12, fontWeight: 600, px: 2, borderColor: "#e53935", color: "#e53935", "&:hover": { backgroundColor: "rgba(229,57,53,0.06)", borderColor: "#e53935" } }}>
                                     Tolak
                                   </Button>
-                                  <Button size="small" variant="contained" startIcon={<CheckCircle sx={{ fontSize: 14 }} />} onClick={() => handleAccept(item)} disabled={submitting}
+                                  <Button size="small" variant="contained" onClick={() => handleAccept(item)} disabled={submitting}
                                     sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12, fontWeight: 600, px: 2, backgroundColor: "#2e7d32", "&:hover": { backgroundColor: "#1b5e20" } }}>
                                     Terima
                                   </Button>
@@ -208,11 +208,11 @@ export default function PenugasanPage() {
                               )}
                               {item.status !== 0 && (
                                 <>
-                                  <Button size="small" variant="outlined" startIcon={<Visibility sx={{ fontSize: 14 }} />} onClick={() => navigate(`/juri/penugasan/${item.id_distribusi}?tab=0`)}
+                                  <Button size="small" variant="outlined" onClick={() => navigate(`/juri/penugasan/${item.id_distribusi}?tab=0`)}
                                     sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12, fontWeight: 600, px: 2, borderColor: "#0D59F2", color: "#0D59F2", "&:hover": { backgroundColor: "#f0f4ff" } }}>
                                     Detail
                                   </Button>
-                                  <Button size="small" variant="contained" startIcon={<Assignment sx={{ fontSize: 14 }} />} onClick={() => navigate(`/juri/penugasan/${item.id_distribusi}?tab=1`)} disabled={![1, 3].includes(item.status)}
+                                  <Button size="small" variant="contained" onClick={() => navigate(`/juri/penugasan/${item.id_distribusi}?tab=1`)} disabled={![1, 3].includes(item.status)}
                                     sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12, fontWeight: 600, px: 2, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" } }}>
                                     Nilai
                                   </Button>
