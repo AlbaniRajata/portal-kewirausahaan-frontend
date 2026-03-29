@@ -264,7 +264,21 @@ export default function AdminSidebar({ collapsed }) {
         )}
       </Box>
 
-      <Box sx={{ flex: 1, overflowY: "auto", overflowX: "hidden", position: "relative", zIndex: 1 }}>
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: "auto",
+          overflowX: "hidden",
+          position: "relative",
+          zIndex: 1,
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+          "&::-webkit-scrollbar": {
+            width: 0,
+            height: 0,
+          },
+        }}
+      >
         <List sx={{ px: collapsed ? 1 : 2, py: 2 }}>
           {menuItems.map((item, index) => (
             <Box key={index}>

@@ -10,8 +10,7 @@ import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
 import PageTransition from "../../components/PageTransition";
-import { getTimList, getTimDetail, getPesertaList, getPesertaDetail } from "../../api/admin";
-import { getAllProgram } from "../../api/public";
+import { getMyProgram, getTimList, getTimDetail, getPesertaList, getPesertaDetail } from "../../api/admin";
 
 const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "15px" } };
 
@@ -91,12 +90,26 @@ export default function TimPesertaPage() {
   const [selectedItem, setSelectedItem] = useState(null);
 
   useEffect(() => {
-    getAllProgram().then((res) => { setProgramList(res.data || []); }).catch(() => {});
+    getMyProgram()
+      .then((res) => {
+        const myProgram = res?.data;
+        if (myProgram?.id_program) {
+          setProgramList([myProgram]);
+          setFilters((prev) => ({ ...prev, id_program: myProgram.id_program }));
+        }
+      })
+      .catch(() => {
+        Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat data program", confirmButtonColor: "#0D59F2" });
+      });
   }, []);
 
   const fetchTim = useCallback(async () => {
     setLoading(true);
     try {
+      if (!filters.id_program) {
+        setTimList([]);
+        return;
+      }
       const params = {};
       if (filters.id_program) params.id_program = filters.id_program;
       if (filters.search) params.search = filters.search;
@@ -112,6 +125,10 @@ export default function TimPesertaPage() {
   const fetchPeserta = useCallback(async () => {
     setLoading(true);
     try {
+      if (!filters.id_program) {
+        setPesertaList([]);
+        return;
+      }
       const params = {};
       if (filters.id_program) params.id_program = filters.id_program;
       if (filters.search) params.search = filters.search;
@@ -376,10 +393,10 @@ export default function TimPesertaPage() {
                   select size="small" label="Program"
                   value={filters.id_program}
                   onChange={(e) => setFilters({ ...filters, id_program: e.target.value })}
+                  disabled
                   InputLabelProps={{ shrink: true }}
                   sx={{ ...roundedField, minWidth: 220 }}
                 >
-                  <MenuItem value="">Semua Program</MenuItem>
                   {programList.map((p) => (
                     <MenuItem key={p.id_program} value={p.id_program}>{p.keterangan}</MenuItem>
                   ))}

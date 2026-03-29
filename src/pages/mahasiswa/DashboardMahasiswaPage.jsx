@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { Box, Typography, CircularProgress, Avatar } from "@mui/material";
+import { Box, Typography, CircularProgress, Avatar, LinearProgress, Chip } from "@mui/material";
 import {
   PersonOutlined, GroupsOutlined, DescriptionOutlined,
   SchoolOutlined, MenuBookOutlined, CheckCircle,
-  RadioButtonUnchecked, ArrowForward,
+  RadioButtonUnchecked, ArrowForward, AssignmentTurnedInOutlined,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import BodyLayout from "../../components/layouts/BodyLayout";
@@ -14,6 +14,7 @@ import { getTimStatus } from "../../api/mahasiswa";
 import { getProposalStatus } from "../../api/mahasiswa";
 import { getStatusPembimbing } from "../../api/mahasiswa";
 import { getListBimbingan } from "../../api/mahasiswa";
+import { getLuaranMahasiswa } from "../../api/mahasiswa";
 import { useAuthStore } from "../../store/authStore";
 
 const API_URL = import.meta.env.VITE_API_URL?.replace("/api", "");
@@ -169,18 +170,27 @@ export default function DashboardMahasiswaPage() {
     proposal: null,
     pembimbing: null,
     bimbingan: [],
+    monev: null,
+    monevMessage: null,
   });
 
   useEffect(() => {
     const fetchAll = async () => {
-      const [profileRes, timRes, proposalRes, pembimbingRes, bimbinganRes] =
+      const [profileRes, timRes, proposalRes, pembimbingRes, bimbinganRes, monevRes] =
         await Promise.allSettled([
           getProfile(),
           getTimStatus(),
           getProposalStatus(),
           getStatusPembimbing(),
           getListBimbingan(),
+          getLuaranMahasiswa(),
         ]);
+
+      const monevPayload = monevRes.status === "fulfilled" ? monevRes.value : null;
+      const monevData = monevPayload?.success ? monevPayload.data : null;
+      const monevMessage = monevPayload && !monevPayload.success
+        ? monevPayload.message || "Data monev belum tersedia"
+        : null;
 
       setData({
         profile:    profileRes.status    === "fulfilled" ? profileRes.value.data    : null,
@@ -190,13 +200,15 @@ export default function DashboardMahasiswaPage() {
         bimbingan:  bimbinganRes.status  === "fulfilled"
           ? (bimbinganRes.value.data?.bimbingan || [])
           : [],
+        monev: monevData,
+        monevMessage,
       });
       setLoading(false);
     };
     fetchAll();
   }, []);
 
-  const { profile, tim, proposal, pembimbing, bimbingan } = data;
+  const { profile, tim, proposal, pembimbing, bimbingan, monev, monevMessage } = data;
 
   const hasTim       = tim?.hasTim === true;
   const timLengkap   = hasTim && (proposal?.data?.anggota?.all_accepted === true);
@@ -208,6 +220,13 @@ export default function DashboardMahasiswaPage() {
   const recentBimbingan = [...bimbingan].sort((a, b) =>
     new Date(b.tanggal_bimbingan) - new Date(a.tanggal_bimbingan)
   ).slice(0, 3);
+  const monevProgress = monev?.progress || null;
+  const monevTotal = Number(monevProgress?.total || 0);
+  const monevDisetujui = Number(monevProgress?.disetujui || 0);
+  const monevSubmitted = Number(monevProgress?.submitted || 0);
+  const monevDitolak = Number(monevProgress?.ditolak || 0);
+  const monevBelum = Number(monevProgress?.belum || 0);
+  const monevPercent = monevTotal > 0 ? Math.round((monevDisetujui / monevTotal) * 100) : 0;
 
   const steps = [
     {
@@ -280,6 +299,16 @@ export default function DashboardMahasiswaPage() {
       accent: "#059669",
       path: "/mahasiswa/bimbingan",
     },
+    {
+      icon: <AssignmentTurnedInOutlined sx={{ fontSize: 20, color: "#ea580c" }} />,
+      label: "Progress Monev",
+      value: monevProgress ? `${monevPercent}%` : "Belum Ada",
+      sub: monevProgress
+        ? `${monevDisetujui}/${monevTotal} luaran disetujui`
+        : (monevMessage || "Belum ada data monev"),
+      accent: "#ea580c",
+      path: "/mahasiswa/monev",
+    },
   ];
 
   if (loading) {
@@ -326,7 +355,7 @@ export default function DashboardMahasiswaPage() {
             </Box>
           </Box>
 
-          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 2.5, mb: 4 }}>
+          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 2.5, mb: 4 }}>
             {statCards.map((card) => (
               <StatCard
                 key={card.label}
@@ -378,6 +407,85 @@ export default function DashboardMahasiswaPage() {
                 />
               ))}
             </Box>
+          </Box>
+
+          <Box sx={{
+            p: 4, mb: 4, borderRadius: "20px",
+            background: "#fff",
+            border: "1px solid #f0f0f0",
+            boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+          }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+              <Box>
+                <Typography sx={{ fontSize: 16, fontWeight: 800, color: "#1a1a1a" }}>
+                  Monitoring & Evaluasi
+                </Typography>
+                <Typography sx={{ fontSize: 13, color: "#aaa" }}>
+                  Ringkasan progres pengumpulan luaran
+                </Typography>
+              </Box>
+              <Box
+                onClick={() => navigate("/mahasiswa/monev")}
+                sx={{
+                  display: "flex", alignItems: "center", gap: 0.5,
+                  cursor: "pointer", color: "#0D59F2",
+                  "&:hover": { opacity: 0.7 },
+                }}
+              >
+                <Typography sx={{ fontSize: 13, fontWeight: 600 }}>Lihat detail</Typography>
+                <ArrowForward sx={{ fontSize: 16 }} />
+              </Box>
+            </Box>
+
+            {!monevProgress ? (
+              <Box sx={{ textAlign: "center", py: 5 }}>
+                <AssignmentTurnedInOutlined sx={{ fontSize: 40, color: "#e0e0e0", mb: 1.5 }} />
+                <Typography sx={{ fontSize: 14, color: "#bbb" }}>
+                  {monevMessage || "Belum ada data monev"}
+                </Typography>
+              </Box>
+            ) : (
+              <>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2.5 }}>
+                  <LinearProgress
+                    variant="determinate"
+                    value={monevPercent}
+                    sx={{
+                      flex: 1,
+                      height: 10,
+                      borderRadius: 99,
+                      backgroundColor: "#f0f0f0",
+                      "& .MuiLinearProgress-bar": {
+                        backgroundColor: monevPercent === 100 && monevTotal > 0 ? "#2e7d32" : "#0D59F2",
+                        borderRadius: 99,
+                      },
+                    }}
+                  />
+                  <Typography sx={{ fontSize: 13, fontWeight: 800, color: "#444", minWidth: 48 }}>
+                    {monevPercent}%
+                  </Typography>
+                </Box>
+
+                <Box sx={{ display: "flex", gap: 1.25, flexWrap: "wrap" }}>
+                  {[
+                    { label: "Total", value: monevTotal, bg: "#424242" },
+                    { label: "Disetujui", value: monevDisetujui, bg: "#1b5e20" },
+                    { label: "Submitted", value: monevSubmitted, bg: "#f57f17" },
+                    { label: "Ditolak", value: monevDitolak, bg: "#c62828" },
+                    { label: "Belum", value: monevBelum, bg: "#757575" },
+                  ].map((item) => (
+                    <Box key={item.label} sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                      <Chip
+                        label={item.value}
+                        size="small"
+                        sx={{ backgroundColor: item.bg, color: "#fff", fontWeight: 700 }}
+                      />
+                      <Typography sx={{ fontSize: 13, color: "#777" }}>{item.label}</Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </>
+            )}
           </Box>
 
           <Box sx={{

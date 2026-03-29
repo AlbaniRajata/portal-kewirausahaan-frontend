@@ -7,15 +7,10 @@ import PageTransition from "../../components/PageTransition";
 import DistribusiOtomatisTab from "../../components/admin/DistribusiOtomatisTab";
 import DistribusiManualTab from "../../components/admin/DistribusiManualTab";
 import HistoryDistribusiTable from "../../components/admin/HistoryDistribusiTable";
-import { getAllProgram } from "../../api/public";
+import { getMyProgram, getTahapProgram } from "../../api/admin";
 import Swal from "sweetalert2";
 
 const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "15px" } };
-
-const tahapOptions = [
-  { value: 1, label: "Tahap 1 — Desk Evaluasi" },
-  { value: 2, label: "Tahap 2 — Wawancara" },
-];
 
 const tabLabels = {
   1: ["Distribusi Otomatis", "Distribusi Manual", "History Distribusi"],
@@ -24,17 +19,43 @@ const tabLabels = {
 
 export default function DistribusiPenilaiPage() {
   const [selectedProgram, setSelectedProgram] = useState("");
-  const [selectedTahap, setSelectedTahap] = useState(1);
+  const [selectedTahap, setSelectedTahap] = useState("");
   const [activeTab, setActiveTab] = useState(0);
   const [programOptions, setProgramOptions] = useState([]);
+  const [tahapOptions, setTahapOptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshHistory, setRefreshHistory] = useState(0);
 
   const fetchPrograms = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await getAllProgram();
-      setProgramOptions(res.data || []);
+      const res = await getMyProgram();
+      const myProgram = res?.data;
+      if (myProgram?.id_program) {
+        setProgramOptions([myProgram]);
+        setSelectedProgram(myProgram.id_program);
+
+        const tahapRes = await getTahapProgram(myProgram.id_program);
+        const mappedTahap = (tahapRes?.data || [])
+          .filter((t) => Number(t.urutan) === 1 || Number(t.urutan) === 2)
+          .sort((a, b) => Number(a.urutan) - Number(b.urutan))
+          .map((t) => {
+            const urutan = Number(t.urutan);
+            const fallbackNama = urutan === 1 ? "Desk Evaluasi" : "Wawancara";
+            return {
+              value: urutan,
+              label: `Tahap ${urutan} — ${t.nama_tahap || fallbackNama}`,
+            };
+          });
+
+        setTahapOptions(mappedTahap);
+        setSelectedTahap(mappedTahap[0]?.value || "");
+      } else {
+        setProgramOptions([]);
+        setSelectedProgram("");
+        setTahapOptions([]);
+        setSelectedTahap("");
+      }
     } catch {
       Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat daftar program", confirmButtonColor: "#0D59F2" });
     } finally {
@@ -71,12 +92,10 @@ export default function DistribusiPenilaiPage() {
               <TextField
                 select size="small" label="Program"
                 value={selectedProgram}
-                onChange={(e) => setSelectedProgram(e.target.value)}
-                disabled={loading}
+                disabled
                 InputLabelProps={{ shrink: true }}
                 sx={{ ...roundedField, flex: "1 1 280px" }}
               >
-                <MenuItem value="">Pilih Program</MenuItem>
                 {programOptions.map((prog) => (
                   <MenuItem key={prog.id_program} value={prog.id_program}>
                     {prog.keterangan}
@@ -87,10 +106,12 @@ export default function DistribusiPenilaiPage() {
               <TextField
                 select size="small" label="Tahap Penilaian"
                 value={selectedTahap}
-                onChange={(e) => setSelectedTahap(e.target.value)}
+                onChange={(e) => setSelectedTahap(Number(e.target.value))}
+                disabled={loading || tahapOptions.length === 0}
                 InputLabelProps={{ shrink: true }}
                 sx={{ ...roundedField, flex: "1 1 240px" }}
               >
+                {tahapOptions.length === 0 && <MenuItem value="">Belum ada tahap</MenuItem>}
                 {tahapOptions.map((tahap) => (
                   <MenuItem key={tahap.value} value={tahap.value}>
                     {tahap.label}
@@ -119,6 +140,25 @@ export default function DistribusiPenilaiPage() {
                 </Typography>
               </Box>
             </Paper>
+          ) : tahapOptions.length === 0 ? (
+            <Paper sx={{ borderRadius: "16px", border: "1px solid #f0f0f0", overflow: "hidden" }}>
+              <Box sx={{ textAlign: "center", py: 10 }}>
+                <Box sx={{
+                  width: 80, height: 80, borderRadius: "50%",
+                  backgroundColor: "#f5f5f5",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  mx: "auto", mb: 2,
+                }}>
+                  <TuneOutlined sx={{ fontSize: 36, color: "#ccc" }} />
+                </Box>
+                <Typography sx={{ fontSize: 20, fontWeight: 700, color: "#444", mb: 1 }}>
+                  Tahap Penilaian Belum Diatur
+                </Typography>
+                <Typography sx={{ fontSize: 14, color: "#999" }}>
+                  Atur tahap penilaian di menu Program terlebih dahulu
+                </Typography>
+              </Box>
+            </Paper>
           ) : (
             <Paper sx={{ borderRadius: "16px", border: "1px solid #f0f0f0", overflow: "hidden" }}>
               <Box sx={{ borderBottom: "1px solid #f0f0f0" }}>
@@ -138,7 +178,7 @@ export default function DistribusiPenilaiPage() {
                     },
                   }}
                 >
-                  {tabLabels[selectedTahap].map((label, i) => (
+                  {(tabLabels[selectedTahap] || tabLabels[1]).map((label, i) => (
                     <Tab key={i} label={label} />
                   ))}
                 </Tabs>

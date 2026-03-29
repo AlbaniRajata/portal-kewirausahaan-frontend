@@ -119,50 +119,66 @@ export default function ReviewerSidebar({ collapsed }) {
         )}
       </Box>
 
-      <List sx={{ px: collapsed ? 1 : 2, py: 2, flex: 1, position: "relative", zIndex: 1 }}>
-        {menuItems.map((item, index) => (
-          <ListItem key={index} disablePadding sx={{ mb: 0.5 }}>
-            <Tooltip title={collapsed ? item.text : ""} placement="right">
-              <ListItemButton
-                onClick={() => navigate(item.path)}
-                sx={{
-                  borderRadius: 50,
-                  backgroundColor: isActive(item.path) ? "rgba(255,255,255,0.18)" : "transparent",
-                  "&:hover": {
-                    backgroundColor: isActive(item.path) ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.12)",
-                  },
-                  justifyContent: collapsed ? "center" : "flex-start",
-                  px: collapsed ? 1 : 2,
-                  minHeight: 44,
-                }}
-              >
-                <ListItemIcon
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: "auto",
+          overflowX: "hidden",
+          position: "relative",
+          zIndex: 1,
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+          "&::-webkit-scrollbar": {
+            width: 0,
+            height: 0,
+          },
+        }}
+      >
+        <List sx={{ px: collapsed ? 1 : 2, py: 2 }}>
+          {menuItems.map((item, index) => (
+            <ListItem key={index} disablePadding sx={{ mb: 0.5 }}>
+              <Tooltip title={collapsed ? item.text : ""} placement="right">
+                <ListItemButton
+                  onClick={() => navigate(item.path)}
                   sx={{
-                    minWidth: collapsed ? "auto" : 40,
-                    color: isActive(item.path) ? "#ffffff" : "rgba(255,255,255,0.88)",
-                    justifyContent: "center",
-                    display: "flex",
-                    alignItems: "center",
+                    borderRadius: 50,
+                    backgroundColor: isActive(item.path) ? "rgba(255,255,255,0.18)" : "transparent",
+                    "&:hover": {
+                      backgroundColor: isActive(item.path) ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.12)",
+                    },
+                    justifyContent: collapsed ? "center" : "flex-start",
+                    px: collapsed ? 1 : 2,
+                    minHeight: 44,
                   }}
                 >
-                  {item.icon}
-                </ListItemIcon>
-
-                {!collapsed && (
-                  <ListItemText
-                    primary={item.text}
-                    primaryTypographyProps={{
-                      fontSize: 14,
-                      fontWeight: isActive(item.path) ? 600 : 500,
-                      color: isActive(item.path) ? "#ffffff" : "rgba(255,255,255,0.92)",
+                  <ListItemIcon
+                    sx={{
+                      minWidth: collapsed ? "auto" : 40,
+                      color: isActive(item.path) ? "#ffffff" : "rgba(255,255,255,0.88)",
+                      justifyContent: "center",
+                      display: "flex",
+                      alignItems: "center",
                     }}
-                  />
-                )}
-              </ListItemButton>
-            </Tooltip>
-          </ListItem>
-        ))}
-      </List>
+                  >
+                    {item.icon}
+                  </ListItemIcon>
+
+                  {!collapsed && (
+                    <ListItemText
+                      primary={item.text}
+                      primaryTypographyProps={{
+                        fontSize: 14,
+                        fontWeight: isActive(item.path) ? 600 : 500,
+                        color: isActive(item.path) ? "#ffffff" : "rgba(255,255,255,0.92)",
+                      }}
+                    />
+                  )}
+                </ListItemButton>
+              </Tooltip>
+            </ListItem>
+          ))}
+        </List>
+      </Box>
     </Box>
   );
 }

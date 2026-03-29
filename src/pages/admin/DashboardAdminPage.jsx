@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Box, Typography, CircularProgress, Avatar,
-  Paper, Divider,
+  Paper, Divider, LinearProgress, Chip,
 } from "@mui/material";
 import {
   DescriptionOutlined, CheckCircleOutlined, CancelOutlined,
   HourglassEmptyOutlined, WarningAmberOutlined, VerifiedUserOutlined,
-  SchoolOutlined, ArrowForward, PeopleOutlined, NewspaperOutlined,
+  SchoolOutlined, ArrowForward,
   AssignmentTurnedInOutlined,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
@@ -17,7 +17,7 @@ import {
 import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
 import PageTransition from "../../components/PageTransition";
-import { getMyProgram, getDashboardAdmin } from "../../api/admin";
+import { getMyProgram, getDashboardAdmin, getProgressLuaranTim } from "../../api/admin";
 import { useAuthStore } from "../../store/authStore";
 import Swal from "sweetalert2";
 
@@ -148,6 +148,7 @@ export default function DashboardAdminPage() {
   const [loading, setLoading] = useState(true);
   const [program, setProgram] = useState(null);
   const [dashboard, setDashboard] = useState(null);
+  const [monevProgressList, setMonevProgressList] = useState([]);
 
   const fetchAll = useCallback(async () => {
     try {
@@ -156,8 +157,12 @@ export default function DashboardAdminPage() {
       const prog = programRes.data;
       setProgram(prog);
       if (prog?.id_program) {
-        const dashRes = await getDashboardAdmin(prog.id_program);
+        const [dashRes, monevRes] = await Promise.all([
+          getDashboardAdmin(prog.id_program),
+          getProgressLuaranTim(prog.id_program),
+        ]);
         setDashboard(dashRes.data);
+        setMonevProgressList(monevRes.data || []);
       }
     } catch {
       Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat data dashboard", confirmButtonColor: "#0D59F2" });
@@ -182,6 +187,15 @@ export default function DashboardAdminPage() {
   const perluTindakan = dashboard?.perlu_tindakan || {};
   const chart = dashboard?.chart || {};
   const recentProposal = dashboard?.recent_proposal || [];
+
+  const monevTotalTim = monevProgressList.length;
+  const monevTotalLuaran = monevProgressList.reduce((sum, item) => sum + Number(item.total_luaran || 0), 0);
+  const monevDisetujui = monevProgressList.reduce((sum, item) => sum + Number(item.total_disetujui || 0), 0);
+  const monevSubmitted = monevProgressList.reduce((sum, item) => sum + Number(item.total_submitted || 0), 0);
+  const monevDitolak = monevProgressList.reduce((sum, item) => sum + Number(item.total_ditolak || 0), 0);
+  const monevBelum = Math.max(0, monevTotalLuaran - (monevDisetujui + monevSubmitted + monevDitolak));
+  const monevPercent = monevTotalLuaran > 0 ? Math.round((monevDisetujui / monevTotalLuaran) * 100) : 0;
+  const monevProgressPath = program?.id_program ? `/admin/monev/${program.id_program}/progress` : "/admin/monev";
 
   const barData = (chart.per_status || []).map((item) => ({
     name: BAR_STATUS_LABELS[item.status] || `Status ${item.status}`,
@@ -226,6 +240,14 @@ export default function DashboardAdminPage() {
       sub: "Proposal aktif bimbingan",
       accent: "#059669",
       onClick: () => navigate("/admin/bimbingan"),
+    },
+    {
+      icon: <AssignmentTurnedInOutlined sx={{ fontSize: 20, color: "#ea580c" }} />,
+      label: "Progress Monev",
+      value: `${monevPercent}%`,
+      sub: `${monevDisetujui}/${monevTotalLuaran} luaran disetujui`,
+      accent: "#ea580c",
+      onClick: () => navigate(monevProgressPath),
     },
   ];
 
@@ -299,13 +321,70 @@ export default function DashboardAdminPage() {
             </Box>
           </Box>
 
-          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 2.5, mb: 4 }}>
+          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 2.5, mb: 4 }}>
             {statCards.map((card) => (
               <StatCard key={card.label} {...card} />
             ))}
           </Box>
 
-          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: 3, mb: 3 }}>
+          <Paper sx={{ p: 3, mb: 3, borderRadius: "20px", border: "1px solid #f0f0f0", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2.5 }}>
+              <Box>
+                <Typography sx={{ fontSize: 16, fontWeight: 800, color: "#1a1a1a" }}>
+                  Monitoring & Evaluasi
+                </Typography>
+                <Typography sx={{ fontSize: 13, color: "#aaa" }}>
+                  Ringkasan progres luaran tim ({monevTotalTim} tim)
+                </Typography>
+              </Box>
+              <Box onClick={() => navigate(monevProgressPath)}
+                sx={{ display: "flex", alignItems: "center", gap: 0.5, cursor: "pointer", color: "#0D59F2", "&:hover": { opacity: 0.7 } }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 600 }}>Lihat detail</Typography>
+                <ArrowForward sx={{ fontSize: 16 }} />
+              </Box>
+            </Box>
+
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2.25 }}>
+              <LinearProgress
+                variant="determinate"
+                value={monevPercent}
+                sx={{
+                  flex: 1,
+                  height: 10,
+                  borderRadius: 99,
+                  backgroundColor: "#f0f0f0",
+                  "& .MuiLinearProgress-bar": {
+                    backgroundColor: monevPercent === 100 && monevTotalLuaran > 0 ? "#2e7d32" : "#0D59F2",
+                    borderRadius: 99,
+                  },
+                }}
+              />
+              <Typography sx={{ fontSize: 13, fontWeight: 800, color: "#444", minWidth: 48 }}>
+                {monevPercent}%
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: "flex", gap: 1.25, flexWrap: "wrap" }}>
+              {[
+                { label: "Total", value: monevTotalLuaran, bg: "#424242" },
+                { label: "Disetujui", value: monevDisetujui, bg: "#1b5e20" },
+                { label: "Submitted", value: monevSubmitted, bg: "#f57f17" },
+                { label: "Ditolak", value: monevDitolak, bg: "#c62828" },
+                { label: "Belum", value: monevBelum, bg: "#757575" },
+              ].map((item) => (
+                <Box key={item.label} sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                  <Chip
+                    label={item.value}
+                    size="small"
+                    sx={{ backgroundColor: item.bg, color: "#fff", fontWeight: 700 }}
+                  />
+                  <Typography sx={{ fontSize: 13, color: "#777" }}>{item.label}</Typography>
+                </Box>
+              ))}
+            </Box>
+          </Paper>
+
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", xl: "1fr 360px" }, gap: 3, mb: 3 }}>
 
             <Paper sx={{ p: 3, borderRadius: "20px", border: "1px solid #f0f0f0", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
               <Typography sx={{ fontSize: 16, fontWeight: 800, color: "#1a1a1a", mb: 0.5 }}>
@@ -368,7 +447,7 @@ export default function DashboardAdminPage() {
             </Paper>
           </Box>
 
-          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: 3 }}>
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", xl: "1fr 360px" }, gap: 3 }}>
 
             <Paper sx={{ p: 3, borderRadius: "20px", border: "1px solid #f0f0f0", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
@@ -431,36 +510,6 @@ export default function DashboardAdminPage() {
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                 {actionCards.map((card) => (
                   <ActionCard key={card.label} {...card} />
-                ))}
-              </Box>
-
-              <Divider sx={{ my: 2.5 }} />
-
-              <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#888", mb: 1.5 }}>Akses Cepat</Typography>
-              <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
-                {[
-                  { label: "Kelola Berita", icon: <NewspaperOutlined sx={{ fontSize: 18, color: "#0D59F2" }} />, path: "/admin/berita", color: "#0D59F2" },
-                  { label: "Kelola Pengguna", icon: <PeopleOutlined sx={{ fontSize: 18, color: "#7c3aed" }} />, path: "/admin/kelola-pengguna", color: "#7c3aed" },
-                  { label: "Data Proposal", icon: <DescriptionOutlined sx={{ fontSize: 18, color: "#059669" }} />, path: "/admin/proposal", color: "#059669" },
-                  { label: "Rekap Penilaian", icon: <AssignmentTurnedInOutlined sx={{ fontSize: 18, color: "#f59e0b" }} />, path: "/admin/rekap-penilaian", color: "#f59e0b" },
-                ].map((item) => (
-                  <Box
-                    key={item.label}
-                    onClick={() => navigate(item.path)}
-                    sx={{
-                      display: "flex", alignItems: "center", gap: 1.5,
-                      p: 1.5, borderRadius: "12px",
-                      border: "1.5px solid #f0f0f0",
-                      cursor: "pointer",
-                      transition: "transform 0.15s, border-color 0.15s",
-                      "&:hover": { transform: "translateY(-2px)", borderColor: item.color },
-                    }}
-                  >
-                    <Box sx={{ width: 34, height: 34, borderRadius: "10px", backgroundColor: `${item.color}12`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      {item.icon}
-                    </Box>
-                    <Typography sx={{ fontSize: 12, fontWeight: 600, color: "#444", lineHeight: 1.3 }}>{item.label}</Typography>
-                  </Box>
                 ))}
               </Box>
             </Paper>

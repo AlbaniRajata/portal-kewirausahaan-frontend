@@ -129,3 +129,8 @@ export const submitLuaran = async (id_luaran, formData) => {
   });
   return res.data;
 };
+
+export const cekEligibilitasInbis = async () => {
+  const res = await api.get("/mahasiswa/tim/eligibilitas-inbis");
+  return res.data;
+};

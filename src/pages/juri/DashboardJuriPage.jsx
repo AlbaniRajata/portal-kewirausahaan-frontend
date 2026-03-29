@@ -205,14 +205,14 @@ export default function DashboardJuriPage() {
         <Box>
 
           <Box sx={{
-            p: 4, mb: 4, borderRadius: "24px",
+            p: { xs: 2.5, md: 4 }, mb: 4, borderRadius: "24px",
             background: "linear-gradient(135deg, #0D59F2 0%, #1e40af 100%)",
             color: "#fff", position: "relative", overflow: "hidden",
           }}>
             <Box sx={{ position: "absolute", top: -40, right: -40, width: 200, height: 200, borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.06)" }} />
             <Box sx={{ position: "absolute", bottom: -60, right: 80, width: 150, height: 150, borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.04)" }} />
 
-            <Box sx={{ display: "flex", alignItems: "center", gap: 3, position: "relative", zIndex: 1 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 3, position: "relative", zIndex: 1, flexWrap: "wrap" }}>
               <Avatar
                 src={profile?.foto ? `${API_URL}/uploads/profil/${profile.foto}` : undefined}
                 sx={{ width: 64, height: 64, border: "3px solid rgba(255,255,255,0.3)", fontSize: 24, backgroundColor: "rgba(255,255,255,0.2)" }}
@@ -233,7 +233,8 @@ export default function DashboardJuriPage() {
 
               {(menungguKonfirmasi + menungguPenilaian) > 0 && (
                 <Box sx={{
-                  ml: "auto", px: 2.5, py: 1.2, borderRadius: "50px",
+                  ml: { xs: 0, md: "auto" }, width: { xs: "100%", md: "auto" },
+                  px: 2.5, py: 1.2, borderRadius: "50px",
                   backgroundColor: "rgba(255,255,255,0.15)",
                   border: "1px solid rgba(255,255,255,0.25)",
                   backdropFilter: "blur(4px)",
@@ -246,7 +247,7 @@ export default function DashboardJuriPage() {
             </Box>
           </Box>
 
-          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 2.5, mb: 4 }}>
+          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 2.5, mb: 4 }}>
             {statCards.map((card) => (
               <StatCard
                 key={card.label}
@@ -261,12 +262,12 @@ export default function DashboardJuriPage() {
           </Box>
 
           <Box sx={{
-            p: 4, borderRadius: "20px",
+            p: { xs: 2.5, md: 4 }, borderRadius: "20px",
             background: "#fff",
             border: "1px solid #f0f0f0",
             boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
           }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1.5, mb: 3 }}>
               <Box>
                 <Typography sx={{ fontSize: 16, fontWeight: 800, color: "#1a1a1a" }}>
                   Perlu Ditindaklanjuti

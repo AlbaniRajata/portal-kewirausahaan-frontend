@@ -25,9 +25,9 @@ const tableHeadCell = {
 const tableBodyRow = { "& td": { borderBottom: "1px solid #f5f5f5", py: 2 } };
 
 const TIPE_MAP = {
-  1: { label: "File", color: "#1565c0", bg: "#e3f2fd" },
-  2: { label: "Link", color: "#6a1b9a", bg: "#f3e5f5" },
-  3: { label: "File & Link", color: "#2e7d32", bg: "#e8f5e9" },
+  1: { label: "File", bg: "#1565c0" },
+  2: { label: "Link", bg: "#6a1b9a" },
+  3: { label: "File & Link", bg: "#2e7d32" },
 };
 
 const formatDate = (dateString) => {
@@ -301,7 +301,7 @@ export default function MonevPage() {
                             <Chip
                               label={tipe.label}
                               size="small"
-                              sx={{ backgroundColor: tipe.bg, color: tipe.color, fontWeight: 700, fontSize: 12 }}
+                              sx={{ backgroundColor: tipe.bg, color: "#fff", fontWeight: 700, fontSize: 12 }}
                             />
                           </TableCell>
                           <TableCell>

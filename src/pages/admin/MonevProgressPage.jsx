@@ -39,34 +39,30 @@ import {
 const STATUS_MAP = {
   0: {
     label: "Belum Dikerjakan",
-    color: "#777",
-    bg: "#f5f5f5",
+    bg: "#757575",
     icon: <RadioButtonUnchecked sx={{ fontSize: 16 }} />,
   },
   1: {
     label: "Submitted",
-    color: "#f57f17",
-    bg: "#fff8e1",
+    bg: "#f57f17",
     icon: <HourglassEmpty sx={{ fontSize: 16 }} />,
   },
   2: {
     label: "Disetujui",
-    color: "#2e7d32",
-    bg: "#e8f5e9",
+    bg: "#2e7d32",
     icon: <CheckCircle sx={{ fontSize: 16 }} />,
   },
   3: {
     label: "Ditolak",
-    color: "#c62828",
-    bg: "#ffebee",
+    bg: "#c62828",
     icon: <Cancel sx={{ fontSize: 16 }} />,
   },
 };
 
 const TIPE_MAP = {
-  1: { label: "File", color: "#1565c0", bg: "#e3f2fd" },
-  2: { label: "Link", color: "#6a1b9a", bg: "#f3e5f5" },
-  3: { label: "File & Link", color: "#2e7d32", bg: "#e8f5e9" },
+  1: { label: "File", bg: "#1565c0" },
+  2: { label: "Link", bg: "#6a1b9a" },
+  3: { label: "File & Link", bg: "#2e7d32" },
 };
 
 const tableHeadCell = {
@@ -104,7 +100,7 @@ const StatusPill = ({ status }) => {
         py: 0.4,
         borderRadius: "50px",
         backgroundColor: s.bg,
-        color: s.color,
+        color: "#fff",
         fontSize: 12,
         fontWeight: 700,
         whiteSpace: "nowrap",
@@ -410,8 +406,8 @@ setTimeout(() => setOpenDetail(true), 200);
                               label={tim.total_submitted}
                               size="small"
                               sx={{
-                                backgroundColor: "#fff8e1",
-                                color: "#f57f17",
+                                backgroundColor: "#f57f17",
+                                color: "#fff",
                                 fontWeight: 700,
                               }}
                             />
@@ -421,8 +417,8 @@ setTimeout(() => setOpenDetail(true), 200);
                               label={tim.total_disetujui}
                               size="small"
                               sx={{
-                                backgroundColor: "#e8f5e9",
-                                color: "#2e7d32",
+                                backgroundColor: "#2e7d32",
+                                color: "#fff",
                                 fontWeight: 700,
                               }}
                             />
@@ -432,8 +428,8 @@ setTimeout(() => setOpenDetail(true), 200);
                               label={tim.total_ditolak}
                               size="small"
                               sx={{
-                                backgroundColor: "#ffebee",
-                                color: "#c62828",
+                                backgroundColor: "#c62828",
+                                color: "#fff",
                                 fontWeight: 700,
                               }}
                             />
@@ -569,7 +565,7 @@ setTimeout(() => setOpenDetail(true), 200);
                               size="small"
                               sx={{
                                 backgroundColor: tipe.bg,
-                                color: tipe.color,
+                                color: "#fff",
                                 fontWeight: 700,
                                 fontSize: 11,
                               }}

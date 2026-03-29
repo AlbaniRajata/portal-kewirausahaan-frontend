@@ -175,129 +175,145 @@ export default function SidebarMahasiswa({ collapsed }) {
         )}
       </Box>
 
-      <List sx={{ px: collapsed ? 1 : 2, py: 2, flex: 1, position: "relative", zIndex: 1 }}>
-        {menuItems.map((item, index) => (
-          <Box key={index}>
-            <ListItem disablePadding sx={{ mb: 0.5 }}>
-              <Tooltip title={collapsed ? item.text : ""} placement="right">
-                <ListItemButton
-                  onClick={() => handleMenuClick(item)}
-                  sx={{
-                    borderRadius: 50,
-                    backgroundColor:
-                      isActive(item.path) ||
-                      (item.hasSubmenu && isInBimbinganSubmenu)
-                        ? "rgba(255,255,255,0.18)"
-                        : "transparent",
-                    "&:hover": {
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: "auto",
+          overflowX: "hidden",
+          position: "relative",
+          zIndex: 1,
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+          "&::-webkit-scrollbar": {
+            width: 0,
+            height: 0,
+          },
+        }}
+      >
+        <List sx={{ px: collapsed ? 1 : 2, py: 2 }}>
+          {menuItems.map((item, index) => (
+            <Box key={index}>
+              <ListItem disablePadding sx={{ mb: 0.5 }}>
+                <Tooltip title={collapsed ? item.text : ""} placement="right">
+                  <ListItemButton
+                    onClick={() => handleMenuClick(item)}
+                    sx={{
+                      borderRadius: 50,
                       backgroundColor:
                         isActive(item.path) ||
                         (item.hasSubmenu && isInBimbinganSubmenu)
-                          ? "rgba(255,255,255,0.22)"
-                          : "rgba(255,255,255,0.12)",
-                    },
-                    justifyContent: collapsed ? "center" : "flex-start",
-                    px: collapsed ? 1 : 2,
-                    minHeight: 44,
-                  }}
-                >
-                  <ListItemIcon
-                    sx={{
-                      minWidth: collapsed ? "auto" : 40,
-                      color:
-                        isActive(item.path) ||
-                        (item.hasSubmenu && isInBimbinganSubmenu)
-                          ? "#ffffff"
-                          : "rgba(255,255,255,0.88)",
-                      justifyContent: "center",
-                      display: "flex",
-                      alignItems: "center",
+                          ? "rgba(255,255,255,0.18)"
+                          : "transparent",
+                      "&:hover": {
+                        backgroundColor:
+                          isActive(item.path) ||
+                          (item.hasSubmenu && isInBimbinganSubmenu)
+                            ? "rgba(255,255,255,0.22)"
+                            : "rgba(255,255,255,0.12)",
+                      },
+                      justifyContent: collapsed ? "center" : "flex-start",
+                      px: collapsed ? 1 : 2,
+                      minHeight: 44,
                     }}
                   >
-                    {item.icon}
-                  </ListItemIcon>
-                  {!collapsed && (
-                    <>
-                      <ListItemText
-                        primary={item.text}
-                        primaryTypographyProps={{
-                          fontSize: 14,
-                          fontWeight:
-                            isActive(item.path) ||
-                            (item.hasSubmenu && isInBimbinganSubmenu)
-                              ? 600
-                              : 500,
-                          color:
-                            isActive(item.path) ||
-                            (item.hasSubmenu && isInBimbinganSubmenu)
-                              ? "#ffffff"
-                              : "rgba(255,255,255,0.92)",
-                        }}
-                      />
-                      {item.hasSubmenu && (
-                        <Box sx={{ display: "flex", alignItems: "center", color: "rgba(255,255,255,0.92)" }}>
-                          {openBimbingan ? <ExpandLess /> : <ExpandMore />}
-                        </Box>
-                      )}
-                    </>
-                  )}
-                </ListItemButton>
-              </Tooltip>
-            </ListItem>
-
-            {item.hasSubmenu && !collapsed && (
-              <Collapse in={openBimbingan} timeout="auto" unmountOnExit>
-                <List component="div" disablePadding>
-                  {item.submenu.map((subItem, subIndex) => (
-                    <ListItem key={subIndex} disablePadding sx={{ mb: 0.5 }}>
-                      <ListItemButton
-                        onClick={() => navigate(subItem.path)}
-                        sx={{
-                          pl: 4,
-                          pr: 2,
-                          borderRadius: 5,
-                          backgroundColor: isActive(subItem.path)
-                            ? "rgba(255,255,255,0.18)"
-                            : "transparent",
-                          "&:hover": {
-                            backgroundColor: isActive(subItem.path)
-                              ? "rgba(255,255,255,0.22)"
-                              : "rgba(255,255,255,0.12)",
-                          },
-                          minHeight: 40,
-                          display: "flex",
-                          alignItems: "center",
-                        }}
-                      >
-                        <ListItemIcon
-                          sx={{
-                            minWidth: 36,
-                            color: isActive(subItem.path) ? "#ffffff" : "rgba(255,255,255,0.88)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          {subItem.icon}
-                        </ListItemIcon>
-
+                    <ListItemIcon
+                      sx={{
+                        minWidth: collapsed ? "auto" : 40,
+                        color:
+                          isActive(item.path) ||
+                          (item.hasSubmenu && isInBimbinganSubmenu)
+                            ? "#ffffff"
+                            : "rgba(255,255,255,0.88)",
+                        justifyContent: "center",
+                        display: "flex",
+                        alignItems: "center",
+                      }}
+                    >
+                      {item.icon}
+                    </ListItemIcon>
+                    {!collapsed && (
+                      <>
                         <ListItemText
-                          primary={subItem.text}
+                          primary={item.text}
                           primaryTypographyProps={{
                             fontSize: 14,
-                            fontWeight: isActive(subItem.path) ? 600 : 500,
-                            color: isActive(subItem.path) ? "#ffffff" : "rgba(255,255,255,0.92)",
+                            fontWeight:
+                              isActive(item.path) ||
+                              (item.hasSubmenu && isInBimbinganSubmenu)
+                                ? 600
+                                : 500,
+                            color:
+                              isActive(item.path) ||
+                              (item.hasSubmenu && isInBimbinganSubmenu)
+                                ? "#ffffff"
+                                : "rgba(255,255,255,0.92)",
                           }}
                         />
-                      </ListItemButton>
-                    </ListItem>
-                  ))}
-                </List>
-              </Collapse>
-            )}
-          </Box>
-        ))}
-      </List>
+                        {item.hasSubmenu && (
+                          <Box sx={{ display: "flex", alignItems: "center", color: "rgba(255,255,255,0.92)" }}>
+                            {openBimbingan ? <ExpandLess /> : <ExpandMore />}
+                          </Box>
+                        )}
+                      </>
+                    )}
+                  </ListItemButton>
+                </Tooltip>
+              </ListItem>
+
+              {item.hasSubmenu && !collapsed && (
+                <Collapse in={openBimbingan} timeout="auto" unmountOnExit>
+                  <List component="div" disablePadding>
+                    {item.submenu.map((subItem, subIndex) => (
+                      <ListItem key={subIndex} disablePadding sx={{ mb: 0.5 }}>
+                        <ListItemButton
+                          onClick={() => navigate(subItem.path)}
+                          sx={{
+                            pl: 4,
+                            pr: 2,
+                            borderRadius: 5,
+                            backgroundColor: isActive(subItem.path)
+                              ? "rgba(255,255,255,0.18)"
+                              : "transparent",
+                            "&:hover": {
+                              backgroundColor: isActive(subItem.path)
+                                ? "rgba(255,255,255,0.22)"
+                                : "rgba(255,255,255,0.12)",
+                            },
+                            minHeight: 40,
+                            display: "flex",
+                            alignItems: "center",
+                          }}
+                        >
+                          <ListItemIcon
+                            sx={{
+                              minWidth: 36,
+                              color: isActive(subItem.path) ? "#ffffff" : "rgba(255,255,255,0.88)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            {subItem.icon}
+                          </ListItemIcon>
+
+                          <ListItemText
+                            primary={subItem.text}
+                            primaryTypographyProps={{
+                              fontSize: 14,
+                              fontWeight: isActive(subItem.path) ? 600 : 500,
+                              color: isActive(subItem.path) ? "#ffffff" : "rgba(255,255,255,0.92)",
+                            }}
+                          />
+                        </ListItemButton>
+                      </ListItem>
+                    ))}
+                  </List>
+                </Collapse>
+              )}
+            </Box>
+          ))}
+        </List>
+      </Box>
     </Box>
   );
 }

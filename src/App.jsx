@@ -29,7 +29,7 @@ function App() {
       }
     };
     restoreToken();
-  }, []);
+  }, [refreshToken, logout]);
 
   if (restoring) {
     return (

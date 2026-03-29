@@ -10,8 +10,7 @@ import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
 import PageTransition from "../../components/PageTransition";
-import { getProposalList } from "../../api/admin";
-import { getAllProgram } from "../../api/public";
+import { getMyProgram, getProposalList } from "../../api/admin";
 
 const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "15px" } };
 
@@ -63,11 +62,25 @@ export default function ProposalListPage() {
   const [filters, setFilters] = useState({ id_program: "", status: [] });
 
   useEffect(() => {
-    getAllProgram().then((res) => { setProgramOptions(res.data || []); }).catch(() => {});
+    getMyProgram()
+      .then((res) => {
+        const myProgram = res?.data;
+        if (myProgram?.id_program) {
+          setProgramOptions([myProgram]);
+          setFilters((prev) => ({ ...prev, id_program: myProgram.id_program }));
+        }
+      })
+      .catch(() => {
+        Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat data program", confirmButtonColor: "#0D59F2" });
+      });
   }, []);
 
   const fetchProposals = useCallback(async () => {
     try {
+      if (!filters.id_program) {
+        setProposalList([]);
+        return;
+      }
       setLoading(true);
       let allProposals = [];
       if (filters.status.length === 0) {
@@ -110,9 +123,9 @@ export default function ProposalListPage() {
                   select fullWidth size="small" label="Program"
                   value={filters.id_program}
                   onChange={(e) => setFilters({ ...filters, id_program: e.target.value })}
+                  disabled
                   sx={roundedField}
                 >
-                  <MenuItem value="">Semua Program</MenuItem>
                   {programOptions.map((prog) => (
                     <MenuItem key={prog.id_program} value={prog.id_program}>{prog.keterangan}</MenuItem>
                   ))}

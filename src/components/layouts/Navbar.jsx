@@ -78,7 +78,7 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed }) {
         transition: "left 0.3s ease, right 0.3s ease, top 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease, border-radius 0.3s ease, border-color 0.3s ease",
       }}
     >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0, flex: 1, pr: 1.5 }}>
         <Box
           onClick={onToggleSidebar}
           sx={{
@@ -107,6 +107,8 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed }) {
             alignItems: "center",
             minHeight: 46,
             px: scrolled ? 0 : 2,
+            minWidth: 0,
+            maxWidth: { xs: 190, sm: 300, md: 460 },
             borderRadius: scrolled ? "50px" : "18px",
             border: scrolled ? "1.5px solid transparent" : "1.5px solid rgba(0,0,0,0.12)",
             backgroundColor: scrolled ? "transparent" : "#ffffff",
@@ -120,6 +122,8 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed }) {
               fontWeight: 700,
               color: "#1a1a2e",
               whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
               letterSpacing: "-0.01em",
             }}
           >
@@ -135,6 +139,8 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed }) {
             display: "flex",
             alignItems: "center",
             gap: 1.5,
+            minWidth: 0,
+            maxWidth: { xs: 190, sm: 280, md: 360 },
             cursor: "pointer",
             px: scrolled ? 0 : 1.5,
             py: scrolled ? 0 : 0.6,
@@ -156,12 +162,32 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed }) {
                 || <AccountCircleIcon sx={{ fontSize: 36 }} />)}
           </Avatar>
 
-          <Box>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#1a1a2e", lineHeight: 1.3 }}>
+          <Box sx={{ minWidth: 0, maxWidth: { xs: 96, sm: 150, md: 220 } }}>
+            <Typography
+              sx={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: "#1a1a2e",
+                lineHeight: 1.3,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
               {displayName}
             </Typography>
             {displaySubtitle && (
-              <Typography sx={{ fontSize: 11, color: "#888", lineHeight: 1.2 }}>
+              <Typography
+                sx={{
+                  fontSize: 11,
+                  color: "#888",
+                  lineHeight: 1.2,
+                  display: { xs: "none", sm: "block" },
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
                 {displaySubtitle}
               </Typography>
             )}

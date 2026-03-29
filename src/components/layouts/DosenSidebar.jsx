@@ -146,126 +146,142 @@ export default function DosenSidebar({ collapsed }) {
         )}
       </Box>
       
-      <List sx={{ px: collapsed ? 1 : 2, py: 2, flex: 1, position: "relative", zIndex: 1 }}>
-        {menuItems.map((item, index) => {
-          const isParentActive =
-            item.hasSubmenu && isInBimbinganSubmenu;
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: "auto",
+          overflowX: "hidden",
+          position: "relative",
+          zIndex: 1,
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+          "&::-webkit-scrollbar": {
+            width: 0,
+            height: 0,
+          },
+        }}
+      >
+        <List sx={{ px: collapsed ? 1 : 2, py: 2 }}>
+          {menuItems.map((item, index) => {
+            const isParentActive =
+              item.hasSubmenu && isInBimbinganSubmenu;
 
-          return (
-            <Box key={index}>
-              <ListItem disablePadding sx={{ mb: 0.5 }}>
-                <Tooltip title={collapsed ? item.text : ""} placement="right">
-                  <ListItemButton
-                    onClick={() => handleMenuClick(item)}
-                    sx={{
-                      borderRadius: 50,
-                      backgroundColor:
-                        isActive(item.path) || isParentActive
-                          ? "rgba(255,255,255,0.18)"
-                          : "transparent",
-                      "&:hover": {
+            return (
+              <Box key={index}>
+                <ListItem disablePadding sx={{ mb: 0.5 }}>
+                  <Tooltip title={collapsed ? item.text : ""} placement="right">
+                    <ListItemButton
+                      onClick={() => handleMenuClick(item)}
+                      sx={{
+                        borderRadius: 50,
                         backgroundColor:
                           isActive(item.path) || isParentActive
-                            ? "rgba(255,255,255,0.22)"
-                            : "rgba(255,255,255,0.12)",
-                      },
-                      justifyContent: collapsed ? "center" : "flex-start",
-                      px: collapsed ? 1 : 2,
-                      minHeight: 44,
-                    }}
-                  >
-                    <ListItemIcon
-                      sx={{
-                        minWidth: collapsed ? "auto" : 40,
-                        color:
-                          isActive(item.path) || isParentActive
-                            ? "#ffffff"
-                            : "rgba(255,255,255,0.88)",
-                        justifyContent: "center",
+                            ? "rgba(255,255,255,0.18)"
+                            : "transparent",
+                        "&:hover": {
+                          backgroundColor:
+                            isActive(item.path) || isParentActive
+                              ? "rgba(255,255,255,0.22)"
+                              : "rgba(255,255,255,0.12)",
+                        },
+                        justifyContent: collapsed ? "center" : "flex-start",
+                        px: collapsed ? 1 : 2,
+                        minHeight: 44,
                       }}
                     >
-                      {item.icon}
-                    </ListItemIcon>
+                      <ListItemIcon
+                        sx={{
+                          minWidth: collapsed ? "auto" : 40,
+                          color:
+                            isActive(item.path) || isParentActive
+                              ? "#ffffff"
+                              : "rgba(255,255,255,0.88)",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {item.icon}
+                      </ListItemIcon>
 
-                    {!collapsed && (
-                      <>
-                        <ListItemText
-                          primary={item.text}
-                          primaryTypographyProps={{
-                            fontSize: 14,
-                            fontWeight:
-                              isActive(item.path) || isParentActive
-                                ? 600
-                                : 500,
-                            color:
-                              isActive(item.path) || isParentActive
-                                ? "#ffffff"
-                                : "rgba(255,255,255,0.92)",
-                          }}
-                        />
-                        {item.hasSubmenu && (
-                          <Box sx={{ color: "rgba(255,255,255,0.92)", display: "flex", alignItems: "center" }}>
-                            {openBimbingan ? <ExpandLess /> : <ExpandMore />}
-                          </Box>
-                        )}
-                      </>
-                    )}
-                  </ListItemButton>
-                </Tooltip>
-              </ListItem>
-
-              {item.hasSubmenu && !collapsed && (
-                <Collapse in={openBimbingan} timeout="auto" unmountOnExit>
-                  <List disablePadding>
-                    {item.submenu.map((sub, i) => {
-                      const subActive =
-                        location.pathname === sub.path ||
-                        location.pathname.startsWith(sub.path + "/");
-
-                      return (
-                        <ListItem key={i} disablePadding sx={{ mb: 0.5 }}>
-                          <ListItemButton
-                            onClick={() => navigate(sub.path)}
-                            sx={{
-                              pl: 4,
-                              borderRadius: 50,
-                              backgroundColor: subActive
-                                ? "rgba(255,255,255,0.18)"
-                                : "transparent",
-                              "&:hover": {
-                                backgroundColor: subActive
-                                  ? "rgba(255,255,255,0.22)"
-                                  : "rgba(255,255,255,0.12)",
-                              },
+                      {!collapsed && (
+                        <>
+                          <ListItemText
+                            primary={item.text}
+                            primaryTypographyProps={{
+                              fontSize: 14,
+                              fontWeight:
+                                isActive(item.path) || isParentActive
+                                  ? 600
+                                  : 500,
+                              color:
+                                isActive(item.path) || isParentActive
+                                  ? "#ffffff"
+                                  : "rgba(255,255,255,0.92)",
                             }}
-                          >
-                            <ListItemIcon
+                          />
+                          {item.hasSubmenu && (
+                            <Box sx={{ color: "rgba(255,255,255,0.92)", display: "flex", alignItems: "center" }}>
+                              {openBimbingan ? <ExpandLess /> : <ExpandMore />}
+                            </Box>
+                          )}
+                        </>
+                      )}
+                    </ListItemButton>
+                  </Tooltip>
+                </ListItem>
+
+                {item.hasSubmenu && !collapsed && (
+                  <Collapse in={openBimbingan} timeout="auto" unmountOnExit>
+                    <List disablePadding>
+                      {item.submenu.map((sub, i) => {
+                        const subActive =
+                          location.pathname === sub.path ||
+                          location.pathname.startsWith(sub.path + "/");
+
+                        return (
+                          <ListItem key={i} disablePadding sx={{ mb: 0.5 }}>
+                            <ListItemButton
+                              onClick={() => navigate(sub.path)}
                               sx={{
-                                minWidth: 36,
-                                color: subActive ? "#ffffff" : "rgba(255,255,255,0.88)",
+                                pl: 4,
+                                borderRadius: 50,
+                                backgroundColor: subActive
+                                  ? "rgba(255,255,255,0.18)"
+                                  : "transparent",
+                                "&:hover": {
+                                  backgroundColor: subActive
+                                    ? "rgba(255,255,255,0.22)"
+                                    : "rgba(255,255,255,0.12)",
+                                },
                               }}
                             >
-                              {sub.icon}
-                            </ListItemIcon>
-                            <ListItemText
-                              primary={sub.text}
-                              primaryTypographyProps={{
-                                fontSize: 14,
-                                fontWeight: subActive ? 600 : 500,
-                                color: subActive ? "#ffffff" : "rgba(255,255,255,0.92)",
-                              }}
-                            />
-                          </ListItemButton>
-                        </ListItem>
-                      );
-                    })}
-                  </List>
-                </Collapse>
-              )}
-            </Box>
-          );
-        })}
-      </List>
+                              <ListItemIcon
+                                sx={{
+                                  minWidth: 36,
+                                  color: subActive ? "#ffffff" : "rgba(255,255,255,0.88)",
+                                }}
+                              >
+                                {sub.icon}
+                              </ListItemIcon>
+                              <ListItemText
+                                primary={sub.text}
+                                primaryTypographyProps={{
+                                  fontSize: 14,
+                                  fontWeight: subActive ? 600 : 500,
+                                  color: subActive ? "#ffffff" : "rgba(255,255,255,0.92)",
+                                }}
+                              />
+                            </ListItemButton>
+                          </ListItem>
+                        );
+                      })}
+                    </List>
+                  </Collapse>
+                )}
+              </Box>
+            );
+          })}
+        </List>
+      </Box>
     </Box>
   );
 }
