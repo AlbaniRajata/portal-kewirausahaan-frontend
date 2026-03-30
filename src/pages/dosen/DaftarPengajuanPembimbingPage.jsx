@@ -127,8 +127,8 @@ export default function DaftarPengajuanPembimbingPage() {
   };
 
   const handleReject = async () => {
-    if (!catatan || catatan.trim().length < 10) {
-      setErrors({ catatan: "Catatan penolakan minimal 10 karakter" });
+    if (!catatan || catatan.trim().length < 5) {
+      setErrors({ catatan: "Catatan penolakan minimal 5 karakter" });
       return;
     }
 
@@ -322,7 +322,7 @@ export default function DaftarPengajuanPembimbingPage() {
                   fullWidth
                   multiline
                   rows={4}
-                  placeholder="Masukkan alasan penolakan (minimal 10 karakter)..."
+                  placeholder="Masukkan catatan penolakan (minimal 5 karakter)..."
                   value={catatan}
                   onChange={(e) => { setCatatan(e.target.value); setErrors({}); }}
                   error={!!errors.catatan}

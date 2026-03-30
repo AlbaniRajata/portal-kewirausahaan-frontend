@@ -146,7 +146,7 @@ export default function MonevPage() {
     } catch (err) {
       setStatusMessage(
         err.response?.data?.message ||
-          "Gagal memuat data luaran. Silakan refresh halaman.",
+          "Gagal memuat data luaran. Silahkan refresh halaman.",
       );
     } finally {
       setLoading(false);

@@ -55,8 +55,7 @@ export default function RegisterDosenPage() {
       } catch {
         await Swal.fire({
           icon: "error", title: "Gagal Memuat Data",
-          text: "Gagal memuat data program studi. Silakan refresh halaman.",
-          confirmButtonColor: "#0D59F2",
+          text: "Gagal memuat data program studi. Silahkan refresh halaman.",
         });
       } finally {
         setLoadingProdi(false);
@@ -83,25 +82,6 @@ export default function RegisterDosenPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleVerifyEmail = async (token) => {
-    try {
-      const response = await api.get(`/auth/verify-email?token=${token}`);
-      await Swal.fire({
-        icon: "success", title: "Email Berhasil Diverifikasi",
-        text: response.data.message || "Email Anda telah berhasil diverifikasi. Silakan tunggu verifikasi dari admin.",
-        timer: 3000, timerProgressBar: true,
-        showConfirmButton: true, confirmButtonText: "Menuju Login", allowOutsideClick: false,
-      });
-      navigate("/login");
-    } catch (err) {
-      await Swal.fire({
-        icon: "error", title: "Verifikasi Gagal",
-        text: err.response?.data?.message || "Token tidak valid atau sudah kadaluarsa",
-        confirmButtonColor: "#0D59F2", confirmButtonText: "OK",
-      });
-    }
-  };
-
   const handleSubmit = async () => {
     if (!validate()) return;
     setLoading(true);
@@ -116,40 +96,24 @@ export default function RegisterDosenPage() {
 
       const response = await registerDosen(payload);
       if (response.success) {
-        let token = null;
-        try {
-          const verificationLink = response.data?.verification_link;
-          if (verificationLink) {
-            token = new URL(verificationLink).searchParams.get("token");
-          }
-        } catch {
-          token = null;
-        }
-
-        if (token) {
-          const result = await Swal.fire({
-            icon: "success", title: "Registrasi Berhasil",
-            html: `<p>Akun Anda telah berhasil didaftarkan.</p><p style="color:#666;font-size:14px;">Silakan verifikasi email Anda terlebih dahulu.</p>`,
-            showCancelButton: false, confirmButtonText: "Verifikasi Email",
-            confirmButtonColor: "#0D59F2", allowOutsideClick: false,
-          });
-          if (result.isConfirmed) await handleVerifyEmail(token);
-        } else {
-          await Swal.fire({
-            icon: "success", title: "Registrasi Berhasil",
-            html: `<p>Akun Anda telah berhasil didaftarkan.</p><p style="color:#666;font-size:14px;">Silakan cek email Anda untuk melakukan verifikasi.</p>`,
-            confirmButtonText: "Menuju Login",
-            confirmButtonColor: "#0D59F2", allowOutsideClick: false,
-            timer: 5000, timerProgressBar: true,
-          });
-          navigate("/login");
-        }
+        await Swal.fire({
+          icon: "success", title: "Registrasi Berhasil",
+          html: `<p>Akun Anda telah berhasil didaftarkan.</p><p style="color:#666;font-size:14px;">Kode verifikasi telah dikirim ke email Anda.</p>`,
+          confirmButtonText: "Masukkan Kode",
+          allowOutsideClick: false,
+        });
+        navigate("/verifikasi-email", {
+          state: {
+            id_user: response.data.user.id_user,
+            email: response.data.user.email,
+          },
+        });
       }
     } catch (err) {
-      const errorMessage = err.response?.data?.message || "Registrasi gagal. Silakan coba lagi.";
+      const errorMessage = err.response?.data?.message || "Registrasi gagal. Silahkan coba lagi.";
       await Swal.fire({
         icon: "error", title: "Registrasi Gagal",
-        text: errorMessage, confirmButtonColor: "#0D59F2", confirmButtonText: "OK",
+        text: errorMessage, confirmButtonText: "OK",
       });
     } finally {
       setLoading(false);

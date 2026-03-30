@@ -104,11 +104,11 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
 
   const handleAssignTahap1 = async () => {
     if (!selectedReviewer) {
-      Swal.fire({ icon: "warning", title: "Perhatian", text: "Silakan pilih reviewer terlebih dahulu", confirmButtonColor: "#0D59F2" });
+      Swal.fire({ icon: "warning", title: "Perhatian", text: "Silahkan pilih reviewer terlebih dahulu", confirmButtonColor: "#0D59F2" });
       return;
     }
     if (selectedProposals.length === 0) {
-      Swal.fire({ icon: "warning", title: "Perhatian", text: "Silakan pilih minimal 1 proposal", confirmButtonColor: "#0D59F2" });
+      Swal.fire({ icon: "warning", title: "Perhatian", text: "Silahkan pilih minimal 1 proposal", confirmButtonColor: "#0D59F2" });
       return;
     }
     const result = await Swal.fire({
@@ -142,11 +142,11 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
 
   const handleAssignTahap2 = async () => {
     if (selectedReviewers.length === 0 && selectedJuries.length === 0) {
-      Swal.fire({ icon: "warning", title: "Perhatian", text: "Silakan pilih minimal 1 reviewer atau 1 juri", confirmButtonColor: "#0D59F2" });
+      Swal.fire({ icon: "warning", title: "Perhatian", text: "Silahkan pilih minimal 1 reviewer atau 1 juri", confirmButtonColor: "#0D59F2" });
       return;
     }
     if (!selectedProposal) {
-      Swal.fire({ icon: "warning", title: "Perhatian", text: "Silakan pilih 1 proposal", confirmButtonColor: "#0D59F2" });
+      Swal.fire({ icon: "warning", title: "Perhatian", text: "Silahkan pilih 1 proposal", confirmButtonColor: "#0D59F2" });
       return;
     }
     const proposal = proposals.find((p) => p.id_proposal === selectedProposal);

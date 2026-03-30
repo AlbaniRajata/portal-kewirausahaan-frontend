@@ -95,7 +95,7 @@ export default function PengajuanPembimbingPage() {
     } catch {
       await Swal.fire({
         icon: "error", title: "Gagal Memuat",
-        text: "Gagal memuat daftar dosen. Silakan refresh halaman.",
+        text: "Gagal memuat daftar dosen. Silahkan refresh halaman.",
         confirmButtonText: "OK",
       });
     } finally {
@@ -240,7 +240,7 @@ export default function PengajuanPembimbingPage() {
                 )}
                 {bisaAjukan && statusPengajuan === 2 && isKetua && (
                   <InfoBox color="#f57f17" borderColor="#ffe082" bgColor="#fff8e1">
-                    Pengajuan sebelumnya ditolak. Silakan ajukan dosen pembimbing lain.
+                    Pengajuan sebelumnya ditolak. Silahkan ajukan dosen pembimbing lain.
                   </InfoBox>
                 )}
                 {bisaAjukan && !pengajuan && isKetua && (

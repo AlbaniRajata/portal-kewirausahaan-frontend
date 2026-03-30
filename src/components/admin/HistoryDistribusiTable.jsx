@@ -292,7 +292,7 @@ export default function HistoryDistribusiTable({
       Swal.fire({
         icon: "warning",
         title: "Perhatian",
-        text: `Silakan pilih ${reassignMode === "reviewer" ? "reviewer" : "juri"} baru`,
+        text: `Silahkan pilih ${reassignMode === "reviewer" ? "reviewer" : "juri"} baru`,
         confirmButtonColor: "#0D59F2",
         didOpen: () => {
           const el = document.querySelector(".swal2-container");

@@ -82,7 +82,7 @@ export default function RekapPenilaianPage() {
             {tabItems.length === 1 && (
               <Box sx={{ p: 2, backgroundColor: "#fff8e1", borderBottom: "1px solid #f0f0f0" }}>
                 <Typography sx={{ fontSize: 13, color: "#8a6d3b" }}>
-                  Tahap penilaian belum diatur. Silakan atur tahap di menu Program terlebih dahulu.
+                  Tahap penilaian belum diatur. Silahkan atur tahap di menu Program terlebih dahulu.
                 </Typography>
               </Box>
             )}

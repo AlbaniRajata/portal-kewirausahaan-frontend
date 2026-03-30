@@ -21,6 +21,7 @@ import {
   CircularProgress,
   IconButton,
   Pagination,
+  Tooltip,
 } from "@mui/material";
 import {
   Close,
@@ -54,6 +55,26 @@ const tableHeadCell = {
 };
 
 const tableBodyRow = { "& td": { borderBottom: "1px solid #f5f5f5", py: 2 } };
+
+const stickyAksiHead = {
+  ...tableHeadCell,
+  textAlign: "center",
+  position: "sticky",
+  right: 0,
+  backgroundColor: "#fafafa",
+  zIndex: 2,
+  boxShadow: "-2px 0 6px rgba(0,0,0,0.04)",
+};
+
+const stickyAksiCell = {
+  position: "sticky",
+  right: 0,
+  backgroundColor: "#fff",
+  zIndex: 1,
+  boxShadow: "-2px 0 6px rgba(0,0,0,0.04)",
+  borderBottom: "1px solid #f5f5f5",
+  py: 2,
+};
 
 const StatusPill = ({ label, backgroundColor }) => (
   <Box
@@ -278,8 +299,8 @@ export default function VerifikasiPage() {
   };
 
   const handleReject = async () => {
-    if (!catatan || catatan.trim().length < 10) {
-      setErrors({ catatan: "Catatan penolakan minimal 10 karakter" });
+    if (!catatan || catatan.trim().length < 5) {
+      setErrors({ catatan: "Catatan penolakan minimal 5 karakter" });
       return;
     }
     setOpenReject(false);
@@ -497,7 +518,7 @@ export default function VerifikasiPage() {
                     sx={{
                       borderRadius: "12px",
                       border: "1px solid #f0f0f0",
-                      overflow: "hidden",
+                      overflow: "auto",
                       mb: 3,
                     }}
                   >
@@ -511,18 +532,12 @@ export default function VerifikasiPage() {
                             "Prodi",
                             "Tanggal Daftar",
                             "Status",
-                            "Aksi",
                           ].map((h, i) => (
-                            <TableCell
-                              key={i}
-                              sx={{
-                                ...tableHeadCell,
-                                ...(i === 6 && { textAlign: "center" }),
-                              }}
-                            >
+                            <TableCell key={i} sx={tableHeadCell}>
                               {h}
                             </TableCell>
                           ))}
+                          <TableCell sx={stickyAksiHead}>Aksi</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -536,6 +551,9 @@ export default function VerifikasiPage() {
                                 >
                                   {user.nama_lengkap || user.username}
                                 </Typography>
+                                <Typography sx={{ fontSize: 12, color: "#aaa" }}>
+                                  @{user.username}
+                                </Typography>
                               </TableCell>
                               <TableCell>
                                 <Typography sx={{ fontSize: 13 }}>
@@ -547,10 +565,22 @@ export default function VerifikasiPage() {
                                   {user.email}
                                 </Typography>
                               </TableCell>
-                              <TableCell>
-                                <Typography sx={{ fontSize: 13 }}>
-                                  {user.jenjang} {user.nama_prodi}
-                                </Typography>
+                              <TableCell sx={{ width: 220, maxWidth: 220 }}>
+                                <Tooltip
+                                  title={`${user.jenjang || ""} ${user.nama_prodi || ""}`.trim()}
+                                >
+                                  <Typography
+                                    sx={{
+                                      fontSize: 13,
+                                      whiteSpace: "nowrap",
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                      display: "block",
+                                    }}
+                                  >
+                                    {user.jenjang} {user.nama_prodi}
+                                  </Typography>
+                                </Tooltip>
                               </TableCell>
                               <TableCell>
                                 <Typography sx={{ fontSize: 13 }}>
@@ -563,24 +593,36 @@ export default function VerifikasiPage() {
                                   backgroundColor={si.backgroundColor}
                                 />
                               </TableCell>
-                              <TableCell align="center">
-                                <Button
-                                  size="small"
-                                  variant="outlined"
-                                  onClick={() => handleViewDetail(user)}
+                              <TableCell sx={stickyAksiCell}>
+                                <Box
                                   sx={{
-                                    textTransform: "none",
-                                    borderRadius: "50px",
-                                    fontSize: 12,
-                                    fontWeight: 600,
-                                    px: 2,
-                                    borderColor: "#0D59F2",
-                                    color: "#0D59F2",
-                                    "&:hover": { backgroundColor: "#f0f4ff" },
+                                    display: "flex",
+                                    gap: 1,
+                                    justifyContent: "center",
+                                    flexWrap: "nowrap",
                                   }}
                                 >
-                                  Detail
-                                </Button>
+                                  <Button
+                                    size="small"
+                                    variant="outlined"
+                                    onClick={() => handleViewDetail(user)}
+                                    sx={{
+                                      textTransform: "none",
+                                      borderRadius: "50px",
+                                      fontSize: 12,
+                                      fontWeight: 600,
+                                      px: 2,
+                                      borderColor: "#0D59F2",
+                                      color: "#0D59F2",
+                                      "&:hover": {
+                                        backgroundColor: "#f0f4ff",
+                                        borderColor: "#0D59F2",
+                                      },
+                                    }}
+                                  >
+                                    Detail
+                                  </Button>
+                                </Box>
                               </TableCell>
                             </TableRow>
                           );
@@ -915,7 +957,7 @@ export default function VerifikasiPage() {
                   fullWidth
                   multiline
                   rows={4}
-                  placeholder="Masukkan alasan penolakan (minimal 10 karakter)..."
+                  placeholder="Masukkan catatan penolakan (minimal 5 karakter)..."
                   value={catatan}
                   onChange={(e) => {
                     setCatatan(e.target.value);

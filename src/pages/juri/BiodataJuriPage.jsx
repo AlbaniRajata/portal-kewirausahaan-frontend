@@ -69,7 +69,7 @@ export default function BiodataJuriPage() {
       await Swal.fire({
         icon: "error",
         title: "Gagal Memuat",
-        text: "Gagal memuat profil. Silakan refresh halaman.",
+        text: "Gagal memuat profil. Silahkan refresh halaman.",
         confirmButtonText: "OK",
       });
     } finally {

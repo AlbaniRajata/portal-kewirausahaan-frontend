@@ -107,7 +107,7 @@ export default function LogBimbinganPage() {
         setStatusMessage(res.message || "Gagal memuat data bimbingan");
       }
     } catch (err) {
-      setStatusMessage(err.response?.data?.message || "Gagal memuat data bimbingan. Silakan refresh halaman.");
+      setStatusMessage(err.response?.data?.message || "Gagal memuat data bimbingan. Silahkan refresh halaman.");
     } finally {
       setLoading(false);
     }
@@ -233,7 +233,7 @@ export default function LogBimbinganPage() {
                 </Typography>
                 <Typography sx={{ fontSize: 14, color: "#999" }}>
                   {isKetua
-                    ? "Silakan ajukan sesi bimbingan terlebih dahulu."
+                    ? "Silahkan ajukan sesi bimbingan terlebih dahulu."
                     : "Riwayat bimbingan akan muncul di sini setelah ketua tim mengajukan."}
                 </Typography>
               </Box>

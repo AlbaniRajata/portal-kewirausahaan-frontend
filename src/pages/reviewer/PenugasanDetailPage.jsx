@@ -43,7 +43,7 @@ export default function PenugasanDetailPage() {
     } catch {
       await Swal.fire({
         icon: "error", title: "Gagal Memuat",
-        text: "Gagal memuat detail penugasan. Silakan coba lagi.",
+        text: "Gagal memuat detail penugasan. Silahkan coba lagi.",
         confirmButtonText: "OK",
       });
       navigate("/reviewer/penugasan");

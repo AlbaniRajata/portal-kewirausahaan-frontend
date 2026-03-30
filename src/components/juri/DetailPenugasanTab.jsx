@@ -54,8 +54,8 @@ export default function DetailPenugasanTab({ penugasan, onAccept, onReject, subm
   const handleCloseReject = () => { setRejectDialog(false); setCatatan(""); setErrors({}); };
 
   const handleRejectConfirm = async () => {
-    if (!catatan || catatan.trim().length < 10) {
-      setErrors({ catatan: "Catatan penolakan minimal 10 karakter" });
+    if (!catatan || catatan.trim().length < 5) {
+      setErrors({ catatan: "Catatan penolakan minimal 5 karakter" });
       return;
     }
     setRejectDialog(false);
@@ -187,7 +187,7 @@ export default function DetailPenugasanTab({ penugasan, onAccept, onReject, subm
         <Box sx={{ mb: 3 }}>
           <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>Catatan Penolakan</Typography>
           <Box sx={{ p: 2.5, backgroundColor: "#fce4ec", borderRadius: "12px", border: "1px solid #ef9a9a" }}>
-            <Typography sx={{ fontSize: 12, color: "#c62828", fontWeight: 700, mb: 0.5 }}>Alasan Penolakan</Typography>
+            <Typography sx={{ fontSize: 12, color: "#c62828", fontWeight: 700, mb: 0.5 }}>Catatan Penolakan</Typography>
             <Typography sx={{ fontSize: 14 }}>{penugasan.catatan_juri}</Typography>
           </Box>
         </Box>
@@ -245,7 +245,7 @@ export default function DetailPenugasanTab({ penugasan, onAccept, onReject, subm
             </Typography>
             <TextField
               fullWidth multiline rows={4}
-              placeholder="Masukkan alasan penolakan (minimal 10 karakter)..."
+              placeholder="Masukkan catatan penolakan (minimal 5 karakter)..."
               value={catatan}
               onChange={(e) => { setCatatan(e.target.value); setErrors({}); }}
               error={!!errors.catatan} helperText={errors.catatan}

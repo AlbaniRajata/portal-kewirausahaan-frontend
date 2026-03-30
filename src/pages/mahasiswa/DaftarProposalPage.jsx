@@ -90,7 +90,7 @@ export default function DaftarProposalPage() {
     } catch {
       await Swal.fire({
         icon: "error", title: "Gagal Memuat",
-        text: "Gagal memuat data proposal. Silakan refresh halaman.",
+        text: "Gagal memuat data proposal. Silahkan refresh halaman.",
         confirmButtonText: "OK",
       });
     } finally {
@@ -155,7 +155,7 @@ export default function DaftarProposalPage() {
           {!status?.hasTim && (
             <Box sx={{ mb: 2, p: 2, borderRadius: "12px", backgroundColor: "#fff8e1", border: "1px solid #ffe082" }}>
               <Typography sx={{ fontSize: 14, color: "#f57f17", fontWeight: 500 }}>
-                Anda belum terdaftar dalam tim. Silakan ajukan anggota tim terlebih dahulu.
+                Anda belum terdaftar dalam tim. Silahkan ajukan anggota tim terlebih dahulu.
               </Typography>
             </Box>
           )}

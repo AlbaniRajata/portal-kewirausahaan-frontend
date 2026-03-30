@@ -62,7 +62,7 @@ export default function UndanganAnggotaPage() {
     } catch {
       await Swal.fire({
         icon: "error", title: "Gagal Memuat",
-        text: "Gagal memuat detail tim. Silakan refresh halaman.",
+        text: "Gagal memuat detail tim. Silahkan refresh halaman.",
         confirmButtonText: "OK",
       });
     } finally {
@@ -276,7 +276,7 @@ export default function UndanganAnggotaPage() {
                 </Typography>
                 <TextField
                   fullWidth multiline rows={4}
-                  placeholder="Masukkan alasan penolakan (minimal 5 karakter)..."
+                  placeholder="Masukkan catatan penolakan (minimal 5 karakter)..."
                   value={catatan}
                   onChange={(e) => { setCatatan(e.target.value); setErrors({}); }}
                   error={!!errors.catatan} helperText={errors.catatan}

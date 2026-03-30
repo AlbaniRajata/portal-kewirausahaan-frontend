@@ -74,6 +74,11 @@ const initFilters = {
   juri: { search: "", is_active: "" },
 };
 
+const truncateWithEllipsis = (text, max = 42) => {
+  if (!text) return "";
+  return text.length > max ? `${text.slice(0, max)}...` : text;
+};
+
 export default function KelolaPenggunaPage() {
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -365,12 +370,28 @@ export default function KelolaPenggunaPage() {
     if (tabKey === "mahasiswa") {
       cells.push(<TableCell key="nim"><Typography sx={{ fontSize: 13 }}>{user.nim}</Typography></TableCell>);
       cells.push(<TableCell key="email"><Typography sx={{ fontSize: 13 }}>{user.email}</Typography></TableCell>);
-      cells.push(<TableCell key="prodi"><Typography sx={{ fontSize: 13 }}>{user.jenjang} {user.nama_prodi}</Typography></TableCell>);
+      cells.push(
+        <TableCell key="prodi" sx={{ width: 220, maxWidth: 220 }}>
+          <Tooltip title={`${user.jenjang || ""} ${user.nama_prodi || ""}`.trim()}>
+            <Typography sx={{ fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", display: "block" }}>
+              {user.jenjang} {user.nama_prodi}
+            </Typography>
+          </Tooltip>
+        </TableCell>
+      );
       cells.push(<TableCell key="tahun"><Typography sx={{ fontSize: 13 }}>{user.tahun_masuk}</Typography></TableCell>);
     } else if (tabKey === "dosen") {
       cells.push(<TableCell key="nip"><Typography sx={{ fontSize: 13 }}>{user.nip}</Typography></TableCell>);
       cells.push(<TableCell key="email"><Typography sx={{ fontSize: 13 }}>{user.email}</Typography></TableCell>);
-      cells.push(<TableCell key="prodi"><Typography sx={{ fontSize: 13 }}>{user.jenjang} {user.nama_prodi}</Typography></TableCell>);
+      cells.push(
+        <TableCell key="prodi" sx={{ width: 220, maxWidth: 220 }}>
+          <Tooltip title={`${user.jenjang || ""} ${user.nama_prodi || ""}`.trim()}>
+            <Typography sx={{ fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", display: "block" }}>
+              {user.jenjang} {user.nama_prodi}
+            </Typography>
+          </Tooltip>
+        </TableCell>
+      );
       cells.push(<TableCell key="keahlian"><Typography sx={{ fontSize: 13 }}>{user.bidang_keahlian || "-"}</Typography></TableCell>);
     } else {
       cells.push(<TableCell key="email"><Typography sx={{ fontSize: 13 }}>{user.email}</Typography></TableCell>);
@@ -452,7 +473,24 @@ export default function KelolaPenggunaPage() {
             <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Program Studi <span style={{ color: "#ef5350" }}>*</span></Typography>
             <TextField select fullWidth value={currentForm.id_prodi || ""}
               onChange={(e) => { setForm({ ...currentForm, id_prodi: e.target.value }); setErrors((prev) => ({ ...prev, id_prodi: "" })); }}
-              error={!!errors.id_prodi} helperText={errors.id_prodi} sx={roundedField}>
+              SelectProps={{
+                displayEmpty: true,
+                renderValue: (selected) => {
+                  if (!selected) return "Pilih prodi";
+                  const selectedProdi = prodiList.find((p) => String(p.id_prodi) === String(selected));
+                  const fullLabel = selectedProdi ? `${selectedProdi.jenjang} ${selectedProdi.nama_prodi}` : "Pilih prodi";
+                  return truncateWithEllipsis(fullLabel, 42);
+                },
+              }}
+              error={!!errors.id_prodi} helperText={errors.id_prodi}
+              sx={{
+                ...roundedField,
+                "& .MuiSelect-select": {
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                },
+              }}>
               <MenuItem value="" disabled>Pilih prodi</MenuItem>
               {prodiList.map((p) => <MenuItem key={p.id_prodi} value={p.id_prodi}>{p.jenjang} {p.nama_prodi}</MenuItem>)}
             </TextField>

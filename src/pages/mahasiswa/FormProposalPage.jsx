@@ -157,7 +157,7 @@ export default function ProposalFormPage() {
     } catch {
       await Swal.fire({
         icon: "error", title: "Gagal Memuat",
-        text: "Gagal memuat status proposal. Silakan refresh halaman.",
+        text: "Gagal memuat status proposal. Silahkan refresh halaman.",
         confirmButtonText: "OK",
       });
     } finally {
@@ -334,7 +334,7 @@ export default function ProposalFormPage() {
             <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>Lengkapi form di bawah ini untuk mendaftarkan proposal Anda</Typography>
             <Box sx={{ p: 2, borderRadius: "12px", backgroundColor: "#fff8e1", border: "1px solid #ffe082" }}>
               <Typography sx={{ fontSize: 14, color: "#f57f17", fontWeight: 500 }}>
-                Anda belum terdaftar dalam tim. Silakan ajukan anggota tim terlebih dahulu.
+                Anda belum terdaftar dalam tim. Silahkan ajukan anggota tim terlebih dahulu.
               </Typography>
             </Box>
           </Box>

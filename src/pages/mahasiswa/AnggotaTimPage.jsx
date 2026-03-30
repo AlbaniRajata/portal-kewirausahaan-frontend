@@ -124,7 +124,7 @@ export default function AnggotaTimPage() {
     } catch {
       await Swal.fire({
         icon: "error", title: "Gagal Memuat",
-        text: "Gagal memuat status tim. Silakan refresh halaman.",
+        text: "Gagal memuat status tim. Silahkan refresh halaman.",
         confirmButtonText: "OK",
       });
     } finally {
@@ -146,7 +146,7 @@ export default function AnggotaTimPage() {
         await Swal.fire({
           icon: "error",
           title: "Gagal Memuat",
-          text: "Gagal memuat opsi program. Silakan refresh halaman.",
+          text: "Gagal memuat opsi program. Silahkan refresh halaman.",
         });
     } finally {
       setLoadingProgram(false);

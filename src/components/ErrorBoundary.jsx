@@ -33,7 +33,7 @@ export default class ErrorBoundary extends Component {
             Terjadi Kesalahan
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Maaf, terjadi kesalahan yang tidak terduga. Silakan muat ulang halaman.
+            Maaf, terjadi kesalahan yang tidak terduga. Silahkan muat ulang halaman.
           </Typography>
           <Button variant="contained" onClick={() => window.location.reload()}>
             Muat Ulang

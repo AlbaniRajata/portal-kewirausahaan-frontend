@@ -65,7 +65,7 @@ export default function PenugasanPage() {
         await Swal.fire({ icon: "warning", title: "Peringatan", text: response.message || "Gagal memuat daftar penugasan", confirmButtonText: "OK" });
       }
     } catch {
-      await Swal.fire({ icon: "error", title: "Gagal Memuat", text: "Gagal memuat daftar penugasan. Silakan refresh halaman.", confirmButtonText: "OK" });
+      await Swal.fire({ icon: "error", title: "Gagal Memuat", text: "Gagal memuat daftar penugasan. Silahkan refresh halaman.", confirmButtonText: "OK" });
     } finally {
       setLoading(false);
     }
@@ -101,7 +101,7 @@ export default function PenugasanPage() {
   const handleCloseReject = () => { setRejectDialog({ open: false, penugasan: null }); setCatatan(""); setErrors({}); };
 
   const handleReject = async () => {
-    if (!catatan || catatan.trim().length < 10) { setErrors({ catatan: "Catatan penolakan minimal 10 karakter" }); return; }
+    if (!catatan || catatan.trim().length < 5) { setErrors({ catatan: "Catatan penolakan minimal 5 karakter" }); return; }
     setRejectDialog((prev) => ({ ...prev, open: false }));
     const result = await Swal.fire({
       title: "Konfirmasi", html: `Tolak penugasan untuk proposal:<br/><br/><b>${rejectDialog.penugasan.judul}</b>?`,
@@ -245,7 +245,7 @@ export default function PenugasanPage() {
               </Box>
               <Box>
                 <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Catatan Penolakan <span style={{ color: "#ef5350" }}>*</span></Typography>
-                <TextField fullWidth multiline rows={4} placeholder="Masukkan alasan penolakan (minimal 10 karakter)..." value={catatan}
+                <TextField fullWidth multiline rows={4} placeholder="Masukkan catatan penolakan (minimal 5 karakter)..." value={catatan}
                   onChange={(e) => { setCatatan(e.target.value); setErrors({}); }} error={!!errors.catatan} helperText={errors.catatan}
                   sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }} />
               </Box>

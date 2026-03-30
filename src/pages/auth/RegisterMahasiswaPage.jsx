@@ -1,14 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Box, Divider, Paper, TextField, Typography,
   Autocomplete, CircularProgress, IconButton, InputAdornment,
+  Dialog, DialogContent,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
 import loginBg from "../../assets/images/login-bg.jpg";
-import { registerMahasiswa } from "../../api/auth";
+import { registerMahasiswa, verifyEmailKode, resendVerificationKode, cancelRegistrasi } from "../../api/auth";
 import api from "../../api/axios";
 
 const poppins = "'Poppins', sans-serif";
@@ -35,10 +36,26 @@ export default function RegisterMahasiswaPage() {
   const [imagePreview, setImagePreview] = useState(null);
   const [mounted, setMounted] = useState(false);
 
+  const [openVerifikasi, setOpenVerifikasi] = useState(false);
+  const [verifikasiData, setVerifikasiData] = useState({ id_user: null, email: "" });
+  const [kode, setKode] = useState(["", "", "", "", "", ""]);
+  const [verifyError, setVerifyError] = useState("");
+  const [loadingVerifikasi, setLoadingVerifikasi] = useState(false);
+  const [resendEmailError, setResendEmailError] = useState("");
+  const [resending, setResending] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const inputRefs = useRef([]);
+
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 50);
     return () => clearTimeout(t);
   }, []);
+
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const timer = setInterval(() => setCountdown((prev) => prev - 1), 1000);
+    return () => clearInterval(timer);
+  }, [countdown]);
 
   useEffect(() => {
     const fetchProdi = async () => {
@@ -57,8 +74,7 @@ export default function RegisterMahasiswaPage() {
       } catch {
         await Swal.fire({
           icon: "error", title: "Gagal Memuat Data",
-          text: "Gagal memuat data program studi. Silakan refresh halaman.",
-          confirmButtonColor: "#0D59F2",
+          text: "Gagal memuat data program studi. Silahkan refresh halaman.",
         });
       } finally {
         setLoadingProdi(false);
@@ -75,7 +91,6 @@ export default function RegisterMahasiswaPage() {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     const allowedFormats = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
     if (!allowedFormats.includes(file.type)) {
       setErrors((prev) => ({ ...prev, foto_ktm: "Format file harus JPG, JPEG, PNG, atau PDF" }));
@@ -85,9 +100,7 @@ export default function RegisterMahasiswaPage() {
       setErrors((prev) => ({ ...prev, foto_ktm: "Ukuran file maksimal 10MB" }));
       return;
     }
-
     handleChange("foto_ktm", file);
-
     if (file.type.startsWith("image/")) {
       const reader = new FileReader();
       reader.onloadend = () => setImagePreview(reader.result);
@@ -113,25 +126,6 @@ export default function RegisterMahasiswaPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleVerifyEmail = async (token) => {
-    try {
-      const response = await api.get(`/auth/verify-email?token=${token}`);
-      await Swal.fire({
-        icon: "success", title: "Email Berhasil Diverifikasi",
-        text: response.data.message || "Email Anda telah berhasil diverifikasi. Silakan tunggu verifikasi dari admin.",
-        timer: 3000, timerProgressBar: true,
-        showConfirmButton: true, confirmButtonText: "Menuju Login", allowOutsideClick: false,
-      });
-      navigate("/login");
-    } catch (err) {
-      await Swal.fire({
-        icon: "error", title: "Verifikasi Gagal",
-        text: err.response?.data?.message || "Token tidak valid atau sudah kadaluarsa",
-        confirmButtonColor: "#0D59F2", confirmButtonText: "OK",
-      });
-    }
-  };
-
   const handleSubmit = async () => {
     if (!validate()) return;
     setLoading(true);
@@ -147,43 +141,128 @@ export default function RegisterMahasiswaPage() {
 
       const response = await registerMahasiswa(formData);
       if (response.success) {
-        let token = null;
-        try {
-          const verificationLink = response.data?.verification_link;
-          if (verificationLink) {
-            token = new URL(verificationLink).searchParams.get("token");
-          }
-        } catch {
-          token = null;
-        }
-
-        if (token) {
-          const result = await Swal.fire({
-            icon: "success", title: "Registrasi Berhasil",
-            html: `<p>Akun Anda telah berhasil didaftarkan.</p><p style="color:#666;font-size:14px;">Silakan verifikasi email Anda terlebih dahulu.</p>`,
-            showCancelButton: false, confirmButtonText: "Verifikasi Email",
-            confirmButtonColor: "#0D59F2", allowOutsideClick: false,
-          });
-          if (result.isConfirmed) await handleVerifyEmail(token);
-        } else {
-          await Swal.fire({
-            icon: "success", title: "Registrasi Berhasil",
-            html: `<p>Akun Anda telah berhasil didaftarkan.</p><p style="color:#666;font-size:14px;">Silakan cek email Anda untuk melakukan verifikasi.</p>`,
-            confirmButtonText: "Menuju Login",
-            confirmButtonColor: "#0D59F2", allowOutsideClick: false,
-            timer: 5000, timerProgressBar: true,
-          });
-          navigate("/login");
-        }
+        setVerifikasiData({
+          id_user: response.data.user.id_user,
+          email: response.data.user.email,
+        });
+        setKode(["", "", "", "", "", ""]);
+        setVerifyError("");
+        setCountdown(60);
+        setOpenVerifikasi(true);
+        setTimeout(() => inputRefs.current[0]?.focus(), 300);
       }
     } catch (err) {
-      const errorMessage = err.response?.data?.message || "Registrasi gagal. Silakan coba lagi.";
+      const errorMessage = err.response?.data?.message || "Registrasi gagal. Silahkan coba lagi.";
       await Swal.fire({
         icon: "error", title: "Registrasi Gagal",
-        text: errorMessage, confirmButtonColor: "#0D59F2", confirmButtonText: "OK",
+        text: errorMessage, confirmButtonText: "OK",
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleKodeChange = (index, value) => {
+    if (!/^\d?$/.test(value)) return;
+    setVerifyError("");
+    const updated = [...kode];
+    updated[index] = value;
+    setKode(updated);
+    if (value && index < 5) inputRefs.current[index + 1]?.focus();
+  };
+
+  const handleKodeKeyDown = (index, e) => {
+    if (e.key === "Backspace" && !kode[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+    if (e.key === "Enter") handleVerifikasi();
+  };
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    setVerifyError("");
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (!pasted) return;
+    const updated = ["", "", "", "", "", ""];
+    for (let i = 0; i < pasted.length; i++) updated[i] = pasted[i];
+    setKode(updated);
+    const nextEmpty = pasted.length < 6 ? pasted.length : 5;
+    inputRefs.current[nextEmpty]?.focus();
+  };
+
+  const handleVerifikasi = async () => {
+    const kodeStr = kode.join("");
+    if (kodeStr.length !== 6) {
+      setVerifyError("Masukkan 6 digit kode verifikasi.");
+      return;
+    }
+    setVerifyError("");
+    setLoadingVerifikasi(true);
+    try {
+      await verifyEmailKode({ id_user: verifikasiData.id_user, kode: kodeStr });
+      setOpenVerifikasi(false);
+      await Swal.fire({
+        icon: "success", title: "Email Terverifikasi",
+        text: "Email Anda berhasil diverifikasi. Silahkan tunggu verifikasi dari admin.",
+        confirmButtonText: "Menuju Login",
+        confirmButtonFontWeight: "500",
+        allowOutsideClick: false,
+      });
+      navigate("/login");
+    } catch (err) {
+      const message = err.response?.data?.message || "Kode tidak valid atau sudah kadaluarsa.";
+      setVerifyError(message);
+    } finally {
+      setLoadingVerifikasi(false);
+    }
+  };
+
+  const handleTulisUlangEmail = async () => {
+    setLoadingVerifikasi(true);
+    try {
+      await cancelRegistrasi({ id_user: verifikasiData.id_user });
+    } catch (err) {
+      await Swal.fire({
+        icon: "error", title: "Gagal Membatalkan Registrasi",
+        text: err.response?.data?.message || "Terjadi kesalahan. Silahkan coba lagi.",
+      });
+    } finally {
+      setLoadingVerifikasi(false);
+      setOpenVerifikasi(false);
+      setKode(["", "", "", "", "", ""]);
+      setVerifikasiData({ id_user: null, email: "" });
+    }
+  };
+
+  const handleResend = async () => {
+    if (countdown > 0 || resending) return;
+
+    setResending(true);
+    setResendEmailError("");
+    try {
+      const targetEmail = verifikasiData.email;
+      if (!targetEmail || !targetEmail.includes("@")) {
+        setResendEmailError("Email verifikasi tidak valid");
+        return;
+      }
+
+      await resendVerificationKode(targetEmail);
+
+      setCountdown(60);
+      setKode(["", "", "", "", "", ""]);
+      setResendEmailError("");
+      setTimeout(() => inputRefs.current[0]?.focus(), 200);
+    } catch (err) {
+      const message = err.response?.data?.message || "Gagal mengirim ulang kode.";
+      const cooldownMatch = message.match(/(\d+)\s*detik/i);
+      if (cooldownMatch) {
+        setCountdown(Number(cooldownMatch[1]));
+        setResendEmailError("");
+      } else {
+        setResendEmailError(message);
+      }
+    } finally {
+      setResending(false);
     }
   };
 
@@ -200,7 +279,6 @@ export default function RegisterMahasiswaPage() {
 
   return (
     <Box sx={{ minHeight: "100vh", display: "flex", overflow: "hidden" }}>
-
       <Box sx={{
         flex: 1, position: "sticky", top: 0, height: "100vh",
         display: { xs: "none", md: "flex" }, flexDirection: "column",
@@ -280,7 +358,6 @@ export default function RegisterMahasiswaPage() {
         transition: "transform 0.7s cubic-bezier(0.22,1,0.36,1), opacity 0.7s ease",
       }}>
         <Paper elevation={0} sx={{ width: "100%", maxWidth: 540, p: { xs: 3, md: 4 } }}>
-
           <Box sx={{
             transform: mounted ? "translateY(0)" : "translateY(20px)",
             opacity: mounted ? 1 : 0,
@@ -388,7 +465,7 @@ export default function RegisterMahasiswaPage() {
                 "&:hover": { borderColor: "#0D59F2", color: "#0D59F2", backgroundColor: "rgba(13,89,242,0.03)" },
               }}
             >
-              {form.foto_ktm ? ` ${form.foto_ktm.name}` : "Pilih File KTM (JPG/PNG/PDF, maks 10MB)"}
+              {form.foto_ktm ? form.foto_ktm.name : "Pilih File KTM (JPG/PNG/PDF, maks 10MB)"}
               <input type="file" hidden accept="image/jpeg,image/jpg,image/png,application/pdf" onChange={handleFileChange} />
             </Box>
 
@@ -412,13 +489,10 @@ export default function RegisterMahasiswaPage() {
             )}
 
             <Box
-              component="button"
-              onClick={handleSubmit}
-              disabled={loading}
+              component="button" onClick={handleSubmit} disabled={loading}
               sx={{
                 width: "100%", py: 1.6, mt: 1, borderRadius: "15px",
-                fontWeight: 700, fontSize: 15, border: "none",
-                fontFamily: poppins,
+                fontWeight: 700, fontSize: 15, border: "none", fontFamily: poppins,
                 backgroundColor: loading ? "#93b8fa" : "#0D59F2",
                 color: "#fff", cursor: loading ? "not-allowed" : "pointer",
                 transition: "all 0.25s ease",
@@ -438,13 +512,10 @@ export default function RegisterMahasiswaPage() {
             </Divider>
 
             <Box
-              component="button"
-              onClick={() => navigate("/login")}
-              disabled={loading}
+              component="button" onClick={() => navigate("/login")} disabled={loading}
               sx={{
                 width: "100%", py: 1.6, borderRadius: "15px",
-                fontWeight: 700, fontSize: 15,
-                fontFamily: poppins,
+                fontWeight: 700, fontSize: 15, fontFamily: poppins,
                 border: "1.5px solid #e0e0e0",
                 backgroundColor: "transparent", color: "#0a0a0a",
                 cursor: loading ? "not-allowed" : "pointer",
@@ -460,6 +531,136 @@ export default function RegisterMahasiswaPage() {
           </Box>
         </Paper>
       </Box>
+
+      <Dialog
+        open={openVerifikasi}
+        onClose={() => {}}
+        maxWidth="xs" fullWidth
+        PaperProps={{ sx: { borderRadius: "20px", p: 1 } }}
+      >
+        <DialogContent sx={{ px: 3, py: 4 }}>
+          <Box sx={{ textAlign: "center", mb: 3 }}>
+            <Box sx={{
+              width: 60, height: 60, borderRadius: "16px",
+              background: "linear-gradient(135deg, #0D59F2, #1e40af)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              mx: "auto", mb: 2, fontSize: 26,
+            }}>
+              ✉️
+            </Box>
+            <Typography sx={{ fontFamily: poppins, fontSize: 20, fontWeight: 800, color: "#0a0a0a", mb: 1 }}>
+              Verifikasi Email
+            </Typography>
+            <Typography sx={{ fontFamily: poppins, fontSize: 13, color: "#888", lineHeight: 1.7 }}>
+              Kode verifikasi telah dikirim ke
+            </Typography>
+            <Typography sx={{ fontFamily: poppins, fontSize: 13, fontWeight: 700, color: "#0D59F2" }}>
+              {verifikasiData.email}
+            </Typography>
+            <Typography sx={{ fontFamily: poppins, fontSize: 12, color: "#aaa", mt: 0.5 }}>
+              Kode berlaku selama 15 menit
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: "flex", gap: 1, justifyContent: "center", mb: 3 }}>
+            {kode.map((digit, index) => (
+              <TextField
+                key={index}
+                inputRef={(el) => (inputRefs.current[index] = el)}
+                value={digit}
+                onChange={(e) => handleKodeChange(index, e.target.value)}
+                onKeyDown={(e) => handleKodeKeyDown(index, e)}
+                onPaste={index === 0 ? handlePaste : undefined}
+                disabled={loadingVerifikasi}
+                inputProps={{
+                  maxLength: 1,
+                  style: {
+                    textAlign: "center", fontSize: 22,
+                    fontWeight: 700, fontFamily: poppins, padding: "10px 0",
+                  },
+                }}
+                sx={{
+                  width: 46,
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "12px",
+                    backgroundColor: digit ? "#f0f4ff" : "#fafafa",
+                    "& fieldset": {
+                      borderColor: digit ? "#0D59F2" : "#e0e0e0",
+                      borderWidth: digit ? 2 : 1,
+                    },
+                    "&:hover fieldset": { borderColor: "#0D59F2" },
+                    "&.Mui-focused fieldset": { borderColor: "#0D59F2", borderWidth: 2 },
+                  },
+                }}
+              />
+            ))}
+          </Box>
+
+          {!!verifyError && (
+            <Typography sx={{ fontFamily: poppins, fontSize: 12, color: "#e53935", textAlign: "center", mb: 2 }}>
+              {verifyError}
+            </Typography>
+          )}
+
+          <Box
+            component="button" onClick={handleVerifikasi} disabled={loadingVerifikasi}
+            sx={{
+              width: "100%", py: 1.5, borderRadius: "14px",
+              fontWeight: 700, fontSize: 15, border: "none", fontFamily: poppins,
+              backgroundColor: loadingVerifikasi ? "#93b8fa" : "#0D59F2",
+              color: "#fff", cursor: loadingVerifikasi ? "not-allowed" : "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 1,
+              transition: "all 0.25s ease", mb: 2,
+              "&:hover": !loadingVerifikasi ? {
+                backgroundColor: "#0846c7",
+                transform: "translateY(-1px)",
+                boxShadow: "0 6px 20px rgba(13,89,242,0.3)",
+              } : {},
+            }}
+          >
+            {loadingVerifikasi ? (
+              <><CircularProgress size={16} sx={{ color: "#fff" }} />Memverifikasi...</>
+            ) : "Verifikasi"}
+          </Box>
+
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+            <Box
+              component="button" onClick={handleResend}
+              disabled={countdown > 0 || loadingVerifikasi || resending}
+              sx={{
+                background: "transparent", border: "none",
+                fontFamily: poppins, fontSize: 13, fontWeight: 600,
+                color: countdown > 0 || loadingVerifikasi || resending ? "#bbb" : "#0D59F2",
+                cursor: countdown > 0 || loadingVerifikasi || resending ? "not-allowed" : "pointer",
+                transition: "color 0.2s",
+                "&:hover": countdown === 0 && !loadingVerifikasi && !resending ? { color: "#0846c7" } : {},
+              }}
+            >
+              {resending ? "Mengirim ulang..." : `Kirim ulang kode${countdown > 0 ? ` dalam ${countdown} detik` : ""}`}
+            </Box>
+
+            {!!resendEmailError && (
+              <Typography sx={{ fontFamily: poppins, fontSize: 12, color: "#e53935", textAlign: "center" }}>
+                {resendEmailError}
+              </Typography>
+            )}
+
+            <Box
+              component="button" onClick={handleTulisUlangEmail} disabled={loadingVerifikasi}
+              sx={{
+                background: "transparent", border: "none",
+                fontFamily: poppins, fontSize: 13, fontWeight: 600,
+                color: loadingVerifikasi ? "#bbb" : "#e53935",
+                cursor: loadingVerifikasi ? "not-allowed" : "pointer",
+                transition: "color 0.2s",
+                "&:hover": !loadingVerifikasi ? { color: "#c62828" } : {},
+              }}
+            >
+              Salah email? Batalkan registrasi & isi ulang email
+            </Box>
+          </Box>
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }

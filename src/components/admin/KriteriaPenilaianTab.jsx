@@ -193,7 +193,7 @@ export default function KriteriaPenilaianTab({ id_program }) {
     return (
       <Box sx={{ p: 2, borderRadius: "10px", backgroundColor: "#e3f2fd", border: "1px solid #90caf9" }}>
         <Typography sx={{ fontSize: 13, color: "#1565c0" }}>
-          Belum ada tahap penilaian. Silakan buat tahap terlebih dahulu di tab Tahap Penilaian.
+          Belum ada tahap penilaian. Silahkan buat tahap terlebih dahulu di tab Tahap Penilaian.
         </Typography>
       </Box>
     );

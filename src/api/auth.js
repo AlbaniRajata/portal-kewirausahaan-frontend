@@ -23,3 +23,18 @@ export const logoutUser = async (refreshToken) => {
   const res = await api.post("/auth/logout", { refresh_token: refreshToken });
   return res.data;
 };
+
+export const verifyEmailKode = async (payload) => {
+  const res = await api.post("/auth/verify-email", payload);
+  return res.data;
+};
+
+export const resendVerificationKode = async (email) => {
+  const res = await api.post("/auth/resend-verification", { email });
+  return res.data;
+};
+
+export const cancelRegistrasi = async (payload) => {
+  const res = await api.post("/auth/cancel-registration", payload);
+  return res.data;
+};

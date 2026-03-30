@@ -260,7 +260,7 @@ export default function DetailBimbinganDosenPage() {
             <Paper sx={{ p: 4, mb: 3, borderRadius: "16px", border: "1px solid #f0f0f0" }}>
               <Typography sx={{ fontSize: 20, fontWeight: 700, mb: 3 }}>Catatan Penolakan</Typography>
               <Box sx={{ p: 2.5, backgroundColor: "#fce4ec", borderRadius: "12px", border: "1px solid #ef9a9a" }}>
-                <Typography sx={{ fontSize: 12, color: "#c62828", fontWeight: 700, mb: 0.5 }}>Alasan Penolakan</Typography>
+                <Typography sx={{ fontSize: 12, color: "#c62828", fontWeight: 700, mb: 0.5 }}>Catatan Penolakan</Typography>
                 <Typography sx={{ fontSize: 14, lineHeight: 1.7 }}>{bimbingan.catatan_dosen}</Typography>
               </Box>
             </Paper>

@@ -15,3 +15,58 @@ body,
 * {
   box-sizing: border-box;
 }
+
+.swal-pmw-popup {
+  border-radius: 20px !important;
+  border: 1px solid #e8ecff !important;
+  box-shadow: 0 14px 40px rgba(13, 89, 242, 0.16) !important;
+  font-family: "Poppins", sans-serif !important;
+  padding: 1.4rem 1.2rem 1.2rem !important;
+}
+
+.swal-pmw-title {
+  font-family: "Poppins", sans-serif !important;
+  font-size: 22px !important;
+  font-weight: 800 !important;
+  color: #0a0a0a !important;
+}
+
+.swal-pmw-html {
+  font-family: "Poppins", sans-serif !important;
+  font-size: 14px !important;
+  color: #6b7280 !important;
+  line-height: 1.7 !important;
+}
+
+.swal-pmw-actions {
+  gap: 10px;
+}
+
+.swal-pmw-confirm,
+.swal-pmw-cancel {
+  border: none !important;
+  border-radius: 14px !important;
+  font-family: "Poppins", sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 14px !important;
+  padding: 0.72rem 1.25rem !important;
+  transition: all 0.2s ease;
+}
+
+.swal-pmw-confirm {
+  background-color: #0d59f2 !important;
+  color: #fff !important;
+}
+
+.swal-pmw-confirm:hover {
+  background-color: #0846c7 !important;
+}
+
+.swal-pmw-cancel {
+  background-color: #eef2ff !important;
+  color: #0d59f2 !important;
+}
+
+.swal-pmw-cancel:hover {
+  background-color: #e1e9ff !important;
+}

@@ -24,7 +24,7 @@ export default function ServerErrorPage() {
         Terjadi Kesalahan Server
       </Typography>
       <Typography variant="body1" color="text.secondary">
-        Maaf, terjadi kesalahan pada server. Silakan coba beberapa saat lagi.
+        Maaf, terjadi kesalahan pada server. Silahkan coba beberapa saat lagi.
       </Typography>
       <Box sx={{ display: "flex", gap: 2 }}>
         <Button variant="outlined" onClick={() => window.location.reload()}>

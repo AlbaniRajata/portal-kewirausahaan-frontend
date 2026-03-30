@@ -16,6 +16,7 @@ import "@fontsource/poppins/600.css";
 import "@fontsource/poppins/700.css";
 
 import "./index.css";
+import "./utils/configureSwal";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>

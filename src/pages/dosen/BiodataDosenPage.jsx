@@ -94,7 +94,7 @@ export default function BiodataDosenPage() {
         setImagePreview(`${baseUrl}/uploads/profil/${response.data.foto}`);
       }
     } catch {
-      Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat profil. Silakan refresh halaman.", confirmButtonText: "OK" });
+      Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat profil. Silahkan refresh halaman.", confirmButtonText: "OK" });
     } finally {
       setLoading(false);
     }
