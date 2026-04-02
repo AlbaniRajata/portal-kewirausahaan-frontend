@@ -3,7 +3,7 @@ import {
   Box, Typography, Button, CircularProgress, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, TextField, Paper,
 } from "@mui/material";
-import { AttachFile } from "@mui/icons-material";
+import { AttachFile, ArrowBack } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
@@ -112,8 +112,9 @@ export default function ProposalDetailPage() {
           <Box sx={{ display: "flex", alignItems: "center", mb: 0.5, gap: 1 }}>
             <Button size="small"
               onClick={() => navigate("/admin/proposal")}
+              startIcon={<ArrowBack />}
               sx={{ textTransform: "none", borderRadius: "50px", fontSize: 13, color: "#888", p: 0, minWidth: 0, "&:hover": { backgroundColor: "transparent", color: "#0D59F2" } }}>
-              Kembali
+              Kembali ke Daftar Proposal
             </Button>
           </Box>
           <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Detail Proposal</Typography>
@@ -234,7 +235,7 @@ export default function ProposalDetailPage() {
               onClick={() => navigate("/admin/proposal")}
               sx={{ textTransform: "none", borderRadius: "50px", px: 4, py: 1.2, fontWeight: 600, backgroundColor: "#FDB022", "&:hover": { backgroundColor: "#e09a1a" } }}
             >
-              Kembali
+              Kembali ke Daftar Proposal
             </Button>
           </Box>
         </Box>

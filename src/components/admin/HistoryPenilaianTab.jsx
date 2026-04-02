@@ -127,7 +127,6 @@ export default function HistoryPenilaianTab({ id_program }) {
                   <TableCell sx={tableHeadCell}>Kategori</TableCell>
                   {tahap === 1 ? (
                     <>
-                      <TableCell sx={tableHeadCell}>Rata-rata Nilai</TableCell>
                     </>
                   ) : (
                     <>
@@ -156,11 +155,6 @@ export default function HistoryPenilaianTab({ id_program }) {
 
                     {tahap === 1 ? (
                       <>
-                        <TableCell>
-                          <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#0D59F2" }}>
-                            {p.rata_rata_nilai ?? "-"}
-                          </Typography>
-                        </TableCell>
                       </>
                     ) : (
                       <>

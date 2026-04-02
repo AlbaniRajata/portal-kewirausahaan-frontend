@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { Box, Paper, Tabs, Tab, CircularProgress, Button, Divider } from "@mui/material";
+import { ArrowBack } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import ReviewerSidebar from "../../components/layouts/ReviewerSidebar";
@@ -119,6 +120,7 @@ export default function PenugasanDetailPage() {
         <Box>
           <Button
             onClick={() => navigate("/reviewer/penugasan")}
+            startIcon={<ArrowBack />}
             sx={{
               borderRadius: "50px",
               textTransform: "none", color: "#777", fontSize: 13,
@@ -181,30 +183,32 @@ export default function PenugasanDetailPage() {
                   Kembali
                 </Button>
                 <Button
-                  variant="outlined"
+                  variant="contained"
                   onClick={formActions.handleSimpanDraft}
                   disabled={formActions.saving || formActions.submitting}
                   sx={{
                     textTransform: "none", borderRadius: "50px",
                     px: 3, py: 1.2, fontWeight: 600,
-                    borderColor: "#0D59F2", color: "#0D59F2",
-                    "&:hover": { backgroundColor: "#f0f4ff" },
+                    backgroundColor: "#0D59F2", color: "#fff",
+                    "&:hover": { backgroundColor: "#0a47c4" },
                   }}
                 >
-                  {formActions.saving ? "Menyimpan..." : "Simpan Draft"}
+                  {formActions.saving ? "Menyimpan..." : "Simpan"}
                 </Button>
-                <Button
-                  variant="contained"
-                  onClick={formActions.handleSubmit}
-                  disabled={formActions.saving || formActions.submitting}
-                  sx={{
-                    textTransform: "none", borderRadius: "50px",
-                    px: 3, py: 1.2, fontWeight: 600,
-                    backgroundColor: "#2e7d32", "&:hover": { backgroundColor: "#1b5e20" },
-                  }}
-                >
-                  {formActions.submitting ? "Memproses..." : "Submit Penilaian"}
-                </Button>
+                {formActions.canSubmit && (
+                  <Button
+                    variant="contained"
+                    onClick={formActions.handleSubmit}
+                    disabled={formActions.saving || formActions.submitting}
+                    sx={{
+                      textTransform: "none", borderRadius: "50px",
+                      px: 3, py: 1.2, fontWeight: 600,
+                      backgroundColor: "#2e7d32", "&:hover": { backgroundColor: "#1b5e20" },
+                    }}
+                  >
+                    {formActions.submitting ? "Memproses..." : "Simpan dan Ajukan"}
+                  </Button>
+                )}
               </>
             )}
             {!(activeTab === 1 && formActions && !formActions.isSubmitted) && (
@@ -217,7 +221,7 @@ export default function PenugasanDetailPage() {
                   backgroundColor: "#FDB022", "&:hover": { backgroundColor: "#e09a1a" },
                 }}
               >
-                Kembali
+                Kembali ke Daftar Penugasan
               </Button>
             )}
           </Box>

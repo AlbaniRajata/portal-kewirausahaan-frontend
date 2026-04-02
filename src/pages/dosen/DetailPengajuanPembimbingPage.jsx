@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import {
   AttachFile,
+  ArrowBack,
 } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom";
 import Swal from "sweetalert2";
@@ -126,6 +127,7 @@ export default function DetailPengajuanPembimbingPage() {
         <Box>
           <Button
             onClick={() => navigate("/dosen/pembimbing/pengajuan")}
+            startIcon={<ArrowBack />}
             sx={{ textTransform: "none", borderRadius: "50px", color: "#777", fontSize: 13, fontWeight: 500, p: 0, mb: 2, minWidth: 0, "&:hover": { backgroundColor: "transparent", color: "#0D59F2" } }}
           >
             Kembali ke Daftar Pengajuan

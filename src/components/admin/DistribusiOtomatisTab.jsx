@@ -55,7 +55,8 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
   const handleExecute = async () => {
     const confirmText = tahap === 1
       ? `Anda akan mendistribusikan <b>${preview.total_proposal}</b> proposal ke <b>${preview.total_reviewer}</b> reviewer secara otomatis.<br/><br/>Lanjutkan?`
-      : `Anda akan mendistribusikan sisa distribusi untuk <b>${preview.total_proposal}</b> proposal ke:<br/>- Reviewer: <b>${preview.distribusi_sisa_reviewer ?? preview.distribusi_reviewer}</b> sisa<br/>- Juri: <b>${preview.distribusi_sisa_juri ?? preview.distribusi_juri}</b> sisa<br/><br/>Total sisa: <b>${preview.distribusi_sisa_total ?? preview.distribusi_total}</b> distribusi<br/><br/>Lanjutkan?`;
+      : `Anda akan mendistribusikan <b>${preview.belum_terdistribusi}</b> proposal yang belum memiliki pasangan panel.<br/><br/>
+         Sistem akan memakai <b>${preview.jumlah_pasang}</b> pasang unik (reviewer + juri) terlebih dahulu, lalu mengulang pasangan jika masih ada sisa proposal.<br/><br/>Lanjutkan?`;
 
     const result = await Swal.fire({
       title: "Konfirmasi Distribusi", html: confirmText, icon: "question",
@@ -68,7 +69,10 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
     try {
       setExecuting(true);
       await (tahap === 1 ? executeAutoDistribusi(id_program, tahap) : executeAutoDistribusiTahap2(id_program));
-      await Swal.fire({ icon: "success", title: "Berhasil", text: "Distribusi berhasil dieksekusi", timer: 2000, timerProgressBar: true, showConfirmButton: false });
+      await Swal.fire({
+        icon: "success", title: "Berhasil", text: "Distribusi berhasil dieksekusi",
+        timer: 2000, timerProgressBar: true, showConfirmButton: false,
+      });
       if (onSuccess) onSuccess("Distribusi berhasil dieksekusi");
       fetchPreview();
     } catch (err) {
@@ -102,8 +106,11 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
     );
   }
 
+  const semuaSudahTerdistribusi = tahap === 2 && preview.belum_terdistribusi === 0;
+
   return (
     <Box>
+      {/* Stat Cards */}
       <Box sx={{ display: "grid", gridTemplateColumns: tahap === 1 ? "repeat(3, 1fr)" : "repeat(4, 1fr)", gap: 2, mb: 3 }}>
         {tahap === 1 ? (
           <>
@@ -114,9 +121,9 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
         ) : (
           <>
             <StatCard label="Total Proposal" value={preview.total_proposal} color="#0D59F2" bg="#E3F2FD" />
-            <StatCard label="Reviewer" value={preview.total_reviewer} color="#9C27B0" bg="#F3E5F5" />
-            <StatCard label="Juri" value={preview.total_juri} color="#FF9800" bg="#FFF3E0" />
-            <StatCard label="Sisa Distribusi" value={preview.distribusi_sisa_total ?? preview.distribusi_total} color="#4CAF50" bg="#E8F5E9" />
+            <StatCard label="Sudah Berpasangan" value={preview.sudah_terdistribusi} color="#4CAF50" bg="#E8F5E9" />
+            <StatCard label="Belum Berpasangan" value={preview.belum_terdistribusi} color="#F44336" bg="#FFEBEE" />
+            <StatCard label="Jumlah Pasang" value={preview.jumlah_pasang} color="#FF9800" bg="#FFF3E0" />
           </>
         )}
       </Box>
@@ -125,6 +132,7 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
         {tahap === 1 ? "Rekomendasi Distribusi" : "Preview Distribusi"}
       </Typography>
 
+      {/* Konten preview */}
       {tahap === 1 ? (
         preview.rekomendasi && preview.rekomendasi.length > 0 ? (
           preview.rekomendasi.map((reviewer) => (
@@ -141,11 +149,8 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
                   <Chip label={`${reviewer.proposals.length} Proposal`} color="primary" sx={{ fontWeight: 700 }} />
                 </Box>
 
-                <Button
-                  size="small"
-                  onClick={() => toggleExpand(reviewer.id_reviewer)}
-                  sx={{ textTransform: "none", borderRadius: "50px", mt: 1 }}
-                >
+                <Button size="small" onClick={() => toggleExpand(reviewer.id_reviewer)}
+                  sx={{ textTransform: "none", borderRadius: "50px", mt: 1 }}>
                   {expandedReviewer[reviewer.id_reviewer] ? "Sembunyikan Detail" : "Lihat Detail"}
                 </Button>
 
@@ -182,40 +187,118 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
           </Box>
         )
       ) : (
-        <Box sx={{ p: 3, borderRadius: 2, background: "#f0f4ff", border: "1px solid #c7d7fc" }}>
-          <Typography sx={{ fontWeight: 700, mb: 1, color: "#0D59F2" }}>Distribusi All-to-All</Typography>
-          <Typography sx={{ fontSize: 14, color: "#444", mb: 1 }}>
-            Sistem akan mendistribusikan <b>{preview.total_proposal}</b> proposal ke:
-          </Typography>
-          <Typography sx={{ fontSize: 14, color: "#444" }}>
-            • <b>{preview.total_reviewer}</b> Reviewer → target {preview.distribusi_reviewer} | sudah {preview.distribusi_existing_reviewer ?? 0} | sisa {preview.distribusi_sisa_reviewer ?? preview.distribusi_reviewer}
-          </Typography>
-          <Typography sx={{ fontSize: 14, color: "#444" }}>
-            • <b>{preview.total_juri}</b> Juri → target {preview.distribusi_juri} | sudah {preview.distribusi_existing_juri ?? 0} | sisa {preview.distribusi_sisa_juri ?? preview.distribusi_juri}
-          </Typography>
-          <Typography sx={{ fontSize: 13, color: "#8b0000", mt: 0.75 }}>
-            Ditolak: reviewer {preview.distribusi_rejected_reviewer ?? 0} • juri {preview.distribusi_rejected_juri ?? 0}
-          </Typography>
-          <Typography sx={{ fontSize: 14, fontWeight: 700, mt: 1.5, color: "#0D59F2" }}>
-            Total: target {preview.distribusi_total} | sudah {preview.distribusi_existing_total ?? 0} | sisa {preview.distribusi_sisa_total ?? preview.distribusi_total}
-          </Typography>
-          <Typography sx={{ fontSize: 12, color: "#667085", mt: 1.25 }}>
-            Catatan: penugasan yang ditolak dihitung sebagai sisa dan akan di-reassign ulang saat eksekusi otomatis.
-          </Typography>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {/* Ringkasan pasangan */}
+          <Box sx={{ p: 3, borderRadius: 2, background: "#f0f4ff", border: "1px solid #c7d7fc" }}>
+            <Typography sx={{ fontWeight: 700, mb: 1, color: "#0D59F2" }}>Sistem Pasangan (Reviewer + Juri)</Typography>
+            <Typography sx={{ fontSize: 14, color: "#444", mb: 0.5 }}>
+              Tersedia <b>{preview.total_reviewer}</b> reviewer dan <b>{preview.total_juri}</b> juri →{" "}
+              <b>{preview.jumlah_pasang}</b> pasang unik siap dipakai terlebih dahulu.
+            </Typography>
+            <Typography sx={{ fontSize: 14, color: "#444", mb: 0.5 }}>
+              Proposal yang sudah berpasangan: <b style={{ color: "#2e7d32" }}>{preview.sudah_terdistribusi}</b>
+            </Typography>
+            <Typography sx={{ fontSize: 14, color: "#444" }}>
+              Proposal sisa untuk didistribusikan: <b style={{ color: preview.belum_terdistribusi > 0 ? "#c62828" : "#2e7d32" }}>{preview.belum_terdistribusi}</b>
+            </Typography>
+          </Box>
+
+          {/* Daftar yang sudah terdistribusi */}
+          {preview.detail_sudah && preview.detail_sudah.length > 0 && (
+            <Box>
+              <Typography sx={{ fontSize: 14, fontWeight: 700, color: "#2e7d32", mb: 1 }}>
+                Sudah Berpasangan ({preview.detail_sudah.length})
+              </Typography>
+              <TableContainer sx={{ borderRadius: "12px", border: "1px solid #f0f0f0" }}>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+                      <TableCell sx={{ fontWeight: 700, fontSize: 12 }}>Proposal</TableCell>
+                      <TableCell sx={{ fontWeight: 700, fontSize: 12 }}>Reviewer</TableCell>
+                      <TableCell sx={{ fontWeight: 700, fontSize: 12 }}>Juri</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {preview.detail_sudah.map((item) => (
+                      <TableRow key={item.id_proposal} hover>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 12, maxWidth: 250 }}>{item.judul}</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 12 }}>{item.reviewer?.nama_lengkap || "-"}</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 12 }}>{item.juri?.nama_lengkap || "-"}</Typography>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          )}
+
+          {/* Rencana distribusi baru */}
+          {preview.rencana_distribusi && preview.rencana_distribusi.length > 0 && (
+            <Box>
+              <Typography sx={{ fontSize: 14, fontWeight: 700, color: "#e65100", mb: 1 }}>
+                Akan Didistribusikan ({preview.rencana_distribusi.length})
+              </Typography>
+              <TableContainer sx={{ borderRadius: "12px", border: "1px solid #ffe0cc" }}>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow sx={{ backgroundColor: "#fff3e0" }}>
+                      <TableCell sx={{ fontWeight: 700, fontSize: 12 }}>Proposal</TableCell>
+                      <TableCell sx={{ fontWeight: 700, fontSize: 12 }}>Reviewer</TableCell>
+                      <TableCell sx={{ fontWeight: 700, fontSize: 12 }}>Juri</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {preview.rencana_distribusi.map((item) => (
+                      <TableRow key={item.id_proposal} hover>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 12, maxWidth: 250 }}>{item.judul}</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 12 }}>{item.reviewer?.nama_lengkap || "-"}</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 12 }}>{item.juri?.nama_lengkap || "-"}</Typography>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          )}
+
+          {semuaSudahTerdistribusi && (
+            <Box sx={{ p: 2.5, borderRadius: 2, background: "#e8f5e9", border: "1px solid #a5d6a7", textAlign: "center" }}>
+              <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#2e7d32" }}>
+                ✓ Semua proposal sudah memiliki pasangan reviewer dan juri
+              </Typography>
+            </Box>
+          )}
         </Box>
       )}
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end", mt: 3 }}>
-        <Button variant="outlined" onClick={fetchPreview} disabled={executing} sx={{ textTransform: "none", borderRadius: "50px" }}>
+        <Button variant="outlined" onClick={fetchPreview} disabled={executing}
+          sx={{ textTransform: "none", borderRadius: "50px" }}>
           Refresh Preview
         </Button>
         <Button
           variant="contained"
           onClick={handleExecute}
-          disabled={executing || (tahap === 2 && (preview.distribusi_sisa_total ?? 0) === 0)}
+          disabled={executing || semuaSudahTerdistribusi}
           sx={{ textTransform: "none", borderRadius: "50px", backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}
         >
-          {executing ? "Memproses..." : tahap === 2 && (preview.distribusi_sisa_total ?? 0) === 0 ? "Sudah Merata" : "Eksekusi Distribusi Otomatis"}
+          {executing
+            ? "Memproses..."
+            : semuaSudahTerdistribusi
+              ? "Semua Sudah Berpasangan"
+              : "Eksekusi Distribusi Otomatis"}
         </Button>
       </Box>
     </Box>

@@ -3,6 +3,7 @@ import {
   Box, Typography, Paper, Button,
   CircularProgress, Divider, TextField,
 } from "@mui/material";
+import { ArrowBack } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
@@ -92,6 +93,7 @@ export default function DetailLogBimbinganPage() {
         <Box>
           <Button
             onClick={() => navigate("/mahasiswa/bimbingan")}
+            startIcon={<ArrowBack />}
             sx={{
               borderRadius: "50px",
               textTransform: "none", color: "#777", fontSize: 13,

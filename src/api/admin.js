@@ -150,13 +150,9 @@ export const getJuriList = async () => {
   return res.data;
 };
 
-export const getDistribusiReviewerHistoryTahap2 = async (id_program) => {
-  const res = await api.get(`/admin/program/${id_program}/distribusi/reviewer/tahap/2/history`);
-  return res.data;
-};
-
-export const getDistribusiJuriHistoryTahap2 = async (id_program) => {
-  const res = await api.get(`/admin/program/${id_program}/distribusi/juri/tahap/2/history`);
+// Satu endpoint gabungan per proposal (menggantikan 2 endpoint lama reviewer/juri terpisah)
+export const getPanelTahap2History = async (id_program) => {
+  const res = await api.get(`/admin/program/${id_program}/panel/tahap2/history`);
   return res.data;
 };
 

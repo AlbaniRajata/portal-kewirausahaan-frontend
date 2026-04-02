@@ -144,13 +144,6 @@ export default function DetailRekapDialog({
           <Box>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
               <Typography sx={{ fontSize: 15, fontWeight: 700 }}>Penilaian Reviewer</Typography>
-              {data.rata_rata_nilai != null && (
-                <Box sx={{ px: 2, py: 0.75, backgroundColor: "#e3f2fd", borderRadius: "50px" }}>
-                  <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#0D59F2" }}>
-                    Rata-rata: {data.rata_rata_nilai}
-                  </Typography>
-                </Box>
-              )}
             </Box>
             {data.reviewer && data.reviewer.length > 0 ? (
               data.reviewer.map((r) => <ReviewerCard key={r.reviewer?.id_user || r.user?.id_user} data={r} />)
@@ -179,12 +172,11 @@ export default function DetailRekapDialog({
             <Divider sx={{ my: 3 }} />
 
             <Paper variant="outlined" sx={{ p: 3, backgroundColor: "#f8f9ff", borderRadius: "12px" }}>
-              <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 2.5 }}>Ringkasan Gabungan</Typography>
-              <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 2 }}>
+              <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 2.5 }}>Ringkasan Panel</Typography>
+              <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
                 {[
                   { label: "Total Reviewer", value: data.total_reviewer ?? 0, bg: "#e3f2fd", color: "#0D59F2" },
                   { label: "Total Juri", value: data.total_juri ?? 0, bg: "#e8f5e9", color: "#2e7d32" },
-                  { label: "Total Gabungan", value: data.total_gabungan ?? 0, bg: "#fff3e0", color: "#e65100" },
                 ].map((item) => (
                   <Box key={item.label} sx={{ textAlign: "center", p: 2.5, backgroundColor: item.bg, borderRadius: "12px" }}>
                     <Typography sx={{ fontSize: 12, color: "#666", mb: 0.5 }}>{item.label}</Typography>

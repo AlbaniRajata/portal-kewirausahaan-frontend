@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import {
   getReviewerList, getProposalList, executeBulkDistribusi,
-  getJuriList, executeManualDistribusiTahap2,
+  getJuriList, executeManualDistribusiTahap2, getPanelTahap2History,
 } from "../../api/admin";
 
 const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "15px" } };
@@ -22,6 +22,32 @@ const tableBodyRow = { "& td": { borderBottom: "1px solid #f5f5f5", py: 2 } };
 const formatRupiah = (value) => {
   if (!value) return "Rp 0";
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(value);
+};
+
+const normalizeId = (value) => {
+  if (value === null || value === undefined || value === "") return null;
+  return String(value);
+};
+
+const extractReviewerId = (historyItem) => normalizeId(
+  historyItem?.id_reviewer
+  ?? historyItem?.id_user_reviewer
+  ?? historyItem?.reviewer_id
+  ?? historyItem?.id_user
+);
+
+const extractJuriId = (historyItem) => normalizeId(
+  historyItem?.id_juri
+  ?? historyItem?.id_user_juri
+  ?? historyItem?.juri_id
+  ?? historyItem?.id_user
+);
+
+const ACTIVE_ASSIGNMENT_STATUSES = new Set([0, 1, 3, 4]);
+
+const toNumberOrNull = (value) => {
+  const num = Number(value);
+  return Number.isNaN(num) ? null : num;
 };
 
 const PersonOption = ({ nama, institusi, keahlian }) => (
@@ -38,11 +64,15 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
   const [reviewers, setReviewers] = useState([]);
   const [juries, setJuries] = useState([]);
   const [proposals, setProposals] = useState([]);
+  const [panelHistory, setPanelHistory] = useState([]);
+
   const [selectedReviewer, setSelectedReviewer] = useState(null);
   const [selectedProposals, setSelectedProposals] = useState([]);
-  const [selectedReviewers, setSelectedReviewers] = useState([]);
-  const [selectedJuries, setSelectedJuries] = useState([]);
+
+  const [selectedReviewerTahap2, setSelectedReviewerTahap2] = useState(null);
+  const [selectedJuri, setSelectedJuri] = useState(null);
   const [selectedProposal, setSelectedProposal] = useState(null);
+
   const [loadingReviewers, setLoadingReviewers] = useState(false);
   const [loadingJuries, setLoadingJuries] = useState(false);
   const [loadingProposals, setLoadingProposals] = useState(false);
@@ -75,15 +105,27 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
         const res = await getProposalList({ id_program, status: 1 });
         setProposals(res.data || []);
       } else {
-        const [resStatus4, resStatus5] = await Promise.all([
+        const [resStatus4, resStatus5, historyRes] = await Promise.all([
           getProposalList({ id_program, status: 4 }),
           getProposalList({ id_program, status: 5 }),
+          getPanelTahap2History(id_program),
         ]);
-        const merged = [...(resStatus4.data || []), ...(resStatus5.data || [])];
-        const uniqueByProposal = merged.filter(
-          (item, index, arr) => arr.findIndex((x) => x.id_proposal === item.id_proposal) === index,
+
+        const history = historyRes.data || [];
+        setPanelHistory(history);
+
+        const idSudahLengkap = new Set(
+          history
+            .filter((h) => h.id_distribusi_reviewer && h.id_distribusi_juri)
+            .map((h) => h.id_proposal)
         );
-        setProposals(uniqueByProposal);
+
+        const merged = [...(resStatus4.data || []), ...(resStatus5.data || [])];
+        const unique = merged.filter(
+          (item, index, arr) => arr.findIndex((x) => x.id_proposal === item.id_proposal) === index
+        );
+
+        setProposals(unique.filter((p) => !idSudahLengkap.has(p.id_proposal)));
       }
     } catch { onError("Gagal memuat daftar proposal"); }
     finally { setLoadingProposals(false); }
@@ -96,11 +138,37 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
       fetchProposals();
       setSelectedProposals([]);
       setSelectedReviewer(null);
-      setSelectedReviewers([]);
-      setSelectedJuries([]);
+      setSelectedReviewerTahap2(null);
+      setSelectedJuri(null);
       setSelectedProposal(null);
     }
   }, [id_program, tahap, fetchProposals]);
+
+  const reviewerSudahAktif = new Set(
+    panelHistory
+      .filter((h) => ACTIVE_ASSIGNMENT_STATUSES.has(toNumberOrNull(h.status_reviewer)))
+      .map(extractReviewerId)
+      .filter(Boolean)
+  );
+
+  const juriSudahAktif = new Set(
+    panelHistory
+      .filter((h) => ACTIVE_ASSIGNMENT_STATUSES.has(toNumberOrNull(h.status_juri)))
+      .map(extractJuriId)
+      .filter(Boolean)
+  );
+
+  const reviewerTersedia = reviewers.filter((r) => {
+    return !reviewerSudahAktif.has(normalizeId(r.id_user));
+  });
+
+  const juriTersedia = juries.filter((j) => {
+    return !juriSudahAktif.has(normalizeId(j.id_user));
+  });
+
+  const slotKosong = proposals.length;
+  const reviewerOptions = reviewerTersedia.length > 0 || slotKosong === 0 ? reviewerTersedia : reviewers;
+  const juriOptions = juriTersedia.length > 0 || slotKosong === 0 ? juriTersedia : juries;
 
   const handleAssignTahap1 = async () => {
     if (!selectedReviewer) {
@@ -141,8 +209,12 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
   };
 
   const handleAssignTahap2 = async () => {
-    if (selectedReviewers.length === 0 && selectedJuries.length === 0) {
-      Swal.fire({ icon: "warning", title: "Perhatian", text: "Silahkan pilih minimal 1 reviewer atau 1 juri", confirmButtonColor: "#0D59F2" });
+    if (!selectedReviewerTahap2) {
+      Swal.fire({ icon: "warning", title: "Perhatian", text: "Silahkan pilih reviewer terlebih dahulu", confirmButtonColor: "#0D59F2" });
+      return;
+    }
+    if (!selectedJuri) {
+      Swal.fire({ icon: "warning", title: "Perhatian", text: "Silahkan pilih juri terlebih dahulu", confirmButtonColor: "#0D59F2" });
       return;
     }
     if (!selectedProposal) {
@@ -152,7 +224,7 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
     const proposal = proposals.find((p) => p.id_proposal === selectedProposal);
     const result = await Swal.fire({
       title: "Konfirmasi Distribusi Panel",
-      html: `Assign panel ke:<br/><br/><b>${proposal?.judul}</b><br/><br/>Reviewer: <b>${selectedReviewers.length}</b> orang<br/>Juri: <b>${selectedJuries.length}</b> orang<br/><br/>Lanjutkan?`,
+      html: `Assign panel wawancara ke:<br/><br/><b>${proposal?.judul}</b><br/><br/>Reviewer: <b>${selectedReviewerTahap2.nama_lengkap}</b><br/>Juri: <b>${selectedJuri.nama_lengkap}</b><br/><br/>Lanjutkan?`,
       icon: "question", showCancelButton: true,
       confirmButtonColor: "#0D59F2", cancelButtonColor: "#d33",
       confirmButtonText: "Ya, Assign", cancelButtonText: "Batal",
@@ -162,13 +234,16 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
       setAssigning(true);
       const res = await executeManualDistribusiTahap2(id_program, {
         id_proposal: selectedProposal,
-        reviewers: selectedReviewers,
-        juries: selectedJuries,
+        id_reviewer: selectedReviewerTahap2.id_user,
+        id_juri: selectedJuri.id_user,
       });
-      await Swal.fire({ icon: "success", title: "Distribusi Selesai", text: res.message, timer: 2000, timerProgressBar: true, showConfirmButton: false });
+      await Swal.fire({
+        icon: "success", title: "Distribusi Selesai", text: res.message,
+        timer: 2000, timerProgressBar: true, showConfirmButton: false,
+      });
       onSuccess(res.message);
-      setSelectedReviewers([]);
-      setSelectedJuries([]);
+      setSelectedReviewerTahap2(null);
+      setSelectedJuri(null);
       setSelectedProposal(null);
       fetchProposals();
     } catch (err) {
@@ -191,9 +266,11 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
 
   return (
     <DistribusiManualTahap2
-      reviewers={reviewers} juries={juries} proposals={proposals}
-      selectedReviewers={selectedReviewers} setSelectedReviewers={setSelectedReviewers}
-      selectedJuries={selectedJuries} setSelectedJuries={setSelectedJuries}
+      reviewerOptions={reviewerOptions}
+      juriOptions={juriOptions}
+      proposals={proposals}
+      selectedReviewer={selectedReviewerTahap2} setSelectedReviewer={setSelectedReviewerTahap2}
+      selectedJuri={selectedJuri} setSelectedJuri={setSelectedJuri}
       selectedProposal={selectedProposal} setSelectedProposal={setSelectedProposal}
       handleAssign={handleAssignTahap2}
       loadingReviewers={loadingReviewers} loadingJuries={loadingJuries} loadingProposals={loadingProposals}
@@ -223,7 +300,6 @@ function ProposalTable({ proposals, loading, renderSelector, navigate }) {
         <TableHead>
           <TableRow>
             <TableCell padding="checkbox" sx={{ ...tableHeadCell, width: 48 }} />
-            <TableCell sx={{ ...tableHeadCell, width: 60 }}>ID</TableCell>
             <TableCell sx={tableHeadCell}>Judul Proposal</TableCell>
             <TableCell sx={tableHeadCell}>Tim</TableCell>
             <TableCell sx={tableHeadCell}>Modal</TableCell>
@@ -234,9 +310,6 @@ function ProposalTable({ proposals, loading, renderSelector, navigate }) {
           {proposals.map((p) => (
             <TableRow key={p.id_proposal} sx={tableBodyRow}>
               <TableCell padding="checkbox">{renderSelector(p)}</TableCell>
-              <TableCell>
-                <Chip label={`#${p.id_proposal}`} size="small" color="primary" variant="outlined" />
-              </TableCell>
               <TableCell>
                 <Typography sx={{ fontSize: 13, maxWidth: 300 }}>{p.judul}</Typography>
               </TableCell>
@@ -275,7 +348,7 @@ function DistribusiManualTahap1({
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      <Typography sx={{...roundedField, fontSize: 15, fontWeight: 700, color: "#1a1a1a" }}>1. Pilih Reviewer</Typography>
+      <Typography sx={{ ...roundedField, fontSize: 15, fontWeight: 700, color: "#1a1a1a" }}>1. Pilih Reviewer</Typography>
 
       <Autocomplete
         options={reviewers}
@@ -287,11 +360,7 @@ function DistribusiManualTahap1({
         loading={loadingReviewers}
         renderOption={(props, option) => (
           <Box component="li" {...props} key={option.id_user}>
-            <PersonOption
-              nama={option.nama_lengkap}
-              institusi={option.institusi}
-              keahlian={option.bidang_keahlian}
-            />
+            <PersonOption nama={option.nama_lengkap} institusi={option.institusi} keahlian={option.bidang_keahlian} />
           </Box>
         )}
         renderInput={(params) => (
@@ -329,8 +398,7 @@ function DistribusiManualTahap1({
 
       <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
         <Button
-          variant="contained"
-          onClick={handleAssign}
+          variant="contained" onClick={handleAssign}
           disabled={assigning || selectedProposals.length === 0 || !selectedReviewer}
           sx={{ textTransform: "none", borderRadius: "50px", px: 3, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}
         >
@@ -342,74 +410,59 @@ function DistribusiManualTahap1({
 }
 
 function DistribusiManualTahap2({
-  reviewers, juries, proposals,
-  selectedReviewers, setSelectedReviewers,
-  selectedJuries, setSelectedJuries,
+  reviewerOptions, juriOptions, proposals,
+  selectedReviewer, setSelectedReviewer,
+  selectedJuri, setSelectedJuri,
   selectedProposal, setSelectedProposal,
   handleAssign, loadingReviewers, loadingJuries, loadingProposals,
   assigning, navigate,
 }) {
+  const canAssign = selectedReviewer && selectedJuri && selectedProposal;
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      <Typography sx={{...roundedField, fontSize: 15, fontWeight: 700, color: "#1a1a1a" }}>
-        1. Pilih Reviewer ({selectedReviewers.length} terpilih)
+      <Typography sx={{ ...roundedField, fontSize: 15, fontWeight: 700, color: "#1a1a1a" }}>
+        1. Pilih Reviewer
       </Typography>
 
       <Autocomplete
-        multiple
-        options={reviewers}
-        value={reviewers.filter((r) => selectedReviewers.includes(r.id_user))}
-        onChange={(_, v) => setSelectedReviewers(v.map((x) => x.id_user))}
+        options={reviewerOptions}
+        value={selectedReviewer}
+        onChange={(_, v) => setSelectedReviewer(v)}
         getOptionLabel={(o) => o.nama_lengkap || ""}
         isOptionEqualToValue={(o, v) => o.id_user === v.id_user}
         disabled={loadingReviewers}
         loading={loadingReviewers}
         renderOption={(props, option) => (
           <Box component="li" {...props} key={option.id_user}>
-            <PersonOption
-              nama={option.nama_lengkap}
-              institusi={option.institusi}
-              keahlian={option.bidang_keahlian}
-            />
+            <PersonOption nama={option.nama_lengkap} institusi={option.institusi} keahlian={option.bidang_keahlian} />
           </Box>
         )}
-        renderTags={(value, getTagProps) =>
-          value.map((o, i) => (
-            <Chip key={i} label={o.nama_lengkap} {...getTagProps({ index: i })} size="small" />
-          ))
-        }
         renderInput={(params) => (
           <TextField {...params} label="Reviewer" placeholder="Cari atau pilih reviewer" sx={roundedField} />
         )}
       />
 
-      <Typography sx={{...roundedField, fontSize: 15, fontWeight: 700, color: "#1a1a1a" }}>
-        2. Pilih Juri ({selectedJuries.length} terpilih)
+      <Typography sx={{ ...roundedField, fontSize: 15, fontWeight: 700, color: "#1a1a1a" }}>
+        2. Pilih Juri
       </Typography>
 
       <Autocomplete
-        multiple
-        options={juries}
-        value={juries.filter((j) => selectedJuries.includes(j.id_user))}
-        onChange={(_, v) => setSelectedJuries(v.map((x) => x.id_user))}
+        options={juriOptions}
+        value={selectedJuri}
+        onChange={(_, v) => setSelectedJuri(v)}
         getOptionLabel={(o) => o.nama_lengkap || ""}
         isOptionEqualToValue={(o, v) => o.id_user === v.id_user}
         disabled={loadingJuries}
         loading={loadingJuries}
         renderOption={(props, option) => (
           <Box component="li" {...props} key={option.id_user}>
-            <PersonOption
-              nama={option.nama_lengkap}
-              institusi={option.institusi}
-              keahlian={option.bidang_keahlian}
-            />
+            <Box>
+              <Typography sx={{ fontWeight: 600, fontSize: 14, lineHeight: 1.4 }}>{option.nama_lengkap}</Typography>
+              <Typography sx={{ fontSize: 12, color: "#888" }}>{option.email || "-"}</Typography>
+            </Box>
           </Box>
         )}
-        renderTags={(value, getTagProps) =>
-          value.map((o, i) => (
-            <Chip key={i} label={o.nama_lengkap} {...getTagProps({ index: i })} size="small" />
-          ))
-        }
         renderInput={(params) => (
           <TextField {...params} label="Juri" placeholder="Cari atau pilih juri" sx={roundedField} />
         )}
@@ -431,9 +484,8 @@ function DistribusiManualTahap2({
 
       <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
         <Button
-          variant="contained"
-          onClick={handleAssign}
-          disabled={assigning || (selectedReviewers.length === 0 && selectedJuries.length === 0) || !selectedProposal}
+          variant="contained" onClick={handleAssign}
+          disabled={assigning || !canAssign}
           sx={{ textTransform: "none", borderRadius: "50px", px: 3, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}
         >
           {assigning ? "Memproses..." : "Assign Panel ke Proposal"}

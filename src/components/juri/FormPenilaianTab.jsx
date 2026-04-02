@@ -35,6 +35,7 @@ export default function FormPenilaianTab({ id_distribusi, onActionsChange }) {
   const fetchFormPenilaian = useCallback(async () => {
     try {
       setLoading(true);
+      setFetchError("");
       const response = await getFormPenilaian(id_distribusi);
       if (response.success) {
         setData(response.data);
@@ -49,8 +50,8 @@ export default function FormPenilaianTab({ id_distribusi, onActionsChange }) {
       } else {
         setFetchError(response.message || "Gagal memuat form penilaian");
       }
-    } catch {
-      setFetchError("Gagal memuat form penilaian");
+    } catch (err) {
+      setFetchError(err.response?.data?.message || "Gagal memuat form penilaian");
     } finally {
       setLoading(false);
     }
@@ -65,12 +66,14 @@ export default function FormPenilaianTab({ id_distribusi, onActionsChange }) {
     if (!onActionsChange) return;
     if (!data) { onActionsChange(null); return; }
     const isSubmitted = data.penilaian.status === 1;
+    const canSubmit = (data.nilai || []).some((item) => item.skor !== null && item.skor !== undefined);
     onActionsChange({
       handleSimpanDraft: (...args) => simpanDraftRef.current?.(...args),
       handleSubmit: (...args) => submitRef.current?.(...args),
       saving,
       submitting,
       isSubmitted,
+      canSubmit,
     });
   }, [data, saving, submitting, onActionsChange]);
 
@@ -174,7 +177,7 @@ export default function FormPenilaianTab({ id_distribusi, onActionsChange }) {
       }
       const response = await submitPenilaian(id_distribusi);
       if (response.success) {
-        Swal.fire({ icon: "success", title: "Berhasil", text: "Penilaian berhasil disubmit", timer: 2000, timerProgressBar: true, showConfirmButton: false });
+        Swal.fire({ icon: "success", title: "Berhasil", text: response.message || "Penilaian berhasil disubmit", timer: 2000, timerProgressBar: true, showConfirmButton: false });
         setTimeout(() => navigate("/juri/penugasan"), 2000);
       } else {
         Swal.fire({ icon: "error", title: "Gagal", text: response.message, confirmButtonText: "OK" });
