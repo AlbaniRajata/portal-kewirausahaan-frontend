@@ -82,7 +82,7 @@ export default function TimPesertaPage() {
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
 
-  const [filters, setFilters] = useState({ search: "", id_program: "" });
+  const [filters, setFilters] = useState({ search: "", id_program: "", tahun: "" });
 
   const [openDetail, setOpenDetail] = useState(false);
   const [detailData, setDetailData] = useState(null);
@@ -180,8 +180,31 @@ export default function TimPesertaPage() {
   };
 
   const currentList = activeTab === 0 ? timList : pesertaList;
-  const totalPages = Math.ceil(currentList.length / rowsPerPage);
-  const paginatedList = currentList.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+
+  const getYearFromItem = (item) => {
+    const dateValue = activeTab === 0
+      ? (item.created_at || item.tanggal_submit || item.wawancara_at)
+      : (item.tahun || item.created_at || item.tanggal_submit);
+
+    if (!dateValue) return null;
+    if (/^\d{4}$/.test(String(dateValue))) return Number(dateValue);
+
+    const year = new Date(dateValue).getFullYear();
+    return Number.isNaN(year) ? null : year;
+  };
+
+  const tahunOptions = Array.from(new Set(
+    currentList
+      .map((item) => getYearFromItem(item))
+      .filter(Boolean)
+  )).sort((a, b) => b - a);
+
+  const filteredList = filters.tahun === ""
+    ? currentList
+    : currentList.filter((item) => getYearFromItem(item) === Number(filters.tahun));
+
+  const totalPages = Math.ceil(filteredList.length / rowsPerPage);
+  const paginatedList = filteredList.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
   const renderTimDetail = () => {
     if (!detailData) return null;
@@ -401,6 +424,18 @@ export default function TimPesertaPage() {
                     <MenuItem key={p.id_program} value={p.id_program}>{p.keterangan}</MenuItem>
                   ))}
                 </TextField>
+                <TextField
+                  select size="small" label="Tahun"
+                  value={filters.tahun}
+                  onChange={(e) => setFilters({ ...filters, tahun: e.target.value })}
+                  InputLabelProps={{ shrink: true }}
+                  sx={{ ...roundedField, minWidth: 160 }}
+                >
+                  <MenuItem value="">Semua Tahun</MenuItem>
+                  {tahunOptions.map((tahun) => (
+                    <MenuItem key={tahun} value={String(tahun)}>{tahun}</MenuItem>
+                  ))}
+                </TextField>
               </Box>
 
               {loading ? (
@@ -503,7 +538,7 @@ export default function TimPesertaPage() {
 
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <Typography sx={{ fontSize: 13, color: "#777" }}>
-                      Menampilkan {((page - 1) * rowsPerPage) + 1}–{Math.min(page * rowsPerPage, currentList.length)} dari {currentList.length} data
+                      Menampilkan {((page - 1) * rowsPerPage) + 1}–{Math.min(page * rowsPerPage, filteredList.length)} dari {filteredList.length} data
                     </Typography>
                     <Pagination count={totalPages} page={page} onChange={(e, v) => setPage(v)} color="primary" shape="rounded" showFirstButton showLastButton />
                   </Box>

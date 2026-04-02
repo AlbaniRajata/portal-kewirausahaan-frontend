@@ -56,6 +56,7 @@ export default function MonevPage() {
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [tahun, setTahun] = useState("");
 
   useEffect(() => {
     getMyProgram()
@@ -84,6 +85,24 @@ export default function MonevPage() {
   }, [selectedProgram]);
 
   useEffect(() => { fetchLuaran(); }, [fetchLuaran]);
+
+  const tahunOptions = Array.from(new Set(
+    luaranList
+      .map((item) => {
+        const dateValue = item.deadline || item.created_at;
+        if (!dateValue) return null;
+        const year = new Date(dateValue).getFullYear();
+        return Number.isNaN(year) ? null : year;
+      })
+      .filter(Boolean)
+  )).sort((a, b) => b - a);
+
+  const filteredLuaranList = tahun === ""
+    ? luaranList
+    : luaranList.filter((item) => {
+      const dateValue = item.deadline || item.created_at;
+      return dateValue && new Date(dateValue).getFullYear() === Number(tahun);
+    });
 
   const handleOpenCreate = () => {
     setEditData(null);
@@ -251,11 +270,29 @@ export default function MonevPage() {
           )}
 
           <Paper sx={{ borderRadius: "16px", border: "1px solid #f0f0f0", overflow: "hidden" }}>
+            <Box sx={{ p: 3, borderBottom: "1px solid #f0f0f0", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+              <TextField
+                select
+                size="small"
+                label="Tahun"
+                value={tahun}
+                onChange={(e) => setTahun(e.target.value)}
+                sx={{ ...roundedField, minWidth: 160 }}
+              >
+                <MenuItem value="">Semua Tahun</MenuItem>
+                {tahunOptions.map((itemTahun) => (
+                  <MenuItem key={itemTahun} value={String(itemTahun)}>{itemTahun}</MenuItem>
+                ))}
+              </TextField>
+              <Typography sx={{ fontSize: 13, color: "#777" }}>
+                Total: {filteredLuaranList.length} luaran
+              </Typography>
+            </Box>
             {loading ? (
               <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
                 <CircularProgress />
               </Box>
-            ) : luaranList.length === 0 ? (
+            ) : filteredLuaranList.length === 0 ? (
               <Box sx={{ textAlign: "center", py: 10 }}>
                 <Box sx={{
                   width: 100, height: 100, borderRadius: "50%", backgroundColor: "#f5f5f5",
@@ -281,7 +318,7 @@ export default function MonevPage() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {luaranList.map((luaran) => {
+                    {filteredLuaranList.map((luaran) => {
                       const tipe = TIPE_MAP[luaran.tipe] || {};
                       const lewat = isDeadlineLewat(luaran.deadline);
                       return (

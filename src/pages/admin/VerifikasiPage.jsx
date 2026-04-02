@@ -128,6 +128,7 @@ export default function VerifikasiPage() {
   const [errors, setErrors] = useState({});
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
+  const [tahunFilter, setTahunFilter] = useState("");
 
   const [filters, setFilters] = useState({
     status_verifikasi: "",
@@ -136,6 +137,21 @@ export default function VerifikasiPage() {
     tanggal_dari: "",
     tanggal_sampai: "",
   });
+
+  const tahunOptions = Array.from({ length: 6 }, (_, idx) => new Date().getFullYear() - idx);
+
+  const getDateRangeFilters = () => {
+    if (tahunFilter) {
+      return {
+        tanggal_dari: `${tahunFilter}-01-01`,
+        tanggal_sampai: `${tahunFilter}-12-31`,
+      };
+    }
+    return {
+      tanggal_dari: filters.tanggal_dari || undefined,
+      tanggal_sampai: filters.tanggal_sampai || undefined,
+    };
+  };
 
   useEffect(() => {
     getAllProdi()
@@ -156,8 +172,7 @@ export default function VerifikasiPage() {
         email_verified:
           filters.email_verified !== "" ? filters.email_verified : undefined,
         id_prodi: filters.id_prodi || undefined,
-        tanggal_dari: filters.tanggal_dari || undefined,
-        tanggal_sampai: filters.tanggal_sampai || undefined,
+        ...getDateRangeFilters(),
       });
       setMahasiswaList(res.data?.mahasiswa || []);
       setPage(1);
@@ -177,6 +192,7 @@ export default function VerifikasiPage() {
     filters.id_prodi,
     filters.tanggal_dari,
     filters.tanggal_sampai,
+    tahunFilter,
   ]);
 
   const fetchDosen = useCallback(async () => {
@@ -190,8 +206,7 @@ export default function VerifikasiPage() {
         email_verified:
           filters.email_verified !== "" ? filters.email_verified : undefined,
         id_prodi: filters.id_prodi || undefined,
-        tanggal_dari: filters.tanggal_dari || undefined,
-        tanggal_sampai: filters.tanggal_sampai || undefined,
+        ...getDateRangeFilters(),
       });
       setDosenList(res.data?.dosen || []);
       setPage(1);
@@ -211,7 +226,12 @@ export default function VerifikasiPage() {
     filters.id_prodi,
     filters.tanggal_dari,
     filters.tanggal_sampai,
+    tahunFilter,
   ]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [tahunFilter, activeTab]);
 
   useEffect(() => {
     if (activeTab === 0) fetchMahasiswa();
@@ -480,6 +500,21 @@ export default function VerifikasiPage() {
                   InputLabelProps={{ shrink: true }}
                   sx={{ ...roundedField, minWidth: 150, flex: "1 1 150px" }}
                 />
+                <TextField
+                  select
+                  fullWidth
+                  size="small"
+                  label="Tahun"
+                  value={tahunFilter}
+                  onChange={(e) => setTahunFilter(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                  sx={{ ...roundedField, minWidth: 150, flex: "1 1 150px" }}
+                >
+                  <MenuItem value="">Semua Tahun</MenuItem>
+                  {tahunOptions.map((tahun) => (
+                    <MenuItem key={tahun} value={String(tahun)}>{tahun}</MenuItem>
+                  ))}
+                </TextField>
               </Box>
 
               {loading ? (

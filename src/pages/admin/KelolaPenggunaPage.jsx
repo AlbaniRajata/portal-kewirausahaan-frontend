@@ -68,10 +68,10 @@ const emptyForms = {
 const TAHUN_OPTIONS = Array.from({ length: 15 }, (_, i) => new Date().getFullYear() - i);
 
 const initFilters = {
-  mahasiswa: { search: "", is_active: "", id_prodi: "", id_jurusan: "" },
-  dosen: { search: "", is_active: "", id_prodi: "" },
-  reviewer: { search: "", is_active: "" },
-  juri: { search: "", is_active: "" },
+  mahasiswa: { search: "", is_active: "", id_prodi: "", id_jurusan: "", tahun: "" },
+  dosen: { search: "", is_active: "", id_prodi: "", tahun: "" },
+  reviewer: { search: "", is_active: "", tahun: "" },
+  juri: { search: "", is_active: "", tahun: "" },
 };
 
 const truncateWithEllipsis = (text, max = 42) => {
@@ -150,8 +150,27 @@ export default function KelolaPenggunaPage() {
   }, [tabKey]);
 
   const currentList = lists[tabKey];
-  const totalPages = Math.ceil(currentList.length / rowsPerPage);
-  const paginatedList = currentList.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+
+  const getYearFromUser = (user) => {
+    if (tabKey === "mahasiswa" && user.tahun_masuk) return Number(user.tahun_masuk);
+    const dateValue = user.created_at || user.updated_at;
+    if (!dateValue) return null;
+    const year = new Date(dateValue).getFullYear();
+    return Number.isNaN(year) ? null : year;
+  };
+
+  const yearOptions = Array.from(new Set(
+    currentList
+      .map((user) => getYearFromUser(user))
+      .filter(Boolean)
+  )).sort((a, b) => b - a);
+
+  const filteredList = currentFilter.tahun === ""
+    ? currentList
+    : currentList.filter((user) => getYearFromUser(user) === Number(currentFilter.tahun));
+
+  const totalPages = Math.ceil(filteredList.length / rowsPerPage);
+  const paginatedList = filteredList.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
   const handleOpenCreate = () => {
     setForm(emptyForms[tabKey]);
@@ -296,6 +315,18 @@ export default function KelolaPenggunaPage() {
         <MenuItem value="">Semua Status</MenuItem>
         <MenuItem value="true">Aktif</MenuItem>
         <MenuItem value="false">Nonaktif</MenuItem>
+      </TextField>
+      <TextField
+        select size="small" label="Tahun"
+        value={currentFilter.tahun}
+        onChange={(e) => setFilter("tahun", e.target.value)}
+        InputLabelProps={{ shrink: true }}
+        sx={{ ...roundedField, minWidth: 150 }}
+      >
+        <MenuItem value="">Semua Tahun</MenuItem>
+        {yearOptions.map((tahun) => (
+          <MenuItem key={tahun} value={String(tahun)}>{tahun}</MenuItem>
+        ))}
       </TextField>
 
       {tabKey === "mahasiswa" && (
@@ -642,7 +673,7 @@ export default function KelolaPenggunaPage() {
 
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <Typography sx={{ fontSize: 13, color: "#777" }}>
-                      Menampilkan {((page - 1) * rowsPerPage) + 1}–{Math.min(page * rowsPerPage, currentList.length)} dari {currentList.length} data
+                      Menampilkan {((page - 1) * rowsPerPage) + 1}–{Math.min(page * rowsPerPage, filteredList.length)} dari {filteredList.length} data
                     </Typography>
                     <Pagination count={totalPages} page={page} onChange={(e, v) => setPage(v)} color="primary" shape="rounded" showFirstButton showLastButton />
                   </Box>

@@ -74,6 +74,8 @@ const tableHeadCell = {
   py: 2,
 };
 
+const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "15px" } };
+
 const formatDate = (dateString) => {
   if (!dateString) return "-";
   return new Date(dateString).toLocaleDateString("id-ID", {
@@ -129,6 +131,7 @@ export default function MonevProgressPage() {
   });
   const [reviewErrors, setReviewErrors] = useState({});
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [tahun, setTahun] = useState("");
 
   const fetchProgress = useCallback(async () => {
     try {
@@ -150,6 +153,24 @@ export default function MonevProgressPage() {
   useEffect(() => {
     fetchProgress();
   }, [fetchProgress]);
+
+  const getYearFromProgress = (tim) => {
+    const dateValue = tim.tahun || tim.created_at || tim.updated_at || tim.tanggal_submit;
+    if (!dateValue) return null;
+    if (/^\d{4}$/.test(String(dateValue))) return Number(dateValue);
+    const year = new Date(dateValue).getFullYear();
+    return Number.isNaN(year) ? null : year;
+  };
+
+  const tahunOptions = Array.from(new Set(
+    progressList
+      .map((tim) => getYearFromProgress(tim))
+      .filter(Boolean)
+  )).sort((a, b) => b - a);
+
+  const filteredProgressList = tahun === ""
+    ? progressList
+    : progressList.filter((tim) => getYearFromProgress(tim) === Number(tahun));
 
   const handleViewDetail = async (tim) => {
     setSelectedTim(tim);
@@ -282,6 +303,25 @@ setTimeout(() => setOpenDetail(true), 200);
             Monitor dan review pengumpulan luaran per tim
           </Typography>
 
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, gap: 2, flexWrap: "wrap" }}>
+            <TextField
+              select
+              size="small"
+              label="Tahun"
+              value={tahun}
+              onChange={(e) => setTahun(e.target.value)}
+              sx={{ ...roundedField, minWidth: 160 }}
+            >
+              <MenuItem value="">Semua Tahun</MenuItem>
+              {tahunOptions.map((itemTahun) => (
+                <MenuItem key={itemTahun} value={String(itemTahun)}>{itemTahun}</MenuItem>
+              ))}
+            </TextField>
+            <Typography sx={{ fontSize: 13, color: "#777" }}>
+              Total: {filteredProgressList.length} tim
+            </Typography>
+          </Box>
+
           <Paper
             sx={{
               borderRadius: "16px",
@@ -293,7 +333,7 @@ setTimeout(() => setOpenDetail(true), 200);
               <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
                 <CircularProgress />
               </Box>
-            ) : progressList.length === 0 ? (
+            ) : filteredProgressList.length === 0 ? (
               <Box sx={{ textAlign: "center", py: 10 }}>
                 <Typography
                   sx={{ fontSize: 20, fontWeight: 700, color: "#444", mb: 1 }}
@@ -334,7 +374,7 @@ setTimeout(() => setOpenDetail(true), 200);
                     </tr>
                   </thead>
                   <tbody>
-                    {progressList.map((tim) => {
+                    {filteredProgressList.map((tim) => {
                       const pct =
                         tim.total_luaran > 0
                           ? Math.round(

@@ -59,7 +59,7 @@ export default function ProposalListPage() {
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
 
-  const [filters, setFilters] = useState({ id_program: "", status: [] });
+  const [filters, setFilters] = useState({ id_program: "", status: [], tahun: "" });
 
   useEffect(() => {
     getMyProgram()
@@ -105,8 +105,27 @@ export default function ProposalListPage() {
 
   useEffect(() => { fetchProposals(); }, [fetchProposals]);
 
-  const totalPages = Math.ceil(proposalList.length / rowsPerPage);
-  const paginatedList = proposalList.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+  const tahunOptions = Array.from(new Set(
+    proposalList
+      .map((item) => {
+        const dateValue = item.tanggal_submit || item.created_at;
+        if (!dateValue) return null;
+        const year = new Date(dateValue).getFullYear();
+        return Number.isNaN(year) ? null : year;
+      })
+      .filter(Boolean)
+  )).sort((a, b) => b - a);
+
+  const filteredProposalList = filters.tahun === ""
+    ? proposalList
+    : proposalList.filter((item) => {
+      const dateValue = item.tanggal_submit || item.created_at;
+      if (!dateValue) return false;
+      return new Date(dateValue).getFullYear() === Number(filters.tahun);
+    });
+
+  const totalPages = Math.ceil(filteredProposalList.length / rowsPerPage);
+  const paginatedList = filteredProposalList.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
   return (
     <BodyLayout Sidebar={AdminSidebar}>
@@ -116,7 +135,7 @@ export default function ProposalListPage() {
           <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>Kelola dan monitor proposal kewirausahaan</Typography>
 
           <Paper sx={{ p: 3, mb: 3, borderRadius: "16px", border: "1px solid #f0f0f0" }}>
-            <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 2 }}>Filter Proposal</Typography>
+            <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 2 }}>Proposal</Typography>
             <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
               <Box sx={{ minWidth: 200, flex: "1 1 auto" }}>
                 <TextField
@@ -157,6 +176,20 @@ export default function ProposalListPage() {
                     })
                   }
                 />
+              </Box>
+              <Box sx={{ minWidth: 170, flex: "1 1 170px" }}>
+                <TextField
+                  select fullWidth size="small" label="Tahun"
+                  value={filters.tahun}
+                  onChange={(e) => setFilters({ ...filters, tahun: e.target.value })}
+                  InputLabelProps={{ shrink: true }}
+                  sx={roundedField}
+                >
+                  <MenuItem value="">Semua Tahun</MenuItem>
+                  {tahunOptions.map((tahun) => (
+                    <MenuItem key={tahun} value={String(tahun)}>{tahun}</MenuItem>
+                  ))}
+                </TextField>
               </Box>
             </Box>
           </Paper>
@@ -224,7 +257,7 @@ export default function ProposalListPage() {
 
                 <Box sx={{ p: 3, display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #f0f0f0" }}>
                   <Typography sx={{ fontSize: 13, color: "#777" }}>
-                    Menampilkan {((page - 1) * rowsPerPage) + 1}–{Math.min(page * rowsPerPage, proposalList.length)} dari {proposalList.length} proposal
+                    Menampilkan {((page - 1) * rowsPerPage) + 1}–{Math.min(page * rowsPerPage, filteredProposalList.length)} dari {filteredProposalList.length} proposal
                   </Typography>
                   <Pagination count={totalPages} page={page} onChange={(e, v) => setPage(v)} color="primary" shape="rounded" showFirstButton showLastButton />
                 </Box>

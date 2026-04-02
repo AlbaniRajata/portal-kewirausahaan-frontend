@@ -51,6 +51,7 @@ export default function JadwalBimbinganTab() {
   const [loading, setLoading] = useState(true);
   const [list, setList] = useState([]);
   const [statusFilter, setStatusFilter] = useState("");
+  const [tahunFilter, setTahunFilter] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
 
@@ -68,6 +69,24 @@ export default function JadwalBimbinganTab() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const tahunOptions = Array.from(new Set(
+    list
+      .map((item) => {
+        const dateValue = item.tanggal_bimbingan || item.created_at;
+        if (!dateValue) return null;
+        const year = new Date(dateValue).getFullYear();
+        return Number.isNaN(year) ? null : year;
+      })
+      .filter(Boolean)
+  )).sort((a, b) => b - a);
+
+  const filteredList = tahunFilter === ""
+    ? list
+    : list.filter((item) => {
+      const dateValue = item.tanggal_bimbingan || item.created_at;
+      return dateValue && new Date(dateValue).getFullYear() === Number(tahunFilter);
+    });
+
   if (loading) {
     return <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}><CircularProgress /></Box>;
   }
@@ -76,20 +95,33 @@ export default function JadwalBimbinganTab() {
     <Box>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography sx={{ fontSize: 16, fontWeight: 600 }}>Daftar Jadwal Bimbingan</Typography>
-        <TextField
-          select size="small" label="Filter Status"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          sx={{ ...roundedField, minWidth: 200 }}
-        >
-          <MenuItem value="">Semua Status</MenuItem>
-          <MenuItem value="0">Menunggu Respon</MenuItem>
-          <MenuItem value="1">Disetujui</MenuItem>
-          <MenuItem value="2">Ditolak</MenuItem>
-        </TextField>
+        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+          <TextField
+            select size="small" label="Status"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            sx={{ ...roundedField, minWidth: 200 }}
+          >
+            <MenuItem value="">Semua Status</MenuItem>
+            <MenuItem value="0">Menunggu Respon</MenuItem>
+            <MenuItem value="1">Disetujui</MenuItem>
+            <MenuItem value="2">Ditolak</MenuItem>
+          </TextField>
+          <TextField
+            select size="small" label="Tahun"
+            value={tahunFilter}
+            onChange={(e) => setTahunFilter(e.target.value)}
+            sx={{ ...roundedField, minWidth: 160 }}
+          >
+            <MenuItem value="">Semua Tahun</MenuItem>
+            {tahunOptions.map((tahun) => (
+              <MenuItem key={tahun} value={String(tahun)}>{tahun}</MenuItem>
+            ))}
+          </TextField>
+        </Box>
       </Box>
 
-      {list.length === 0 ? (
+      {filteredList.length === 0 ? (
         <Box sx={{ textAlign: "center", py: 8 }}>
           <Typography sx={{ color: "#666" }}>Belum ada jadwal bimbingan</Typography>
         </Box>
@@ -104,7 +136,7 @@ export default function JadwalBimbinganTab() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {list.map((item) => {
+              {filteredList.map((item) => {
                 const sp = STATUS_PILL[item.status] || { label: "Unknown", backgroundColor: "#757575" };
                 return (
                   <TableRow key={item.id_bimbingan} sx={tableBodyRow}>

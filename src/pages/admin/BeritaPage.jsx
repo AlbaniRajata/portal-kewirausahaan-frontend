@@ -42,7 +42,7 @@ export default function BeritaPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [list, setList] = useState([]);
-  const [filters, setFilters] = useState({ search: "", status: "" });
+  const [filters, setFilters] = useState({ search: "", status: "", tahun: "" });
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
 
@@ -79,8 +79,22 @@ export default function BeritaPage() {
     }
   };
 
-  const totalPages = Math.ceil(list.length / rowsPerPage);
-  const paginatedList = list.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+  const tahunOptions = Array.from(new Set(
+    list
+      .map((item) => {
+        if (!item.created_at) return null;
+        const year = new Date(item.created_at).getFullYear();
+        return Number.isNaN(year) ? null : year;
+      })
+      .filter(Boolean)
+  )).sort((a, b) => b - a);
+
+  const filteredList = filters.tahun === ""
+    ? list
+    : list.filter((item) => item.created_at && new Date(item.created_at).getFullYear() === Number(filters.tahun));
+
+  const totalPages = Math.ceil(filteredList.length / rowsPerPage);
+  const paginatedList = filteredList.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
   return (
     <BodyLayout Sidebar={AdminSidebar}>
@@ -108,6 +122,18 @@ export default function BeritaPage() {
                 <MenuItem value="">Semua Status</MenuItem>
                 <MenuItem value="0">Draft</MenuItem>
                 <MenuItem value="1">Published</MenuItem>
+              </TextField>
+              <TextField
+                select size="small" label="Tahun"
+                value={filters.tahun}
+                onChange={(e) => setFilters({ ...filters, tahun: e.target.value })}
+                InputLabelProps={{ shrink: true }}
+                sx={{ ...roundedField, minWidth: 150 }}
+              >
+                <MenuItem value="">Semua Tahun</MenuItem>
+                {tahunOptions.map((tahun) => (
+                  <MenuItem key={tahun} value={String(tahun)}>{tahun}</MenuItem>
+                ))}
               </TextField>
               <Box sx={{ flex: 1 }} />
               <Button
@@ -198,7 +224,7 @@ export default function BeritaPage() {
 
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <Typography sx={{ fontSize: 13, color: "#777" }}>
-                      Menampilkan {((page - 1) * rowsPerPage) + 1}–{Math.min(page * rowsPerPage, list.length)} dari {list.length} berita
+                      Menampilkan {((page - 1) * rowsPerPage) + 1}–{Math.min(page * rowsPerPage, filteredList.length)} dari {filteredList.length} berita
                     </Typography>
                     <Pagination count={totalPages} page={page} onChange={(e, v) => setPage(v)} color="primary" shape="rounded" showFirstButton showLastButton />
                   </Box>

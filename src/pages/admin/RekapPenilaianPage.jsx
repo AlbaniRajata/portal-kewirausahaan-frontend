@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Box, Typography, Paper, Tabs, Tab, CircularProgress } from "@mui/material";
+import { Box, Typography, Paper, CircularProgress, Tabs, Tab } from "@mui/material";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
 import PageTransition from "../../components/PageTransition";
@@ -40,15 +40,6 @@ export default function RekapPenilaianPage() {
   const tahap1 = tahapList.find((t) => Number(t.urutan) === 1);
   const tahap2 = tahapList.find((t) => Number(t.urutan) === 2);
 
-  const tabItems = [];
-  if (tahap1) tabItems.push({ key: "tahap1", label: `Tahap 1 — ${tahap1.nama_tahap || "Desk Evaluasi"}` });
-  if (tahap2) tabItems.push({ key: "tahap2", label: `Tahap 2 — ${tahap2.nama_tahap || "Wawancara"}` });
-  tabItems.push({ key: "history", label: "History Penilaian" });
-
-  useEffect(() => {
-    if (activeTab > tabItems.length - 1) setActiveTab(0);
-  }, [activeTab, tabItems.length]);
-
   if (loading) {
     return (
       <BodyLayout Sidebar={AdminSidebar}>
@@ -79,13 +70,14 @@ export default function RekapPenilaianPage() {
           </Typography>
 
           <Paper sx={{ borderRadius: "16px", border: "1px solid #f0f0f0", overflow: "hidden" }}>
-            {tabItems.length === 1 && (
+            {!tahap1 && !tahap2 && (
               <Box sx={{ p: 2, backgroundColor: "#fff8e1", borderBottom: "1px solid #f0f0f0" }}>
                 <Typography sx={{ fontSize: 13, color: "#8a6d3b" }}>
                   Tahap penilaian belum diatur. Silahkan atur tahap di menu Program terlebih dahulu.
                 </Typography>
               </Box>
             )}
+
             <Box sx={{ borderBottom: "1px solid #f0f0f0" }}>
               <Tabs
                 value={activeTab}
@@ -93,23 +85,47 @@ export default function RekapPenilaianPage() {
                 sx={{
                   px: 2,
                   "& .MuiTab-root": {
-                    textTransform: "none", fontSize: 14, fontWeight: 500,
-                    color: "#888", minHeight: 52,
+                    textTransform: "none",
+                    fontSize: 14,
+                    fontWeight: 500,
+                    color: "#888",
+                    minHeight: 52,
                     "&.Mui-selected": { fontWeight: 700, color: "#0D59F2" },
                   },
                   "& .MuiTabs-indicator": { backgroundColor: "#0D59F2", height: 3, borderRadius: "3px 3px 0 0" },
                 }}
               >
-                {tabItems.map((item) => (
-                  <Tab key={item.key} label={item.label} />
-                ))}
+                <Tab label="Rekap Penilaian" />
+                <Tab label="History Penilaian" />
               </Tabs>
             </Box>
 
             <Box sx={{ p: 3 }}>
-              {tabItems[activeTab]?.key === "tahap1" && <RekapTahap1Tab id_program={program.id_program} />}
-              {tabItems[activeTab]?.key === "tahap2" && <RekapTahap2Tab id_program={program.id_program} />}
-              {tabItems[activeTab]?.key === "history" && <HistoryPenilaianTab id_program={program.id_program} />}
+              {activeTab === 0 && (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  {tahap1 && (
+                    <Paper variant="outlined" sx={{ p: 3, borderRadius: "16px", borderColor: "#eceff1" }}>
+                      <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 2 }}>
+                        Rekap Tahap 1 — {tahap1.nama_tahap || "Desk Evaluasi"}
+                      </Typography>
+                      <RekapTahap1Tab id_program={program.id_program} />
+                    </Paper>
+                  )}
+
+                  {tahap2 && (
+                    <Paper variant="outlined" sx={{ p: 3, borderRadius: "16px", borderColor: "#eceff1" }}>
+                      <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 2 }}>
+                        Rekap Tahap 2 — {tahap2.nama_tahap || "Wawancara"}
+                      </Typography>
+                      <RekapTahap2Tab id_program={program.id_program} />
+                    </Paper>
+                  )}
+                </Box>
+              )}
+
+              {activeTab === 1 && (
+                <HistoryPenilaianTab id_program={program.id_program} />
+              )}
             </Box>
           </Paper>
         </Box>

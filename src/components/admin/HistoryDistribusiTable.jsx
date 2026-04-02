@@ -95,6 +95,7 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
 
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState("");
+  const [tahunFilter, setTahunFilter] = useState("");
   const [reviewers, setReviewers] = useState([]);
   const [juries, setJuries] = useState([]);
   const [selectedNewReviewer, setSelectedNewReviewer] = useState(null);
@@ -106,8 +107,28 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
   const [pageMain, setPageMain] = useState(1);
   const [pagePanel, setPagePanel] = useState(1);
 
-  const paginasi = usePagination(filteredHistory, pageMain, setPageMain);
-  const paginasiPanel = usePagination(historyPanel, pagePanel, setPagePanel);
+  const tahunOptions = Array.from(new Set(
+    (tahap === 1 ? history : historyPanel)
+      .map((item) => {
+        const dateValue = tahap === 1 ? item.assigned_at : (item.assigned_at_reviewer || item.assigned_at_juri);
+        return dateValue ? new Date(dateValue).getFullYear() : null;
+      })
+      .filter(Boolean)
+  )).sort((a, b) => b - a);
+
+  const filteredHistoryByYear = filteredHistory.filter((item) => {
+    if (tahunFilter === "") return true;
+    return item.assigned_at && new Date(item.assigned_at).getFullYear() === Number(tahunFilter);
+  });
+
+  const filteredHistoryPanel = historyPanel.filter((item) => {
+    if (tahunFilter === "") return true;
+    const dateValue = item.assigned_at_reviewer || item.assigned_at_juri;
+    return dateValue && new Date(dateValue).getFullYear() === Number(tahunFilter);
+  });
+
+  const paginasi = usePagination(filteredHistoryByYear, pageMain, setPageMain);
+  const paginasiPanel = usePagination(filteredHistoryPanel, pagePanel, setPagePanel);
 
   const fetchHistory = useCallback(async () => {
     if (!id_program) return;
@@ -150,6 +171,11 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
     );
     setPageMain(1);
   }, [statusFilter, history, tahap]);
+
+  useEffect(() => {
+    setPageMain(1);
+    setPagePanel(1);
+  }, [tahunFilter, tahap]);
 
   const handleOpenReassign = (item, mode) => {
     setReassignMode(mode);
@@ -298,19 +324,31 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
 
     return (
       <Box>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-          <TextField
-            select label="Filter Status" value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setPageMain(1); }}
-            size="small" sx={{ ...roundedField, minWidth: 220 }}
-          >
-            <MenuItem value="">Semua Status</MenuItem>
-            {Object.entries(STATUS_CONFIG).filter(([key]) => key !== "5").map(([key, cfg]) => (
-              <MenuItem key={key} value={key}>{cfg.label}</MenuItem>
-            ))}
-          </TextField>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, gap: 2, flexWrap: "wrap" }}>
+          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+            <TextField
+              select label="Status" value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setPageMain(1); }}
+              size="small" sx={{ ...roundedField, minWidth: 220 }}
+            >
+              <MenuItem value="">Semua Status</MenuItem>
+              {Object.entries(STATUS_CONFIG).filter(([key]) => key !== "5").map(([key, cfg]) => (
+                <MenuItem key={key} value={key}>{cfg.label}</MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              select label="Tahun" value={tahunFilter}
+              onChange={(e) => setTahunFilter(e.target.value)}
+              size="small" sx={{ ...roundedField, minWidth: 180 }}
+            >
+              <MenuItem value="">Semua Tahun</MenuItem>
+              {tahunOptions.map((tahun) => (
+                <MenuItem key={tahun} value={String(tahun)}>{tahun}</MenuItem>
+              ))}
+            </TextField>
+          </Box>
           <Typography sx={{ fontSize: 13, color: "#777" }}>
-            Total: {filteredHistory.length} distribusi
+            Total: {filteredHistoryByYear.length} distribusi
           </Typography>
         </Box>
 
@@ -366,9 +404,21 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
   return (
     <Box>
       <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
-        <Typography sx={{ fontSize: 13, color: "#777" }}>
-          Total: {historyPanel.length} proposal
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+          <TextField
+            select size="small" label="Tahun" value={tahunFilter}
+            onChange={(e) => setTahunFilter(e.target.value)}
+            sx={{ ...roundedField, minWidth: 180 }}
+          >
+            <MenuItem value="">Semua Tahun</MenuItem>
+            {tahunOptions.map((tahun) => (
+              <MenuItem key={tahun} value={String(tahun)}>{tahun}</MenuItem>
+            ))}
+          </TextField>
+          <Typography sx={{ fontSize: 13, color: "#777" }}>
+            Total: {filteredHistoryPanel.length} proposal
+          </Typography>
+        </Box>
       </Box>
 
       <TableContainer sx={{ borderRadius: "12px", border: "1px solid #f0f0f0", overflow: "auto" }}>
