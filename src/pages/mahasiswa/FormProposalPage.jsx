@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Box, Paper, Typography, CircularProgress, Button,
+  Box, Paper, Typography, Button,
   TextField, MenuItem, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, IconButton,
 } from "@mui/material";
-import { CloudUpload, Send, Save, Close, AttachFile } from "@mui/icons-material";
+import { CloudUpload, Send, Save, Close, AttachFile, ArrowBack } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import {
   getProposalStatus, createProposal, updateProposal, submitProposal,
 } from "../../api/mahasiswa";
@@ -119,6 +120,7 @@ const MemberTable = ({ members, showStatus = false }) => (
 const BackButton = ({ navigate }) => (
   <Button
     onClick={() => navigate("/mahasiswa/proposal")}
+    startIcon={<ArrowBack />}
     sx={{
       borderRadius: "50px",
       textTransform: "none", color: "#777", fontSize: 13,
@@ -282,6 +284,12 @@ export default function ProposalFormPage() {
     setErrors({ ...errors, modal_diajukan: "" });
   };
 
+  const anggotaAccepted = status?.data?.anggota?.all_accepted === true;
+  const pembimbingStatus = status?.data?.pembimbing?.status;
+  const pembimbingDisetujui = pembimbingStatus === 1;
+  const pembimbingDitolak = pembimbingStatus === 2;
+  const proposalReady = anggotaAccepted && pembimbingDisetujui && status?.timelineOpen;
+
   const FileBox = ({ fileName, isExisting = false, showDownload = false, canRemove = false }) => (
     <Box sx={{ border: "1.5px solid #f0f0f0", borderRadius: "12px", p: 2, display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "#fafafa" }}>
       <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -317,8 +325,8 @@ export default function ProposalFormPage() {
   if (loading) {
     return (
       <BodyLayout Sidebar={SidebarMahasiswa}>
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-          <CircularProgress />
+        <Box sx={{ position: "relative", minHeight: "60vh" }}>
+          <LoadingScreen message="Memuat form proposal..." overlay minHeight="60vh" />
         </Box>
       </BodyLayout>
     );
@@ -428,32 +436,9 @@ export default function ProposalFormPage() {
     );
   }
 
-  if (!status?.data?.anggota?.all_accepted) {
-    return (
-      <BodyLayout Sidebar={SidebarMahasiswa}>
-        <PageTransition>
-          <Box>
-            <BackButton navigate={navigate} />
-            <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Form Proposal</Typography>
-            <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>Lengkapi form di bawah ini untuk mendaftarkan proposal Anda</Typography>
-            <Box sx={{ mb: 3, p: 2, borderRadius: "12px", backgroundColor: "#fff8e1", border: "1px solid #ffe082" }}>
-              <Typography sx={{ fontSize: 14, color: "#f57f17", fontWeight: 500 }}>
-                Belum semua anggota menyetujui undangan. Pengajuan proposal hanya bisa dilakukan setelah semua anggota menyetujui undangan.
-              </Typography>
-            </Box>
-            <Paper sx={{ p: 4, borderRadius: "16px", border: "1px solid #f0f0f0" }}>
-              <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 3 }}>Status Anggota Tim</Typography>
-              <MemberTable members={status.data.anggota.members} showStatus />
-            </Paper>
-          </Box>
-        </PageTransition>
-      </BodyLayout>
-    );
-  }
-
   const isDraft = status?.data?.proposal?.status === 0;
   const isReadOnly = status?.data?.proposal && !isDraft;
-  const canEdit = !isReadOnly && status?.timelineOpen;
+  const canEdit = !isReadOnly && proposalReady;
   const si = status?.data?.proposal ? getStatusInfo(status.data.proposal.status) : null;
 
   return (
@@ -469,6 +454,30 @@ export default function ProposalFormPage() {
               <Typography sx={{ fontSize: 14, color: "#f57f17", fontWeight: 500 }}>
                 Pendaftaran proposal untuk program ini sudah ditutup.
               </Typography>
+            </Box>
+          )}
+          {!proposalReady && !isReadOnly && (
+            <Box sx={{ mb: 3, p: 2.5, borderRadius: "12px", backgroundColor: "#fff8e1", border: "1px solid #ffe082" }}>
+              <Typography sx={{ fontSize: 14, color: "#f57f17", fontWeight: 700, mb: 1 }}>
+                Proposal belum bisa dibuat atau diunggah
+              </Typography>
+              <Typography sx={{ fontSize: 13, color: "#8d6e00", mb: 1.5 }}>
+                Proposal baru dapat di-upload setelah semua anggota tim menyetujui undangan dan dosen pembimbing menyetujui pengajuan.
+              </Typography>
+              <Box sx={{ display: "grid", gap: 1 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
+                  <Typography sx={{ fontSize: 13, color: "#6d4c41" }}>Status anggota tim</Typography>
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, color: anggotaAccepted ? "#2e7d32" : "#c62828" }}>
+                    {anggotaAccepted ? "Semua disetujui" : "Masih menunggu"}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
+                  <Typography sx={{ fontSize: 13, color: "#6d4c41" }}>Status pembimbing</Typography>
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, color: pembimbingDisetujui ? "#2e7d32" : pembimbingDitolak ? "#c62828" : "#f57f17" }}>
+                    {pembimbingDisetujui ? "Disetujui" : pembimbingDitolak ? "Ditolak" : status?.data?.pembimbing ? "Menunggu respon" : "Belum diajukan"}
+                  </Typography>
+                </Box>
+              </Box>
             </Box>
           )}
           {isReadOnly && (
@@ -522,18 +531,30 @@ export default function ProposalFormPage() {
               </Box>
             </Box>
 
-            <Box sx={{ mb: 3 }}>
-              <Typography sx={{ fontWeight: 600, mb: 1 }}>
-                Anggaran Dana {canEdit && <span style={{ color: "red" }}>*</span>}
-              </Typography>
-              <TextField
-                fullWidth placeholder="Masukkan anggaran dana"
-                value={formatRupiah(form.modal_diajukan)}
-                onChange={handleModalChange}
-                error={!!errors.modal_diajukan} helperText={errors.modal_diajukan}
-                disabled={!canEdit || submitting} sx={roundedField}
-                InputProps={{ startAdornment: <Typography sx={{ mr: 1, color: "#555" }}>Rp</Typography> }}
-              />
+            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, mb: 3 }}>
+              <Box>
+                <Typography sx={{ fontWeight: 600, mb: 1 }}>Dosen Pembimbing</Typography>
+                <TextField
+                  fullWidth
+                  value={status?.data?.pembimbing?.nama_dosen || "-"}
+                  disabled
+                  sx={roundedField}
+                />
+              </Box>
+
+              <Box>
+                <Typography sx={{ fontWeight: 600, mb: 1 }}>
+                  Anggaran Dana {canEdit && <span style={{ color: "red" }}>*</span>}
+                </Typography>
+                <TextField
+                  fullWidth placeholder="Masukkan anggaran dana"
+                  value={formatRupiah(form.modal_diajukan)}
+                  onChange={handleModalChange}
+                  error={!!errors.modal_diajukan} helperText={errors.modal_diajukan}
+                  disabled={!canEdit || submitting} sx={roundedField}
+                  InputProps={{ startAdornment: <Typography sx={{ mr: 1, color: "#555" }}>Rp</Typography> }}
+                />
+              </Box>
             </Box>
 
             <Box sx={{ mb: 3 }}>

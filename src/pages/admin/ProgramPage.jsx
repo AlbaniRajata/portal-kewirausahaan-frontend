@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  Box, Typography, CircularProgress, Tabs, Tab, Paper,
+  Box, Typography, Tabs, Tab, Paper,
 } from "@mui/material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import TimelineProgramTab from "../../components/admin/TimelineProgramTab";
 import TahapPenilaianTab from "../../components/admin/TahapPenilaianTab";
 import KriteriaPenilaianTab from "../../components/admin/KriteriaPenilaianTab";
@@ -34,8 +35,8 @@ export default function ProgramPage() {
   if (loading) {
     return (
       <BodyLayout Sidebar={AdminSidebar}>
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-          <CircularProgress />
+        <Box sx={{ position: "relative", minHeight: "60vh" }}>
+          <LoadingScreen message="Memuat data..." overlay minHeight="60vh" />
         </Box>
       </BodyLayout>
     );

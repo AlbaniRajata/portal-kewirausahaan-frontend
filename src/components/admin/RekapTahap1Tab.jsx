@@ -7,6 +7,7 @@ import {
 import { KeyboardArrowDown, KeyboardArrowRight } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import { getListProposalRekapTahap1, finalisasiDeskBatch, getRekapDesk } from "../../api/admin";
+import LoadingScreen from "../common/LoadingScreen";
 
 const tableHeadCell = { fontWeight: 700, fontSize: 13, color: "#000", backgroundColor: "#fafafa", borderBottom: "2px solid #f0f0f0", py: 2 };
 const tableBodyRow = { "& td": { borderBottom: "1px solid #f5f5f5", py: 2 } };
@@ -112,7 +113,11 @@ export default function RekapTahap1Tab({ id_program }) {
         <Box sx={{ display: "flex", gap: 1.5 }}><Button variant="outlined" color="error" onClick={() => handleFinalisasi(false)} disabled={selected.length === 0 || submitting} sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600 }}>Finalisasi Tidak Lolos</Button><Button variant="contained" onClick={() => handleFinalisasi(true)} disabled={selected.length === 0 || submitting} sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}>Finalisasi Lolos</Button></Box>
       </Box>
 
-      {loading ? <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box> : filteredList.length === 0 ? <Box sx={{ textAlign: "center", py: 8 }}><Typography sx={{ fontSize: 14, color: "#999" }}>Belum ada proposal untuk tahap desk evaluasi</Typography></Box> : (
+      {loading ? (
+        <Box sx={{ position: "relative", minHeight: 320 }}>
+          <LoadingScreen message="Memuat rekap tahap 1..." overlay minHeight="320px" />
+        </Box>
+      ) : filteredList.length === 0 ? <Box sx={{ textAlign: "center", py: 8 }}><Typography sx={{ fontSize: 14, color: "#999" }}>Belum ada proposal untuk tahap desk evaluasi</Typography></Box> : (
         <>
           <TableContainer sx={{ borderRadius: "12px", border: "1px solid #f0f0f0", overflow: "auto" }}>
             <Table>

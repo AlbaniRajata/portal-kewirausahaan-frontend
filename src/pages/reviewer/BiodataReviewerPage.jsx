@@ -8,6 +8,7 @@ import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import ReviewerSidebar from "../../components/layouts/ReviewerSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import { getProfile, updateProfile, updatePassword } from "../../api/reviewer";
 
 const roundedField = {
@@ -183,8 +184,8 @@ export default function BiodataReviewerPage() {
   if (loading) {
     return (
       <BodyLayout Sidebar={ReviewerSidebar}>
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-          <CircularProgress />
+        <Box sx={{ position: "relative", minHeight: "60vh" }}>
+          <LoadingScreen message="Memuat biodata reviewer..." overlay minHeight="60vh" />
         </Box>
       </BodyLayout>
     );

@@ -10,6 +10,7 @@ import {
   getRekapDesk, getRekapWawancara,
   getHistoryDetailTahap1, getHistoryDetailTahap2,
 } from "../../api/admin";
+import LoadingScreen from "../common/LoadingScreen";
 
 const tableHeadCell = {
   fontWeight: 700, fontSize: 13, color: "#000",
@@ -137,7 +138,9 @@ export default function DetailRekapDialog({
 
       <DialogContent dividers sx={{ px: 3, py: 3 }}>
         {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}><CircularProgress /></Box>
+          <Box sx={{ position: "relative", minHeight: 240 }}>
+            <LoadingScreen message="Memuat detail rekap..." overlay minHeight="240px" />
+          </Box>
         ) : notFound ? (
           <EmptyInfo text="Belum ada penilaian yang tersedia untuk proposal ini" />
         ) : !data ? null : tahap === 1 ? (

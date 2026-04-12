@@ -7,6 +7,7 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import LoadingScreen from "../common/LoadingScreen";
 import {
   getDistribusiHistory,
   getReviewerList,
@@ -258,7 +259,11 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
   };
 
   if (loading) {
-    return <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}><CircularProgress /></Box>;
+    return (
+      <Box sx={{ position: "relative", minHeight: 280 }}>
+        <LoadingScreen message="Memuat history distribusi..." overlay minHeight="280px" />
+      </Box>
+    );
   }
 
   if (tahap === 1) {
@@ -442,18 +447,15 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
             ) : (
               paginasiPanel.paginated.map((item, i) => (
                 <TableRow key={i} sx={tableBodyRow}>
-                  {/* Proposal */}
                   <TableCell>
                     <Typography sx={{ fontSize: 13, maxWidth: 220, fontWeight: 500 }}>{item.judul}</Typography>
                     <StatusPill status={item.status_proposal} configMap={STATUS_PROPOSAL_CONFIG} />
                   </TableCell>
 
-                  {/* Tim */}
                   <TableCell>
                     <Typography sx={{ fontSize: 13 }}>{item.nama_tim}</Typography>
                   </TableCell>
 
-                  {/* Reviewer */}
                   <TableCell>
                     {item.nama_reviewer ? (
                       <>
@@ -470,7 +472,6 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
                     )}
                   </TableCell>
 
-                  {/* Juri */}
                   <TableCell>
                     {item.nama_juri ? (
                       <>
@@ -487,10 +488,8 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
                     )}
                   </TableCell>
 
-                  {/* Aksi */}
                   <TableCell sx={{ textAlign: "center" }}>
                     <Box sx={{ display: "flex", flexDirection: "column", gap: 1, alignItems: "center" }}>
-                      {/* Reassign reviewer jika ditolak */}
                       {item.status_reviewer === 2 && item.id_distribusi_reviewer && (
                         <Button size="small" variant="outlined" color="warning"
                           onClick={() => handleOpenReassign(item, "reviewer")}
@@ -498,7 +497,6 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
                           Ganti Reviewer
                         </Button>
                       )}
-                      {/* Reassign juri jika ditolak */}
                       {item.status_juri === 2 && item.id_distribusi_juri && (
                         <Button size="small" variant="outlined" color="warning"
                           onClick={() => handleOpenReassign(item, "juri")}
@@ -506,7 +504,6 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
                           Ganti Juri
                         </Button>
                       )}
-                      {/* Tidak ada aksi jika tidak ada yang ditolak */}
                       {item.status_reviewer !== 2 && item.status_juri !== 2 && (
                         <Typography sx={{ fontSize: 12, color: "#ccc" }}>—</Typography>
                       )}

@@ -30,6 +30,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import {
   getProgressLuaranTim,
   getDetailLuaranTim,
@@ -330,8 +331,8 @@ setTimeout(() => setOpenDetail(true), 200);
             }}
           >
             {loading ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-                <CircularProgress />
+              <Box sx={{ position: "relative", minHeight: 320 }}>
+                <LoadingScreen message="Memuat progress tim..." overlay minHeight="320px" />
               </Box>
             ) : filteredProgressList.length === 0 ? (
               <Box sx={{ textAlign: "center", py: 10 }}>
@@ -553,8 +554,8 @@ setTimeout(() => setOpenDetail(true), 200);
 
           <DialogContent dividers sx={{ px: 3, py: 3 }}>
             {loadingDetail ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
-                <CircularProgress />
+              <Box sx={{ position: "relative", minHeight: 220 }}>
+                <LoadingScreen message="Memuat detail luaran..." overlay minHeight="220px" />
               </Box>
             ) : detailLuaran.length === 0 ? (
               <Typography sx={{ textAlign: "center", color: "#999", py: 4 }}>

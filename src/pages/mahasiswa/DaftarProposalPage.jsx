@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import {
-  Box, Paper, Typography, CircularProgress, Button,
+  Box, Paper, Typography, Button,
   Table, TableBody, TableCell, TableContainer, TableHead,
   TableRow, TextField, Divider,
 } from "@mui/material";
@@ -10,6 +10,7 @@ import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import { getProposalStatus } from "../../api/mahasiswa";
 import { getAllProgram } from "../../api/public";
 
@@ -113,8 +114,8 @@ export default function DaftarProposalPage() {
   if (loading) {
     return (
       <BodyLayout Sidebar={SidebarMahasiswa}>
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-          <CircularProgress />
+        <Box sx={{ position: "relative", minHeight: "60vh" }}>
+          <LoadingScreen message="Memuat proposal..." overlay minHeight="60vh" />
         </Box>
       </BodyLayout>
     );
@@ -122,6 +123,10 @@ export default function DaftarProposalPage() {
 
   const proposal = status?.data?.proposal;
   const statusInfo = proposal ? getStatusInfo(proposal.status) : null;
+  const pembimbingDisetujui = status?.data?.pembimbing?.status === 1;
+  const pembimbingDitolak = status?.data?.pembimbing?.status === 2;
+  const canCreateProposal = status?.isKetua && status?.data?.anggota?.all_accepted && pembimbingDisetujui && !status?.data?.proposal;
+  const canEditProposal = !!proposal && proposal.status === 0 && pembimbingDisetujui && status?.data?.anggota?.all_accepted;
   const anyProgramOpen = programs.some((p) => {
     if (!p.pendaftaran_mulai || !p.pendaftaran_selesai) return false;
     const now = new Date();
@@ -137,7 +142,7 @@ export default function DaftarProposalPage() {
               <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Daftar Proposal</Typography>
               <Typography sx={{ fontSize: 14, color: "#777" }}>Kelola proposal kewirausahaan Anda</Typography>
             </Box>
-            {status?.isKetua && status?.data?.anggota?.all_accepted && !status?.data?.proposal && (
+            {canCreateProposal && (
               <Button
                 variant="contained"
                 onClick={() => navigate("/mahasiswa/proposal/form")}
@@ -190,6 +195,18 @@ export default function DaftarProposalPage() {
               </Typography>
             </Box>
           )}
+          {status?.hasTim && status?.isKetua && status?.data?.anggota?.all_accepted && !pembimbingDisetujui && (
+            <Box sx={{ mb: 3, p: 2, borderRadius: "12px", backgroundColor: "#fff8e1", border: "1px solid #ffe082" }}>
+              <Typography sx={{ fontSize: 14, color: "#f57f17", fontWeight: 500 }}>
+                Tim sudah lengkap. Proposal baru bisa dibuat setelah dosen pembimbing menyetujui pengajuan.
+              </Typography>
+              {pembimbingDitolak && (
+                <Typography sx={{ fontSize: 13, color: "#b26a00", mt: 0.75 }}>
+                  Pengajuan pembimbing sebelumnya ditolak. Silahkan ajukan dosen pembimbing lain.
+                </Typography>
+              )}
+            </Box>
+          )}
 
           <Paper sx={{ overflow: "hidden", mb: 3, borderRadius: "16px", border: "1px solid #f0f0f0" }}>
             {proposal ? (
@@ -232,17 +249,17 @@ export default function DaftarProposalPage() {
                         <Box sx={{ display: "flex", justifyContent: "center" }}>
                           <Button
                             size="small"
-                            variant={proposal.status === 0 ? "contained" : "outlined"}
+                            variant={canEditProposal ? "contained" : "outlined"}
                             onClick={() => navigate("/mahasiswa/proposal/form")}
                             sx={{
                               textTransform: "none", borderRadius: "50px",
                               fontSize: 13, fontWeight: 600, px: 2,
-                              ...(proposal.status === 0
+                              ...(canEditProposal
                                 ? { backgroundColor: "#FDB022", "&:hover": { backgroundColor: "#e09a1a" }, border: "none", color: "#fff" }
                                 : { borderColor: "#0D59F2", color: "#0D59F2", "&:hover": { backgroundColor: "#f0f4ff", borderColor: "#0D59F2" } }),
                             }}
                           >
-                            {proposal.status === 0 ? "Edit" : "Lihat"}
+                            {canEditProposal ? "Edit" : "Lihat"}
                           </Button>
                         </Box>
                       </TableCell>
@@ -264,8 +281,10 @@ export default function DaftarProposalPage() {
                   Belum Ada Proposal
                 </Typography>
                 <Typography sx={{ fontSize: 14, color: "#999", mb: 4, maxWidth: 400, mx: "auto", lineHeight: 1.7 }}>
-                  {status?.isKetua && status?.data?.anggota?.all_accepted
+                  {status?.isKetua && status?.data?.anggota?.all_accepted && pembimbingDisetujui
                     ? "Tambahkan proposal kewirausahaan Anda dengan klik tombol di kanan atas."
+                    : status?.isKetua && status?.data?.anggota?.all_accepted
+                      ? "Tunggu persetujuan dosen pembimbing terlebih dahulu sebelum membuat proposal."
                     : "Proposal akan muncul di sini setelah dibuat oleh ketua tim"}
                 </Typography>
               </Box>

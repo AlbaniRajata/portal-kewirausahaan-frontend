@@ -8,6 +8,7 @@ import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import { getProfile, updateProfile, updatePassword } from "../../api/mahasiswa";
 import { getAllJurusan } from "../../api/jurusan";
 import { getAllProdi } from "../../api/public";
@@ -230,8 +231,8 @@ export default function BiodataMahasiswaPage() {
   if (loading) {
     return (
       <BodyLayout Sidebar={SidebarMahasiswa}>
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-          <CircularProgress />
+        <Box sx={{ position: "relative", minHeight: "60vh" }}>
+          <LoadingScreen message="Memuat biodata mahasiswa..." overlay minHeight="60vh" />
         </Box>
       </BodyLayout>
     );

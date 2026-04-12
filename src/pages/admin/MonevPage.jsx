@@ -10,6 +10,7 @@ import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import { useNavigate } from "react-router-dom";
 import {
   getMyProgram, getLuaranProgram, createLuaran, updateLuaran, deleteLuaran,
@@ -203,8 +204,8 @@ export default function MonevPage() {
   if (loadingProgram) {
     return (
       <BodyLayout Sidebar={AdminSidebar}>
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-          <CircularProgress />
+        <Box sx={{ position: "relative", minHeight: "60vh" }}>
+          <LoadingScreen message="Memuat data program..." overlay minHeight="60vh" />
         </Box>
       </BodyLayout>
     );
@@ -289,8 +290,8 @@ export default function MonevPage() {
               </Typography>
             </Box>
             {loading ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-                <CircularProgress />
+              <Box sx={{ position: "relative", minHeight: 320 }}>
+                <LoadingScreen message="Memuat data luaran..." overlay minHeight="320px" />
               </Box>
             ) : filteredLuaranList.length === 0 ? (
               <Box sx={{ textAlign: "center", py: 10 }}>

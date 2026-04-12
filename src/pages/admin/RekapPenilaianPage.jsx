@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
-import { Box, Typography, Paper, CircularProgress, Tabs, Tab } from "@mui/material";
+import { Box, Typography, Paper, Tabs, Tab } from "@mui/material";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import RekapTahap1Tab from "../../components/admin/RekapTahap1Tab";
 import RekapTahap2Tab from "../../components/admin/RekapTahap2Tab";
 import HistoryPenilaianTab from "../../components/admin/HistoryPenilaianTab";
@@ -43,8 +44,8 @@ export default function RekapPenilaianPage() {
   if (loading) {
     return (
       <BodyLayout Sidebar={AdminSidebar}>
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-          <CircularProgress />
+        <Box sx={{ position: "relative", minHeight: "60vh" }}>
+          <LoadingScreen message="Memuat data..." overlay minHeight="60vh" />
         </Box>
       </BodyLayout>
     );
@@ -66,7 +67,7 @@ export default function RekapPenilaianPage() {
         <Box>
           <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Rekap Penilaian</Typography>
           <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>
-            Rekap hasil penilaian dan finalisasi proposal — {program.keterangan}
+            Rekap hasil penilaian dan finalisasi proposal
           </Typography>
 
           <Paper sx={{ borderRadius: "16px", border: "1px solid #f0f0f0", overflow: "hidden" }}>

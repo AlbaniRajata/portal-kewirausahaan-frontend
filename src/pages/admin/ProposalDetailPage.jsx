@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  Box, Typography, Button, CircularProgress, Table, TableBody,
+  Box, Typography, Button, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, TextField, Paper,
 } from "@mui/material";
 import { AttachFile, ArrowBack } from "@mui/icons-material";
@@ -9,6 +9,7 @@ import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import { getProposalDetailAdmin } from "../../api/admin";
 
 const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "15px" } };
@@ -53,6 +54,18 @@ const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
 };
 
+const getDosenPembimbingName = (item) => {
+  return (
+    item?.nama_dosen ||
+    item?.nama_pembimbing ||
+    item?.dosen_pembimbing ||
+    item?.pembimbing?.nama_dosen ||
+    item?.pembimbing?.nama_lengkap ||
+    item?.pengajuan_pembimbing?.nama_dosen ||
+    "-"
+  );
+};
+
 export default function ProposalDetailPage() {
   const navigate = useNavigate();
   const { id_proposal } = useParams();
@@ -76,8 +89,8 @@ export default function ProposalDetailPage() {
   if (loading) {
     return (
       <BodyLayout Sidebar={AdminSidebar}>
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-          <CircularProgress />
+        <Box sx={{ position: "relative", minHeight: "60vh" }}>
+          <LoadingScreen message="Memuat data..." overlay minHeight="60vh" />
         </Box>
       </BodyLayout>
     );
@@ -148,6 +161,11 @@ export default function ProposalDetailPage() {
                 <Typography sx={{ fontWeight: 600, mb: 2, fontSize: 14 }}>Status</Typography>
                 <StatusPill label={si?.label || "Unknown"} backgroundColor={si?.backgroundColor || "#666"} />
               </Box>
+            </Box>
+
+            <Box sx={{ mb: 3 }}>
+              <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>Dosen Pembimbing</Typography>
+              <TextField fullWidth value={getDosenPembimbingName(proposal)} disabled sx={roundedField} />
             </Box>
 
             <Box sx={{ mb: 3 }}>

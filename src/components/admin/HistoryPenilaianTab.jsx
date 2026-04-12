@@ -4,13 +4,18 @@ import {
   TableHead, TableRow, Chip, CircularProgress, Button, Collapse, Paper,
   Pagination, TextField, MenuItem,
 } from "@mui/material";
-import { KeyboardArrowDown, KeyboardArrowRight } from "@mui/icons-material";
+import { KeyboardArrowRight, Download } from "@mui/icons-material";
 import Swal from "sweetalert2";
+import * as XLSX from "xlsx-js-style";
+import LoadingScreen from "../common/LoadingScreen";
 import {
+  getMyProgram,
   getHistoryPenilaianTahap1,
   getHistoryPenilaianTahap2,
   getHistoryDetailTahap1,
   getHistoryDetailTahap2,
+  getProposalDetailAdmin,
+  getPesertaDetail,
 } from "../../api/admin";
 
 const tableHeadCell = {
@@ -66,10 +71,218 @@ const formatDate = (d) => {
   });
 };
 
+const getFinalisasiDateValue = (item) => {
+  return (
+    item?.tanggal_finalisasi ||
+    item?.tanggal_finalisasi_tahap2 ||
+    item?.tanggal_finalisasi_wawancara ||
+    item?.finalized_at ||
+    item?.wawancara_finalized_at ||
+    item?.desk_finalized_at ||
+    item?.finalisasi?.tanggal_finalisasi ||
+    item?.finalisasi_tahap2?.tanggal_finalisasi ||
+    item?.updated_at ||
+    item?.created_at ||
+    null
+  );
+};
+
+const getProgramDisplayName = (program) => {
+  const namaProgram = program?.nama_program?.trim();
+  const keteranganProgram = program?.keterangan?.trim();
+
+  if (namaProgram && keteranganProgram && namaProgram.toLowerCase() !== keteranganProgram.toLowerCase()) {
+    return `${namaProgram} - ${keteranganProgram}`;
+  }
+
+  return namaProgram || keteranganProgram || "PENDAFTAR PMW";
+};
+
+const getProgramTitleForExport = (program) => {
+  const programText = `${program?.nama_program || ""} ${program?.keterangan || ""}`.toLowerCase();
+
+  if (programText.includes("pmw") || programText.includes("program mahasiswa wirausaha")) {
+    return "DAFTAR PROGRAM MAHASISWA WIRAUSAHA";
+  }
+
+  if (programText.includes("inbis") || programText.includes("inkubator bisnis")) {
+    return "DAFTAR INKUBATOR BISNIS";
+  }
+
+  return getProgramDisplayName(program).toUpperCase();
+};
+
+const getProgramNameForFilename = (program) => {
+  const programText = `${program?.nama_program || ""} ${program?.keterangan || ""}`.toLowerCase();
+  if (programText.includes("pmw") || programText.includes("program mahasiswa wirausaha")) {
+    return "PMW";
+  }
+  if (programText.includes("inbis") || programText.includes("inkubator bisnis")) {
+    return "INBIS";
+  }
+  return program?.keterangan?.substring(0, 10).toUpperCase() || "Program";
+};
+
 const getProposalKey = (tahap, proposalId) => `${tahap}-${proposalId}`;
 
 const getTahap1Nilai = (item) => {
   return item.rata_rata_nilai ?? item.total_nilai ?? item.nilai ?? item.nilai_akhir ?? item.rata_rata_reviewer ?? "-";
+};
+
+const getTahap2Nilai = (item) => {
+  return item.nilai_akhir ?? item.total_nilai ?? item.rata_rata_nilai ?? item.rata_rata_juri ?? item.rata_rata_reviewer ?? "-";
+};
+
+const getPenilaiLabel = (tahap, historyDetail) => {
+  if (!historyDetail) return "-";
+
+  if (tahap === 1) {
+    const reviewerNames = (historyDetail.reviewer || [])
+      .map((item) => item?.reviewer?.nama || item?.user?.nama_lengkap || item?.user?.nama || "")
+      .filter(Boolean);
+    const uniqueReviewerNames = [...new Set(reviewerNames)];
+    return uniqueReviewerNames.length > 0 ? uniqueReviewerNames.join(" dan ") : "-";
+  }
+
+  const reviewerPanelNames = (historyDetail.reviewer_panel || [])
+    .map((item) => item?.reviewer?.nama || item?.user?.nama_lengkap || item?.user?.nama || "")
+    .filter(Boolean);
+
+  const juriPanelNames = (historyDetail.juri_panel || [])
+    .map((item) => item?.juri?.nama || item?.user?.nama_lengkap || item?.user?.nama || "")
+    .filter(Boolean);
+
+  const uniqueNames = [...new Set([...reviewerPanelNames, ...juriPanelNames])];
+  return uniqueNames.length > 0 ? uniqueNames.join(" dan ") : "-";
+};
+
+const getDosenPembimbingName = (item) => {
+  return (
+    item?.nama_dosen ||
+    item?.nama_pembimbing ||
+    item?.dosen_pembimbing ||
+    item?.pembimbing?.nama_dosen ||
+    item?.pembimbing?.nama_lengkap ||
+    item?.pengajuan_pembimbing?.nama_dosen ||
+    "-"
+  );
+};
+
+const centerWorksheetColumns = (worksheet, columns = [], startRow = 0, endRow = 0) => {
+  for (let row = startRow; row <= endRow; row += 1) {
+    columns.forEach((column) => {
+      const cellRef = XLSX.utils.encode_cell({ r: row, c: column });
+      const cell = worksheet[cellRef];
+      if (!cell) return;
+      cell.s = {
+        ...(cell.s || {}),
+        alignment: {
+          ...(cell.s?.alignment || {}),
+          horizontal: "center",
+          vertical: "center",
+        },
+      };
+    });
+  }
+};
+
+const wrapWorksheetColumns = (worksheet, columns = [], startRow = 0, endRow = 0) => {
+  for (let row = startRow; row <= endRow; row += 1) {
+    columns.forEach((column) => {
+      const cellRef = XLSX.utils.encode_cell({ r: row, c: column });
+      const cell = worksheet[cellRef];
+      if (!cell) return;
+      cell.s = {
+        ...(cell.s || {}),
+        alignment: {
+          ...(cell.s?.alignment || {}),
+          vertical: "center",
+          wrapText: true,
+        },
+      };
+    });
+  }
+};
+
+const getAnggotaPeranLabel = (anggota) => {
+  const peran = anggota?.peran;
+  if (peran === 1 || String(peran).toLowerCase() === "ketua") return "Ketua";
+  return "Anggota";
+};
+
+const getAnggotaKey = (anggota) => {
+  return String(anggota?.id_user || anggota?.id || anggota?.nim || anggota?.username || "");
+};
+
+const getAnggotaProdi = (anggota, pesertaDetail) => {
+  const jenjang = anggota?.jenjang ? `${anggota.jenjang} ` : "";
+  const jenjangPeserta = pesertaDetail?.jenjang ? `${pesertaDetail.jenjang} ` : "";
+  return (
+    anggota?.prodi ||
+    `${jenjang}${anggota?.nama_prodi || ""}`.trim() ||
+    `${jenjangPeserta}${pesertaDetail?.nama_prodi || ""}`.trim() ||
+    "-"
+  );
+};
+
+const getAnggotaJurusan = (anggota, pesertaDetail) => {
+  return (
+    anggota?.nama_jurusan ||
+    anggota?.jurusan ||
+    anggota?.mahasiswa?.nama_jurusan ||
+    pesertaDetail?.nama_jurusan ||
+    "-"
+  );
+};
+
+const getAnggotaNoHp = (anggota, pesertaDetail) => {
+  return (
+    anggota?.no_hp ||
+    anggota?.nomor_hp ||
+    anggota?.hp ||
+    anggota?.mahasiswa?.no_hp ||
+    pesertaDetail?.no_hp ||
+    "-"
+  );
+};
+
+const getAnggotaRowsForExport = (proposal, detail, pesertaDetailMap = new Map()) => {
+  const anggotaRaw =
+    detail?.anggota_tim ||
+    detail?.anggota ||
+    proposal?.anggota_tim ||
+    [];
+
+  if (Array.isArray(anggotaRaw) && anggotaRaw.length > 0) {
+    return [...anggotaRaw]
+      .sort((a, b) => {
+        const peranA = getAnggotaPeranLabel(a) === "Ketua" ? 0 : 1;
+        const peranB = getAnggotaPeranLabel(b) === "Ketua" ? 0 : 1;
+        if (peranA !== peranB) return peranA - peranB;
+        return (a?.nama_lengkap || "").localeCompare(b?.nama_lengkap || "", "id-ID");
+      })
+      .map((anggota) => {
+        const anggotaKey = getAnggotaKey(anggota);
+        const pesertaDetail = anggotaKey ? pesertaDetailMap.get(anggotaKey) : null;
+        return {
+          keterangan: getAnggotaPeranLabel(anggota),
+          nama: anggota?.nama_lengkap || anggota?.nama || anggota?.username || "-",
+          nim: anggota?.nim || "-",
+          prodi: getAnggotaProdi(anggota, pesertaDetail),
+          jurusan: getAnggotaJurusan(anggota, pesertaDetail),
+          noHp: getAnggotaNoHp(anggota, pesertaDetail),
+        };
+      });
+  }
+
+  return [{
+    keterangan: "Ketua",
+    nama: proposal?.ketua?.nama_lengkap || proposal?.nama_ketua || "-",
+    nim: proposal?.ketua?.nim || proposal?.nim_ketua || "-",
+    prodi: getAnggotaProdi(proposal?.ketua, null),
+    jurusan: getAnggotaJurusan(proposal?.ketua, null),
+    noHp: getAnggotaNoHp(proposal?.ketua, null),
+  }];
 };
 
 function ReviewerCard({ data }) {
@@ -153,7 +366,7 @@ function StageSection({
   const filteredList = tahunFilter === ""
     ? filteredByKategori
     : filteredByKategori.filter((item) => {
-      const dateValue = item.tanggal_finalisasi || item.updated_at || item.created_at;
+      const dateValue = getFinalisasiDateValue(item);
       if (!dateValue) return false;
       return String(new Date(dateValue).getFullYear()) === tahunFilter;
     });
@@ -245,7 +458,7 @@ function StageSection({
 
   return (
     <Box>
-      <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 2 }}>{title}</Typography>
+      {title ? <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 2 }}>{title}</Typography> : null}
       <TableContainer sx={{ borderRadius: "12px", border: "1px solid #f0f0f0", overflow: "auto" }}>
         <Table>
           <TableHead>
@@ -308,7 +521,7 @@ function StageSection({
                       )}
 
                       <TableCell>
-                        <Typography sx={{ fontSize: 13 }}>{formatDate(p.tanggal_finalisasi)}</Typography>
+                        <Typography sx={{ fontSize: 13 }}>{formatDate(getFinalisasiDateValue(p))}</Typography>
                       </TableCell>
                       <TableCell>
                         <StatusPill status={p.status_proposal} />
@@ -365,8 +578,10 @@ function StageSection({
 
 export default function HistoryPenilaianTab({ id_program }) {
   const [loading, setLoading] = useState(true);
+  const [programInfo, setProgramInfo] = useState(null);
   const [listTahap1, setListTahap1] = useState([]);
   const [listTahap2, setListTahap2] = useState([]);
+  const [exportingTahap, setExportingTahap] = useState(null);
   const [kategoriFilter, setKategoriFilter] = useState("");
   const [tahunFilter, setTahunFilter] = useState("");
   const [pageMap, setPageMap] = useState({ 1: 1, 2: 1 });
@@ -393,6 +608,16 @@ export default function HistoryPenilaianTab({ id_program }) {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  useEffect(() => {
+    getMyProgram()
+      .then((res) => {
+        setProgramInfo(res?.data || null);
+      })
+      .catch(() => {
+        setProgramInfo(null);
+      });
+  }, []);
+
   const kategoriOptions = Array.from(new Set(
     [...listTahap1, ...listTahap2]
       .map((item) => item.nama_kategori || "")
@@ -401,7 +626,7 @@ export default function HistoryPenilaianTab({ id_program }) {
 
   const tahunOptions = Array.from(new Set(
     [...listTahap1, ...listTahap2]
-      .map((item) => item.tanggal_finalisasi || item.updated_at || item.created_at)
+      .map((item) => getFinalisasiDateValue(item))
       .filter(Boolean)
       .map((value) => String(new Date(value).getFullYear()))
   )).sort((a, b) => Number(b) - Number(a));
@@ -410,8 +635,253 @@ export default function HistoryPenilaianTab({ id_program }) {
     setPageMap({ 1: 1, 2: 1 });
   }, [kategoriFilter, tahunFilter]);
 
+  const filterHistoryList = useCallback((list) => {
+    const filteredByKategori = kategoriFilter === ""
+      ? list
+      : list.filter((item) => (item.nama_kategori || "") === kategoriFilter);
+
+    return tahunFilter === ""
+      ? filteredByKategori
+      : filteredByKategori.filter((item) => {
+        const dateValue = getFinalisasiDateValue(item);
+        if (!dateValue) return false;
+        return String(new Date(dateValue).getFullYear()) === tahunFilter;
+      });
+  }, [kategoriFilter, tahunFilter]);
+
+  const buildExportGroups = useCallback((tahap) => {
+    const isDesk = tahap === 1;
+    const sourceList = isDesk ? listTahap1 : listTahap2;
+    const grouped = new Map();
+
+    [...filterHistoryList(sourceList)]
+      .sort((a, b) => {
+        const kategoriA = a?.nama_kategori || "Tanpa Kategori";
+        const kategoriB = b?.nama_kategori || "Tanpa Kategori";
+        if (kategoriA !== kategoriB) return kategoriA.localeCompare(kategoriB, "id-ID");
+        return (a?.judul || "").localeCompare(b?.judul || "", "id-ID");
+      })
+      .forEach((item) => {
+        const kategori = item?.nama_kategori || "Tanpa Kategori";
+        if (!grouped.has(kategori)) grouped.set(kategori, []);
+        grouped.get(kategori).push(item);
+      });
+
+    return Array.from(grouped.entries()).map(([kategori, items]) => ({
+      tahap: isDesk ? 1 : 2,
+      kategori,
+      items,
+    }));
+  }, [filterHistoryList, listTahap1, listTahap2]);
+
+  const exportHeaders = [
+    "NO",
+    "NAMA USAHA",
+    "NO",
+    "KETERANGAN",
+    "NAMA",
+    "NIM",
+    "PRODI",
+    "JURUSAN",
+    "NO HP",
+    "DOSEN PEMBIMBING",
+    "PENILAI",
+    "NILAI",
+  ];
+
+  const buildDetailedExportGroups = useCallback(async (tahap) => {
+    const groupedData = buildExportGroups(tahap);
+    const allProposals = groupedData.flatMap((group) => group.items);
+
+    const detailMapByProposal = new Map();
+    const historyDetailMapByProposal = new Map();
+    const pesertaDetailMap = new Map();
+
+    if (allProposals.length > 0) {
+      const detailResults = await Promise.allSettled(
+        allProposals.map((proposal) => getProposalDetailAdmin(proposal.id_proposal))
+      );
+
+      detailResults.forEach((result, index) => {
+        const proposalId = allProposals[index]?.id_proposal;
+        if (!proposalId || result.status !== "fulfilled") return;
+        detailMapByProposal.set(proposalId, result.value?.data || null);
+      });
+
+      const historyDetailResults = await Promise.allSettled(
+        allProposals.map((proposal) => (
+          tahap === 1
+            ? getHistoryDetailTahap1(id_program, proposal.id_proposal)
+            : getHistoryDetailTahap2(id_program, proposal.id_proposal)
+        ))
+      );
+
+      historyDetailResults.forEach((result, index) => {
+        const proposalId = allProposals[index]?.id_proposal;
+        if (!proposalId || result.status !== "fulfilled") return;
+        historyDetailMapByProposal.set(proposalId, result.value?.data || null);
+      });
+    }
+
+    const pesertaQueue = new Map();
+    allProposals.forEach((proposal) => {
+      const detail = detailMapByProposal.get(proposal.id_proposal);
+      const anggotaRaw = detail?.anggota_tim || detail?.anggota || proposal?.anggota_tim || [];
+      if (!Array.isArray(anggotaRaw)) return;
+
+      anggotaRaw.forEach((anggota) => {
+        const anggotaKey = getAnggotaKey(anggota);
+        const idUser = anggota?.id_user || anggota?.id;
+        if (!anggotaKey || !idUser || !id_program) return;
+        if (!pesertaQueue.has(anggotaKey)) {
+          pesertaQueue.set(anggotaKey, { idUser, idProgram: id_program });
+        }
+      });
+    });
+
+    if (pesertaQueue.size > 0) {
+      const pesertaTargets = Array.from(pesertaQueue.entries());
+      const pesertaResults = await Promise.allSettled(
+        pesertaTargets.map(([, value]) => getPesertaDetail(value.idUser, value.idProgram))
+      );
+
+      pesertaResults.forEach((result, index) => {
+        if (result.status !== "fulfilled") return;
+        const anggotaKey = pesertaTargets[index]?.[0];
+        if (!anggotaKey) return;
+        pesertaDetailMap.set(anggotaKey, result.value?.data || null);
+      });
+    }
+
+    return groupedData.map((group) => ({
+      ...group,
+      items: group.items.map((proposal) => ({
+        ...proposal,
+        detail: detailMapByProposal.get(proposal.id_proposal) || null,
+        historyDetail: historyDetailMapByProposal.get(proposal.id_proposal) || null,
+      })),
+      pesertaDetailMap,
+    }));
+  }, [buildExportGroups, id_program]);
+
+  const getExportMeta = (tahap) => {
+    const tahapTitle = tahap === 1 ? "DESK EVALUASI" : "WAWANCARA";
+    const tahapFileName = tahap === 1 ? "DeskEvaluasi" : "Wawancara";
+    const programTitle = getProgramTitleForExport(programInfo);
+    const programFileName = getProgramNameForFilename(programInfo);
+    const titleText = tahunFilter
+      ? `${programTitle} - LOLOS ${tahapTitle} ${tahunFilter}`
+      : `${programTitle} - LOLOS ${tahapTitle}`;
+    const exportFileBaseName = tahunFilter
+      ? `Lolos_${tahapFileName}_${programFileName}_${tahunFilter}`
+      : `Lolos_${tahapFileName}_${programFileName}`;
+    return { titleText, exportFileBaseName };
+  };
+
+  const handleExportXlsx = async (tahap) => {
+    const exportGroups = buildExportGroups(tahap);
+    if (exportGroups.length === 0) {
+      Swal.fire({ icon: "info", title: "Tidak ada data", text: "Tidak ada history penilaian untuk diekspor", confirmButtonColor: "#0D59F2" });
+      return;
+    }
+
+    const { titleText, exportFileBaseName } = getExportMeta(tahap);
+
+    setExportingTahap(tahap);
+    try {
+      const groupedData = await buildDetailedExportGroups(tahap);
+      const aoa = [[titleText], []];
+      const merges = [{ s: { r: 0, c: 0 }, e: { r: 0, c: exportHeaders.length - 1 } }];
+      const dataRowRanges = [];
+      let rowIndex = 2;
+
+      groupedData.forEach((categoryGroup) => {
+        aoa.push([String(categoryGroup.kategori || "Tanpa Kategori").toUpperCase()]);
+        merges.push({ s: { r: rowIndex, c: 0 }, e: { r: rowIndex, c: exportHeaders.length - 1 } });
+        rowIndex += 1;
+
+        aoa.push(exportHeaders);
+        rowIndex += 1;
+
+        let anggotaNomor = 1;
+        categoryGroup.items.forEach((proposal, proposalIndex) => {
+          const anggotaRows = getAnggotaRowsForExport(proposal, proposal.detail, categoryGroup.pesertaDetailMap);
+          const startRow = rowIndex;
+          const nilai = categoryGroup.tahap === 1 ? getTahap1Nilai(proposal) : getTahap2Nilai(proposal);
+
+          anggotaRows.forEach((anggota, anggotaIndex) => {
+            aoa.push([
+              anggotaIndex === 0 ? proposalIndex + 1 : "",
+              anggotaIndex === 0 ? proposal?.judul || "-" : "",
+              anggotaNomor,
+              anggota?.keterangan || "-",
+              anggota?.nama || "-",
+              anggota?.nim || "-",
+              anggota?.prodi || "-",
+              anggota?.jurusan || "-",
+              anggota?.noHp || "-",
+              anggotaIndex === 0 ? getDosenPembimbingName(proposal?.detail || proposal) : "",
+              anggotaIndex === 0 ? getPenilaiLabel(categoryGroup.tahap, proposal?.historyDetail) : "",
+              anggotaIndex === 0 ? nilai : "",
+            ]);
+            anggotaNomor += 1;
+            rowIndex += 1;
+          });
+
+          const endRow = rowIndex - 1;
+          dataRowRanges.push({ startRow, endRow });
+
+          if (anggotaRows.length > 1) {
+            merges.push({ s: { r: startRow, c: 0 }, e: { r: endRow, c: 0 } });
+            merges.push({ s: { r: startRow, c: 1 }, e: { r: endRow, c: 1 } });
+            merges.push({ s: { r: startRow, c: 9 }, e: { r: endRow, c: 9 } });
+            merges.push({ s: { r: startRow, c: 10 }, e: { r: endRow, c: 10 } });
+            merges.push({ s: { r: startRow, c: 11 }, e: { r: endRow, c: 11 } });
+          }
+        });
+
+        aoa.push([]);
+        rowIndex += 1;
+      });
+
+      const worksheet = XLSX.utils.aoa_to_sheet(aoa);
+      dataRowRanges.forEach(({ startRow, endRow }) => {
+        centerWorksheetColumns(worksheet, [0, 1, 9, 10, 11], startRow, endRow);
+        wrapWorksheetColumns(worksheet, [10], startRow, endRow);
+      });
+      worksheet["!merges"] = merges;
+      worksheet["!cols"] = [
+        { wch: 6 },
+        { wch: 48 },
+        { wch: 6 },
+        { wch: 14 },
+        { wch: 28 },
+        { wch: 16 },
+        { wch: 32 },
+        { wch: 20 },
+        { wch: 17 },
+        { wch: 30 },
+        { wch: 38 },
+        { wch: 16 },
+      ];
+
+      const workbook = XLSX.utils.book_new();
+      const sheetName = tahap === 1 ? "Lolos Desk Evaluasi" : "Lolos Wawancara";
+      XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+      XLSX.writeFile(workbook, `${exportFileBaseName}.xlsx`, { cellStyles: true });
+    } catch {
+      Swal.fire({ icon: "error", title: "Gagal", text: "Gagal mengekspor file XLSX", confirmButtonColor: "#0D59F2" });
+    } finally {
+      setExportingTahap(null);
+    }
+  };
+
   if (loading) {
-    return <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>;
+    return (
+      <Box sx={{ position: "relative", minHeight: 320 }}>
+        <LoadingScreen message="Memuat history penilaian..." overlay minHeight="320px" />
+      </Box>
+    );
   }
 
   if (listTahap1.length === 0 && listTahap2.length === 0) {
@@ -452,15 +922,34 @@ export default function HistoryPenilaianTab({ id_program }) {
             ))}
           </TextField>
         </Box>
-        <Typography sx={{ fontSize: 13, color: "#777" }}>
-          History Penilaian per tahap
-        </Typography>
       </Box>
 
       <Paper variant="outlined" sx={{ p: 3, borderRadius: "16px", borderColor: "#eceff1", mb: 3 }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, gap: 2, flexWrap: "wrap" }}>
+          <Typography sx={{ fontSize: 18, fontWeight: 700 }}>Tahap 1 — Desk Evaluasi</Typography>
+          <Box>
+            <Button
+              variant="contained"
+              onClick={() => handleExportXlsx(1)}
+              startIcon={<Download />}
+              sx={{
+                textTransform: "none",
+                borderRadius: "50px",
+                px: 2.2,
+                boxShadow: "none",
+                backgroundColor: "#2e7d32",
+                "&:hover": { backgroundColor: "#1b5e20" },
+              }}
+              disabled={exportingTahap !== null || buildExportGroups(1).length === 0}
+            >
+              {exportingTahap === 1 ? "Mengekspor..." : "Ekspor Excel"}
+            </Button>
+          </Box>
+        </Box>
+
         <StageSection
           tahap={1}
-          title="Tahap 1 — Desk Evaluasi"
+          title=""
           list={listTahap1}
           kategoriFilter={kategoriFilter}
           tahunFilter={tahunFilter}
@@ -477,9 +966,31 @@ export default function HistoryPenilaianTab({ id_program }) {
       </Paper>
 
       <Paper variant="outlined" sx={{ p: 3, borderRadius: "16px", borderColor: "#eceff1" }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, gap: 2, flexWrap: "wrap" }}>
+          <Typography sx={{ fontSize: 18, fontWeight: 700 }}>Tahap 2 — Wawancara</Typography>
+          <Box>
+            <Button
+              variant="contained"
+              onClick={() => handleExportXlsx(2)}
+              startIcon={<Download />}
+              sx={{
+                textTransform: "none",
+                borderRadius: "50px",
+                px: 2.2,
+                boxShadow: "none",
+                backgroundColor: "#2e7d32",
+                "&:hover": { backgroundColor: "#1b5e20" },
+              }}
+              disabled={exportingTahap !== null || buildExportGroups(2).length === 0}
+            >
+              {exportingTahap === 2 ? "Mengekspor..." : "Ekspor Excel"}
+            </Button>
+          </Box>
+        </Box>
+
         <StageSection
           tahap={2}
-          title="Tahap 2 — Wawancara"
+          title=""
           list={listTahap2}
           kategoriFilter={kategoriFilter}
           tahunFilter={tahunFilter}

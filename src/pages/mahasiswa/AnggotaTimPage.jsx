@@ -10,6 +10,7 @@ import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import {
   getTimStatus, getTimDetail, createTim, searchMahasiswa,
   addAnggotaTim, resetTim, cekEligibilitasInbis,
@@ -211,7 +212,6 @@ export default function AnggotaTimPage() {
   };
 
   const handleAddAnggota = () => {
-    if (formTim.anggota.length >= 4) return;
     setFormTim({
       ...formTim,
       anggota: [...formTim.anggota, { nim: "", nama_lengkap: "", id_user: null }],
@@ -380,8 +380,8 @@ export default function AnggotaTimPage() {
   if (loading) {
     return (
       <BodyLayout Sidebar={SidebarMahasiswa}>
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-          <CircularProgress />
+        <Box sx={{ position: "relative", minHeight: "60vh" }}>
+          <LoadingScreen message="Memuat data tim..." overlay minHeight="60vh" />
         </Box>
       </BodyLayout>
     );
@@ -874,19 +874,17 @@ export default function AnggotaTimPage() {
               );
             })}
 
-            {formTim.anggota.length < 4 && (
-              <Button
-                onClick={handleAddAnggota} disabled={submitting}
-                sx={{
-                  mb: 3, textTransform: "none", borderRadius: "50px",
-                  color: "#0D59F2", border: "1.5px dashed rgba(13,89,242,0.3)",
-                  px: 2.5, py: 0.8, width: "100%",
-                  "&:hover": { backgroundColor: "rgba(13,89,242,0.04)", borderColor: "rgba(13,89,242,0.6)" },
-                }}
-              >
-                Tambah Anggota
-              </Button>
-            )}
+            <Button
+              onClick={handleAddAnggota} disabled={submitting}
+              sx={{
+                mb: 3, textTransform: "none", borderRadius: "50px",
+                color: "#0D59F2", border: "1.5px dashed rgba(13,89,242,0.3)",
+                px: 2.5, py: 0.8, width: "100%",
+                "&:hover": { backgroundColor: "rgba(13,89,242,0.04)", borderColor: "rgba(13,89,242,0.6)" },
+              }}
+            >
+              Tambah Anggota
+            </Button>
 
             <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
               <Button

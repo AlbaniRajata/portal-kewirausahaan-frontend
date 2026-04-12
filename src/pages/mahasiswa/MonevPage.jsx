@@ -4,7 +4,6 @@ import {
   Paper,
   Typography,
   Button,
-  CircularProgress,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -28,6 +27,7 @@ import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import { getLuaranMahasiswa, submitLuaran } from "../../api/mahasiswa";
 
 const STATUS_MAP = {
@@ -303,15 +303,8 @@ export default function MonevPage() {
   if (loading) {
     return (
       <BodyLayout Sidebar={SidebarMahasiswa}>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            minHeight: "60vh",
-          }}
-        >
-          <CircularProgress />
+        <Box sx={{ position: "relative", minHeight: "60vh" }}>
+          <LoadingScreen message="Memuat data monev..." overlay minHeight="60vh" />
         </Box>
       </BodyLayout>
     );

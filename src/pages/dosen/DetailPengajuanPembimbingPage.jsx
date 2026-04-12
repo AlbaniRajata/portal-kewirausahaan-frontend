@@ -22,6 +22,7 @@ import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import DosenSidebar from "../../components/layouts/DosenSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import { getDetailPengajuan } from "../../api/dosen";
 
 const roundedField = {
@@ -101,8 +102,8 @@ export default function DetailPengajuanPembimbingPage() {
   if (loading) {
     return (
       <BodyLayout Sidebar={DosenSidebar}>
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-          <CircularProgress />
+        <Box sx={{ position: "relative", minHeight: "60vh" }}>
+          <LoadingScreen message="Memuat detail pengajuan..." overlay minHeight="60vh" />
         </Box>
       </BodyLayout>
     );

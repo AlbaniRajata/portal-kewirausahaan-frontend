@@ -5,11 +5,15 @@ import {
   Card, CardContent, Paper,
 } from "@mui/material";
 import Swal from "sweetalert2";
+import LoadingScreen from "../common/LoadingScreen";
 import {
   getPreviewDistribusi,
   executeAutoDistribusi,
   getPreviewDistribusiTahap2,
   executeAutoDistribusiTahap2,
+  executeManualDistribusiTahap2,
+  getReviewerList,
+  getJuriList,
 } from "../../api/admin";
 
 const formatRupiah = (value) => {
@@ -24,6 +28,80 @@ const StatCard = ({ label, value, color, bg }) => (
   </Paper>
 );
 
+const normalizeId = (value) => {
+  if (value === null || value === undefined || value === "") return null;
+  return String(value);
+};
+
+const getReviewerIdFromItem = (item) => normalizeId(
+  item?.reviewer?.id_user
+  ?? item?.reviewer?.id_reviewer
+  ?? item?.id_reviewer
+  ?? item?.id_user_reviewer
+);
+
+const getJuriIdFromItem = (item) => normalizeId(
+  item?.juri?.id_user
+  ?? item?.juri?.id_juri
+  ?? item?.id_juri
+  ?? item?.id_user_juri
+);
+
+const toNumberId = (value) => {
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? null : parsed;
+};
+
+const sortByIdAsc = (list = []) => {
+  return [...list].sort((a, b) => {
+    const aNum = Number(a?.id_user);
+    const bNum = Number(b?.id_user);
+
+    const aValid = !Number.isNaN(aNum);
+    const bValid = !Number.isNaN(bNum);
+
+    if (aValid && bValid) return aNum - bNum;
+    if (aValid) return -1;
+    if (bValid) return 1;
+
+    return String(a?.nama_lengkap || "").localeCompare(String(b?.nama_lengkap || ""));
+  });
+};
+
+const applyRoundRobinRencana = (previewData, reviewers, juries) => {
+  if (!previewData?.rencana_distribusi?.length) return previewData;
+  if (!reviewers?.length || !juries?.length) return previewData;
+
+  const usedReviewer = new Set((previewData.detail_sudah || []).map(getReviewerIdFromItem).filter(Boolean));
+  const usedJuri = new Set((previewData.detail_sudah || []).map(getJuriIdFromItem).filter(Boolean));
+
+  const availableReviewer = sortByIdAsc(reviewers.filter((r) => !usedReviewer.has(normalizeId(r.id_user))));
+  const availableJuri = sortByIdAsc(juries.filter((j) => !usedJuri.has(normalizeId(j.id_user))));
+
+  if (!availableReviewer.length || !availableJuri.length) return previewData;
+
+  const rencanaBaru = previewData.rencana_distribusi.map((item, index) => {
+    const reviewer = availableReviewer[index % availableReviewer.length];
+    const juri = availableJuri[index % availableJuri.length];
+
+    return {
+      ...item,
+      reviewer: {
+        ...(item.reviewer || {}),
+        id_user: reviewer.id_user,
+        nama_lengkap: reviewer.nama_lengkap,
+      },
+      juri: {
+        ...(item.juri || {}),
+        id_user: juri.id_user,
+        nama_lengkap: juri.nama_lengkap,
+      },
+    };
+  });
+
+  return { ...previewData, rencana_distribusi: rencanaBaru };
+};
+
 export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, onError }) {
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -36,10 +114,22 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
     try {
       setLoading(true);
       setErrorMsg("");
-      const res = tahap === 1
-        ? await getPreviewDistribusi(id_program, tahap)
-        : await getPreviewDistribusiTahap2(id_program);
-      setPreview(res.data || null);
+      if (tahap === 1) {
+        const res = await getPreviewDistribusi(id_program, tahap);
+        setPreview(res.data || null);
+      } else {
+        const [previewRes, reviewerRes, juriRes] = await Promise.all([
+          getPreviewDistribusiTahap2(id_program),
+          getReviewerList(),
+          getJuriList(),
+        ]);
+
+        const previewData = previewRes.data || null;
+        const reviewerData = reviewerRes.data || [];
+        const juriData = juriRes.data || [];
+
+        setPreview(applyRoundRobinRencana(previewData, reviewerData, juriData));
+      }
     } catch (err) {
       setErrorMsg(err.response?.data?.message || "Gagal memuat preview distribusi");
       setPreview(null);
@@ -56,7 +146,7 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
     const confirmText = tahap === 1
       ? `Anda akan mendistribusikan <b>${preview.total_proposal}</b> proposal ke <b>${preview.total_reviewer}</b> reviewer secara otomatis.<br/><br/>Lanjutkan?`
       : `Anda akan mendistribusikan <b>${preview.belum_terdistribusi}</b> proposal yang belum memiliki pasangan panel.<br/><br/>
-         Sistem akan memakai <b>${preview.jumlah_pasang}</b> pasang unik (reviewer + juri) terlebih dahulu, lalu mengulang pasangan jika masih ada sisa proposal.<br/><br/>Lanjutkan?`;
+         Sistem akan mendistribusikan berurutan berdasarkan ID reviewer dan ID juri (round-robin) sesuai preview.<br/><br/>Lanjutkan?`;
 
     const result = await Swal.fire({
       title: "Konfirmasi Distribusi", html: confirmText, icon: "question",
@@ -68,7 +158,43 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
 
     try {
       setExecuting(true);
-      await (tahap === 1 ? executeAutoDistribusi(id_program, tahap) : executeAutoDistribusiTahap2(id_program));
+
+      if (tahap === 1) {
+        await executeAutoDistribusi(id_program, tahap);
+      } else {
+        const rencana = preview?.rencana_distribusi || [];
+
+        if (rencana.length === 0) {
+          await executeAutoDistribusiTahap2(id_program);
+        } else {
+          for (const item of rencana) {
+            const id_proposal = toNumberId(item?.id_proposal);
+            const id_reviewer = toNumberId(
+              item?.reviewer?.id_user
+              ?? item?.reviewer?.id_reviewer
+              ?? item?.id_reviewer
+              ?? item?.id_user_reviewer
+            );
+            const id_juri = toNumberId(
+              item?.juri?.id_user
+              ?? item?.juri?.id_juri
+              ?? item?.id_juri
+              ?? item?.id_user_juri
+            );
+
+            if (!id_proposal || !id_reviewer || !id_juri) {
+              throw new Error("Rencana distribusi tidak valid");
+            }
+
+            await executeManualDistribusiTahap2(id_program, {
+              id_proposal,
+              id_reviewer,
+              id_juri,
+            });
+          }
+        }
+      }
+
       await Swal.fire({
         icon: "success", title: "Berhasil", text: "Distribusi berhasil dieksekusi",
         timer: 2000, timerProgressBar: true, showConfirmButton: false,
@@ -84,7 +210,11 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
   };
 
   if (loading) {
-    return <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}><CircularProgress /></Box>;
+    return (
+      <Box sx={{ position: "relative", minHeight: 280 }}>
+        <LoadingScreen message="Memuat preview distribusi..." overlay minHeight="280px" />
+      </Box>
+    );
   }
 
   if (errorMsg) {
@@ -110,7 +240,6 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
 
   return (
     <Box>
-      {/* Stat Cards */}
       <Box sx={{ display: "grid", gridTemplateColumns: tahap === 1 ? "repeat(3, 1fr)" : "repeat(4, 1fr)", gap: 2, mb: 3 }}>
         {tahap === 1 ? (
           <>
@@ -132,7 +261,6 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
         {tahap === 1 ? "Rekomendasi Distribusi" : "Preview Distribusi"}
       </Typography>
 
-      {/* Konten preview */}
       {tahap === 1 ? (
         preview.rekomendasi && preview.rekomendasi.length > 0 ? (
           preview.rekomendasi.map((reviewer) => (
@@ -188,7 +316,6 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
         )
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {/* Ringkasan pasangan */}
           <Box sx={{ p: 3, borderRadius: 2, background: "#f0f4ff", border: "1px solid #c7d7fc" }}>
             <Typography sx={{ fontWeight: 700, mb: 1, color: "#0D59F2" }}>Sistem Pasangan (Reviewer + Juri)</Typography>
             <Typography sx={{ fontSize: 14, color: "#444", mb: 0.5 }}>
@@ -203,7 +330,6 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
             </Typography>
           </Box>
 
-          {/* Daftar yang sudah terdistribusi */}
           {preview.detail_sudah && preview.detail_sudah.length > 0 && (
             <Box>
               <Typography sx={{ fontSize: 14, fontWeight: 700, color: "#2e7d32", mb: 1 }}>
@@ -238,7 +364,6 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
             </Box>
           )}
 
-          {/* Rencana distribusi baru */}
           {preview.rencana_distribusi && preview.rencana_distribusi.length > 0 && (
             <Box>
               <Typography sx={{ fontSize: 14, fontWeight: 700, color: "#e65100", mb: 1 }}>

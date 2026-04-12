@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Box, Typography, Button, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, CircularProgress,
+  TableContainer, TableHead, TableRow,
   Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, MenuItem, IconButton, Tooltip,
 } from "@mui/material";
 import { Close, Assignment } from "@mui/icons-material";
 import Swal from "sweetalert2";
+import LoadingScreen from "../common/LoadingScreen";
 import {
   getTahapProgram, getKriteriaPenilaian,
   createKriteriaPenilaian, updateKriteriaPenilaian, deleteKriteriaPenilaian,
@@ -186,7 +187,11 @@ export default function KriteriaPenilaianTab({ id_program }) {
   };
 
   if (loading && tahapList.length === 0) {
-    return <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>;
+    return (
+      <Box sx={{ position: "relative", minHeight: 320 }}>
+        <LoadingScreen message="Memuat tahap penilaian..." overlay minHeight="320px" />
+      </Box>
+    );
   }
 
   if (tahapList.length === 0) {
@@ -226,7 +231,9 @@ export default function KriteriaPenilaianTab({ id_program }) {
       </Box>
 
       {loading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
+        <Box sx={{ position: "relative", minHeight: 320 }}>
+          <LoadingScreen message="Memuat kriteria penilaian..." overlay minHeight="320px" />
+        </Box>
       ) : kriteriaList.length === 0 ? (
         <Box sx={{ textAlign: "center", py: 10 }}>
           <Box sx={{ width: 100, height: 100, borderRadius: "50%", backgroundColor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 3 }}>

@@ -8,6 +8,7 @@ import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import JuriSidebar from "../../components/layouts/JuriSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import { getProfile, updateProfile, updatePassword } from "../../api/juri";
 
 const roundedField = {
@@ -183,8 +184,8 @@ export default function BiodataJuriPage() {
   if (loading) {
     return (
       <BodyLayout Sidebar={JuriSidebar}>
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-          <CircularProgress />
+        <Box sx={{ position: "relative", minHeight: "60vh" }}>
+          <LoadingScreen message="Memuat biodata juri..." overlay minHeight="60vh" />
         </Box>
       </BodyLayout>
     );

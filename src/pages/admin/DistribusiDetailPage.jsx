@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import { Box, Paper, Typography, Button, Chip, CircularProgress, TextField } from "@mui/material";
+import { Box, Paper, Typography, Button, Chip, TextField } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import { getDistribusiDetail } from "../../api/admin";
 import Swal from "sweetalert2";
 
@@ -60,8 +61,8 @@ export default function DistribusiDetailPage() {
   if (loading) {
     return (
       <BodyLayout Sidebar={AdminSidebar}>
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-          <CircularProgress />
+        <Box sx={{ position: "relative", minHeight: "60vh" }}>
+          <LoadingScreen message="Memuat data..." overlay minHeight="60vh" />
         </Box>
       </BodyLayout>
     );

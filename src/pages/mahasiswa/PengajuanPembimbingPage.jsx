@@ -10,6 +10,7 @@ import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import MahasiswaSidebar from "../../components/layouts/MahasiswaSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import {
   getStatusPembimbing, getListDosen, ajukanPembimbing,
 } from "../../api/mahasiswa";
@@ -115,6 +116,8 @@ export default function PengajuanPembimbingPage() {
   const isKetua = statusData?.is_ketua === true;
   const pengajuan = statusData?.pengajuan;
   const statusPengajuan = pengajuan?.status;
+  const isReassigned = pengajuan?.is_reassigned === true;
+  const catatanDosenDisplay = pengajuan?.catatan_dosen_display || (isReassigned ? null : pengajuan?.catatan_dosen);
 
   const handleOpenDetail = (dosen) => { setSelectedDosen(dosen); setDialogOpen(true); };
   const handleCloseDialog = () => { setDialogOpen(false); setSelectedDosen(null); };
@@ -166,7 +169,7 @@ export default function PengajuanPembimbingPage() {
           <Box sx={{ mb: 4 }}>
             <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Pengajuan Pembimbing</Typography>
             <Typography sx={{ fontSize: 14, color: "#777" }}>
-              Ajukan dosen pembimbing untuk proposal Anda yang telah lolos seleksi
+              Ajukan dosen pembimbing untuk tim Anda. Hanya 1 pengajuan aktif yang dapat diproses dalam satu waktu.
             </Typography>
           </Box>
 
@@ -179,8 +182,8 @@ export default function PengajuanPembimbingPage() {
           )}
 
           {loadingStatus ? (
-            <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
-              <CircularProgress size={24} />
+            <Box sx={{ position: "relative", minHeight: 140 }}>
+              <LoadingScreen message="Memuat status pembimbing..." overlay minHeight="140px" />
             </Box>
           ) : statusData ? (
             <Paper sx={{ p: 4, mb: 3, borderRadius: "16px", border: "1px solid #f0f0f0", borderLeft: "4px solid #0D59F2" }}>
@@ -218,16 +221,21 @@ export default function PengajuanPembimbingPage() {
                     )}
                   </Box>
 
-                  {pengajuan.catatan_dosen && (
+                  {catatanDosenDisplay && (
                     <Box sx={{ mt: 3, p: 2.5, backgroundColor: "#fff8e1", borderRadius: "12px", border: "1px solid #ffe082" }}>
                       <Typography sx={{ fontSize: 12, color: "#f57f17", fontWeight: 700, mb: 0.5 }}>Catatan Dosen</Typography>
-                      <Typography sx={{ fontSize: 14 }}>{pengajuan.catatan_dosen}</Typography>
+                      <Typography sx={{ fontSize: 14 }}>{catatanDosenDisplay}</Typography>
                     </Box>
                   )}
                 </>
               )}
 
               <Box sx={{ mt: 3, display: "flex", flexDirection: "column", gap: 1.5 }}>
+                {isReassigned && (
+                  <InfoBox color="#1565c0" borderColor="#90caf9" bgColor="#e3f2fd">
+                    Dosen pembimbing Anda telah di reassign oleh admin. Pembimbing saat ini: <b>{pengajuan?.nama_dosen || "-"}</b>.
+                  </InfoBox>
+                )}
                 {!bisaAjukan && statusPengajuan === 1 && (
                   <InfoBox color="#2e7d32" borderColor="#a5d6a7" bgColor="#e8f5e9">
                     Pengajuan pembimbing Anda telah disetujui.
@@ -253,7 +261,7 @@ export default function PengajuanPembimbingPage() {
           ) : (
             <Box sx={{ mb: 3 }}>
               <InfoBox color="#1565c0" borderColor="#90caf9" bgColor="#e3f2fd">
-                Fitur pengajuan pembimbing hanya tersedia setelah proposal lolos seleksi wawancara.
+                Fitur pengajuan pembimbing hanya tersedia untuk ketua tim yang sudah terdaftar dalam tim aktif.
               </InfoBox>
             </Box>
           )}
@@ -278,8 +286,8 @@ export default function PengajuanPembimbingPage() {
             </Box>
 
             {loadingDosen ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
-                <CircularProgress />
+              <Box sx={{ position: "relative", minHeight: 240 }}>
+                <LoadingScreen message="Memuat daftar dosen..." overlay minHeight="240px" />
               </Box>
             ) : filteredDosen.length === 0 ? (
               <Box sx={{ textAlign: "center", py: 8 }}>

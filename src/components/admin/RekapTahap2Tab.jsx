@@ -21,6 +21,7 @@ import {
 import { KeyboardArrowDown, KeyboardArrowRight } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import { finalisasiWawancaraBatch, getListProposalRekapTahap2, getRekapWawancara } from "../../api/admin";
+import LoadingScreen from "../common/LoadingScreen";
 
 const tableHeadCell = {
   fontWeight: 700,
@@ -291,7 +292,9 @@ export default function RekapTahap2Tab({ id_program }) {
       </Box>
 
       {loading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
+        <Box sx={{ position: "relative", minHeight: 320 }}>
+          <LoadingScreen message="Memuat rekap tahap 2..." overlay minHeight="320px" />
+        </Box>
       ) : filteredList.length === 0 ? (
         <Box sx={{ textAlign: "center", py: 8 }}>
           <Typography sx={{ fontSize: 14, color: "#999" }}>Belum ada proposal untuk tahap wawancara</Typography>

@@ -8,6 +8,7 @@ import {
 import { Close } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import { getDashboardBimbingan } from "../../api/admin";
+import LoadingScreen from "../common/LoadingScreen";
 
 const STATUS_PILL = {
   0: { label: "Menunggu Respon", backgroundColor: "#f57f17" },
@@ -88,7 +89,11 @@ export default function JadwalBimbinganTab() {
     });
 
   if (loading) {
-    return <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}><CircularProgress /></Box>;
+    return (
+      <Box sx={{ position: "relative", minHeight: 260 }}>
+        <LoadingScreen message="Memuat data jadwal bimbingan..." overlay minHeight="260px" />
+      </Box>
+    );
   }
 
   return (

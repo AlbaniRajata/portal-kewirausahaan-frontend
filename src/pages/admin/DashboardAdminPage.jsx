@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  Box, Typography, CircularProgress, Avatar,
+  Box, Typography, Avatar,
   Paper, Divider, LinearProgress, Chip,
 } from "@mui/material";
 import {
@@ -17,6 +17,7 @@ import {
 import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import { getMyProgram, getDashboardAdmin, getProgressLuaranTim } from "../../api/admin";
 import { useAuthStore } from "../../store/authStore";
 import Swal from "sweetalert2";
@@ -176,8 +177,8 @@ export default function DashboardAdminPage() {
   if (loading) {
     return (
       <BodyLayout Sidebar={AdminSidebar}>
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-          <CircularProgress />
+        <Box sx={{ position: "relative", minHeight: "60vh" }}>
+          <LoadingScreen message="Memuat data..." overlay minHeight="60vh" />
         </Box>
       </BodyLayout>
     );

@@ -11,7 +11,8 @@ import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
 import PageTransition from "../../components/PageTransition";
-import { getListBimbingan, ajukanBimbingan } from "../../api/mahasiswa";
+import LoadingScreen from "../../components/common/LoadingScreen";
+import { getListBimbingan, ajukanBimbingan, getStatusPembimbing } from "../../api/mahasiswa";
 
 const roundedField = {
   "& .MuiOutlinedInput-root": { borderRadius: "12px" },
@@ -88,6 +89,7 @@ export default function LogBimbinganPage() {
   const [loading, setLoading] = useState(true);
   const [bimbinganList, setBimbinganList] = useState([]);
   const [isKetua, setIsKetua] = useState(false);
+  const [pembimbingInfo, setPembimbingInfo] = useState(null);
   const [statusMessage, setStatusMessage] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -97,15 +99,24 @@ export default function LogBimbinganPage() {
   const fetchBimbingan = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await getListBimbingan();
-      if (res.success) {
-        const list = res.data?.bimbingan || [];
+      const [bimbinganRes, pembimbingRes] = await Promise.all([
+        getListBimbingan(),
+        getStatusPembimbing(),
+      ]);
+
+      if (bimbinganRes.success) {
+        const list = bimbinganRes.data?.bimbingan || [];
         setBimbinganList(list);
-        setIsKetua(res.data?.is_ketua || false);
-        setStatusMessage(null);
+        setIsKetua(bimbinganRes.data?.is_ketua || false);
       } else {
-        setStatusMessage(res.message || "Gagal memuat data bimbingan");
+        setStatusMessage(bimbinganRes.message || "Gagal memuat data bimbingan");
       }
+
+      if (pembimbingRes.success) {
+        setPembimbingInfo(pembimbingRes.data || null);
+      }
+
+      if (bimbinganRes.success) setStatusMessage(null);
     } catch (err) {
       setStatusMessage(err.response?.data?.message || "Gagal memuat data bimbingan. Silahkan refresh halaman.");
     } finally {
@@ -114,6 +125,11 @@ export default function LogBimbinganPage() {
   }, []);
 
   useEffect(() => { fetchBimbingan(); }, [fetchBimbingan]);
+
+  const pengajuanPembimbing = pembimbingInfo?.pengajuan;
+  const sudahAjukanPembimbing = !!pengajuanPembimbing;
+  const pembimbingDisetujui = pengajuanPembimbing?.status === 1;
+  const canAjukanBimbingan = isKetua && sudahAjukanPembimbing && pembimbingDisetujui;
 
   const handleOpenDialog = () => { setForm(emptyForm); setFormError({}); setDialogOpen(true); };
   const handleCloseDialog = () => { setDialogOpen(false); setForm(emptyForm); setFormError({}); };
@@ -190,7 +206,7 @@ export default function LogBimbinganPage() {
             <Button
               variant="contained"
               onClick={handleOpenDialog}
-              disabled={!isKetua}
+              disabled={!canAjukanBimbingan}
               sx={{
                 textTransform: "none", borderRadius: "50px",
                 backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" },
@@ -200,6 +216,18 @@ export default function LogBimbinganPage() {
               Ajukan Bimbingan
             </Button>
           </Box>
+
+          {!loading && isKetua && !sudahAjukanPembimbing && (
+            <InfoBox color="#f57f17" borderColor="#ffe082" bgColor="#fff8e1">
+              Anda belum mengajukan dosen pembimbing. Silahkan ajukan pembimbing terlebih dahulu untuk dapat mengajukan sesi bimbingan.
+            </InfoBox>
+          )}
+
+          {!loading && isKetua && sudahAjukanPembimbing && !pembimbingDisetujui && (
+            <InfoBox color="#1565c0" borderColor="#90caf9" bgColor="#e3f2fd">
+              Pengajuan dosen pembimbing masih diproses. Bimbingan bisa diajukan setelah pembimbing disetujui.
+            </InfoBox>
+          )}
 
           {statusMessage && !loading && (
             <InfoBox color="#f57f17" borderColor="#ffe082" bgColor="#fff8e1">
@@ -215,8 +243,8 @@ export default function LogBimbinganPage() {
 
           <Paper sx={{ overflow: "hidden", borderRadius: "16px", border: "1px solid #f0f0f0" }}>
             {loading ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-                <CircularProgress />
+              <Box sx={{ position: "relative", minHeight: 320 }}>
+                <LoadingScreen message="Memuat log bimbingan..." overlay minHeight="320px" />
               </Box>
             ) : bimbinganList.length === 0 ? (
               <Box sx={{ py: 10, textAlign: "center" }}>

@@ -10,6 +10,7 @@ import {
   getReviewerList, getProposalList, executeBulkDistribusi,
   getJuriList, executeManualDistribusiTahap2, getPanelTahap2History,
 } from "../../api/admin";
+import LoadingScreen from "../common/LoadingScreen";
 
 const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "15px" } };
 
@@ -22,6 +23,18 @@ const tableBodyRow = { "& td": { borderBottom: "1px solid #f5f5f5", py: 2 } };
 const formatRupiah = (value) => {
   if (!value) return "Rp 0";
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(value);
+};
+
+const getDosenPembimbingName = (item) => {
+  return (
+    item?.nama_dosen ||
+    item?.nama_pembimbing ||
+    item?.dosen_pembimbing ||
+    item?.pembimbing?.nama_dosen ||
+    item?.pembimbing?.nama_lengkap ||
+    item?.pengajuan_pembimbing?.nama_dosen ||
+    "-"
+  );
 };
 
 const normalizeId = (value) => {
@@ -282,8 +295,8 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
 function ProposalTable({ proposals, loading, renderSelector, navigate }) {
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
-        <CircularProgress />
+      <Box sx={{ position: "relative", minHeight: 260 }}>
+        <LoadingScreen message="Memuat daftar proposal..." overlay minHeight="260px" />
       </Box>
     );
   }
@@ -302,6 +315,7 @@ function ProposalTable({ proposals, loading, renderSelector, navigate }) {
             <TableCell padding="checkbox" sx={{ ...tableHeadCell, width: 48 }} />
             <TableCell sx={tableHeadCell}>Judul Proposal</TableCell>
             <TableCell sx={tableHeadCell}>Tim</TableCell>
+            <TableCell sx={tableHeadCell}>Dosen Pembimbing</TableCell>
             <TableCell sx={tableHeadCell}>Modal</TableCell>
             <TableCell sx={{ ...tableHeadCell, width: 90 }}>Aksi</TableCell>
           </TableRow>
@@ -315,6 +329,9 @@ function ProposalTable({ proposals, loading, renderSelector, navigate }) {
               </TableCell>
               <TableCell>
                 <Typography sx={{ fontSize: 13 }}>{p.nama_tim}</Typography>
+              </TableCell>
+              <TableCell>
+                <Typography sx={{ fontSize: 13 }}>{getDosenPembimbingName(p)}</Typography>
               </TableCell>
               <TableCell>
                 <Typography sx={{ fontSize: 13 }}>{formatRupiah(p.modal_diajukan)}</Typography>

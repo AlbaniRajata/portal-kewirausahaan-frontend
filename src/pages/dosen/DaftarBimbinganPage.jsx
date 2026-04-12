@@ -11,6 +11,7 @@ import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import DosenSidebar from "../../components/layouts/DosenSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import { getBimbinganMasuk, approveBimbingan, rejectBimbingan } from "../../api/dosen";
 
 const roundedField = {
@@ -207,8 +208,8 @@ export default function DaftarBimbinganPage() {
 
           <Paper sx={{ overflow: "hidden", borderRadius: "16px", border: "1px solid #f0f0f0" }}>
             {loading ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-                <CircularProgress />
+              <Box sx={{ position: "relative", minHeight: 320 }}>
+                <LoadingScreen message="Memuat daftar bimbingan..." overlay minHeight="320px" />
               </Box>
             ) : filtered.length === 0 ? (
               <Box sx={{ py: 10, textAlign: "center" }}>

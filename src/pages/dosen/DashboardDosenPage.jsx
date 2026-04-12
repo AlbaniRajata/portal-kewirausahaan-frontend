@@ -1,14 +1,20 @@
 import { useState, useEffect } from "react";
-import { Box, Typography, CircularProgress, Avatar } from "@mui/material";
+import { Box, Typography, Avatar, LinearProgress } from "@mui/material";
 import {
   SchoolOutlined, MenuBookOutlined, CheckCircleOutlined,
-  CancelOutlined, ArrowForward, PersonOutlined,
+  CancelOutlined, ArrowForward, AssignmentTurnedInOutlined,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import DosenSidebar from "../../components/layouts/DosenSidebar";
 import PageTransition from "../../components/PageTransition";
-import { getProfile, getPengajuanMasuk, getBimbinganMasuk } from "../../api/dosen";
+import LoadingScreen from "../../components/common/LoadingScreen";
+import {
+  getProfile,
+  getPengajuanMasuk,
+  getBimbinganMasuk,
+  getMonevTimBimbingan,
+} from "../../api/dosen";
 import { useAuthStore } from "../../store/authStore";
 
 const API_URL = import.meta.env.VITE_API_URL?.replace("/api", "");
@@ -110,27 +116,30 @@ export default function DashboardDosenPage() {
     profile: null,
     pengajuan: [],
     bimbingan: [],
+    monev: [],
   });
 
   useEffect(() => {
     const fetchAll = async () => {
-      const [profileRes, pengajuanRes, bimbinganRes] = await Promise.allSettled([
+      const [profileRes, pengajuanRes, bimbinganRes, monevRes] = await Promise.allSettled([
         getProfile(),
         getPengajuanMasuk(),
         getBimbinganMasuk(),
+        getMonevTimBimbingan(),
       ]);
 
       setData({
         profile:   profileRes.status   === "fulfilled" ? profileRes.value.data       : null,
         pengajuan: pengajuanRes.status === "fulfilled" ? (pengajuanRes.value.data || []) : [],
         bimbingan: bimbinganRes.status === "fulfilled" ? (bimbinganRes.value.data || []) : [],
+        monev: monevRes.status === "fulfilled" ? (monevRes.value.data || []) : [],
       });
       setLoading(false);
     };
     fetchAll();
   }, []);
 
-  const { profile, pengajuan, bimbingan } = data;
+  const { profile, pengajuan, bimbingan, monev } = data;
 
   const pengajuanMenunggu  = pengajuan.filter((p) => p.status === 0).length;
   const pengajuanDisetujui = pengajuan.filter((p) => p.status === 1).length;
@@ -144,10 +153,32 @@ export default function DashboardDosenPage() {
   const totalDisetujui = pengajuanDisetujui + bimbinganDisetujui;
   const totalDitolak   = pengajuanDitolak + bimbinganDitolak;
 
+  const monevTotalLuaran = monev.reduce((sum, item) => sum + Number(item.total_luaran || 0), 0);
+  const monevDisetujui = monev.reduce((sum, item) => sum + Number(item.total_disetujui || 0), 0);
+  const monevSubmitted = monev.reduce((sum, item) => sum + Number(item.total_submitted || 0), 0);
+  const monevDitolak = monev.reduce((sum, item) => sum + Number(item.total_ditolak || 0), 0);
+  const monevBelum = Math.max(0, monevTotalLuaran - (monevDisetujui + monevSubmitted + monevDitolak));
+  const monevTotalTim = monev.length;
+  const monevPercent = monevTotalLuaran > 0 ? Math.round((monevDisetujui / monevTotalLuaran) * 100) : 0;
+
   const aktivitasBelumDirespon = [
     ...pengajuan.filter((p) => p.status === 0).map((p) => ({ ...p, _type: "pembimbing" })),
     ...bimbingan.filter((b) => b.status === 0).map((b) => ({ ...b, _type: "bimbingan" })),
   ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5);
+
+  const daftarTimDibimbing = [...monev]
+    .sort((a, b) => Number(b.total_disetujui || 0) - Number(a.total_disetujui || 0))
+    .slice(0, 5);
+
+  const daftarBimbingan = [...bimbingan]
+    .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+    .slice(0, 5);
+
+  const statusBimbinganMap = {
+    0: { label: "Menunggu", color: "#f57f17" },
+    1: { label: "Disetujui", color: "#2e7d32" },
+    2: { label: "Ditolak", color: "#c62828" },
+  };
 
   const statCards = [
     {
@@ -187,8 +218,8 @@ export default function DashboardDosenPage() {
   if (loading) {
     return (
       <BodyLayout Sidebar={DosenSidebar}>
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-          <CircularProgress />
+        <Box sx={{ position: "relative", minHeight: "60vh" }}>
+          <LoadingScreen message="Memuat data..." overlay minHeight="60vh" />
         </Box>
       </BodyLayout>
     );
@@ -256,61 +287,279 @@ export default function DashboardDosenPage() {
             ))}
           </Box>
 
-          <Box sx={{
-            p: { xs: 2.5, md: 4 }, borderRadius: "20px",
-            background: "#fff",
-            border: "1px solid #f0f0f0",
-            boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
-          }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1.5, mb: 3 }}>
-              <Box>
-                <Typography sx={{ fontSize: 16, fontWeight: 800, color: "#1a1a1a" }}>
-                  Perlu Direspon
-                </Typography>
-                <Typography sx={{ fontSize: 13, color: "#aaa" }}>
-                  Pengajuan pembimbing & bimbingan yang belum direspon
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" }, gap: 2.5, mb: 2.5 }}>
+            <Box sx={{
+              p: { xs: 2.5, md: 4 }, borderRadius: "20px",
+              background: "#fff",
+              border: "1px solid #f0f0f0",
+              boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+            }}>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1.5, mb: 3 }}>
+                <Box>
+                  <Typography sx={{ fontSize: 16, fontWeight: 800, color: "#1a1a1a" }}>
+                    Perlu Direspon
+                  </Typography>
+                  <Typography sx={{ fontSize: 13, color: "#aaa" }}>
+                    Pengajuan pembimbing & bimbingan yang belum direspon
+                  </Typography>
+                </Box>
+                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                  <Box
+                    onClick={() => navigate("/dosen/pembimbing/pengajuan")}
+                    sx={{ display: "flex", alignItems: "center", gap: 0.5, cursor: "pointer", color: "#0D59F2", "&:hover": { opacity: 0.7 } }}
+                  >
+                    <Typography sx={{ fontSize: 13, fontWeight: 600 }}>Pembimbing</Typography>
+                    <ArrowForward sx={{ fontSize: 16 }} />
+                  </Box>
+                  <Box
+                    onClick={() => navigate("/dosen/bimbingan")}
+                    sx={{ display: "flex", alignItems: "center", gap: 0.5, cursor: "pointer", color: "#059669", "&:hover": { opacity: 0.7 } }}
+                  >
+                    <Typography sx={{ fontSize: 13, fontWeight: 600 }}>Bimbingan</Typography>
+                    <ArrowForward sx={{ fontSize: 16 }} />
+                  </Box>
+                </Box>
+              </Box>
+
+              {aktivitasBelumDirespon.length === 0 ? (
+                <Box sx={{ textAlign: "center", py: 5 }}>
+                  <CheckCircleOutlined sx={{ fontSize: 40, color: "#e0e0e0", mb: 1.5 }} />
+                  <Typography sx={{ fontSize: 14, color: "#bbb" }}>Semua pengajuan sudah direspon</Typography>
+                </Box>
+              ) : (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                  {aktivitasBelumDirespon.map((item) => (
+                    <AktivitasItem
+                      key={`${item._type}-${item._type === "pembimbing" ? item.id_pengajuan : item.id_bimbingan}`}
+                      item={item}
+                      onClick={() =>
+                        navigate(
+                          item._type === "pembimbing"
+                            ? `/dosen/pembimbing/pengajuan/${item.id_pengajuan}`
+                            : `/dosen/bimbingan/pengajuan/${item.id_bimbingan}`
+                        )
+                      }
+                    />
+                  ))}
+                </Box>
+              )}
+            </Box>
+
+            <Box
+              onClick={() => navigate("/dosen/monitoring")}
+              sx={{
+                p: { xs: 2.5, md: 3 },
+                borderRadius: "20px",
+                background: "#fff",
+                border: "1px solid #f0f0f0",
+                boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+                cursor: "pointer",
+                transition: "transform 0.2s, box-shadow 0.2s",
+                "&:hover": { transform: "translateY(-2px)", boxShadow: "0 8px 24px rgba(0,0,0,0.09)" },
+              }}
+            >
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, gap: 2, flexWrap: "wrap" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+                  <Box
+                    sx={{
+                      width: 38,
+                      height: 38,
+                      borderRadius: "12px",
+                      backgroundColor: "#ea580c18",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <AssignmentTurnedInOutlined sx={{ fontSize: 20, color: "#ea580c" }} />
+                  </Box>
+                  <Box>
+                    <Typography sx={{ fontSize: 15, fontWeight: 800, color: "#1a1a1a" }}>Detail Progress Monev</Typography>
+                    <Typography sx={{ fontSize: 12, color: "#999" }}>{monevTotalTim} tim bimbingan</Typography>
+                  </Box>
+                </Box>
+
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "#ea580c" }}>
+                  <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{monevPercent}%</Typography>
+                  <ArrowForward sx={{ fontSize: 16 }} />
+                </Box>
+              </Box>
+
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.25 }}>
+                <LinearProgress
+                  variant="determinate"
+                  value={monevPercent}
+                  sx={{
+                    flex: 1,
+                    height: 8,
+                    borderRadius: 6,
+                    backgroundColor: "#f0f0f0",
+                    "& .MuiLinearProgress-bar": {
+                      borderRadius: 6,
+                      backgroundColor: "#ea580c",
+                    },
+                  }}
+                />
+                <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#666", minWidth: 58, textAlign: "right" }}>
+                  {monevDisetujui}/{monevTotalLuaran}
                 </Typography>
               </Box>
-              <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+
+              <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                <Typography sx={{ fontSize: 12, color: "#2e7d32", fontWeight: 700 }}>Disetujui: {monevDisetujui}</Typography>
+                <Typography sx={{ fontSize: 12, color: "#f57f17", fontWeight: 700 }}>Submitted: {monevSubmitted}</Typography>
+                <Typography sx={{ fontSize: 12, color: "#c62828", fontWeight: 700 }}>Ditolak: {monevDitolak}</Typography>
+                <Typography sx={{ fontSize: 12, color: "#757575", fontWeight: 700 }}>Belum: {monevBelum}</Typography>
+              </Box>
+            </Box>
+          </Box>
+
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" }, gap: 2.5 }}>
+            <Box
+              sx={{
+                p: { xs: 2.5, md: 3 },
+                borderRadius: "20px",
+                background: "#fff",
+                border: "1px solid #f0f0f0",
+                boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+              }}
+            >
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2.5, gap: 1.5 }}>
+                <Box>
+                  <Typography sx={{ fontSize: 16, fontWeight: 800, color: "#1a1a1a" }}>
+                    Daftar Tim Dibimbing
+                  </Typography>
+                  <Typography sx={{ fontSize: 12, color: "#999" }}>
+                    Ringkasan tim pada monitoring luaran
+                  </Typography>
+                </Box>
                 <Box
-                  onClick={() => navigate("/dosen/pembimbing/pengajuan")}
-                  sx={{ display: "flex", alignItems: "center", gap: 0.5, cursor: "pointer", color: "#0D59F2", "&:hover": { opacity: 0.7 } }}
+                  onClick={() => navigate("/dosen/monitoring")}
+                  sx={{ display: "flex", alignItems: "center", gap: 0.5, cursor: "pointer", color: "#ea580c", "&:hover": { opacity: 0.7 } }}
                 >
-                  <Typography sx={{ fontSize: 13, fontWeight: 600 }}>Pembimbing</Typography>
-                  <ArrowForward sx={{ fontSize: 16 }} />
+                  <Typography sx={{ fontSize: 12, fontWeight: 700 }}>Lihat semua</Typography>
+                  <ArrowForward sx={{ fontSize: 15 }} />
+                </Box>
+              </Box>
+
+              {daftarTimDibimbing.length === 0 ? (
+                <Box sx={{ textAlign: "center", py: 4 }}>
+                  <SchoolOutlined sx={{ fontSize: 36, color: "#e0e0e0", mb: 1 }} />
+                  <Typography sx={{ fontSize: 13, color: "#bbb" }}>Belum ada tim bimbingan</Typography>
+                </Box>
+              ) : (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+                  {daftarTimDibimbing.map((tim) => {
+                    const total = Number(tim.total_luaran || 0);
+                    const approved = Number(tim.total_disetujui || 0);
+                    const percent = total > 0 ? Math.round((approved / total) * 100) : 0;
+
+                    return (
+                      <Box
+                        key={tim.id_tim}
+                        onClick={() => navigate("/dosen/monitoring")}
+                        sx={{
+                          p: 1.5,
+                          borderRadius: "12px",
+                          border: "1px solid #f3f3f3",
+                          backgroundColor: "#fafafa",
+                          cursor: "pointer",
+                          "&:hover": { backgroundColor: "#f0f4ff" },
+                        }}
+                      >
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1 }}>
+                          <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#1a1a1a" }}>
+                            {tim.nama_tim || "-"}
+                          </Typography>
+                          <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#ea580c" }}>{percent}%</Typography>
+                        </Box>
+                        <Typography sx={{ fontSize: 12, color: "#888", mb: 1 }}>
+                          {tim.ketua?.nama_lengkap || "-"}
+                        </Typography>
+                        <LinearProgress
+                          variant="determinate"
+                          value={percent}
+                          sx={{
+                            height: 6,
+                            borderRadius: 6,
+                            backgroundColor: "#eeeeee",
+                            "& .MuiLinearProgress-bar": { borderRadius: 6, backgroundColor: "#ea580c" },
+                          }}
+                        />
+                      </Box>
+                    );
+                  })}
+                </Box>
+              )}
+            </Box>
+
+            <Box
+              sx={{
+                p: { xs: 2.5, md: 3 },
+                borderRadius: "20px",
+                background: "#fff",
+                border: "1px solid #f0f0f0",
+                boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+              }}
+            >
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2.5, gap: 1.5 }}>
+                <Box>
+                  <Typography sx={{ fontSize: 16, fontWeight: 800, color: "#1a1a1a" }}>
+                    Daftar Bimbingan
+                  </Typography>
+                  <Typography sx={{ fontSize: 12, color: "#999" }}>
+                    Riwayat pengajuan log bimbingan terbaru
+                  </Typography>
                 </Box>
                 <Box
                   onClick={() => navigate("/dosen/bimbingan")}
                   sx={{ display: "flex", alignItems: "center", gap: 0.5, cursor: "pointer", color: "#059669", "&:hover": { opacity: 0.7 } }}
                 >
-                  <Typography sx={{ fontSize: 13, fontWeight: 600 }}>Bimbingan</Typography>
-                  <ArrowForward sx={{ fontSize: 16 }} />
+                  <Typography sx={{ fontSize: 12, fontWeight: 700 }}>Lihat semua</Typography>
+                  <ArrowForward sx={{ fontSize: 15 }} />
                 </Box>
               </Box>
-            </Box>
 
-            {aktivitasBelumDirespon.length === 0 ? (
-              <Box sx={{ textAlign: "center", py: 5 }}>
-                <CheckCircleOutlined sx={{ fontSize: 40, color: "#e0e0e0", mb: 1.5 }} />
-                <Typography sx={{ fontSize: 14, color: "#bbb" }}>Semua pengajuan sudah direspon</Typography>
-              </Box>
-            ) : (
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                {aktivitasBelumDirespon.map((item) => (
-                  <AktivitasItem
-                    key={`${item._type}-${item._type === "pembimbing" ? item.id_pengajuan : item.id_bimbingan}`}
-                    item={item}
-                    onClick={() =>
-                      navigate(
-                        item._type === "pembimbing"
-                          ? `/dosen/pembimbing/pengajuan/${item.id_pengajuan}`
-                          : `/dosen/bimbingan/pengajuan/${item.id_bimbingan}`
-                      )
-                    }
-                  />
-                ))}
-              </Box>
-            )}
+              {daftarBimbingan.length === 0 ? (
+                <Box sx={{ textAlign: "center", py: 4 }}>
+                  <MenuBookOutlined sx={{ fontSize: 36, color: "#e0e0e0", mb: 1 }} />
+                  <Typography sx={{ fontSize: 13, color: "#bbb" }}>Belum ada data bimbingan</Typography>
+                </Box>
+              ) : (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+                  {daftarBimbingan.map((item) => {
+                    const statusCfg = statusBimbinganMap[item.status] || { label: "Unknown", color: "#757575" };
+
+                    return (
+                      <Box
+                        key={item.id_bimbingan}
+                        onClick={() => navigate(`/dosen/bimbingan/pengajuan/${item.id_bimbingan}`)}
+                        sx={{
+                          p: 1.5,
+                          borderRadius: "12px",
+                          border: "1px solid #f3f3f3",
+                          backgroundColor: "#fafafa",
+                          cursor: "pointer",
+                          "&:hover": { backgroundColor: "#f0f4ff" },
+                        }}
+                      >
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1 }}>
+                          <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#1a1a1a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {item.nama_tim || "-"}
+                          </Typography>
+                          <Box sx={{ px: 1.2, py: 0.3, borderRadius: "50px", backgroundColor: statusCfg.color }}>
+                            <Typography sx={{ fontSize: 11, fontWeight: 700, color: "#fff" }}>{statusCfg.label}</Typography>
+                          </Box>
+                        </Box>
+                        <Typography sx={{ fontSize: 12, color: "#888" }}>
+                          {formatTime(item.created_at)}
+                        </Typography>
+                      </Box>
+                    );
+                  })}
+                </Box>
+              )}
+            </Box>
           </Box>
 
         </Box>

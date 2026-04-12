@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  Box, Typography, Paper, Button, CircularProgress,
+  Box, Typography, Paper, Button,
   TextField, Table,
   TableBody, TableCell, TableContainer, TableHead, TableRow,
 } from "@mui/material";
@@ -10,6 +10,7 @@ import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import DosenSidebar from "../../components/layouts/DosenSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import { getDetailBimbinganDosen } from "../../api/dosen";
 
 const roundedField = {
@@ -93,8 +94,8 @@ export default function DetailBimbinganDosenPage() {
   if (loading) {
     return (
       <BodyLayout Sidebar={DosenSidebar}>
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-          <CircularProgress />
+        <Box sx={{ position: "relative", minHeight: "60vh" }}>
+          <LoadingScreen message="Memuat data..." overlay minHeight="60vh" />
         </Box>
       </BodyLayout>
     );

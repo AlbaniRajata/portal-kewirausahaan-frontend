@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Box, CircularProgress } from "@mui/material";
+import { Box } from "@mui/material";
 import axios from "axios";
 import AppRoutes from "./routes/AppRoutes";
 import { useAuthStore } from "./store/authStore";
 import { setAccessToken } from "./api/axios";
+import LoadingScreen from "./components/common/LoadingScreen";
 
 function App() {
   const { refreshToken, logout } = useAuthStore();
@@ -33,8 +34,8 @@ function App() {
 
   if (restoring) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }}>
-        <CircularProgress />
+      <Box sx={{ position: "relative", minHeight: "100vh" }}>
+        <LoadingScreen message="Menyiapkan aplikasi..." overlay minHeight="100vh" />
       </Box>
     );
   }

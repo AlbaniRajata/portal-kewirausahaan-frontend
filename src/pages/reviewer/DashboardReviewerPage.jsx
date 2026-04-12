@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Box, Typography, CircularProgress, Avatar } from "@mui/material";
+import { Box, Typography, Avatar } from "@mui/material";
 import {
   AssignmentOutlined, CheckCircleOutlined, CancelOutlined,
   PendingActionsOutlined, ArrowForward, RateReviewOutlined,
@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import ReviewerSidebar from "../../components/layouts/ReviewerSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import { getProfile, getListPenugasan } from "../../api/reviewer";
 import { useAuthStore } from "../../store/authStore";
 
@@ -207,8 +208,8 @@ export default function DashboardReviewerPage() {
   if (loading) {
     return (
       <BodyLayout Sidebar={ReviewerSidebar}>
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-          <CircularProgress />
+        <Box sx={{ position: "relative", minHeight: "60vh" }}>
+          <LoadingScreen message="Memuat dashboard reviewer..." overlay minHeight="60vh" />
         </Box>
       </BodyLayout>
     );

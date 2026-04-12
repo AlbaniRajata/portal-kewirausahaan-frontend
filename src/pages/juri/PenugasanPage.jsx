@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   Box, Paper, Typography, TextField, MenuItem,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Button, CircularProgress, Dialog, DialogTitle, DialogContent,
+  Button, Dialog, DialogTitle, DialogContent,
   DialogActions, IconButton,
 } from "@mui/material";
 import { Close } from "@mui/icons-material";
@@ -12,6 +12,7 @@ import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import JuriSidebar from "../../components/layouts/JuriSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import { getListPenugasan, acceptPenugasan, rejectPenugasan } from "../../api/juri";
 
 const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "12px" } };
@@ -45,6 +46,13 @@ const formatRupiah = (v) => {
   return "Rp " + new Intl.NumberFormat("id-ID").format(v);
 };
 
+const toNumberOrNull = (value) => {
+  const num = Number(value);
+  return Number.isNaN(num) ? null : num;
+};
+
+const isAcceptedStatus = (status) => [1, 3, 4].includes(Number(status));
+
 export default function PenugasanPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -54,13 +62,29 @@ export default function PenugasanPage() {
   const [catatan, setCatatan] = useState("");
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [pairApprovalMap, setPairApprovalMap] = useState({});
 
   const fetchPenugasan = useCallback(async () => {
     try {
       setLoading(true);
+      setPairApprovalMap({});
       const response = await getListPenugasan(statusFilter);
       if (response.success) {
-        setPenugasan(response.data.penugasan || []);
+        const list = response.data.penugasan || [];
+        setPenugasan(list);
+
+        if (list.length > 0) {
+          const details = list.map((item) => {
+            const tahap = toNumberOrNull(item?.urutan_tahap ?? item?.tahap);
+            const statusReviewer = toNumberOrNull(item?.status_reviewer);
+            const statusJuri = toNumberOrNull(item?.status_juri);
+            const blocked = tahap === 2 && !(isAcceptedStatus(statusReviewer) && isAcceptedStatus(statusJuri));
+
+            return [item.id_distribusi, { tahap, statusReviewer, statusJuri, blocked }];
+          });
+
+          setPairApprovalMap(Object.fromEntries(details));
+        }
       } else {
         await Swal.fire({ icon: "warning", title: "Peringatan", text: response.message || "Gagal memuat daftar penugasan", confirmButtonText: "OK" });
       }
@@ -128,6 +152,8 @@ export default function PenugasanPage() {
     }
   };
 
+  const blockedTahap2Count = penugasan.filter((item) => pairApprovalMap[item.id_distribusi]?.blocked).length;
+
   return (
     <BodyLayout Sidebar={JuriSidebar}>
       <PageTransition>
@@ -151,9 +177,31 @@ export default function PenugasanPage() {
             </Box>
           </Paper>
 
+          {blockedTahap2Count > 0 && (
+            <Paper
+              sx={{
+                mb: 2,
+                px: 3,
+                py: 2,
+                borderRadius: "16px",
+                border: "1px solid #ffe082",
+                backgroundColor: "#fff8e1",
+              }}
+            >
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#8a6d3b", mb: 0.25 }}>
+                Penilaian tahap 2 belum aktif untuk sebagian penugasan.
+              </Typography>
+              <Typography sx={{ fontSize: 13, color: "#8a6d3b" }}>
+                {blockedTahap2Count} penugasan menunggu reviewer dan juri sama-sama menyetujui penugasan.
+              </Typography>
+            </Paper>
+          )}
+
           <Paper sx={{ overflow: "hidden", borderRadius: "16px", border: "1px solid #f0f0f0" }}>
             {loading ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
+              <Box sx={{ position: "relative", minHeight: 320 }}>
+                <LoadingScreen message="Memuat penugasan juri..." overlay minHeight="320px" />
+              </Box>
             ) : penugasan.length === 0 ? (
               <Box sx={{ py: 10, textAlign: "center" }}>
                 <Box sx={{ width: 100, height: 100, borderRadius: "50%", backgroundColor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 3 }}>
@@ -212,7 +260,7 @@ export default function PenugasanPage() {
                                     sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12, fontWeight: 600, px: 2, borderColor: "#0D59F2", color: "#0D59F2", "&:hover": { backgroundColor: "#f0f4ff" } }}>
                                     Detail
                                   </Button>
-                                  <Button size="small" variant="contained" onClick={() => navigate(`/juri/penugasan/${item.id_distribusi}?tab=1`)} disabled={![1, 3].includes(item.status)}
+                                  <Button size="small" variant="contained" onClick={() => navigate(`/juri/penugasan/${item.id_distribusi}?tab=1`)} disabled={![1, 3].includes(item.status) || !!pairApprovalMap[item.id_distribusi]?.blocked}
                                     sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12, fontWeight: 600, px: 2, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" } }}>
                                     Nilai
                                   </Button>

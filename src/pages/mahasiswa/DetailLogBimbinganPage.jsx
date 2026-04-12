@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Box, Typography, Paper, Button,
-  CircularProgress, Divider, TextField,
+  Divider, TextField,
 } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom";
@@ -9,6 +9,7 @@ import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import { getDetailBimbingan } from "../../api/mahasiswa";
 
 const roundedField = {
@@ -76,8 +77,8 @@ export default function DetailLogBimbinganPage() {
   if (loading) {
     return (
       <BodyLayout Sidebar={SidebarMahasiswa}>
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-          <CircularProgress />
+        <Box sx={{ position: "relative", minHeight: "60vh" }}>
+          <LoadingScreen message="Memuat detail bimbingan..." overlay minHeight="60vh" />
         </Box>
       </BodyLayout>
     );

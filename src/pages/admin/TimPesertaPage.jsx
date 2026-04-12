@@ -10,6 +10,7 @@ import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import { getMyProgram, getTimList, getTimDetail, getPesertaList, getPesertaDetail } from "../../api/admin";
 
 const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "15px" } };
@@ -71,6 +72,18 @@ const formatDate = (d) => {
 const formatCurrency = (v) => {
   if (!v) return "-";
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(v);
+};
+
+const getDosenPembimbingName = (item) => {
+  return (
+    item?.nama_dosen ||
+    item?.nama_pembimbing ||
+    item?.dosen_pembimbing ||
+    item?.pembimbing?.nama_dosen ||
+    item?.pembimbing?.nama_lengkap ||
+    item?.pengajuan_pembimbing?.nama_dosen ||
+    "-"
+  );
 };
 
 export default function TimPesertaPage() {
@@ -266,6 +279,7 @@ export default function TimPesertaPage() {
             </Box>
             <DetailRow label="Kategori" value={detailData.proposal.nama_kategori} />
             <DetailRow label="Modal Diajukan" value={formatCurrency(detailData.proposal.modal_diajukan)} />
+            <DetailRow label="Dosen Pembimbing" value={getDosenPembimbingName(detailData.proposal)} />
             <DetailRow label="Tanggal Submit" value={formatDate(detailData.proposal.tanggal_submit)} />
             <DetailRow label="Jadwal Wawancara" value={formatDate(detailData.proposal.wawancara_at)} />
             <Box>
@@ -353,6 +367,7 @@ export default function TimPesertaPage() {
             </Box>
             <DetailRow label="Kategori" value={detailData.proposal.nama_kategori} />
             <DetailRow label="Modal Diajukan" value={formatCurrency(detailData.proposal.modal_diajukan)} />
+            <DetailRow label="Dosen Pembimbing" value={getDosenPembimbingName(detailData.proposal)} />
             <DetailRow label="Tanggal Submit" value={formatDate(detailData.proposal.tanggal_submit)} />
             <DetailRow label="Jadwal Wawancara" value={formatDate(detailData.proposal.wawancara_at)} />
             <Box>
@@ -439,7 +454,9 @@ export default function TimPesertaPage() {
               </Box>
 
               {loading ? (
-                <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
+                <Box sx={{ position: "relative", minHeight: 320 }}>
+                  <LoadingScreen message="Memuat data tim dan peserta..." overlay minHeight="320px" />
+                </Box>
               ) : paginatedList.length === 0 ? (
                 <Box sx={{ textAlign: "center", py: 10 }}>
                   <Box sx={{ width: 100, height: 100, borderRadius: "50%", backgroundColor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 3 }}>
@@ -460,11 +477,11 @@ export default function TimPesertaPage() {
                       <TableHead>
                         <TableRow>
                           {activeTab === 0
-                            ? ["Nama Tim", "Program", "Ketua", "Anggota", "Proposal", "Aksi"].map((h, i) => (
-                                <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 5 && { textAlign: "center" }) }}>{h}</TableCell>
-                              ))
-                            : ["Nama Peserta", "NIM", "Program", "Tim", "Peran", "Status Lolos", "Aksi"].map((h, i) => (
+                            ? ["Nama Tim", "Program", "Ketua", "Dosen Pembimbing", "Anggota", "Proposal", "Aksi"].map((h, i) => (
                                 <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 6 && { textAlign: "center" }) }}>{h}</TableCell>
+                              ))
+                            : ["Nama Peserta", "NIM", "Program", "Tim", "Dosen Pembimbing", "Peran", "Status Lolos", "Aksi"].map((h, i) => (
+                                <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 7 && { textAlign: "center" }) }}>{h}</TableCell>
                               ))
                           }
                         </TableRow>
@@ -483,6 +500,7 @@ export default function TimPesertaPage() {
                                     <Typography sx={{ fontSize: 13, fontWeight: 600 }}>{item.nama_ketua || "-"}</Typography>
                                     {item.nim_ketua && <Typography sx={{ fontSize: 11, color: "#aaa" }}>{item.nim_ketua}</Typography>}
                                   </TableCell>
+                                  <TableCell><Typography sx={{ fontSize: 13 }}>{getDosenPembimbingName(item)}</Typography></TableCell>
                                   <TableCell><Typography sx={{ fontSize: 13 }}>{item.jumlah_anggota} orang</Typography></TableCell>
                                   <TableCell>
                                     {proposalStatus
@@ -512,6 +530,7 @@ export default function TimPesertaPage() {
                                   <TableCell><Typography sx={{ fontSize: 13 }}>{item.nim}</Typography></TableCell>
                                   <TableCell><Typography sx={{ fontSize: 13 }}>{item.nama_program}</Typography></TableCell>
                                   <TableCell><Typography sx={{ fontSize: 13 }}>{item.nama_tim || "-"}</Typography></TableCell>
+                                  <TableCell><Typography sx={{ fontSize: 13 }}>{getDosenPembimbingName(item)}</Typography></TableCell>
                                   <TableCell>
                                     {item.peran !== undefined && item.peran !== null
                                       ? <Chip label={item.peran === 1 ? "Ketua" : "Anggota"} size="small"
@@ -547,7 +566,6 @@ export default function TimPesertaPage() {
             </Box>
           </Paper>
 
-          {/* ── Dialog: style konsisten dengan DetailRekapDialog ── */}
           <Dialog open={openDetail} onClose={() => setOpenDetail(false)} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: "16px" } }}>
             <DialogTitle sx={{ pb: 1 }}>
               <Box sx={{ pr: 4 }}>
@@ -569,7 +587,11 @@ export default function TimPesertaPage() {
             </DialogTitle>
             <DialogContent dividers sx={{ px: 3, py: 3 }}>
               {loadingDetail
-                ? <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}><CircularProgress /></Box>
+                ? (
+                  <Box sx={{ position: "relative", minHeight: 220 }}>
+                    <LoadingScreen message="Memuat detail..." overlay minHeight="220px" />
+                  </Box>
+                )
                 : activeTab === 0 ? renderTimDetail() : renderPesertaDetail()
               }
             </DialogContent>

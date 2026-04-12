@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Box, Paper, Typography, Button, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, CircularProgress,
+  TableContainer, TableHead, TableRow,
   Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, MenuItem, IconButton, Tooltip, Pagination,
 } from "@mui/material";
@@ -10,6 +10,7 @@ import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import { getProdi, createProdi, updateProdi, deleteProdi, getKampus, getJurusan } from "../../api/admin";
 
 const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "15px" } };
@@ -231,7 +232,9 @@ export default function ProdiPage() {
               </Box>
 
               {loading ? (
-                <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
+                <Box sx={{ position: "relative", minHeight: 320 }}>
+                  <LoadingScreen message="Memuat data program studi..." overlay minHeight="320px" />
+                </Box>
               ) : paginatedList.length === 0 ? (
                 <Box sx={{ textAlign: "center", py: 10 }}>
                   <Box sx={{ width: 100, height: 100, borderRadius: "50%", backgroundColor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 3 }}>

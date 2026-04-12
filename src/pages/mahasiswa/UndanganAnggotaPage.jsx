@@ -4,13 +4,14 @@ import {
   Box, Paper, Typography, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Button, Dialog,
   DialogTitle, DialogContent, DialogActions, TextField,
-  CircularProgress, IconButton,
+  IconButton,
 } from "@mui/material";
 import { Close, MailOutline } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import { getTimDetail, acceptInvite, rejectInvite } from "../../api/mahasiswa";
 
 const tableHeadCell = {
@@ -148,8 +149,8 @@ export default function UndanganAnggotaPage() {
   if (loading) {
     return (
       <BodyLayout Sidebar={SidebarMahasiswa}>
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-          <CircularProgress />
+        <Box sx={{ position: "relative", minHeight: "60vh" }}>
+          <LoadingScreen message="Memuat undangan anggota..." overlay minHeight="60vh" />
         </Box>
       </BodyLayout>
     );

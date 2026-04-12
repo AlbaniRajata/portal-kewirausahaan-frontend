@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Box, Typography, CircularProgress, Avatar, LinearProgress, Chip } from "@mui/material";
+import { Box, Typography, Avatar, LinearProgress, Chip } from "@mui/material";
 import {
   PersonOutlined, GroupsOutlined, DescriptionOutlined,
   SchoolOutlined, MenuBookOutlined, CheckCircle,
@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import { getProfile } from "../../api/mahasiswa";
 import { getTimStatus } from "../../api/mahasiswa";
 import { getProposalStatus } from "../../api/mahasiswa";
@@ -216,6 +217,7 @@ export default function DashboardMahasiswaPage() {
   const proposalObj  = proposal?.data?.proposal;
   const proposalLolos = proposalObj?.status >= 7;
   const hasPembimbing = pembimbing?.pengajuan?.status === 1;
+  const proposalSiapDibuat = hasTim && proposal?.data?.anggota?.all_accepted && hasPembimbing;
   const totalBimbingan = bimbingan.length;
   const recentBimbingan = [...bimbingan].sort((a, b) =>
     new Date(b.tanggal_bimbingan) - new Date(a.tanggal_bimbingan)
@@ -244,13 +246,6 @@ export default function DashboardMahasiswaPage() {
       path: "/mahasiswa/anggota-tim",
     },
     {
-      icon: <DescriptionOutlined sx={{ fontSize: 20 }} />,
-      label: "Proposal",
-      sublabel: hasProposal ? getProposalStatusInfo(proposalObj.status).label : "Belum diajukan",
-      status: proposalLolos ? "done" : hasProposal ? "active" : "pending",
-      path: "/mahasiswa/proposal",
-    },
-    {
       icon: <SchoolOutlined sx={{ fontSize: 20 }} />,
       label: "Pembimbing",
       sublabel: hasPembimbing ? "Disetujui" : pembimbing?.pengajuan ? "Menunggu" : "Belum diajukan",
@@ -264,6 +259,19 @@ export default function DashboardMahasiswaPage() {
       status: totalBimbingan > 0 ? "active" : "pending",
       path: "/mahasiswa/bimbingan",
     },
+    {
+      icon: <DescriptionOutlined sx={{ fontSize: 20 }} />,
+      label: "Proposal",
+      sublabel: hasProposal
+        ? getProposalStatusInfo(proposalObj.status).label
+        : proposalSiapDibuat
+          ? "Siap dibuat"
+          : proposal?.data?.anggota?.all_accepted
+            ? (pembimbing?.pengajuan ? "Menunggu pembimbing" : "Pembimbing belum diajukan")
+            : "Belum diajukan",
+      status: proposalLolos ? "done" : hasProposal ? "active" : "pending",
+      path: "/mahasiswa/proposal",
+    },
   ];
 
   const statCards = [
@@ -276,14 +284,6 @@ export default function DashboardMahasiswaPage() {
       path: "/mahasiswa/anggota-tim",
     },
     {
-      icon: <DescriptionOutlined sx={{ fontSize: 20, color: "#7c3aed" }} />,
-      label: "Status Proposal",
-      value: hasProposal ? getProposalStatusInfo(proposalObj.status).label : "Belum Ada",
-      sub: hasProposal ? proposalObj.judul?.slice(0, 40) + "..." : "Belum membuat proposal",
-      accent: "#7c3aed",
-      path: "/mahasiswa/proposal",
-    },
-    {
       icon: <SchoolOutlined sx={{ fontSize: 20, color: "#0891b2" }} />,
       label: "Pembimbing",
       value: hasPembimbing ? "Disetujui" : pembimbing?.pengajuan ? "Menunggu" : "Belum",
@@ -293,11 +293,25 @@ export default function DashboardMahasiswaPage() {
     },
     {
       icon: <MenuBookOutlined sx={{ fontSize: 20, color: "#059669" }} />,
-      label: "Total Bimbingan",
+      label: "Bimbingan",
       value: `${totalBimbingan} Sesi`,
       sub: totalBimbingan > 0 ? `Terakhir: ${formatDate(recentBimbingan[0]?.tanggal_bimbingan)}` : "Belum ada sesi bimbingan",
       accent: "#059669",
       path: "/mahasiswa/bimbingan",
+    },
+    {
+      icon: <DescriptionOutlined sx={{ fontSize: 20, color: "#7c3aed" }} />,
+      label: "Status Proposal",
+      value: hasProposal ? getProposalStatusInfo(proposalObj.status).label : "Belum Ada",
+      sub: hasProposal
+        ? proposalObj.judul?.slice(0, 40) + "..."
+        : proposalSiapDibuat
+          ? "Proposal sudah bisa dibuat"
+          : proposal?.data?.anggota?.all_accepted
+            ? "Menunggu persetujuan pembimbing"
+            : "Belum membuat proposal",
+      accent: "#7c3aed",
+      path: "/mahasiswa/proposal",
     },
     {
       icon: <AssignmentTurnedInOutlined sx={{ fontSize: 20, color: "#ea580c" }} />,
@@ -314,8 +328,8 @@ export default function DashboardMahasiswaPage() {
   if (loading) {
     return (
       <BodyLayout Sidebar={SidebarMahasiswa}>
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-          <CircularProgress />
+        <Box sx={{ position: "relative", minHeight: "60vh" }}>
+          <LoadingScreen message="Memuat dashboard mahasiswa..." overlay minHeight="60vh" />
         </Box>
       </BodyLayout>
     );

@@ -8,6 +8,7 @@ import { Info, CheckCircle } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { getFormPenilaian, simpanNilai, submitPenilaian } from "../../api/reviewer";
+import LoadingScreen from "../common/LoadingScreen";
 
 const roundedField = {
   "& .MuiOutlinedInput-root": { borderRadius: "12px" },
@@ -200,8 +201,8 @@ export default function FormPenilaianTab({ id_distribusi, onActionsChange }) {
 
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 8 }}>
-        <CircularProgress />
+      <Box sx={{ position: "relative", minHeight: 320 }}>
+        <LoadingScreen message="Memuat form penilaian..." overlay minHeight="320px" />
       </Box>
     );
   }

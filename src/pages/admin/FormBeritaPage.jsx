@@ -1,14 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Box, Paper, Typography, Button, TextField, MenuItem,
-  CircularProgress, Divider, ToggleButtonGroup, ToggleButton,
+  Divider, ToggleButtonGroup, ToggleButton,
 } from "@mui/material";
-import { Upload, Link as LinkIcon, AttachFile } from "@mui/icons-material";
+import { Upload, Link as LinkIcon, AttachFile, ArrowBack } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import {
   getBeritaDetailAdmin, createBerita, updateBerita,
 } from "../../api/admin";
@@ -130,8 +131,8 @@ export default function FormBeritaPage() {
   if (loading) {
     return (
       <BodyLayout Sidebar={AdminSidebar}>
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-          <CircularProgress />
+        <Box sx={{ position: "relative", minHeight: "60vh" }}>
+          <LoadingScreen message="Memuat data..." overlay minHeight="60vh" />
         </Box>
       </BodyLayout>
     );
@@ -143,6 +144,7 @@ export default function FormBeritaPage() {
         <Box>
           <Button size="small"
             onClick={() => navigate("/admin/berita")}
+            startIcon={<ArrowBack />}
             sx={{ textTransform: "none", borderRadius: "50px", fontSize: 13, color: "#888", p: 0, mb: 0.5, minWidth: 0, "&:hover": { backgroundColor: "transparent", color: "#0D59F2" } }}
           >
             Kembali ke Daftar Berita

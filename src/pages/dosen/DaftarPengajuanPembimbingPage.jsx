@@ -11,6 +11,7 @@ import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import DosenSidebar from "../../components/layouts/DosenSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import { getPengajuanMasuk, approvePengajuan, rejectPengajuan } from "../../api/dosen";
 
 const roundedField = {
@@ -54,6 +55,32 @@ const formatDate = (dateString) => {
   });
 };
 
+const isPengajuanReassigned = (item) => {
+  if (item?.is_reassigned === true) return true;
+
+  const source = item?.pengajuan_raw || item?.pengajuan || item;
+
+  return Boolean(
+    source?.is_reassign ||
+    source?.is_reassigned ||
+    source?.reassigned ||
+    source?.reassign ||
+    source?.dari_reassign ||
+    source?.reassigned_at ||
+    source?.reassign_at ||
+    source?.id_pengajuan_sebelumnya ||
+    source?.id_pengajuan_lama ||
+    source?.id_dosen_sebelumnya ||
+    source?.id_dosen_lama ||
+    (Number(source?.reassign_count) > 0) ||
+    String(source?.sumber || "").toLowerCase() === "reassign" ||
+    String(source?.jenis_pengajuan || "").toLowerCase().includes("reassign") ||
+    String(source?.tipe_pengajuan || "").toLowerCase().includes("reassign") ||
+    String(source?.catatan_admin || "").toLowerCase().includes("reassign") ||
+    String(source?.keterangan_admin || "").toLowerCase().includes("reassign")
+  );
+};
+
 export default function DaftarPengajuanPembimbingPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -84,6 +111,14 @@ export default function DaftarPengajuanPembimbingPage() {
     (p.keterangan || "").toLowerCase().includes(search.toLowerCase()) ||
     (p.mahasiswa_pengaju || "").toLowerCase().includes(search.toLowerCase())
   );
+
+  const reassignedPengajuan = pengajuanList.filter((p) => isPengajuanReassigned(p));
+  const reassignedTimNames = [...new Set(
+    reassignedPengajuan
+      .map((item) => item.nama_tim)
+      .filter(Boolean)
+  )];
+  const reassignedTimPreview = reassignedTimNames.slice(0, 3).join(", ");
 
   const pending = pengajuanList.filter((p) => p.status === 0).length;
 
@@ -181,6 +216,26 @@ export default function DaftarPengajuanPembimbingPage() {
             )}
           </Box>
 
+          {reassignedPengajuan.length > 0 && (
+            <Box
+              sx={{
+                mb: 3,
+                p: 2,
+                borderRadius: "12px",
+                backgroundColor: "#e3f2fd",
+                border: "1px solid #90caf9",
+              }}
+            >
+              <Typography sx={{ fontSize: 13, color: "#1565c0", fontWeight: 700, mb: 0.4 }}>
+                Keterangan Reassign
+              </Typography>
+              <Typography sx={{ fontSize: 13, color: "#1565c0" }}>
+                Anda telah di reassign ke tim {reassignedTimPreview}
+                {reassignedTimNames.length > 3 ? ` dan ${reassignedTimNames.length - 3} tim lainnya` : ""}.
+              </Typography>
+            </Box>
+          )}
+
           <Paper sx={{ p: 3, borderRadius: "16px", border: "1px solid #f0f0f0" }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
               <Typography sx={{ fontSize: 15, fontWeight: 700 }}>Daftar Pengajuan</Typography>
@@ -201,7 +256,9 @@ export default function DaftarPengajuanPembimbingPage() {
             </Box>
 
             {loading ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
+              <Box sx={{ position: "relative", minHeight: 320 }}>
+                <LoadingScreen message="Memuat pengajuan pembimbing..." overlay minHeight="320px" />
+              </Box>
             ) : filtered.length === 0 ? (
               <Box sx={{ textAlign: "center", py: 10 }}>
                 <Box sx={{ width: 100, height: 100, borderRadius: "50%", backgroundColor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 3 }}>
@@ -227,10 +284,16 @@ export default function DaftarPengajuanPembimbingPage() {
                   <TableBody>
                     {filtered.map((p) => {
                       const si = STATUS_PENGAJUAN[p.status];
+                      const isReassigned = isPengajuanReassigned(p);
                       return (
                         <TableRow key={p.id_pengajuan} sx={tableBodyRow}>
                           <TableCell>
                             <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{p.nama_tim}</Typography>
+                            {isReassigned && (
+                              <Typography sx={{ fontSize: 12, color: "#1565c0", fontWeight: 600, mt: 0.4 }}>
+                                Anda telah di reassign ke tim ini
+                              </Typography>
+                            )}
                           </TableCell>
                           <TableCell>
                             <Typography sx={{ fontSize: 13 }}>{p.keterangan || "-"}</Typography>

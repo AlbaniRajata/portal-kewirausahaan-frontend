@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Box, Paper, Typography, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, Button, CircularProgress,
+  TableContainer, TableHead, TableRow, Button,
   TextField, MenuItem, Pagination, InputAdornment, Avatar,
 } from "@mui/material";
 import { Search, Newspaper } from "@mui/icons-material";
@@ -10,6 +10,7 @@ import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import { getBeritaListAdmin, deleteBerita } from "../../api/admin";
 
 const BASE_URL = import.meta.env.VITE_API_URL.replace("/api", "");
@@ -147,7 +148,9 @@ export default function BeritaPage() {
 
             <Box sx={{ p: 3 }}>
               {loading ? (
-                <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
+                <Box sx={{ position: "relative", minHeight: 320 }}>
+                  <LoadingScreen message="Memuat berita..." overlay minHeight="320px" />
+                </Box>
               ) : paginatedList.length === 0 ? (
                 <Box sx={{ textAlign: "center", py: 10 }}>
                   <Box sx={{ width: 100, height: 100, borderRadius: "50%", backgroundColor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 3 }}>

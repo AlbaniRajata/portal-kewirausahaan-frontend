@@ -1,14 +1,31 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import { Box, Paper, Tabs, Tab, CircularProgress, Button, Divider } from "@mui/material";
+import { Box, Paper, Tabs, Tab, Button, Divider } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import JuriSidebar from "../../components/layouts/JuriSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import DetailPenugasanTab from "../../components/juri/DetailPenugasanTab";
 import FormPenilaianTab from "../../components/juri/FormPenilaianTab";
 import { getDetailPenugasan, acceptPenugasan, rejectPenugasan } from "../../api/juri";
+
+const toNumberOrNull = (value) => {
+  const num = Number(value);
+  return Number.isNaN(num) ? null : num;
+};
+
+const isAcceptedStatus = (status) => [1, 3, 4].includes(Number(status));
+
+const isTahap2BlockedByPairApproval = (item) => {
+  const tahap = toNumberOrNull(item?.urutan_tahap ?? item?.tahap);
+  if (tahap !== 2) return false;
+
+  const statusReviewer = toNumberOrNull(item?.status_reviewer);
+  const statusJuri = toNumberOrNull(item?.status_juri);
+  return !(isAcceptedStatus(statusReviewer) && isAcceptedStatus(statusJuri));
+};
 
 export default function PenugasanDetailPage() {
   const { id_distribusi } = useParams();
@@ -105,14 +122,16 @@ export default function PenugasanDetailPage() {
   if (loading) {
     return (
       <BodyLayout Sidebar={JuriSidebar}>
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-          <CircularProgress />
+        <Box sx={{ position: "relative", minHeight: "60vh" }}>
+          <LoadingScreen message="Memuat detail penugasan..." overlay minHeight="60vh" />
         </Box>
       </BodyLayout>
     );
   }
 
   if (!penugasan) return null;
+
+  const blockedByPairApproval = isTahap2BlockedByPairApproval(penugasan);
 
   return (
     <BodyLayout Sidebar={JuriSidebar}>
@@ -149,7 +168,7 @@ export default function PenugasanDetailPage() {
                 <Tab label="Detail Penugasan" />
                 <Tab
                   label="Form Penilaian"
-                  disabled={penugasan.status !== 1 && penugasan.status !== 3}
+                  disabled={(penugasan.status !== 1 && penugasan.status !== 3) || blockedByPairApproval}
                 />
               </Tabs>
             </Box>
