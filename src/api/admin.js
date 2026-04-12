@@ -1,5 +1,24 @@
 import api from "./axios";
 
+export const getProfile = async () => {
+  const res = await api.get("/admin/profile");
+  return res.data;
+};
+
+export const updateProfile = async (formData) => {
+  const res = await api.patch("/admin/profile", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return res.data;
+};
+
+export const updatePassword = async (payload) => {
+  const res = await api.put("/admin/password", payload);
+  return res.data;
+};
+
 export const getMyProgram = async () => {
   const res = await api.get("/admin/program/my");
   return res.data;
@@ -53,32 +72,6 @@ export const approveMahasiswa = async (id) => {
 
 export const rejectMahasiswa = async (id, catatan) => {
   const res = await api.post(`/admin/verifikasi/mahasiswa/${id}/reject`, { catatan });
-  return res.data;
-};
-
-export const getPendingDosen = async (filters = {}) => {
-  const params = new URLSearchParams();
-  if (filters.status_verifikasi !== undefined) params.append("status_verifikasi", filters.status_verifikasi);
-  if (filters.email_verified !== undefined) params.append("email_verified", filters.email_verified);
-  if (filters.id_prodi) params.append("id_prodi", filters.id_prodi);
-  if (filters.tanggal_dari) params.append("tanggal_dari", filters.tanggal_dari);
-  if (filters.tanggal_sampai) params.append("tanggal_sampai", filters.tanggal_sampai);
-  const res = await api.get(`/admin/verifikasi/dosen?${params.toString()}`);
-  return res.data;
-};
-
-export const getDetailDosen = async (id) => {
-  const res = await api.get(`/admin/verifikasi/dosen/${id}`);
-  return res.data;
-};
-
-export const approveDosen = async (id) => {
-  const res = await api.post(`/admin/verifikasi/dosen/${id}/approve`);
-  return res.data;
-};
-
-export const rejectDosen = async (id) => {
-  const res = await api.post(`/admin/verifikasi/dosen/${id}/reject`);
   return res.data;
 };
 
@@ -506,5 +499,35 @@ export const getDetailLuaranTim = async (id_program, id_tim) => {
 
 export const reviewLuaranTim = async (id_luaran_tim, payload) => {
   const res = await api.patch(`/admin/monev/luaran-tim/${id_luaran_tim}/review`, payload);
+  return res.data;
+};
+
+// Pemerataan Pembimbing APIs
+export const getProposalPembimbing = async (id_program) => {
+  const params = new URLSearchParams();
+  if (id_program) params.append("id_program", id_program);
+  const res = await api.get(`/admin/pemerataan-pembimbing/proposal?${params.toString()}`);
+  return res.data;
+};
+
+export const getDosenPembimbing = async () => {
+  const res = await api.get("/admin/pemerataan-pembimbing/dosen");
+  return res.data;
+};
+
+export const getDosenBebanPembimbing = async (id_program) => {
+  const params = new URLSearchParams();
+  if (id_program) params.append("id_program", id_program);
+  const res = await api.get(`/admin/pemerataan-pembimbing/dosen/beban?${params.toString()}`);
+  return res.data;
+};
+
+export const updatePembimbing = async (id_tim, id_dosen) => {
+  const res = await api.patch(`/admin/pemerataan-pembimbing/tim/${id_tim}`, { id_dosen });
+  return res.data;
+};
+
+export const updateBatchPembimbing = async (updates) => {
+  const res = await api.post("/admin/pemerataan-pembimbing/batch-update", { updates });
   return res.data;
 };

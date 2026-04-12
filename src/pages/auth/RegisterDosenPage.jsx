@@ -1,14 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Box, Divider, Paper, TextField, Typography,
   Autocomplete, CircularProgress, IconButton, InputAdornment,
+  Dialog, DialogContent,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
 import loginBg from "../../assets/images/login-bg.jpg";
-import { registerDosen } from "../../api/auth";
+import { registerDosen, verifyEmailKode, resendVerificationKode, cancelRegistrasi } from "../../api/auth";
 import api from "../../api/axios";
 
 const poppins = "'Poppins', sans-serif";
@@ -32,6 +33,16 @@ export default function RegisterDosenPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [prodiOptions, setProdiOptions] = useState([]);
   const [mounted, setMounted] = useState(false);
+
+  const [openVerifikasi, setOpenVerifikasi] = useState(false);
+  const [verifikasiData, setVerifikasiData] = useState({ id_user: null, email: "" });
+  const [kode, setKode] = useState(["", "", "", "", "", ""]);
+  const [verifyError, setVerifyError] = useState("");
+  const [loadingVerifikasi, setLoadingVerifikasi] = useState(false);
+  const [resendEmailError, setResendEmailError] = useState("");
+  const [resending, setResending] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const inputRefs = useRef([]);
 
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 50);
@@ -63,6 +74,12 @@ export default function RegisterDosenPage() {
     };
     fetchProdi();
   }, []);
+
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const timer = setInterval(() => setCountdown((prev) => prev - 1), 1000);
+    return () => clearInterval(timer);
+  }, [countdown]);
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -96,18 +113,15 @@ export default function RegisterDosenPage() {
 
       const response = await registerDosen(payload);
       if (response.success) {
-        await Swal.fire({
-          icon: "success", title: "Registrasi Berhasil",
-          html: `<p>Akun Anda telah berhasil didaftarkan.</p><p style="color:#666;font-size:14px;">Kode verifikasi telah dikirim ke email Anda.</p>`,
-          confirmButtonText: "Masukkan Kode",
-          allowOutsideClick: false,
+        setVerifikasiData({
+          id_user: response.data.user.id_user,
+          email: response.data.user.email,
         });
-        navigate("/verifikasi-email", {
-          state: {
-            id_user: response.data.user.id_user,
-            email: response.data.user.email,
-          },
-        });
+        setKode(["", "", "", "", "", ""]);
+        setVerifyError("");
+        setCountdown(60);
+        setOpenVerifikasi(true);
+        setTimeout(() => inputRefs.current[0]?.focus(), 300);
       }
     } catch (err) {
       const errorMessage = err.response?.data?.message || "Registrasi gagal. Silahkan coba lagi.";
@@ -130,6 +144,113 @@ export default function RegisterDosenPage() {
     opacity: mounted ? 1 : 0,
     transition: `transform 0.8s ease ${delay}, opacity 0.8s ease ${delay}`,
   });
+
+  const handleKodeChange = (index, value) => {
+    if (!/^\d?$/.test(value)) return;
+    setVerifyError("");
+    const updated = [...kode];
+    updated[index] = value;
+    setKode(updated);
+    if (value && index < 5) inputRefs.current[index + 1]?.focus();
+  };
+
+  const handleKodeKeyDown = (index, e) => {
+    if (e.key === "Backspace" && !kode[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+    if (e.key === "Enter") handleVerifikasi();
+  };
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    setVerifyError("");
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (!pasted) return;
+    const updated = ["", "", "", "", "", ""];
+    for (let i = 0; i < pasted.length; i++) updated[i] = pasted[i];
+    setKode(updated);
+    const nextEmpty = pasted.length < 6 ? pasted.length : 5;
+    inputRefs.current[nextEmpty]?.focus();
+  };
+
+  const handleVerifikasi = async () => {
+    const kodeStr = kode.join("");
+    if (kodeStr.length !== 6) {
+      setVerifyError("Masukkan 6 digit kode verifikasi.");
+      return;
+    }
+
+    setVerifyError("");
+    setLoadingVerifikasi(true);
+    try {
+      await verifyEmailKode({ id_user: verifikasiData.id_user, kode: kodeStr });
+      setOpenVerifikasi(false);
+      await Swal.fire({
+        icon: "success",
+        title: "Email Terverifikasi",
+        text: "Email Anda berhasil diverifikasi. Akun dosen Anda sudah aktif dan dapat langsung login.",
+        confirmButtonText: "Menuju Login",
+        confirmButtonFontWeight: "500",
+        allowOutsideClick: false,
+      });
+      navigate("/login");
+    } catch (err) {
+      const message = err.response?.data?.message || "Kode tidak valid atau sudah kadaluarsa.";
+      setVerifyError(message);
+    } finally {
+      setLoadingVerifikasi(false);
+    }
+  };
+
+  const handleTulisUlangEmail = async () => {
+    setLoadingVerifikasi(true);
+    try {
+      await cancelRegistrasi({ id_user: verifikasiData.id_user });
+    } catch (err) {
+      await Swal.fire({
+        icon: "error",
+        title: "Gagal Membatalkan Registrasi",
+        text: err.response?.data?.message || "Terjadi kesalahan. Silahkan coba lagi.",
+      });
+    } finally {
+      setLoadingVerifikasi(false);
+      setOpenVerifikasi(false);
+      setKode(["", "", "", "", "", ""]);
+      setVerifikasiData({ id_user: null, email: "" });
+    }
+  };
+
+  const handleResend = async () => {
+    if (countdown > 0 || resending) return;
+
+    setResending(true);
+    setResendEmailError("");
+    try {
+      const targetEmail = verifikasiData.email;
+      if (!targetEmail || !targetEmail.includes("@")) {
+        setResendEmailError("Email verifikasi tidak valid");
+        return;
+      }
+
+      await resendVerificationKode(targetEmail);
+
+      setCountdown(60);
+      setKode(["", "", "", "", "", ""]);
+      setResendEmailError("");
+      setTimeout(() => inputRefs.current[0]?.focus(), 200);
+    } catch (err) {
+      const message = err.response?.data?.message || "Gagal mengirim ulang kode.";
+      const cooldownMatch = message.match(/(\d+)\s*detik/i);
+      if (cooldownMatch) {
+        setCountdown(Number(cooldownMatch[1]));
+        setResendEmailError("");
+      } else {
+        setResendEmailError(message);
+      }
+    } finally {
+      setResending(false);
+    }
+  };
 
   return (
     <Box sx={{ minHeight: "100vh", display: "flex", overflow: "hidden" }}>
@@ -349,6 +470,142 @@ export default function RegisterDosenPage() {
           </Box>
         </Paper>
       </Box>
+
+      <Dialog
+        open={openVerifikasi}
+        onClose={() => {}}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: "20px", p: 1 } }}
+      >
+        <DialogContent sx={{ px: 3, py: 4 }}>
+          <Box sx={{ textAlign: "center", mb: 3 }}>
+            <Box sx={{
+              width: 60, height: 60, borderRadius: "16px",
+              background: "linear-gradient(135deg, #0D59F2, #1e40af)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              mx: "auto", mb: 2, fontSize: 26,
+            }}>
+              ✉️
+            </Box>
+            <Typography sx={{ fontFamily: poppins, fontSize: 20, fontWeight: 800, color: "#0a0a0a", mb: 1 }}>
+              Verifikasi Email
+            </Typography>
+            <Typography sx={{ fontFamily: poppins, fontSize: 13, color: "#888", lineHeight: 1.7 }}>
+              Kode verifikasi telah dikirim ke
+            </Typography>
+            <Typography sx={{ fontFamily: poppins, fontSize: 13, fontWeight: 700, color: "#0D59F2" }}>
+              {verifikasiData.email}
+            </Typography>
+            <Typography sx={{ fontFamily: poppins, fontSize: 12, color: "#aaa", mt: 0.5 }}>
+              Kode berlaku selama 15 menit
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: "flex", gap: 1, justifyContent: "center", mb: 3 }}>
+            {kode.map((digit, index) => (
+              <TextField
+                key={index}
+                inputRef={(el) => (inputRefs.current[index] = el)}
+                value={digit}
+                onChange={(e) => handleKodeChange(index, e.target.value)}
+                onKeyDown={(e) => handleKodeKeyDown(index, e)}
+                onPaste={index === 0 ? handlePaste : undefined}
+                disabled={loadingVerifikasi}
+                inputProps={{
+                  maxLength: 1,
+                  style: {
+                    textAlign: "center", fontSize: 22,
+                    fontWeight: 700, fontFamily: poppins, padding: "10px 0",
+                  },
+                }}
+                sx={{
+                  width: 46,
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "12px",
+                    backgroundColor: digit ? "#f0f4ff" : "#fafafa",
+                    "& fieldset": {
+                      borderColor: digit ? "#0D59F2" : "#e0e0e0",
+                      borderWidth: digit ? 2 : 1,
+                    },
+                    "&:hover fieldset": { borderColor: "#0D59F2" },
+                    "&.Mui-focused fieldset": { borderColor: "#0D59F2", borderWidth: 2 },
+                  },
+                }}
+              />
+            ))}
+          </Box>
+
+          {!!verifyError && (
+            <Typography sx={{ fontFamily: poppins, fontSize: 12, color: "#e53935", textAlign: "center", mb: 2 }}>
+              {verifyError}
+            </Typography>
+          )}
+
+          <Box
+            component="button"
+            onClick={handleVerifikasi}
+            disabled={loadingVerifikasi}
+            sx={{
+              width: "100%", py: 1.5, borderRadius: "14px",
+              fontWeight: 700, fontSize: 15, border: "none", fontFamily: poppins,
+              backgroundColor: loadingVerifikasi ? "#93b8fa" : "#0D59F2",
+              color: "#fff", cursor: loadingVerifikasi ? "not-allowed" : "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 1,
+              transition: "all 0.25s ease", mb: 2,
+              "&:hover": !loadingVerifikasi ? {
+                backgroundColor: "#0846c7",
+                transform: "translateY(-1px)",
+                boxShadow: "0 6px 20px rgba(13,89,242,0.3)",
+              } : {},
+            }}
+          >
+            {loadingVerifikasi ? (
+              <><CircularProgress size={16} sx={{ color: "#fff" }} />Memverifikasi...</>
+            ) : "Verifikasi"}
+          </Box>
+
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+            <Box
+              component="button"
+              onClick={handleResend}
+              disabled={countdown > 0 || loadingVerifikasi || resending}
+              sx={{
+                background: "transparent", border: "none",
+                fontFamily: poppins, fontSize: 13, fontWeight: 600,
+                color: countdown > 0 || loadingVerifikasi || resending ? "#bbb" : "#0D59F2",
+                cursor: countdown > 0 || loadingVerifikasi || resending ? "not-allowed" : "pointer",
+                transition: "color 0.2s",
+                "&:hover": countdown === 0 && !loadingVerifikasi && !resending ? { color: "#0846c7" } : {},
+              }}
+            >
+              {resending ? "Mengirim ulang..." : `Kirim ulang kode${countdown > 0 ? ` dalam ${countdown} detik` : ""}`}
+            </Box>
+
+            {!!resendEmailError && (
+              <Typography sx={{ fontFamily: poppins, fontSize: 12, color: "#e53935", textAlign: "center" }}>
+                {resendEmailError}
+              </Typography>
+            )}
+
+            <Box
+              component="button"
+              onClick={handleTulisUlangEmail}
+              disabled={loadingVerifikasi}
+              sx={{
+                background: "transparent", border: "none",
+                fontFamily: poppins, fontSize: 13, fontWeight: 600,
+                color: loadingVerifikasi ? "#bbb" : "#e53935",
+                cursor: loadingVerifikasi ? "not-allowed" : "pointer",
+                transition: "color 0.2s",
+                "&:hover": !loadingVerifikasi ? { color: "#c62828" } : {},
+              }}
+            >
+              Salah email? Batalkan registrasi & isi ulang email
+            </Box>
+          </Box>
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }

@@ -3,8 +3,6 @@ import {
   Box,
   Paper,
   Typography,
-  Tabs,
-  Tab,
   Table,
   TableBody,
   TableCell,
@@ -31,15 +29,12 @@ import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
 import PageTransition from "../../components/PageTransition";
+import LoadingScreen from "../../components/common/LoadingScreen";
 import {
   getPendingMahasiswa,
   getDetailMahasiswa,
   approveMahasiswa,
   rejectMahasiswa,
-  getPendingDosen,
-  getDetailDosen,
-  approveDosen,
-  rejectDosen,
 } from "../../api/admin";
 import { getAllProdi } from "../../api/public";
 
@@ -110,14 +105,20 @@ const STATUS_MAP = {
   2: { label: "Ditolak", backgroundColor: "#c62828" },
 };
 
+const swalOverDialogOptions = {
+  customClass: { container: "swal-over-dialog" },
+  didOpen: () => {
+    const container = document.querySelector(".swal-over-dialog");
+    if (container) container.style.zIndex = "99999";
+  },
+};
+
 const getStatusInfo = (status) =>
   STATUS_MAP[status] || { label: "Unknown", backgroundColor: "#bdbdbd" };
 
 export default function VerifikasiPage() {
-  const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(true);
   const [mahasiswaList, setMahasiswaList] = useState([]);
-  const [dosenList, setDosenList] = useState([]);
   const [prodiOptions, setProdiOptions] = useState([]);
   const [openDetail, setOpenDetail] = useState(false);
   const [openReject, setOpenReject] = useState(false);
@@ -140,7 +141,7 @@ export default function VerifikasiPage() {
 
   const tahunOptions = Array.from({ length: 6 }, (_, idx) => new Date().getFullYear() - idx);
 
-  const getDateRangeFilters = () => {
+  const getDateRangeFilters = useCallback(() => {
     if (tahunFilter) {
       return {
         tanggal_dari: `${tahunFilter}-01-01`,
@@ -151,7 +152,7 @@ export default function VerifikasiPage() {
       tanggal_dari: filters.tanggal_dari || undefined,
       tanggal_sampai: filters.tanggal_sampai || undefined,
     };
-  };
+  }, [tahunFilter, filters.tanggal_dari, filters.tanggal_sampai]);
 
   useEffect(() => {
     getAllProdi()
@@ -187,56 +188,19 @@ export default function VerifikasiPage() {
       setLoading(false);
     }
   }, [
+    getDateRangeFilters,
     filters.status_verifikasi,
     filters.email_verified,
     filters.id_prodi,
-    filters.tanggal_dari,
-    filters.tanggal_sampai,
-    tahunFilter,
-  ]);
-
-  const fetchDosen = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await getPendingDosen({
-        status_verifikasi:
-          filters.status_verifikasi !== ""
-            ? filters.status_verifikasi
-            : undefined,
-        email_verified:
-          filters.email_verified !== "" ? filters.email_verified : undefined,
-        id_prodi: filters.id_prodi || undefined,
-        ...getDateRangeFilters(),
-      });
-      setDosenList(res.data?.dosen || []);
-      setPage(1);
-    } catch {
-      Swal.fire({
-        icon: "error",
-        title: "Gagal",
-        text: "Gagal memuat data dosen",
-        confirmButtonColor: "#0D59F2",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [
-    filters.status_verifikasi,
-    filters.email_verified,
-    filters.id_prodi,
-    filters.tanggal_dari,
-    filters.tanggal_sampai,
-    tahunFilter,
   ]);
 
   useEffect(() => {
     setPage(1);
-  }, [tahunFilter, activeTab]);
+  }, [tahunFilter]);
 
   useEffect(() => {
-    if (activeTab === 0) fetchMahasiswa();
-    else fetchDosen();
-  }, [activeTab, fetchMahasiswa, fetchDosen]);
+    fetchMahasiswa();
+  }, [fetchMahasiswa]);
 
   const handleViewDetail = async (user) => {
     setSelectedUser(user);
@@ -244,13 +208,8 @@ export default function VerifikasiPage() {
     setOpenDetail(true);
     setLoadingDetail(true);
     try {
-      if (activeTab === 0) {
-        const res = await getDetailMahasiswa(user.id_user);
-        setDetailData(res.data);
-      } else {
-        const res = await getDetailDosen(user.id_user);
-        setDetailData(res.data);
-      }
+      const res = await getDetailMahasiswa(user.id_user);
+      setDetailData(res.data);
     } catch {
       Swal.fire({
         icon: "error",
@@ -268,7 +227,7 @@ export default function VerifikasiPage() {
     setOpenDetail(false);
     const result = await Swal.fire({
       title: "Konfirmasi",
-      text: `Setujui ${activeTab === 0 ? "mahasiswa" : "dosen"} ${selectedUser?.nama_lengkap || selectedUser?.username}?`,
+      text: `Setujui mahasiswa ${selectedUser?.nama_lengkap || selectedUser?.username}?`,
       icon: "question",
       showCancelButton: true,
       confirmButtonColor: "#2e7d32",
@@ -281,18 +240,16 @@ export default function VerifikasiPage() {
       return;
     }
     try {
-      if (activeTab === 0) await approveMahasiswa(selectedUser.id_user);
-      else await approveDosen(selectedUser.id_user);
+      await approveMahasiswa(selectedUser.id_user);
       await Swal.fire({
         icon: "success",
         title: "Berhasil",
-        text: `${activeTab === 0 ? "Mahasiswa" : "Dosen"} berhasil disetujui`,
+        text: "Mahasiswa berhasil disetujui",
         timer: 2000,
         timerProgressBar: true,
         showConfirmButton: false,
       });
-      if (activeTab === 0) fetchMahasiswa();
-      else fetchDosen();
+      fetchMahasiswa();
     } catch (err) {
       Swal.fire({
         icon: "error",
@@ -323,10 +280,10 @@ export default function VerifikasiPage() {
       setErrors({ catatan: "Catatan penolakan minimal 5 karakter" });
       return;
     }
-    setOpenReject(false);
     const result = await Swal.fire({
+      ...swalOverDialogOptions,
       title: "Konfirmasi",
-      text: `Tolak ${activeTab === 0 ? "mahasiswa" : "dosen"} ${selectedUser?.nama_lengkap || selectedUser?.username}?`,
+      text: `Tolak mahasiswa ${selectedUser?.nama_lengkap || selectedUser?.username}?`,
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#d33",
@@ -335,37 +292,34 @@ export default function VerifikasiPage() {
       cancelButtonText: "Batal",
     });
     if (!result.isConfirmed) {
-      setOpenReject(true);
       return;
     }
     try {
-      if (activeTab === 0)
-        await rejectMahasiswa(selectedUser.id_user, catatan.trim());
-      else await rejectDosen(selectedUser.id_user, catatan.trim());
+      await rejectMahasiswa(selectedUser.id_user, catatan.trim());
+      setOpenReject(false);
       await Swal.fire({
         icon: "success",
         title: "Berhasil",
-        text: `${activeTab === 0 ? "Mahasiswa" : "Dosen"} berhasil ditolak`,
+        text: "Mahasiswa berhasil ditolak",
         timer: 2000,
         timerProgressBar: true,
         showConfirmButton: false,
       });
       setCatatan("");
       setErrors({});
-      if (activeTab === 0) fetchMahasiswa();
-      else fetchDosen();
+      fetchMahasiswa();
     } catch (err) {
-      Swal.fire({
+      await Swal.fire({
+        ...swalOverDialogOptions,
         icon: "error",
         title: "Gagal",
         text: err.response?.data?.message || "Gagal menolak pengguna",
         confirmButtonColor: "#0D59F2",
       });
-      setOpenReject(true);
     }
   };
 
-  const currentList = activeTab === 0 ? mahasiswaList : dosenList;
+  const currentList = mahasiswaList;
   const totalPages = Math.ceil(currentList.length / rowsPerPage);
   const paginatedList = currentList.slice(
     (page - 1) * rowsPerPage,
@@ -380,7 +334,7 @@ export default function VerifikasiPage() {
             Verifikasi Pengguna
           </Typography>
           <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>
-            Kelola verifikasi mahasiswa dan dosen
+            Kelola verifikasi mahasiswa
           </Typography>
 
           <Paper
@@ -390,35 +344,6 @@ export default function VerifikasiPage() {
               overflow: "hidden",
             }}
           >
-            <Box sx={{ borderBottom: "1px solid #f0f0f0" }}>
-              <Tabs
-                value={activeTab}
-                onChange={(e, v) => {
-                  setActiveTab(v);
-                  setPage(1);
-                }}
-                sx={{
-                  px: 2,
-                  "& .MuiTab-root": {
-                    textTransform: "none",
-                    fontSize: 14,
-                    fontWeight: 500,
-                    color: "#888",
-                    minHeight: 52,
-                    "&.Mui-selected": { fontWeight: 700, color: "#0D59F2" },
-                  },
-                  "& .MuiTabs-indicator": {
-                    backgroundColor: "#0D59F2",
-                    height: 3,
-                    borderRadius: "3px 3px 0 0",
-                  },
-                }}
-              >
-                <Tab label="Mahasiswa" />
-                <Tab label="Dosen" />
-              </Tabs>
-            </Box>
-
             <Box sx={{ p: 3 }}>
               <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
                 <TextField
@@ -518,8 +443,8 @@ export default function VerifikasiPage() {
               </Box>
 
               {loading ? (
-                <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-                  <CircularProgress />
+                <Box sx={{ position: "relative", minHeight: 320 }}>
+                  <LoadingScreen message="Memuat data verifikasi..." overlay minHeight="320px" />
                 </Box>
               ) : paginatedList.length === 0 ? (
                 <Box sx={{ textAlign: "center", py: 10 }}>
@@ -541,7 +466,7 @@ export default function VerifikasiPage() {
                   <Typography
                     sx={{ fontSize: 20, fontWeight: 700, color: "#444", mb: 1 }}
                   >
-                    Tidak ada data {activeTab === 0 ? "mahasiswa" : "dosen"}
+                    Tidak ada data mahasiswa
                   </Typography>
                   <Typography sx={{ fontSize: 14, color: "#999" }}>
                     Data verifikasi akan muncul di sini
@@ -562,7 +487,7 @@ export default function VerifikasiPage() {
                         <TableRow>
                           {[
                             "Username",
-                            activeTab === 0 ? "NIM" : "NIP",
+                            "NIM",
                             "Email",
                             "Prodi",
                             "Tanggal Daftar",
@@ -592,7 +517,7 @@ export default function VerifikasiPage() {
                               </TableCell>
                               <TableCell>
                                 <Typography sx={{ fontSize: 13 }}>
-                                  {activeTab === 0 ? user.nim : user.nip}
+                                  {user.nim}
                                 </Typography>
                               </TableCell>
                               <TableCell>
@@ -703,7 +628,7 @@ export default function VerifikasiPage() {
             <DialogTitle sx={{ pb: 1 }}>
               <Box sx={{ pr: 4 }}>
                 <Typography sx={{ fontWeight: 700, fontSize: 16 }}>
-                  Detail {activeTab === 0 ? "Mahasiswa" : "Dosen"}
+                  Detail Mahasiswa
                 </Typography>
                 {selectedUser && (
                   <Typography sx={{ fontSize: 13, color: "#777", mt: 0.5 }}>
@@ -720,8 +645,8 @@ export default function VerifikasiPage() {
             </DialogTitle>
             <DialogContent dividers sx={{ px: 3, py: 3 }}>
               {loadingDetail ? (
-                <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
-                  <CircularProgress />
+                <Box sx={{ position: "relative", minHeight: 220 }}>
+                  <LoadingScreen message="Memuat detail pengguna..." overlay minHeight="220px" />
                 </Box>
               ) : detailData ? (
                 <Box
@@ -757,10 +682,10 @@ export default function VerifikasiPage() {
                   </Box>
                   <Box>
                     <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>
-                      {activeTab === 0 ? "NIM" : "NIP"}
+                      NIM
                     </Typography>
                     <Typography sx={{ fontWeight: 600, fontSize: 14 }}>
-                      {activeTab === 0 ? detailData.nim : detailData.nip}
+                      {detailData.nim}
                     </Typography>
                   </Box>
                   <Box>
@@ -789,12 +714,10 @@ export default function VerifikasiPage() {
                   </Box>
                   <Box>
                     <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>
-                      {activeTab === 0 ? "Tahun Masuk" : "Bidang Keahlian"}
+                      Tahun Masuk
                     </Typography>
                     <Typography sx={{ fontWeight: 600, fontSize: 14 }}>
-                      {activeTab === 0
-                        ? detailData.tahun_masuk
-                        : detailData.bidang_keahlian || "-"}
+                      {detailData.tahun_masuk}
                     </Typography>
                   </Box>
                   <Box>
@@ -836,7 +759,7 @@ export default function VerifikasiPage() {
                       }
                     />
                   </Box>
-                  {activeTab === 0 && detailData.foto_ktm && (
+                  {detailData.foto_ktm && (
                     <Box sx={{ gridColumn: "1 / -1" }}>
                       <Typography sx={{ fontSize: 12, color: "#888", mb: 1 }}>
                         Foto KTM
@@ -945,7 +868,7 @@ export default function VerifikasiPage() {
             <DialogTitle sx={{ pb: 1 }}>
               <Box sx={{ pr: 4 }}>
                 <Typography sx={{ fontWeight: 700, fontSize: 16 }}>
-                  Tolak {activeTab === 0 ? "Mahasiswa" : "Dosen"}
+                  Tolak Mahasiswa
                 </Typography>
                 {selectedUser && (
                   <Typography sx={{ fontSize: 13, color: "#777", mt: 0.5 }}>
@@ -978,7 +901,7 @@ export default function VerifikasiPage() {
                     mb: 0.5,
                   }}
                 >
-                  {activeTab === 0 ? "Mahasiswa" : "Dosen"} yang akan ditolak
+                  Mahasiswa yang akan ditolak
                 </Typography>
                 <Typography sx={{ fontSize: 14, fontWeight: 600 }}>
                   {selectedUser?.nama_lengkap || selectedUser?.username}
