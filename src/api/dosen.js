@@ -58,3 +58,13 @@ export const rejectBimbingan = async (id_bimbingan, catatan) => {
   const res = await api.patch(`/dosen/bimbingan/pengajuan/${id_bimbingan}/reject`, { catatan });
   return res.data;
 };
+
+export const getMonevTimBimbingan = async () => {
+  const res = await api.get("/dosen/monev/tim");
+  return res.data;
+};
+
+export const getMonevDetailTim = async (id_tim) => {
+  const res = await api.get(`/dosen/monev/tim/${id_tim}`);
+  return res.data;
+};

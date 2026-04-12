@@ -1,7 +1,8 @@
 import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
-import { CircularProgress, Box } from "@mui/material";
+import { Box } from "@mui/material";
 import PrivateRoute from "../components/PrivateRoute";
+import LoadingScreen from "../components/common/LoadingScreen";
 
 const LandingPage = lazy(() => import("../pages/public/LandingPage"));
 const BeritaDetailPage = lazy(() => import("../pages/public/BeritaDetailPage"));
@@ -10,11 +11,13 @@ const RegisterMahasiswaPage = lazy(() => import("../pages/auth/RegisterMahasiswa
 const RegisterDosenPage = lazy(() => import("../pages/auth/RegisterDosenPage"));
 
 const DashboardAdminPage = lazy(() => import("../pages/admin/DashboardAdminPage"));
+const BiodataAdminPage = lazy(() => import("../pages/admin/BiodataAdminPage"));
 const VerifikasiPage = lazy(() => import("../pages/admin/VerifikasiPage"));
 const ProgramPage = lazy(() => import("../pages/admin/ProgramPage"));
 const ProposalListPage = lazy(() => import("../pages/admin/ProposalListPage"));
 const ProposalDetailPage = lazy(() => import("../pages/admin/ProposalDetailPage"));
 const DistribusiPenilaiPage = lazy(() => import("../pages/admin/DistribusiPenilaiPage"));
+const DistribusiPembimbingPage = lazy(() => import("../pages/admin/DistribusiPembimbingPage"));
 const DistribusiDetailPage = lazy(() => import("../pages/admin/DistribusiDetailPage"));
 const RekapPenilaianPage = lazy(() => import("../pages/admin/RekapPenilaianPage"));
 const BimbinganPage = lazy(() => import("../pages/admin/BimbinganPage"));
@@ -55,14 +58,15 @@ const DaftarPengajuanPembimbingPage = lazy(() => import("../pages/dosen/DaftarPe
 const DetailPengajuanPembimbingPage = lazy(() => import("../pages/dosen/DetailPengajuanPembimbingPage"));
 const DaftarBimbinganPage = lazy(() => import("../pages/dosen/DaftarBimbinganPage"));
 const DetailBimbinganPage = lazy(() => import("../pages/dosen/DetailBimbinganPage"));
+const MonevDosenPage = lazy(() => import("../pages/dosen/MonevDosenPage"));
 
 const NotFoundPage = lazy(() => import("../pages/errors/NotFoundPage"));
 const ServerErrorPage = lazy(() => import("../components/ErrorBoundary"));
 const UnauthorizedPage = lazy(() => import("../pages/errors/UnauthorizedPage"));
 
 const PageLoader = () => (
-  <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }}>
-    <CircularProgress />
+  <Box sx={{ position: "relative", minHeight: "100vh" }}>
+    <LoadingScreen message="Memuat halaman..." overlay minHeight="100vh" />
   </Box>
 );
 
@@ -79,11 +83,13 @@ export default function AppRoutes() {
 
         <Route path="/admin" element={<PrivateRoute allowedRoles={["admin", "super admin"]} />}>
           <Route path="dashboard" element={<DashboardAdminPage />} />
+          <Route path="biodata" element={<BiodataAdminPage />} />
           <Route path="verifikasi" element={<VerifikasiPage />} />
           <Route path="program" element={<ProgramPage />} />
           <Route path="proposal" element={<ProposalListPage />} />
           <Route path="proposal/:id_proposal" element={<ProposalDetailPage />} />
           <Route path="distribusi-penilai" element={<DistribusiPenilaiPage />} />
+          <Route path="distribusi-pembimbing" element={<DistribusiPembimbingPage />} />
           <Route path="program/:id_program/distribusi/reviewer/tahap/:tahap/:id_distribusi" element={<DistribusiDetailPage />} />
           <Route path="rekap-penilaian" element={<RekapPenilaianPage />} />
           <Route path="bimbingan" element={<BimbinganPage />} />
@@ -133,6 +139,7 @@ export default function AppRoutes() {
           <Route path="pembimbing/pengajuan/:id_pengajuan" element={<DetailPengajuanPembimbingPage />} />
           <Route path="bimbingan" element={<DaftarBimbinganPage />} />
           <Route path="bimbingan/pengajuan/:id_bimbingan" element={<DetailBimbinganPage />} />
+          <Route path="monitoring" element={<MonevDosenPage />} />
         </Route>
 
         <Route path="/500" element={<ServerErrorPage />} />
