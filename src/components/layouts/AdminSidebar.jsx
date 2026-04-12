@@ -28,6 +28,8 @@ import ApartmentIcon from "@mui/icons-material/Apartment";
 import BusinessIcon from "@mui/icons-material/Business";
 import GroupsIcon from "@mui/icons-material/Groups";
 import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
+import PersonSearchIcon from "@mui/icons-material/PersonSearch";
+import PersonIcon from "@mui/icons-material/Person";
 
 export default function AdminSidebar({ collapsed }) {
   const navigate = useNavigate();
@@ -55,7 +57,8 @@ export default function AdminSidebar({ collapsed }) {
       location.pathname.startsWith("/admin/proposal/") ||
       location.pathname === "/admin/tim" ||
       location.pathname === "/admin/distribusi-penilai" ||
-      location.pathname.startsWith("/admin/program/") || //distribusi detail
+      location.pathname === "/admin/distribusi-pembimbing" ||
+      location.pathname.startsWith("/admin/program/") ||
       location.pathname === "/admin/rekap-penilaian" ||
       location.pathname === "/admin/bimbingan" ||
       location.pathname === "/admin/monev" ||
@@ -80,6 +83,11 @@ export default function AdminSidebar({ collapsed }) {
       text: "Dashboard",
       icon: <DashboardIcon />,
       path: "/admin/dashboard",
+    },
+    {
+      text: "Biodata",
+      icon: <PersonIcon />,
+      path: "/admin/biodata",
     },
     {
       text: "Master Data",
@@ -153,6 +161,11 @@ export default function AdminSidebar({ collapsed }) {
           text: "Distribusi Penilai",
           icon: <AssignmentIcon sx={{ fontSize: 20 }} />,
           path: "/admin/distribusi-penilai",
+        },
+        {
+          text: "Distribusi Pembimbing",
+          icon: <PersonSearchIcon sx={{ fontSize: 20 }} />,
+          path: "/admin/distribusi-pembimbing",
         },
         {
           text: "Rekap Penilaian",
