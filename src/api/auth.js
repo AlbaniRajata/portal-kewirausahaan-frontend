@@ -38,3 +38,13 @@ export const cancelRegistrasi = async (payload) => {
   const res = await api.post("/auth/cancel-registration", payload);
   return res.data;
 };
+
+export const forgotPasswordRequest = async (email) => {
+  const res = await api.post("/auth/forgot-password", { email });
+  return res.data;
+};
+
+export const resetPasswordConfirm = async ({ token, new_password }) => {
+  const res = await api.post("/auth/reset-password", { token, new_password });
+  return res.data;
+};

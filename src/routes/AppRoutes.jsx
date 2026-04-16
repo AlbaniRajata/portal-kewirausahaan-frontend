@@ -7,6 +7,7 @@ import LoadingScreen from "../components/common/LoadingScreen";
 const LandingPage = lazy(() => import("../pages/public/LandingPage"));
 const BeritaDetailPage = lazy(() => import("../pages/public/BeritaDetailPage"));
 const LoginPage = lazy(() => import("../pages/auth/LoginPage"));
+const ResetPasswordPage = lazy(() => import("../pages/auth/ResetPasswordPage"));
 const RegisterMahasiswaPage = lazy(() => import("../pages/auth/RegisterMahasiswaPage"));
 const RegisterDosenPage = lazy(() => import("../pages/auth/RegisterDosenPage"));
 
@@ -77,6 +78,7 @@ export default function AppRoutes() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/berita/:slug" element={<BeritaDetailPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/daftar/mahasiswa" element={<RegisterMahasiswaPage />} />
         <Route path="/daftar/dosen" element={<RegisterDosenPage />} />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />

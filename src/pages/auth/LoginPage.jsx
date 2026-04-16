@@ -8,9 +8,10 @@ import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
 import loginBg from "../../assets/images/login-bg.jpg";
-import { loginUser } from "../../api/auth";
+import { forgotPasswordRequest, loginUser } from "../../api/auth";
 import { useAuthStore } from "../../store/authStore";
 import { setAccessToken } from "../../api/axios";
+import { getErrorMessage } from "../../utils/getErrorMessage";
 
 const roundedField = {
   mb: 2,
@@ -32,9 +33,13 @@ export default function LoginPage() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [openRegisterModal, setOpenRegisterModal] = useState(false);
+  const [openForgotModal, setOpenForgotModal] = useState(false);
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotError, setForgotError] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -75,7 +80,7 @@ export default function LoginPage() {
       const route = roleRouteMap[res.data.user.role] || "/";
       navigate(route);
     } catch (err) {
-      const message = err.response?.data?.message || "Login gagal. Coba lagi.";
+      const message = getErrorMessage(err, "Login gagal. Coba lagi.");
       await Swal.fire({
         icon: "error",
         title: "Login Gagal",
@@ -99,6 +104,45 @@ export default function LoginPage() {
     setOpenRegisterModal(false);
     if (type === "mahasiswa") navigate("/daftar/mahasiswa");
     else if (type === "dosen") navigate("/daftar/dosen");
+  };
+
+  const handleOpenForgotModal = () => {
+    setForgotEmail(form.email || "");
+    setForgotError("");
+    setOpenForgotModal(true);
+  };
+
+  const handleForgotPassword = async () => {
+    const email = forgotEmail.trim();
+
+    if (!email) {
+      setForgotError("Email wajib diisi");
+      return;
+    }
+
+    if (!email.includes("@")) {
+      setForgotError("Format email tidak valid");
+      return;
+    }
+
+    setForgotLoading(true);
+    try {
+      const res = await forgotPasswordRequest(email);
+      setOpenForgotModal(false);
+      setForgotError("");
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      await Swal.fire({
+        icon: "success",
+        title: "Permintaan berhasil",
+        text: res?.message || "Jika email terdaftar, link reset sudah dikirim.",
+        confirmButtonColor: "#0D59F2",
+      });
+    } catch (err) {
+      const message = getErrorMessage(err, "Gagal mengirim permintaan reset password.");
+      setForgotError(message);
+    } finally {
+      setForgotLoading(false);
+    }
   };
 
   const poppins = "'Poppins', sans-serif";
@@ -247,7 +291,26 @@ export default function LoginPage() {
             />
 
             <Box sx={{ textAlign: "right", mt: 1, mb: 3 }}>
-              <Typography sx={{ fontFamily: poppins, fontSize: 13, fontWeight: 600, color: "#bbb", cursor: "default" }}>
+              <Typography
+                component="button"
+                type="button"
+                onClick={handleOpenForgotModal}
+                disabled={loading || forgotLoading}
+                sx={{
+                  fontFamily: poppins,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "#0D59F2",
+                  cursor: loading || forgotLoading ? "not-allowed" : "pointer",
+                  background: "transparent",
+                  border: "none",
+                  p: 0,
+                  transition: "color 0.2s",
+                  "&:hover": {
+                    color: "#0846c7",
+                  },
+                }}
+              >
                 Lupa Password?
               </Typography>
             </Box>
@@ -303,7 +366,11 @@ export default function LoginPage() {
         </Paper>
       </Box>
 
-      <Modal open={openRegisterModal} onClose={() => !loading && setOpenRegisterModal(false)}>
+      <Modal
+        open={openRegisterModal}
+        onClose={() => !loading && setOpenRegisterModal(false)}
+        sx={{ zIndex: 1700 }}
+      >
         <Box sx={{
           position: "absolute", top: "50%", left: "50%",
           transform: "translate(-50%, -50%)",
@@ -359,6 +426,72 @@ export default function LoginPage() {
               cursor: "pointer",
               transition: "color 0.2s",
               "&:hover": { color: "#555" },
+            }}
+          >
+            Batal
+          </Box>
+        </Box>
+      </Modal>
+
+      <Modal
+        open={openForgotModal}
+        onClose={() => !forgotLoading && setOpenForgotModal(false)}
+        sx={{ zIndex: 1800 }}
+      >
+        <Box sx={{
+          position: "absolute", top: "50%", left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: "90%", maxWidth: 460,
+          bgcolor: "background.paper", borderRadius: "20px",
+          boxShadow: "0 28px 90px rgba(0,0,0,0.22)", p: 4,
+          outline: "none",
+        }}>
+          <Typography align="center" sx={{ fontFamily: poppins, fontSize: 22, fontWeight: 800, mb: 1 }}>
+            Lupa Password
+          </Typography>
+          <Typography align="center" sx={{ fontFamily: poppins, fontSize: 14, color: "#999", mb: 3 }}>
+            Masukkan email akun Anda untuk menerima link reset password.
+          </Typography>
+
+          <TextField
+            fullWidth
+            placeholder="Masukkan email Anda"
+            value={forgotEmail}
+            onChange={(e) => {
+              setForgotEmail(e.target.value);
+              setForgotError("");
+            }}
+            error={!!forgotError}
+            helperText={forgotError}
+            disabled={forgotLoading}
+            sx={{ ...roundedField, mb: 2 }}
+          />
+
+          <Box
+            component="button"
+            onClick={handleForgotPassword}
+            disabled={forgotLoading}
+            sx={{
+              width: "100%", py: 1.5, borderRadius: "14px",
+              fontWeight: 700, fontSize: 15, border: "none",
+              fontFamily: poppins,
+              backgroundColor: forgotLoading ? "#93b8fa" : "#0D59F2",
+              color: "#fff", cursor: forgotLoading ? "not-allowed" : "pointer",
+            }}
+          >
+            {forgotLoading ? "Mengirim..." : "Kirim Link Reset"}
+          </Box>
+
+          <Box
+            component="button"
+            onClick={() => setOpenForgotModal(false)}
+            disabled={forgotLoading}
+            sx={{
+              mt: 2, width: "100%", py: 1.2,
+              background: "transparent", border: "none",
+              fontWeight: 600, fontSize: 14, color: "#aaa",
+              fontFamily: poppins,
+              cursor: forgotLoading ? "not-allowed" : "pointer",
             }}
           >
             Batal

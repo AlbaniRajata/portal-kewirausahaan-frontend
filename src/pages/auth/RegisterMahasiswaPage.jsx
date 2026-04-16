@@ -11,6 +11,7 @@ import Swal from "sweetalert2";
 import loginBg from "../../assets/images/login-bg.jpg";
 import { registerMahasiswa, verifyEmailKode, resendVerificationKode, cancelRegistrasi } from "../../api/auth";
 import api from "../../api/axios";
+import { getErrorMessage } from "../../utils/getErrorMessage";
 
 const poppins = "'Poppins', sans-serif";
 
@@ -74,7 +75,7 @@ export default function RegisterMahasiswaPage() {
       } catch {
         await Swal.fire({
           icon: "error", title: "Gagal Memuat Data",
-          text: "Gagal memuat data program studi. Silahkan refresh halaman.",
+          text: "Tidak ada koneksi internet. Periksa jaringan Anda lalu coba lagi.",
         });
       } finally {
         setLoadingProdi(false);
@@ -152,7 +153,7 @@ export default function RegisterMahasiswaPage() {
         setTimeout(() => inputRefs.current[0]?.focus(), 300);
       }
     } catch (err) {
-      const errorMessage = err.response?.data?.message || "Registrasi gagal. Silahkan coba lagi.";
+      const errorMessage = getErrorMessage(err, "Registrasi gagal. Silahkan coba lagi.");
       await Swal.fire({
         icon: "error", title: "Registrasi Gagal",
         text: errorMessage, confirmButtonText: "OK",
@@ -224,7 +225,7 @@ export default function RegisterMahasiswaPage() {
     } catch (err) {
       await Swal.fire({
         icon: "error", title: "Gagal Membatalkan Registrasi",
-        text: err.response?.data?.message || "Terjadi kesalahan. Silahkan coba lagi.",
+        text: getErrorMessage(err, "Terjadi kesalahan. Silahkan coba lagi."),
       });
     } finally {
       setLoadingVerifikasi(false);
@@ -253,7 +254,7 @@ export default function RegisterMahasiswaPage() {
       setResendEmailError("");
       setTimeout(() => inputRefs.current[0]?.focus(), 200);
     } catch (err) {
-      const message = err.response?.data?.message || "Gagal mengirim ulang kode.";
+      const message = getErrorMessage(err, "Gagal mengirim ulang kode.");
       const cooldownMatch = message.match(/(\d+)\s*detik/i);
       if (cooldownMatch) {
         setCountdown(Number(cooldownMatch[1]));
