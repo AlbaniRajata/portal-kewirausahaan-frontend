@@ -230,7 +230,7 @@ export default function DashboardReviewerPage() {
 
             <Box sx={{ display: "flex", alignItems: "center", gap: 3, position: "relative", zIndex: 1, flexWrap: "wrap" }}>
               <Avatar
-                src={profile?.foto ? `${API_URL}/uploads/profil/${profile.foto}` : undefined}
+                src={profile?.foto ? `/uploads/profil/${profile.foto}` : undefined}
                 sx={{ width: 64, height: 64, border: "3px solid rgba(255,255,255,0.3)", fontSize: 24, backgroundColor: "rgba(255,255,255,0.2)" }}
               >
                 {user?.nama_lengkap?.[0] || "R"}

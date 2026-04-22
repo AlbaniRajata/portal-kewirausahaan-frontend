@@ -49,7 +49,7 @@ export default function FormBeritaPage() {
       setExisting(d);
       setForm({ judul: d.judul || "", isi: d.isi || "", status: String(d.status) });
       if (d.file_gambar) {
-        setGambarPreview(`${BASE_URL}/uploads/berita/${d.file_gambar}`);
+        setGambarPreview(`/uploads/berita/${d.file_gambar}`);
       }
     } catch {
       Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat data berita", confirmButtonColor: "#0D59F2" });

@@ -251,7 +251,7 @@ export default function LandingPage() {
     const filename = b.file_gambar || b.foto_berita || null;
     if (!filename) return null;
     if (filename.startsWith("http")) return filename;
-    return `${BASE_URL}/uploads/berita/${filename}`;
+    return `/uploads/berita/${filename}`;
   };
 
   const stripHtml = (html) => {

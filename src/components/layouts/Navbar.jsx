@@ -38,7 +38,7 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed }) {
 
   const baseUrl = import.meta.env.VITE_API_URL.replace("/api", "");
   const displayName = profile?.nama_lengkap || user?.nama_lengkap || "User";
-  const photoUrl = profile?.foto ? `${baseUrl}/uploads/profil/${profile.foto}` : null;
+  const photoUrl = profile?.foto ? `/uploads/profil/${profile.foto}` : null;
   const currentProgram = profile?.current_program?.trim() || "";
   const roleName = profile?.nama_role?.trim() || "";
   const navbarTitle = currentProgram;

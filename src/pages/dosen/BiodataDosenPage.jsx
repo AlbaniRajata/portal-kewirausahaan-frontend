@@ -92,7 +92,7 @@ export default function BiodataDosenPage() {
       });
       if (response.data.foto) {
         const baseUrl = import.meta.env.VITE_API_URL.replace("/api", "");
-        setImagePreview(`${baseUrl}/uploads/profil/${response.data.foto}`);
+        setImagePreview(`/uploads/profil/${response.data.foto}`);
       }
     } catch {
       Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat profil. Silahkan refresh halaman.", confirmButtonText: "OK" });

@@ -768,7 +768,7 @@ const paginatedList = mahasiswaList;
                         Foto KTM
                       </Typography>
                       <img
-                        src={`${import.meta.env.VITE_API_URL.replace("/api", "")}/uploads/ktm/${detailData.foto_ktm}`}
+                        src={`/uploads/ktm/${detailData.foto_ktm}`}
                         alt="KTM"
                         style={{
                           maxWidth: "100%",

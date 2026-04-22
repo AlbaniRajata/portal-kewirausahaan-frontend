@@ -64,7 +64,7 @@ export default function BiodataJuriPage() {
       });
       if (response.data.foto) {
         const baseUrl = import.meta.env.VITE_API_URL.replace("/api", "");
-        setImagePreview(`${baseUrl}/uploads/profil/${response.data.foto}`);
+        setImagePreview(`/uploads/profil/${response.data.foto}`);
       }
     } catch {
       await Swal.fire({
