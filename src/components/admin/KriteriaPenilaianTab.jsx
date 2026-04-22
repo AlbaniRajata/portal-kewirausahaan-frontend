@@ -204,6 +204,13 @@ export default function KriteriaPenilaianTab({ id_program }) {
     );
   }
 
+  const aktifKriteria = kriteriaList.filter((k) => Number(k.status) === 1);
+  const totalBobot = aktifKriteria.reduce((sum, k) => sum + Number(k.bobot), 0);
+  const isBobotComplete = totalBobot === 100;
+  const isBobotExceeded = totalBobot > 100;
+
+  const selectedTahapName = tahapList.find((t) => t.id_tahap === selectedTahap)?.nama_tahap || "Tahap ini";
+
   return (
     <Box>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
@@ -224,11 +231,30 @@ export default function KriteriaPenilaianTab({ id_program }) {
         <Button
           variant="contained"
           onClick={handleOpenCreate}
-          sx={{ textTransform: "none", borderRadius: "50px", px: 3, py: 1.2, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}
+          disabled={isBobotComplete || isBobotExceeded}
+          sx={{ textTransform: "none", borderRadius: "50px", px: 3, py: 1.2, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" }, "&.Mui-disabled": { backgroundColor: "#ccc" } }}
         >
           Tambah Kriteria
         </Button>
       </Box>
+
+      {(isBobotComplete || isBobotExceeded || totalBobot > 0) && (
+        <Box sx={{
+          mb: 2,
+          p: 2,
+          borderRadius: "10px",
+          border: `1px solid ${isBobotComplete ? "#66bb6a" : isBobotExceeded ? "#ef5350" : "#ffa726"}`,
+          backgroundColor: isBobotComplete ? "#e8f5e9" : isBobotExceeded ? "#ffebee" : "#fff3e0",
+        }}>
+          <Typography sx={{ fontSize: 13, fontWeight: 600, color: isBobotComplete ? "#2e7d32" : isBobotExceeded ? "#c62828" : "#e65100" }}>
+            {isBobotComplete
+              ? `Bobot tahap ${selectedTahapName} sudah lengkap 100%`
+              : isBobotExceeded
+              ? `Bobot tahap ${selectedTahapName} sudah ${totalBobot}% (melebihi 100%)`
+              : `Bobot tahap ${selectedTahapName} kini ${totalBobot}%, masih kurang ${100 - totalBobot}%`}
+          </Typography>
+        </Box>
+      )}
 
       {loading ? (
         <Box sx={{ position: "relative", minHeight: 320 }}>
