@@ -56,6 +56,8 @@ export const getPendingMahasiswa = async (filters = {}) => {
   if (filters.id_prodi) params.append("id_prodi", filters.id_prodi);
   if (filters.tanggal_dari) params.append("tanggal_dari", filters.tanggal_dari);
   if (filters.tanggal_sampai) params.append("tanggal_sampai", filters.tanggal_sampai);
+  if (filters.page) params.append("page", filters.page);
+  if (filters.limit) params.append("limit", filters.limit);
   const res = await api.get(`/admin/verifikasi/mahasiswa?${params.toString()}`);
   return res.data;
 };
@@ -79,6 +81,8 @@ export const getProposalList = async (filters = {}) => {
   const params = new URLSearchParams();
   if (filters.id_program) params.append("id_program", filters.id_program);
   if (filters.status !== undefined && filters.status !== "") params.append("status", filters.status);
+  if (filters.page) params.append("page", filters.page);
+  if (filters.limit) params.append("limit", filters.limit);
   const res = await api.get(`/admin/proposal?${params.toString()}`);
   return res.data;
 };
@@ -103,8 +107,13 @@ export const executeBulkDistribusi = async (id_program, tahap, payload) => {
   return res.data;
 };
 
-export const getReviewerList = async () => {
-  const res = await api.get("/admin/pengguna/reviewer");
+export const getReviewerList = async (filters = {}) => {
+  const params = new URLSearchParams();
+  if (filters.is_active !== undefined && filters.is_active !== "") params.append("is_active", filters.is_active);
+  if (filters.search) params.append("search", filters.search);
+  if (filters.page) params.append("page", filters.page);
+  if (filters.limit) params.append("limit", filters.limit);
+  const res = await api.get(`/admin/pengguna/reviewer?${params.toString()}`);
   return res.data;
 };
 
@@ -138,8 +147,13 @@ export const executeManualDistribusiTahap2 = async (id_program, payload) => {
   return res.data;
 };
 
-export const getJuriList = async () => {
-  const res = await api.get("/admin/pengguna/juri");
+export const getJuriList = async (filters = {}) => {
+  const params = new URLSearchParams();
+  if (filters.is_active !== undefined && filters.is_active !== "") params.append("is_active", filters.is_active);
+  if (filters.search) params.append("search", filters.search);
+  if (filters.page) params.append("page", filters.page);
+  if (filters.limit) params.append("limit", filters.limit);
+  const res = await api.get(`/admin/pengguna/juri?${params.toString()}`);
   return res.data;
 };
 
@@ -305,6 +319,8 @@ export const getMahasiswaList = async (filters = {}) => {
   if (filters.is_active !== undefined && filters.is_active !== "") params.append("is_active", filters.is_active);
   if (filters.id_prodi) params.append("id_prodi", filters.id_prodi);
   if (filters.status_verifikasi !== undefined && filters.status_verifikasi !== "") params.append("status_verifikasi", filters.status_verifikasi);
+  if (filters.page) params.append("page", filters.page);
+  if (filters.limit) params.append("limit", filters.limit);
   const res = await api.get(`/admin/pengguna/mahasiswa?${params.toString()}`);
   return res.data;
 };
@@ -325,6 +341,8 @@ export const getDosenList = async (filters = {}) => {
   if (filters.is_active !== undefined && filters.is_active !== "") params.append("is_active", filters.is_active);
   if (filters.id_prodi) params.append("id_prodi", filters.id_prodi);
   if (filters.status_verifikasi !== undefined && filters.status_verifikasi !== "") params.append("status_verifikasi", filters.status_verifikasi);
+  if (filters.page) params.append("page", filters.page);
+  if (filters.limit) params.append("limit", filters.limit);
   const res = await api.get(`/admin/pengguna/dosen?${params.toString()}`);
   return res.data;
 };
@@ -390,8 +408,14 @@ export const getTimPesertaProgram = async () => {
   return res.data;
 };
 
-export const getTimList = async (params = {}) => {
-  const res = await api.get("/admin/tim-peserta/tim", { params });
+export const getTimList = async (filters = {}) => {
+  const params = new URLSearchParams();
+  if (filters.id_program) params.append("id_program", filters.id_program);
+  if (filters.status !== undefined && filters.status !== "") params.append("status", filters.status);
+  if (filters.search) params.append("search", filters.search);
+  if (filters.page) params.append("page", filters.page);
+  if (filters.limit) params.append("limit", filters.limit);
+  const res = await api.get(`/admin/tim-peserta/tim?${params.toString()}`);
   return res.data;
 };
 
@@ -400,8 +424,15 @@ export const getTimDetail = async (id_tim) => {
   return res.data;
 };
 
-export const getPesertaList = async (params = {}) => {
-  const res = await api.get("/admin/tim-peserta/peserta", { params });
+export const getPesertaList = async (filters = {}) => {
+  const params = new URLSearchParams();
+  if (filters.id_program) params.append("id_program", filters.id_program);
+  if (filters.status_lolos !== undefined && filters.status_lolos !== "") params.append("status_lolos", filters.status_lolos);
+  if (filters.status_peserta !== undefined && filters.status_peserta !== "") params.append("status_peserta", filters.status_peserta);
+  if (filters.search) params.append("search", filters.search);
+  if (filters.page) params.append("page", filters.page);
+  if (filters.limit) params.append("limit", filters.limit);
+  const res = await api.get(`/admin/tim-peserta/peserta?${params.toString()}`);
   return res.data;
 };
 

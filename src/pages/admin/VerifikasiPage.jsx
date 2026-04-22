@@ -130,6 +130,8 @@ export default function VerifikasiPage() {
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
   const [tahunFilter, setTahunFilter] = useState("");
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   const [filters, setFilters] = useState({
     status_verifikasi: "",
@@ -168,15 +170,20 @@ export default function VerifikasiPage() {
       const res = await getPendingMahasiswa({
         status_verifikasi:
           filters.status_verifikasi !== ""
-            ? filters.status_verifikasi
+            ? parseInt(filters.status_verifikasi)
             : undefined,
         email_verified:
           filters.email_verified !== "" ? filters.email_verified : undefined,
         id_prodi: filters.id_prodi || undefined,
         ...getDateRangeFilters(),
+        page,
+        limit: rowsPerPage,
       });
-      setMahasiswaList(res.data?.mahasiswa || []);
-      setPage(1);
+      setMahasiswaList(res.data || []);
+      if (res.pagination) {
+        setTotalItems(res.pagination.total || 0);
+        setTotalPages(res.pagination.total_pages || 1);
+      }
     } catch {
       Swal.fire({
         icon: "error",
@@ -192,11 +199,12 @@ export default function VerifikasiPage() {
     filters.status_verifikasi,
     filters.email_verified,
     filters.id_prodi,
+    page,
   ]);
 
   useEffect(() => {
     setPage(1);
-  }, [tahunFilter]);
+  }, [tahunFilter, filters.status_verifikasi, filters.email_verified, filters.id_prodi]);
 
   useEffect(() => {
     fetchMahasiswa();
@@ -319,12 +327,7 @@ export default function VerifikasiPage() {
     }
   };
 
-  const currentList = mahasiswaList;
-  const totalPages = Math.ceil(currentList.length / rowsPerPage);
-  const paginatedList = currentList.slice(
-    (page - 1) * rowsPerPage,
-    page * rowsPerPage,
-  );
+const paginatedList = mahasiswaList;
 
   return (
     <BodyLayout Sidebar={AdminSidebar}>
@@ -599,9 +602,9 @@ export default function VerifikasiPage() {
                     }}
                   >
                     <Typography sx={{ fontSize: 13, color: "#777" }}>
-                      Menampilkan {(page - 1) * rowsPerPage + 1}–
-                      {Math.min(page * rowsPerPage, currentList.length)} dari{" "}
-                      {currentList.length} data
+                      Menampilkan {totalItems > 0 ? (page - 1) * rowsPerPage + 1 : 0}–
+                      {Math.min(page * rowsPerPage, totalItems)} dari{" "}
+                      {totalItems} data
                     </Typography>
                     <Pagination
                       count={totalPages}
