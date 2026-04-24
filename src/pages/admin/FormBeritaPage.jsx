@@ -66,8 +66,18 @@ export default function FormBeritaPage() {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    const allowedFormats = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!allowedFormats.includes(file.type)) {
+      setErrors((prev) => ({ ...prev, gambar: "Format harus JPG, PNG, atau WebP" }));
+      return;
+    }
+    if (file.size > 7 * 1024 * 1024) {
+      setErrors((prev) => ({ ...prev, gambar: "Ukuran file maksimal 7MB" }));
+      return;
+    }
     setGambarFile(file);
     setGambarPreview(URL.createObjectURL(file));
+    setErrors((prev) => ({ ...prev, gambar: "" }));
   };
 
   const handleUrlChange = (val) => {

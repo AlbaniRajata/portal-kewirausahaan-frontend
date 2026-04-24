@@ -286,18 +286,7 @@ export default function TimPesertaPage() {
               <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Status Proposal</Typography>
               {ps && <StatusPill label={ps.label} backgroundColor={ps.backgroundColor} />}
             </Box>
-            {detailData.proposal.file_proposal && (
-              <Box>
-                <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>File Proposal</Typography>
-                <Button size="small" variant="outlined"
-                  href={`${import.meta.env.VITE_API_URL.replace("/api", "")}/uploads/proposal/${detailData.proposal.file_proposal}`}
-                  target="_blank"
-                  sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12, borderColor: "#0D59F2", color: "#0D59F2" }}
-                >
-                  Lihat File
-                </Button>
-              </Box>
-            )}
+            
           </Box>
         ) : (
           <Typography sx={{ fontSize: 13, color: "#999" }}>Belum ada proposal</Typography>
@@ -374,18 +363,7 @@ export default function TimPesertaPage() {
               <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Status Proposal</Typography>
               {ps && <StatusPill label={ps.label} backgroundColor={ps.backgroundColor} />}
             </Box>
-            {detailData.proposal.file_proposal && (
-              <Box>
-                <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>File Proposal</Typography>
-                <Button size="small" variant="outlined"
-                  href={`${import.meta.env.VITE_API_URL.replace("/api", "")}/uploads/proposal/${detailData.proposal.file_proposal}`}
-                  target="_blank"
-                  sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12, borderColor: "#0D59F2", color: "#0D59F2" }}
-                >
-                  Lihat File
-                </Button>
-              </Box>
-            )}
+            
           </Box>
         ) : (
           <Typography sx={{ fontSize: 13, color: "#999" }}>Belum ada proposal</Typography>

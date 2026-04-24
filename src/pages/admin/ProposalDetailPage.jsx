@@ -11,6 +11,7 @@ import AdminSidebar from "../../components/layouts/AdminSidebar";
 import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import { getProposalDetailAdmin } from "../../api/admin";
+import { downloadFile } from "../../utils/download";
 
 const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "15px" } };
 
@@ -187,10 +188,8 @@ export default function ProposalDetailPage() {
                     </Box>
                   </Box>
                   <Button
-                    component="a"
-                    href={`${import.meta.env.VITE_API_URL.replace("/api", "")}/uploads/proposal/${proposal.file_proposal}`}
-                    target="_blank"
                     size="small"
+                    onClick={() => downloadFile(proposal.file_proposal)}
                     sx={{ textTransform: "none", borderRadius: "50px", fontSize: 13, fontWeight: 600, color: "#0D59F2", border: "1.5px solid #0D59F2", px: 2, "&:hover": { backgroundColor: "#f0f4ff" } }}
                   >
                     Download

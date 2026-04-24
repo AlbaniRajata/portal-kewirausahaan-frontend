@@ -36,6 +36,7 @@ import {
   getDetailLuaranTim,
   reviewLuaranTim,
 } from "../../api/admin";
+import { downloadFile } from "../../utils/download";
 
 const STATUS_MAP = {
   0: {
@@ -690,9 +691,7 @@ setTimeout(() => setOpenDetail(true), 200);
                                 sx={{ fontSize: 16, color: "#1565c0" }}
                               />
                               <Button
-                                component="a"
-                                href={`${import.meta.env.VITE_API_URL.replace("/api", "")}/uploads/luaran/${luaran.file_luaran}`}
-                                target="_blank"
+                                onClick={() => downloadFile(luaran.file_luaran, "luaran")}
                                 size="small"
                                 sx={{
                                   textTransform: "none",

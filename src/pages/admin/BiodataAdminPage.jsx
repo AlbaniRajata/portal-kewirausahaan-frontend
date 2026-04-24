@@ -16,12 +16,14 @@ import AdminSidebar from "../../components/layouts/AdminSidebar";
 import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import { getProfile, updateProfile, updatePassword } from "../../api/admin";
+import { useAuthStore } from "../../store/authStore";
 
 const roundedField = {
   "& .MuiOutlinedInput-root": { borderRadius: "15px" },
 };
 
 export default function BiodataAdminPage() {
+  const { updateUser } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submittingPassword, setSubmittingPassword] = useState(false);
@@ -103,8 +105,8 @@ export default function BiodataAdminPage() {
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      setErrors((prev) => ({ ...prev, foto: "Ukuran file maksimal 10MB" }));
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors((prev) => ({ ...prev, foto: "Ukuran file maksimal 5MB" }));
       return;
     }
 
@@ -166,6 +168,10 @@ export default function BiodataAdminPage() {
       if (formBiodata.foto) formData.append("foto", formBiodata.foto);
 
       const response = await updateProfile(formData);
+      const res = await getProfile();
+      if (res.success) {
+        updateUser({ nama_lengkap: res.data.nama_lengkap, foto: res.data.foto });
+      }
       await Swal.fire({
         icon: "success",
         title: "Berhasil",
@@ -174,7 +180,6 @@ export default function BiodataAdminPage() {
         timerProgressBar: true,
         showConfirmButton: false,
       });
-      fetchProfile();
     } catch (err) {
       await Swal.fire({
         icon: "error",

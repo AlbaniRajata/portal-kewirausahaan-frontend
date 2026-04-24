@@ -143,8 +143,9 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
   const toggleExpand = (id) => setExpandedReviewer((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const handleExecute = async () => {
+    const reviewerText = preview.total_proposal === 1 ? "1 reviewer" : `${preview.total_reviewer} reviewer`;
     const confirmText = tahap === 1
-      ? `Anda akan mendistribusikan <b>${preview.total_proposal}</b> proposal ke <b>${preview.total_reviewer}</b> reviewer secara otomatis.<br/><br/>Lanjutkan?`
+      ? `Anda akan mendistribusikan <b>${preview.total_proposal}</b> proposal ke <b>${reviewerText}</b> secara otomatis.<br/><br/>Lanjutkan?`
       : `Anda akan mendistribusikan <b>${preview.belum_terdistribusi}</b> proposal yang belum memiliki pasangan panel.<br/><br/>
          Sistem akan mendistribusikan berurutan berdasarkan ID reviewer dan ID juri (round-robin) sesuai preview.<br/><br/>Lanjutkan?`;
 
