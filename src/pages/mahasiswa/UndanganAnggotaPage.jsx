@@ -1,34 +1,64 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Box, Paper, Typography, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, Button, Dialog,
+  Box, Paper, Typography, Button, Dialog,
   DialogTitle, DialogContent, DialogActions, TextField,
   IconButton,
 } from "@mui/material";
-import { Close, MailOutline } from "@mui/icons-material";
+import { Close, MailOutline, Group } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
-import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
+import MahasiswaNavbar from "../../components/layouts/MahasiswaNavbar";
 import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import { getTimDetail, acceptInvite, rejectInvite } from "../../api/mahasiswa";
 
-const tableHeadCell = {
-  fontWeight: 700, fontSize: 13, color: "#000",
-  backgroundColor: "#fafafa", borderBottom: "2px solid #f0f0f0", py: 2,
+const COLORS = {
+  primary: "#0D59F2",
+  primaryLight: "#E0F2FE",
+  primaryDark: "#0369A1",
+  primaryMuted: "#93C5FD",
+  secondary: "#2563EB",
+  accent: "#3B82F6",
+  slate: "#64748B",
+  slateLight: "#F1F5F9",
+  success: "#059669",
+  warning: "#D97706",
+  error: "#DC2626",
 };
 
-const tableBodyRow = {
-  "& td": { borderBottom: "1px solid #f5f5f5", py: 2 },
-};
-
-const StatusPill = ({ label, backgroundColor }) => (
+const SectionHeader = ({ icon: Icon, title, subtitle, gradient }) => (
   <Box sx={{
-    display: "inline-flex", alignItems: "center",
-    px: 1.5, py: 0.4, borderRadius: "50px",
-    backgroundColor, color: "#fff",
-    fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
+    display: "flex", alignItems: "center", gap: 2, mb: 3,
+    p: 2.5, borderRadius: "14px",
+    background: gradient,
+  }}>
+    <Box sx={{
+      width: 44, height: 44, borderRadius: "12px",
+      background: "rgba(255,255,255,0.25)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      backdropFilter: "blur(4px)",
+    }}>
+      <Icon sx={{ color: "#fff", fontSize: 22 }} />
+    </Box>
+    <Box>
+      <Typography sx={{ fontSize: 17, fontWeight: 700, color: "#fff" }}>{title}</Typography>
+      <Typography sx={{ fontSize: 12, color: "rgba(255,255,255,0.8)" }}>{subtitle}</Typography>
+    </Box>
+  </Box>
+);
+
+const StatusPill = ({ label, color }) => (
+  <Box sx={{
+    display: "inline-flex",
+    alignItems: "center",
+    px: 1.5,
+    py: 0.4,
+    borderRadius: "50px",
+    backgroundColor: color,
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: 700,
   }}>
     {label}
   </Box>
@@ -36,10 +66,10 @@ const StatusPill = ({ label, backgroundColor }) => (
 
 const getStatusInfo = (status) => {
   switch (status) {
-    case 0: return { label: "Menunggu",  backgroundColor: "#f57f17" };
-    case 1: return { label: "Disetujui", backgroundColor: "#2e7d32" };
-    case 2: return { label: "Ditolak",   backgroundColor: "#c62828" };
-    default: return { label: "Unknown",  backgroundColor: "#666" };
+    case 0: return { label: "Menunggu", color: COLORS.warning };
+    case 1: return { label: "Disetujui", color: COLORS.success };
+    case 2: return { label: "Ditolak", color: COLORS.error };
+    default: return { label: "Unknown", color: COLORS.slate };
   }
 };
 
@@ -62,8 +92,9 @@ export default function UndanganAnggotaPage() {
       setTimDetail(response.data);
     } catch {
       await Swal.fire({
-        icon: "error", title: "Gagal Memuat",
-        text: "Gagal memuat detail tim. Silahkan refresh halaman.",
+        icon: "error",
+        title: "Gagal Memuat",
+        text: "Gagal memuat detail tim.",
         confirmButtonText: "OK",
       });
     } finally {
@@ -75,72 +106,59 @@ export default function UndanganAnggotaPage() {
     const result = await Swal.fire({
       title: "Konfirmasi",
       text: `Terima undangan sebagai anggota tim "${tim.nama_tim}"?`,
-      icon: "question", showCancelButton: true,
-      confirmButtonColor: "#0D59F2", cancelButtonColor: "#d33",
-      confirmButtonText: "Ya, Terima", cancelButtonText: "Batal",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: COLORS.primary,
+      cancelButtonColor: "#d33",
     });
+
     if (!result.isConfirmed) return;
 
     setSubmitting(true);
     try {
       await acceptInvite(tim.id_tim);
       await Swal.fire({
-        icon: "success", title: "Berhasil",
-        text: "Undangan berhasil diterima",
-        timer: 2000, timerProgressBar: true, showConfirmButton: false,
+        icon: "success",
+        title: "Berhasil",
+        text: "Undangan diterima",
+        timer: 2000,
+        showConfirmButton: false,
       });
       navigate("/mahasiswa/anggota-tim", { replace: true });
     } catch (err) {
       await Swal.fire({
-        icon: "error", title: "Gagal",
-        text: err.response?.data?.message || "Gagal menerima undangan",
-        confirmButtonText: "OK",
+        icon: "error",
+        title: "Gagal",
+        text: err.response?.data?.message || "Gagal menerima",
       });
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleOpenReject = (tim) => {
-    setSelectedTim(tim); setCatatan(""); setErrors({}); setOpenReject(true);
-  };
-
-  const handleCloseReject = () => {
-    setOpenReject(false); setSelectedTim(null); setCatatan(""); setErrors({});
-  };
-
   const handleReject = async () => {
     if (!catatan || catatan.trim().length < 5) {
-      setErrors({ catatan: "Catatan penolakan minimal 5 karakter" });
+      setErrors({ catatan: "Minimal 5 karakter" });
       return;
     }
-    setOpenReject(false);
-    const result = await Swal.fire({
-      title: "Konfirmasi",
-      text: `Tolak undangan dari tim "${selectedTim.nama_tim}"?`,
-      icon: "warning", showCancelButton: true,
-      confirmButtonColor: "#d33", cancelButtonColor: "#666",
-      confirmButtonText: "Ya, Tolak", cancelButtonText: "Batal",
-    });
-    if (!result.isConfirmed) { setOpenReject(true); return; }
 
     setSubmitting(true);
     try {
       await rejectInvite(selectedTim.id_tim, catatan.trim());
       await Swal.fire({
-        icon: "success", title: "Berhasil",
-        text: "Undangan berhasil ditolak",
-        timer: 2000, timerProgressBar: true, showConfirmButton: false,
+        icon: "success",
+        title: "Berhasil",
+        text: "Undangan ditolak",
+        timer: 2000,
+        showConfirmButton: false,
       });
-      handleCloseReject();
       navigate("/mahasiswa/anggota-tim", { replace: true });
-    } catch (err) {
+    } catch {
       await Swal.fire({
-        icon: "error", title: "Gagal",
-        text: err.response?.data?.message || "Gagal menolak undangan",
-        confirmButtonText: "OK",
+        icon: "error",
+        title: "Gagal",
+        text: "Gagal menolak",
       });
-      setOpenReject(true);
     } finally {
       setSubmitting(false);
     }
@@ -148,36 +166,37 @@ export default function UndanganAnggotaPage() {
 
   if (loading) {
     return (
-      <BodyLayout Sidebar={SidebarMahasiswa}>
-        <Box sx={{ position: "relative", minHeight: "60vh" }}>
-          <LoadingScreen message="Memuat undangan anggota..." overlay minHeight="60vh" />
+      <BodyLayout Sidebar={MahasiswaNavbar}>
+        <Box sx={{ minHeight: "60vh" }}>
+          <LoadingScreen message="Memuat..." overlay />
         </Box>
       </BodyLayout>
     );
   }
 
-  const pendingInvitations = timDetail?.anggota?.filter((item) => item.peran === 2 && item.status === 0) || [];
-  const myInvitation = pendingInvitations[0];
+  const invitation = timDetail?.anggota?.find(a => a.peran === 2 && a.status === 0);
 
-  if (!myInvitation) {
+  if (!invitation) {
     return (
-      <BodyLayout Sidebar={SidebarMahasiswa}>
+      <BodyLayout Sidebar={MahasiswaNavbar}>
         <PageTransition>
           <Box>
-            <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Undangan Anggota Tim</Typography>
-            <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>Daftar undangan yang Anda terima</Typography>
-            <Paper sx={{ py: 10, borderRadius: "16px", border: "1px solid #f0f0f0", textAlign: "center" }}>
-              <Box sx={{
-                width: 100, height: 100, borderRadius: "50%",
-                backgroundColor: "#f5f5f5",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                mx: "auto", mb: 3,
-              }}>
-                <MailOutline sx={{ fontSize: 48, color: "#ccc" }} />
-              </Box>
-              <Typography sx={{ fontSize: 20, fontWeight: 700, color: "#444", mb: 1 }}>Tidak Ada Undangan</Typography>
-              <Typography sx={{ fontSize: 14, color: "#999" }}>
-                Anda tidak memiliki undangan yang menunggu persetujuan.
+            <Typography sx={{ fontSize: 36, fontWeight: 800, mb: 1 }}>
+              Undangan Tim
+            </Typography>
+            <Typography sx={{ color: "#6B7280", mb: 4 }}>
+              Tidak ada undangan
+            </Typography>
+
+            <Paper sx={{
+              py: 10,
+              borderRadius: "20px",
+              border: "1.5px solid #E5E7EB",
+              textAlign: "center"
+            }}>
+              <MailOutline sx={{ fontSize: 60, color: "#ccc" }} />
+              <Typography sx={{ mt: 2, fontWeight: 700 }}>
+                Kosong
               </Typography>
             </Paper>
           </Box>
@@ -186,117 +205,130 @@ export default function UndanganAnggotaPage() {
     );
   }
 
-  const statusInfo = getStatusInfo(myInvitation.status);
+  const status = getStatusInfo(invitation.status);
 
   return (
-    <BodyLayout Sidebar={SidebarMahasiswa}>
+    <BodyLayout Sidebar={MahasiswaNavbar}>
       <PageTransition>
         <Box>
-          <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Undangan Anggota Tim</Typography>
-          <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>Daftar undangan yang Anda terima</Typography>
 
-          <Paper sx={{ overflow: "hidden", borderRadius: "16px", border: "1px solid #f0f0f0" }}>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    {["Nama Tim", "Ketua Tim", "Program", "Status", "Aksi"].map((h, i) => (
-                      <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 4 && { textAlign: "center" }) }}>
-                        {h}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  <TableRow sx={tableBodyRow}>
-                    <TableCell>
-                      <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{timDetail.nama_tim}</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{timDetail.ketua_tim?.nama_lengkap}</Typography>
-                      <Typography sx={{ fontSize: 12, color: "#888" }}>{timDetail.ketua_tim?.nim}</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography sx={{ fontSize: 13, color: "#555" }}>{timDetail.keterangan}</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <StatusPill label={statusInfo.label} backgroundColor={statusInfo.backgroundColor} />
-                    </TableCell>
-                    <TableCell align="center">
-                      <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
-                        <Button
-                          size="small" variant="outlined"
-                          onClick={() => handleOpenReject(timDetail)}
-                          disabled={submitting}
-                          sx={{
-                            textTransform: "none", borderRadius: "50px",
-                            fontSize: 12, fontWeight: 600, px: 2,
-                            borderColor: "#e53935", color: "#e53935",
-                            "&:hover": { backgroundColor: "rgba(229,57,53,0.06)", borderColor: "#e53935" },
-                          }}
-                        >
-                          Tolak
-                        </Button>
-                        <Button
-                          size="small" variant="contained"
-                          onClick={() => handleAccept(timDetail)}
-                          disabled={submitting}
-                          sx={{
-                            textTransform: "none", borderRadius: "50px",
-                            fontSize: 12, fontWeight: 600, px: 2,
-                            backgroundColor: "#2e7d32", "&:hover": { backgroundColor: "#1b5e20" },
-                          }}
-                        >
-                          Terima
-                        </Button>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </TableContainer>
+          <Box sx={{ mb: 4 }}>
+            <Typography sx={{ fontSize: 36, fontWeight: 800 }}>
+              Undangan Tim
+            </Typography>
+            <Typography sx={{ color: "#6B7280" }}>
+              Kelola undangan yang masuk
+            </Typography>
+          </Box>
+
+          <Paper sx={{
+            borderRadius: "20px",
+            border: "1.5px solid #E5E7EB",
+            overflow: "hidden"
+          }}>
+            <Box sx={{
+              height: 5,
+              background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})`
+            }} />
+
+            <Box sx={{ p: 4 }}>
+              <SectionHeader
+                icon={Group}
+                title="Undangan Masuk"
+                subtitle="Detail undangan tim"
+                gradient={`linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`}
+              />
+
+              <Box sx={{
+                p: 3,
+                borderRadius: "16px",
+                background: COLORS.primaryLight,
+                border: `1.5px solid ${COLORS.primaryMuted}`,
+                mb: 3
+              }}>
+                <Typography sx={{ fontWeight: 700, fontSize: 16 }}>
+                  {timDetail.nama_tim}
+                </Typography>
+                <Typography sx={{ fontSize: 13, color: COLORS.slate }}>
+                  Ketua: {timDetail.ketua_tim?.nama_lengkap}
+                </Typography>
+                <Typography sx={{ fontSize: 13, color: COLORS.slate }}>
+                  {timDetail.keterangan}
+                </Typography>
+                <Box sx={{ mt: 1 }}>
+                  <StatusPill label={status.label} color={status.color} />
+                </Box>
+              </Box>
+
+              <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
+                <Button
+                  onClick={() => {
+                    setSelectedTim(timDetail);
+                    setOpenReject(true);
+                  }}
+                  sx={{
+                    borderRadius: "10px", px: 3, py: 1.2, fontWeight: 700, textTransform: "none",
+                    backgroundColor: COLORS.warning, color: "#fff",
+                    "&:hover": { backgroundColor: "#B45309" },
+                  }}
+                >
+                  Tolak
+                </Button>
+
+                <Button
+                  variant="contained"
+                  onClick={() => handleAccept(timDetail)}
+                  sx={{
+                    borderRadius: "10px", px: 3, py: 1.2, fontWeight: 700, textTransform: "none",
+                    backgroundColor: COLORS.primary,
+                    "&:hover": { backgroundColor: COLORS.primaryDark },
+                  }}
+                >
+                  Terima
+                </Button>
+              </Box>
+            </Box>
           </Paper>
 
-          <Dialog open={openReject} onClose={handleCloseReject} maxWidth="sm" fullWidth
-            PaperProps={{ sx: { borderRadius: "16px" } }}>
-            <DialogTitle sx={{ pb: 1 }}>
-              <Typography sx={{ fontWeight: 700, fontSize: 16 }}>Tolak Undangan</Typography>
-              <IconButton onClick={handleCloseReject} sx={{ position: "absolute", right: 12, top: 8, color: "#888" }}>
+          <Dialog open={openReject} onClose={() => setOpenReject(false)} fullWidth maxWidth="sm">
+            <DialogTitle>
+              Tolak Undangan
+              <IconButton onClick={() => setOpenReject(false)} sx={{ position: "absolute", right: 8, top: 8 }}>
                 <Close />
               </IconButton>
             </DialogTitle>
 
-            <DialogContent dividers sx={{ px: 3, py: 3 }}>
-              <Box sx={{ p: 2.5, backgroundColor: "#fce4ec", borderRadius: "12px", border: "1px solid #ef9a9a", mb: 3 }}>
-                <Typography sx={{ fontSize: 12, color: "#c62828", fontWeight: 700, mb: 0.5 }}>Tim yang akan ditolak</Typography>
-                <Typography sx={{ fontSize: 14, fontWeight: 600 }}>{selectedTim?.nama_tim}</Typography>
-              </Box>
-              <Box>
-                <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>
-                  Catatan Penolakan <span style={{ color: "#ef5350" }}>*</span>
-                </Typography>
-                <TextField
-                  fullWidth multiline rows={4}
-                  placeholder="Masukkan catatan penolakan (minimal 5 karakter)..."
-                  value={catatan}
-                  onChange={(e) => { setCatatan(e.target.value); setErrors({}); }}
-                  error={!!errors.catatan} helperText={errors.catatan}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
-                />
-              </Box>
+            <DialogContent>
+              <TextField
+                fullWidth
+                multiline
+                rows={4}
+                value={catatan}
+                onChange={(e) => setCatatan(e.target.value)}
+                error={!!errors.catatan}
+                helperText={errors.catatan}
+                sx={{ mt: 2 }}
+              />
             </DialogContent>
 
-            <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-              <Button onClick={handleCloseReject}
-                sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, color: "#666", border: "1.5px solid #e0e0e0", "&:hover": { backgroundColor: "#f5f5f5" } }}>
+            <DialogActions>
+              <Button onClick={() => setOpenReject(false)} sx={{
+                borderRadius: "10px", px: 3, py: 1.2, fontWeight: 700, textTransform: "none",
+                backgroundColor: COLORS.error, color: "#fff",
+                "&:hover": { backgroundColor: "#B91C1C" },
+              }}>
                 Batal
               </Button>
-              <Button variant="contained" onClick={handleReject}
-                sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, backgroundColor: "#e53935", "&:hover": { backgroundColor: "#c62828" } }}>
-                Tolak Undangan
+              <Button onClick={handleReject} variant="contained" sx={{
+                borderRadius: "10px", px: 3, py: 1.2, fontWeight: 700, textTransform: "none",
+                backgroundColor: COLORS.primary,
+                "&:hover": { backgroundColor: COLORS.primaryDark },
+              }}>
+                Tolak
               </Button>
             </DialogActions>
           </Dialog>
+
         </Box>
       </PageTransition>
     </BodyLayout>

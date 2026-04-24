@@ -1,20 +1,61 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Box, Paper, Typography, Button,
-  TextField, MenuItem, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, IconButton,
+  Box, Paper, Typography, Button, TextField, MenuItem,
+  Table, TableBody, TableCell, TableContainer, TableHead,
+  TableRow, IconButton, CircularProgress,
 } from "@mui/material";
-import { CloudUpload, Send, Save, Close, AttachFile, ArrowBack } from "@mui/icons-material";
+import { CloudUpload, Send, Save, Close, AttachFile, ArrowBack, Description, Group } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
-import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
+import MahasiswaNavbar from "../../components/layouts/MahasiswaNavbar";
 import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import {
   getProposalStatus, createProposal, updateProposal, submitProposal,
 } from "../../api/mahasiswa";
 import { getAllKategori } from "../../api/public";
+import { downloadFile } from "../../utils/download";
+
+
+const COLORS = {
+  primary:      "#0D59F2",
+  primaryLight: "#E0F2FE",
+  primaryDark:  "#0369A1",
+  primaryMuted: "#93C5FD",
+  secondary:    "#2563EB",
+  accent:       "#3B82F6",
+  slate:        "#64748B",
+  slateLight:   "#F1F5F9",
+  success:      "#059669",
+  successLight: "#ECFDF5",
+  warning:      "#D97706",
+  warningLight: "#FFFBEB",
+  error:        "#DC2626",
+  errorLight:   "#FEF2F2",
+};
+
+const roundedField = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "12px",
+    backgroundColor: "#fff",
+    transition: "box-shadow 0.2s",
+    "&:hover fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused": { boxShadow: `0 0 0 3px ${COLORS.primaryLight}` },
+  },
+};
+
+const tableHeadCell = {
+  fontWeight: 700, fontSize: 13, color: "#000",
+  backgroundColor: "#fafafa", borderBottom: "2px solid #f0f0f0", py: 2,
+};
+
+const tableBodyRow = {
+  "&:hover": { backgroundColor: "#f8f9ff" },
+  "& td": { borderBottom: "1px solid #f5f5f5", py: 2 },
+};
+
 
 const validateProposalFilename = (filename) => {
   const nameWithoutExt = filename.replace(/\.pdf$/i, "");
@@ -37,19 +78,63 @@ const validateProposalFilename = (filename) => {
   return { valid: true };
 };
 
-const roundedField = {
-  "& .MuiOutlinedInput-root": { borderRadius: "12px" },
+const getStatusInfo = (statusCode) => {
+  const map = {
+    0:  { label: "Draft",                   backgroundColor: "#666" },
+    1:  { label: "Diajukan",                backgroundColor: "#1565c0" },
+    2:  { label: "Ditugaskan ke Reviewer",  backgroundColor: "#3949ab" },
+    3:  { label: "Tidak Lolos Desk",        backgroundColor: "#c62828" },
+    4:  { label: "Lolos Desk",              backgroundColor: "#2e7d32" },
+    5:  { label: "Wawancara Dijadwalkan",   backgroundColor: "#f57f17" },
+    6:  { label: "Panel Wawancara",         backgroundColor: "#3949ab" },
+    7:  { label: "Tidak Lolos Wawancara",   backgroundColor: "#c62828" },
+    8:  { label: "Lolos Wawancara",         backgroundColor: "#2e7d32" },
+    9:  { label: "Pembimbing Diajukan",     backgroundColor: "#1565c0" },
+    10: { label: "Pembimbing Disetujui",    backgroundColor: "#2e7d32" },
+  };
+  return map[statusCode] || { label: "Unknown", backgroundColor: "#666" };
 };
 
-const tableHeadCell = {
-  fontWeight: 700, fontSize: 13, color: "#000",
-  backgroundColor: "#fafafa", borderBottom: "2px solid #f0f0f0", py: 2,
-};
 
-const tableBodyRow = {
-  "&:hover": { backgroundColor: "#f8f9ff" },
-  "& td": { borderBottom: "1px solid #f5f5f5", py: 2 },
-};
+const SectionHeader = ({ icon: Icon, title, subtitle, gradient }) => (
+  <Box sx={{
+    display: "flex", alignItems: "center", gap: 2, mb: 3,
+    p: 2.5, borderRadius: "14px",
+    background: gradient,
+  }}>
+    <Box sx={{
+      width: 44, height: 44, borderRadius: "12px",
+      background: "rgba(255,255,255,0.25)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      backdropFilter: "blur(4px)",
+    }}>
+      <Icon sx={{ color: "#fff", fontSize: 22 }} />
+    </Box>
+    <Box>
+      <Typography sx={{ fontSize: 17, fontWeight: 700, color: "#fff", lineHeight: 1.2 }}>{title}</Typography>
+      {subtitle && <Typography sx={{ fontSize: 12, color: "rgba(255,255,255,0.8)", mt: 0.3 }}>{subtitle}</Typography>}
+    </Box>
+  </Box>
+);
+
+const FieldLabel = ({ children, required }) => (
+  <Typography sx={{ fontWeight: 600, mb: 0.8, fontSize: 13, color: "#374151", display: "flex", gap: 0.4 }}>
+    {children}
+    {required && <span style={{ color: COLORS.error }}>*</span>}
+  </Typography>
+);
+
+const ReadonlyField = ({ value }) => (
+  <Box sx={{
+    px: 2, py: 1.5, borderRadius: "12px",
+    background: COLORS.slateLight,
+    border: "1.5px dashed #CBD5E1",
+    fontSize: 14, color: COLORS.slate, fontWeight: 500,
+    minHeight: "44px", display: "flex", alignItems: "center",
+  }}>
+    {value || "—"}
+  </Box>
+);
 
 const StatusPill = ({ label, backgroundColor }) => (
   <Box sx={{
@@ -62,25 +147,62 @@ const StatusPill = ({ label, backgroundColor }) => (
   </Box>
 );
 
-const getStatusInfo = (statusCode) => {
-  const map = {
-    0:  { label: "Draft",                    backgroundColor: "#666" },
-    1:  { label: "Diajukan",                 backgroundColor: "#1565c0" },
-    2:  { label: "Ditugaskan ke Reviewer",   backgroundColor: "#3949ab" },
-    3:  { label: "Tidak Lolos Desk",         backgroundColor: "#c62828" },
-    4:  { label: "Lolos Desk",               backgroundColor: "#2e7d32" },
-    5:  { label: "Wawancara Dijadwalkan",    backgroundColor: "#f57f17" },
-    6:  { label: "Panel Wawancara",          backgroundColor: "#3949ab" },
-    7:  { label: "Tidak Lolos Wawancara",    backgroundColor: "#c62828" },
-    8:  { label: "Lolos Wawancara",          backgroundColor: "#2e7d32" },
-    9:  { label: "Pembimbing Diajukan",      backgroundColor: "#1565c0" },
-    10: { label: "Pembimbing Disetujui",     backgroundColor: "#2e7d32" },
-  };
-  return map[statusCode] || { label: "Unknown", backgroundColor: "#666" };
-};
+const FileBox = ({ fileName, isExisting = false, showDownload = false, canRemove = false, onRemove }) => (
+  <Box sx={{
+    border: "1.5px solid #f0f0f0", borderRadius: "12px", p: 2,
+    display: "flex", alignItems: "center", justifyContent: "space-between",
+    backgroundColor: "#fafafa",
+  }}>
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+      <Box sx={{
+        width: 36, height: 36, borderRadius: "8px",
+        backgroundColor: COLORS.primaryLight,
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        <AttachFile sx={{ color: COLORS.primary, fontSize: 18 }} />
+      </Box>
+      <Box>
+        <Typography sx={{ fontWeight: 600, fontSize: 13 }}>{fileName}</Typography>
+        {isExisting && (
+          <Typography sx={{ fontSize: 11, color: COLORS.success, fontWeight: 600 }}>File Tersimpan</Typography>
+        )}
+      </Box>
+    </Box>
+    <Box sx={{ display: "flex", gap: 1 }}>
+      {showDownload && (
+        <Button
+          onClick={() => downloadFile(fileName)}
+          size="small"
+          sx={{
+            textTransform: "none", borderRadius: "50px", fontSize: 13,
+            fontWeight: 600, color: COLORS.primary,
+            border: `1.5px solid ${COLORS.primary}`, px: 2,
+            "&:hover": { backgroundColor: COLORS.primaryLight },
+          }}
+        >
+          Download
+        </Button>
+      )}
+      {canRemove && (
+        <IconButton
+          size="small"
+          onClick={onRemove}
+          sx={{
+            color: COLORS.error,
+            backgroundColor: `${COLORS.errorLight}`,
+            borderRadius: "8px",
+            "&:hover": { backgroundColor: "#FCA5A5" },
+          }}
+        >
+          <Close fontSize="small" />
+        </IconButton>
+      )}
+    </Box>
+  </Box>
+);
 
 const MemberTable = ({ members, showStatus = false }) => (
-  <TableContainer sx={{ borderRadius: "12px", border: "1px solid #f0f0f0", overflow: "hidden" }}>
+  <TableContainer sx={{ borderRadius: "12px", border: "1px solid #f0f0f0", overflow: "hidden", overflowX: "auto" }}>
     <Table>
       <TableHead>
         <TableRow>
@@ -122,27 +244,29 @@ const BackButton = ({ navigate }) => (
     onClick={() => navigate("/mahasiswa/proposal")}
     startIcon={<ArrowBack />}
     sx={{
-      borderRadius: "50px",
-      textTransform: "none", color: "#777", fontSize: 13,
-      fontWeight: 500, p: 0, mb: 2, minWidth: 0,
-      "&:hover": { backgroundColor: "transparent", color: "#0D59F2" },
+      borderRadius: "50px", textTransform: "none",
+      color: COLORS.primary, fontSize: 13, fontWeight: 500,
+      p: 0, mb: 2, minWidth: 0,
+      "&:hover": { backgroundColor: "transparent" },
     }}
   >
     Kembali ke Daftar Proposal
   </Button>
 );
 
+
 export default function ProposalFormPage() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [status, setStatus] = useState(null);
+  const [loading, setLoading]           = useState(true);
+  const [submitting, setSubmitting]     = useState(false);
+  const [status, setStatus]             = useState(null);
   const [kategoriOptions, setKategoriOptions] = useState([]);
-  const [file, setFile] = useState(null);
-  const [filePreview, setFilePreview] = useState(null);
+  const [file, setFile]                 = useState(null);
+  const [filePreview, setFilePreview]   = useState(null);
   const [fileNameError, setFileNameError] = useState("");
-  const [form, setForm] = useState({ judul: "", id_kategori: "", modal_diajukan: "" });
-  const [errors, setErrors] = useState({});
+  const [form, setForm]                 = useState({ judul: "", id_kategori: "", modal_diajukan: "" });
+  const [errors, setErrors]             = useState({});
+  const [isDragging, setIsDragging]     = useState(false);
 
   useEffect(() => { fetchStatus(); fetchKategori(); }, []);
 
@@ -162,58 +286,62 @@ export default function ProposalFormPage() {
         text: "Gagal memuat status proposal. Silahkan refresh halaman.",
         confirmButtonText: "OK",
       });
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const fetchKategori = async () => {
     try {
       const response = await getAllKategori();
       if (response.success) setKategoriOptions(response.data);
-    } catch {
-      // kategori gagal dimuat, dropdown kosong
-    }
+    } catch {}
   };
 
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    if (!selectedFile) return;
+  const processFile = (selectedFile) => {
+    const el = document.getElementById("file-upload");
     if (selectedFile.type !== "application/pdf") {
       Swal.fire({ icon: "warning", title: "Format Salah", text: "File harus berformat PDF", confirmButtonText: "OK" });
-      e.target.value = "";
+      if (el) el.value = "";
       return;
     }
     if (selectedFile.size > 10 * 1024 * 1024) {
       Swal.fire({ icon: "warning", title: "File Terlalu Besar", text: "Ukuran file maksimal 10 MB", confirmButtonText: "OK" });
-      e.target.value = "";
+      if (el) el.value = "";
       return;
     }
     const nameValidation = validateProposalFilename(selectedFile.name);
     setFileNameError(nameValidation.valid ? "" : nameValidation.message);
     setFile(selectedFile);
     setFilePreview({ name: selectedFile.name, isExisting: false });
-    setErrors({ ...errors, file: "" });
+    setErrors((p) => ({ ...p, file: "" }));
+    if (el) el.value = "";
   };
 
-  const handleRemoveFile = () => {
-    setFile(null);
-    setFilePreview(null);
-    setFileNameError("");
+  const handleFileChange  = (e) => { const f = e.target.files[0]; if (f) processFile(f); };
+  const handleDragOver    = (e) => { e.preventDefault(); e.stopPropagation(); };
+  const handleDragEnter   = (e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); };
+  const handleDragLeave   = (e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); };
+  const handleDrop        = (e) => {
+    e.preventDefault(); e.stopPropagation(); setIsDragging(false);
+    if (!canEdit || submitting) return;
+    const files = e.dataTransfer.files;
+    if (files?.length > 0) { document.getElementById("file-upload").value = ""; processFile(files[0]); }
+  };
+  const handleRemoveFile  = () => {
+    setFile(null); setFilePreview(null); setFileNameError("");
     const el = document.getElementById("file-upload");
     if (el) el.value = "";
   };
 
   const validate = () => {
-    const newErrors = {};
-    if (!form.judul?.trim()) newErrors.judul = "Judul proposal wajib diisi";
-    else if (form.judul.length > 200) newErrors.judul = "Judul maksimal 200 karakter";
-    if (!form.id_kategori) newErrors.id_kategori = "Kategori usaha wajib dipilih";
-    if (!form.modal_diajukan || form.modal_diajukan <= 0) newErrors.modal_diajukan = "Anggaran dana wajib diisi";
-    if (!status?.data?.proposal && !file) newErrors.file = "File proposal wajib diunggah";
-    if (file && fileNameError) newErrors.file = "Perbaiki nama file sebelum menyimpan";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const e = {};
+    if (!form.judul?.trim())                     e.judul = "Judul proposal wajib diisi";
+    else if (form.judul.length > 200)            e.judul = "Judul maksimal 200 karakter";
+    if (!form.id_kategori)                       e.id_kategori = "Kategori usaha wajib dipilih";
+    if (!form.modal_diajukan || form.modal_diajukan <= 0) e.modal_diajukan = "Anggaran dana wajib diisi";
+    if (!status?.data?.proposal && !file)        e.file = "File proposal wajib diunggah";
+    if (file && fileNameError)                   e.file = "Perbaiki nama file sebelum menyimpan";
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
   const handleSave = async () => {
@@ -241,9 +369,7 @@ export default function ProposalFormPage() {
         text: err.response?.data?.message || "Gagal menyimpan proposal",
         confirmButtonText: "OK",
       });
-    } finally {
-      setSubmitting(false);
-    }
+    } finally { setSubmitting(false); }
   };
 
   const handleSubmit = async () => {
@@ -252,7 +378,7 @@ export default function ProposalFormPage() {
       title: "Konfirmasi Submit",
       text: "Setelah submit, proposal tidak bisa diedit lagi. Lanjutkan?",
       icon: "warning", showCancelButton: true,
-      confirmButtonColor: "#0D59F2", cancelButtonColor: "#d33",
+      confirmButtonColor: COLORS.primary, cancelButtonColor: COLORS.error,
       confirmButtonText: "Ya, Submit", cancelButtonText: "Batal",
     });
     if (!result.isConfirmed) return;
@@ -271,144 +397,139 @@ export default function ProposalFormPage() {
         text: err.response?.data?.message || "Gagal submit proposal",
         confirmButtonText: "OK",
       });
-    } finally {
-      setSubmitting(false);
-    }
+    } finally { setSubmitting(false); }
   };
 
-  const formatRupiah = (value) => value ? new Intl.NumberFormat("id-ID").format(value) : "";
-
+  const formatRupiah      = (value) => value ? new Intl.NumberFormat("id-ID").format(value) : "";
   const handleModalChange = (e) => {
     const value = e.target.value.replace(/\D/g, "");
-    setForm({ ...form, modal_diajukan: value });
-    setErrors({ ...errors, modal_diajukan: "" });
+    setForm((p) => ({ ...p, modal_diajukan: value }));
+    setErrors((p) => ({ ...p, modal_diajukan: "" }));
   };
 
-  const anggotaAccepted = status?.data?.anggota?.all_accepted === true;
-  const pembimbingStatus = status?.data?.pembimbing?.status;
+  const anggotaAccepted    = status?.data?.anggota?.all_accepted === true;
+  const pembimbingStatus   = status?.data?.pembimbing?.status;
   const pembimbingDisetujui = pembimbingStatus === 1;
-  const pembimbingDitolak = pembimbingStatus === 2;
-  const proposalReady = anggotaAccepted && pembimbingDisetujui && status?.timelineOpen;
+  const pembimbingDitolak  = pembimbingStatus === 2;
+  const proposalReady      = anggotaAccepted && pembimbingDisetujui && status?.timelineOpen;
+  const isDraft            = status?.data?.proposal?.status === 0;
+  const isReadOnly         = status?.data?.proposal && !isDraft;
+  const canEdit            = !isReadOnly && proposalReady;
+  const si                 = status?.data?.proposal ? getStatusInfo(status.data.proposal.status) : null;
 
-  const FileBox = ({ fileName, isExisting = false, showDownload = false, canRemove = false }) => (
-    <Box sx={{ border: "1.5px solid #f0f0f0", borderRadius: "12px", p: 2, display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "#fafafa" }}>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-        <Box sx={{ width: 36, height: 36, borderRadius: "8px", backgroundColor: "#e3f2fd", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <AttachFile sx={{ color: "#1565c0", fontSize: 18 }} />
-        </Box>
-        <Box>
-          <Typography sx={{ fontWeight: 600, fontSize: 13 }}>{fileName}</Typography>
-          {isExisting && <Typography sx={{ fontSize: 11, color: "#2e7d32", fontWeight: 600 }}>File Tersimpan</Typography>}
-        </Box>
+  if (loading) return (
+    <BodyLayout Sidebar={MahasiswaNavbar}>
+      <Box sx={{ position: "relative", minHeight: "60vh" }}>
+        <LoadingScreen message="Memuat form proposal..." overlay minHeight="60vh" />
       </Box>
-      <Box sx={{ display: "flex", gap: 1 }}>
-        {showDownload && (
-          <Button
-            component="a"
-            href={`${import.meta.env.VITE_API_URL.replace("/api", "")}/uploads/proposal/${fileName}`}
-            target="_blank" size="small"
-            sx={{ textTransform: "none", borderRadius: "50px", fontSize: 13, fontWeight: 600, color: "#0D59F2", border: "1.5px solid #0D59F2", px: 2, "&:hover": { backgroundColor: "#f0f4ff" } }}
-          >
-            Download
-          </Button>
-        )}
-        {canRemove && (
-          <IconButton size="small" onClick={handleRemoveFile}
-            sx={{ color: "#e53935", backgroundColor: "rgba(229,57,53,0.06)", borderRadius: "8px", "&:hover": { backgroundColor: "rgba(229,57,53,0.12)" } }}>
-            <Close fontSize="small" />
-          </IconButton>
-        )}
-      </Box>
-    </Box>
+    </BodyLayout>
   );
 
-  if (loading) {
-    return (
-      <BodyLayout Sidebar={SidebarMahasiswa}>
-        <Box sx={{ position: "relative", minHeight: "60vh" }}>
-          <LoadingScreen message="Memuat form proposal..." overlay minHeight="60vh" />
-        </Box>
-      </BodyLayout>
-    );
-  }
-
-  if (!status?.hasTim) {
-    return (
-      <BodyLayout Sidebar={SidebarMahasiswa}>
-        <PageTransition>
-          <Box>
-            <BackButton navigate={navigate} />
-            <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Form Proposal</Typography>
-            <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>Lengkapi form di bawah ini untuk mendaftarkan proposal Anda</Typography>
-            <Box sx={{ p: 2, borderRadius: "12px", backgroundColor: "#fff8e1", border: "1px solid #ffe082" }}>
-              <Typography sx={{ fontSize: 14, color: "#f57f17", fontWeight: 500 }}>
-                Anda belum terdaftar dalam tim. Silahkan ajukan anggota tim terlebih dahulu.
-              </Typography>
-            </Box>
+  if (!status?.hasTim) return (
+    <BodyLayout Sidebar={MahasiswaNavbar}>
+      <PageTransition>
+        <Box>
+          <BackButton navigate={navigate} />
+          <Typography sx={{ fontSize: 36, fontWeight: 800, color: "#1F2937", mb: 0.5 }}>Form Proposal</Typography>
+          <Typography sx={{ fontSize: 16, color: "#6B7280", mb: 4 }}>
+            Lengkapi form di bawah ini untuk mendaftarkan proposal Anda
+          </Typography>
+          <Box sx={{ p: 2.5, borderRadius: "12px", backgroundColor: COLORS.warningLight, border: `1.5px solid #FDE68A`, display: "flex", gap: 1.5 }}>
+            <Box sx={{ width: 8, height: 8, mt: 0.6, borderRadius: "50%", background: COLORS.warning, flexShrink: 0 }} />
+            <Typography sx={{ fontSize: 13, color: "#92400E" }}>
+              Anda belum terdaftar dalam tim. Silahkan ajukan anggota tim terlebih dahulu.
+            </Typography>
           </Box>
-        </PageTransition>
-      </BodyLayout>
-    );
-  }
+        </Box>
+      </PageTransition>
+    </BodyLayout>
+  );
 
   if (!status?.isKetua) {
     if (status?.data?.proposal) {
       const proposal = status.data.proposal;
-      const si = getStatusInfo(proposal.status);
+      const siAnggota = getStatusInfo(proposal.status);
       return (
-        <BodyLayout Sidebar={SidebarMahasiswa}>
+        <BodyLayout Sidebar={MahasiswaNavbar}>
           <PageTransition>
             <Box>
               <BackButton navigate={navigate} />
-              <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Form Proposal</Typography>
-              <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>Detail proposal tim Anda</Typography>
-              <Box sx={{ mb: 3, p: 2, borderRadius: "12px", backgroundColor: "#e3f2fd", border: "1px solid #90caf9" }}>
-                <Typography sx={{ fontSize: 14, color: "#1565c0", fontWeight: 500 }}>
+              <Typography sx={{ fontSize: 36, fontWeight: 800, color: "#1F2937", mb: 0.5 }}>Form Proposal</Typography>
+              <Typography sx={{ fontSize: 16, color: "#6B7280", mb: 4 }}>Detail proposal tim Anda</Typography>
+
+              <Box sx={{ mb: 3, p: 2.5, borderRadius: "12px", backgroundColor: COLORS.primaryLight, border: `1.5px solid ${COLORS.primaryMuted}`, display: "flex", gap: 1.5 }}>
+                <Box sx={{ width: 8, height: 8, mt: 0.6, borderRadius: "50%", background: COLORS.primary, flexShrink: 0 }} />
+                <Typography sx={{ fontSize: 13, color: COLORS.primaryDark }}>
                   Anda adalah anggota tim. Proposal hanya dapat diedit oleh ketua tim.
                 </Typography>
               </Box>
 
-              <Paper sx={{ p: 4, mb: 3, borderRadius: "16px", border: "1px solid #f0f0f0" }}>
-                <Typography sx={{ fontSize: 20, fontWeight: 700, mb: 3 }}>Detail Proposal</Typography>
-                <Box sx={{ mb: 3 }}>
-                  <Typography sx={{ fontWeight: 600, mb: 1 }}>Judul Proposal</Typography>
-                  <TextField fullWidth value={proposal.judul || ""} disabled multiline rows={2} sx={roundedField} />
-                </Box>
-                <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, mb: 3 }}>
-                  <Box>
-                    <Typography sx={{ fontWeight: 600, mb: 1 }}>Program</Typography>
-                    <TextField fullWidth value={status?.data?.tim?.keterangan || ""} disabled sx={roundedField} />
-                  </Box>
-                  <Box>
-                    <Typography sx={{ fontWeight: 600, mb: 1 }}>Kategori Usaha</Typography>
-                    <TextField fullWidth value={proposal.nama_kategori || ""} disabled sx={roundedField} />
-                  </Box>
-                </Box>
-                <Box sx={{ mb: 3 }}>
-                  <Typography sx={{ fontWeight: 600, mb: 1 }}>Anggaran Dana</Typography>
-                  <TextField fullWidth value={formatRupiah(proposal.modal_diajukan)} disabled sx={roundedField}
-                    InputProps={{ startAdornment: <Typography sx={{ mr: 1, color: "#555" }}>Rp</Typography> }} />
-                </Box>
-                {proposal.file_proposal && (
+              <Paper elevation={0} sx={{ mb: 3, borderRadius: "20px", border: "1.5px solid #E5E7EB", overflow: "hidden" }}>
+                <Box sx={{ height: 5, background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
+                <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
+                  <SectionHeader
+                    icon={Description}
+                    title="Detail Proposal"
+                    subtitle="Informasi dan berkas proposal tim"
+                    gradient={`linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)`}
+                  />
                   <Box sx={{ mb: 3 }}>
-                    <Typography sx={{ fontWeight: 600, mb: 1 }}>File Proposal</Typography>
-                    <FileBox fileName={proposal.file_proposal} isExisting showDownload />
+                    <FieldLabel>Judul Proposal</FieldLabel>
+                    <TextField fullWidth value={proposal.judul || ""} disabled multiline rows={2} sx={roundedField} />
                   </Box>
-                )}
-                <Box>
-                  <Typography sx={{ fontWeight: 600, mb: 1.5 }}>Status Proposal</Typography>
-                  <StatusPill label={si.label} backgroundColor={si.backgroundColor} />
+                  <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3, mb: 3 }}>
+                    <Box>
+                      <FieldLabel>Program</FieldLabel>
+                      <ReadonlyField value={status?.data?.tim?.keterangan} />
+                    </Box>
+                    <Box>
+                      <FieldLabel>Kategori Usaha</FieldLabel>
+                      <ReadonlyField value={proposal.nama_kategori} />
+                    </Box>
+                  </Box>
+                  <Box sx={{ mb: 3 }}>
+                    <FieldLabel>Anggaran Dana</FieldLabel>
+                    <TextField
+                      fullWidth value={formatRupiah(proposal.modal_diajukan)} disabled sx={roundedField}
+                      InputProps={{ startAdornment: <Typography sx={{ mr: 1, color: COLORS.slate }}>Rp</Typography> }}
+                    />
+                  </Box>
+                  {proposal.file_proposal && (
+                    <Box sx={{ mb: 3 }}>
+                      <FieldLabel>File Proposal</FieldLabel>
+                      <FileBox fileName={proposal.file_proposal} isExisting showDownload />
+                    </Box>
+                  )}
+                  <Box>
+                    <FieldLabel>Status Proposal</FieldLabel>
+                    <StatusPill label={siAnggota.label} backgroundColor={siAnggota.backgroundColor} />
+                  </Box>
                 </Box>
               </Paper>
 
-              <Paper sx={{ p: 4, mb: 3, borderRadius: "16px", border: "1px solid #f0f0f0" }}>
-                <Typography sx={{ fontSize: 20, fontWeight: 700, mb: 3 }}>Anggota Tim</Typography>
-                <MemberTable members={status.data.anggota.members} />
+              <Paper elevation={0} sx={{ mb: 3, borderRadius: "20px", border: "1.5px solid #E5E7EB", overflow: "hidden" }}>
+                <Box sx={{ height: 5, background: `linear-gradient(90deg, ${COLORS.secondary}, ${COLORS.accent})` }} />
+                <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
+                  <SectionHeader
+                    icon={Group}
+                    title="Anggota Tim"
+                    subtitle="Daftar anggota tim pengusul"
+                    gradient={`linear-gradient(135deg, ${COLORS.secondary} 0%, ${COLORS.accent} 100%)`}
+                  />
+                  <MemberTable members={status.data.anggota.members} />
+                </Box>
               </Paper>
 
               <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-                <Button onClick={() => navigate("/mahasiswa/proposal")}
-                  sx={{ textTransform: "none", borderRadius: "50px", px: 4, py: 1.2, fontWeight: 600, backgroundColor: "#FDB022", color: "#fff", "&:hover": { backgroundColor: "#e09a1a" } }}>
+                <Button
+                  onClick={() => navigate("/mahasiswa/proposal")}
+                  sx={{
+                    textTransform: "none", borderRadius: "10px", px: 4, py: 1.3,
+                    fontWeight: 700, fontSize: 14,
+                    backgroundColor: COLORS.warning, color: "#fff",
+                    "&:hover": { backgroundColor: "#B45309" },
+                  }}
+                >
                   Kembali
                 </Button>
               </Box>
@@ -419,14 +540,17 @@ export default function ProposalFormPage() {
     }
 
     return (
-      <BodyLayout Sidebar={SidebarMahasiswa}>
+      <BodyLayout Sidebar={MahasiswaNavbar}>
         <PageTransition>
           <Box>
             <BackButton navigate={navigate} />
-            <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Form Proposal</Typography>
-            <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>Lengkapi form di bawah ini untuk mendaftarkan proposal Anda</Typography>
-            <Box sx={{ p: 2, borderRadius: "12px", backgroundColor: "#e3f2fd", border: "1px solid #90caf9" }}>
-              <Typography sx={{ fontSize: 14, color: "#1565c0", fontWeight: 500 }}>
+            <Typography sx={{ fontSize: 36, fontWeight: 800, color: "#1F2937", mb: 0.5 }}>Form Proposal</Typography>
+            <Typography sx={{ fontSize: 16, color: "#6B7280", mb: 4 }}>
+              Lengkapi form di bawah ini untuk mendaftarkan proposal Anda
+            </Typography>
+            <Box sx={{ p: 2.5, borderRadius: "12px", backgroundColor: COLORS.primaryLight, border: `1.5px solid ${COLORS.primaryMuted}`, display: "flex", gap: 1.5 }}>
+              <Box sx={{ width: 8, height: 8, mt: 0.6, borderRadius: "50%", background: COLORS.primary, flexShrink: 0 }} />
+              <Typography sx={{ fontSize: 13, color: COLORS.primaryDark }}>
                 Hanya ketua tim yang dapat mengajukan proposal. Proposal akan muncul di sini setelah dibuat oleh ketua.
               </Typography>
             </Box>
@@ -436,209 +560,276 @@ export default function ProposalFormPage() {
     );
   }
 
-  const isDraft = status?.data?.proposal?.status === 0;
-  const isReadOnly = status?.data?.proposal && !isDraft;
-  const canEdit = !isReadOnly && proposalReady;
-  const si = status?.data?.proposal ? getStatusInfo(status.data.proposal.status) : null;
-
   return (
-    <BodyLayout Sidebar={SidebarMahasiswa}>
+    <BodyLayout Sidebar={MahasiswaNavbar}>
       <PageTransition>
         <Box>
           <BackButton navigate={navigate} />
-          <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Form Proposal</Typography>
-          <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>Lengkapi form di bawah ini untuk mendaftarkan proposal Anda</Typography>
+
+          <Box sx={{ mb: 4 }}>
+            <Typography sx={{ fontSize: 36, fontWeight: 800, color: "#1F2937", mb: 0.5 }}>
+              Form Proposal
+            </Typography>
+            <Typography sx={{ fontSize: 16, color: "#6B7280" }}>
+              Lengkapi form di bawah ini untuk mendaftarkan proposal Anda
+            </Typography>
+          </Box>
 
           {!status?.timelineOpen && (
-            <Box sx={{ mb: 3, p: 2, borderRadius: "12px", backgroundColor: "#fff8e1", border: "1px solid #ffe082" }}>
-              <Typography sx={{ fontSize: 14, color: "#f57f17", fontWeight: 500 }}>
+            <Box sx={{ mb: 3, p: 2.5, borderRadius: "12px", backgroundColor: COLORS.warningLight, border: `1.5px solid #FDE68A`, display: "flex", gap: 1.5 }}>
+              <Box sx={{ width: 8, height: 8, mt: 0.6, borderRadius: "50%", background: COLORS.warning, flexShrink: 0 }} />
+              <Typography sx={{ fontSize: 13, color: "#92400E" }}>
                 Pendaftaran proposal untuk program ini sudah ditutup.
               </Typography>
             </Box>
           )}
+
           {!proposalReady && !isReadOnly && (
-            <Box sx={{ mb: 3, p: 2.5, borderRadius: "12px", backgroundColor: "#fff8e1", border: "1px solid #ffe082" }}>
-              <Typography sx={{ fontSize: 14, color: "#f57f17", fontWeight: 700, mb: 1 }}>
-                Proposal belum bisa dibuat atau diunggah
-              </Typography>
-              <Typography sx={{ fontSize: 13, color: "#8d6e00", mb: 1.5 }}>
+            <Box sx={{ mb: 3, p: 2.5, borderRadius: "12px", backgroundColor: COLORS.warningLight, border: `1.5px solid #FDE68A` }}>
+              <Box sx={{ display: "flex", gap: 1.5, mb: 1 }}>
+                <Box sx={{ width: 8, height: 8, mt: 0.6, borderRadius: "50%", background: COLORS.warning, flexShrink: 0 }} />
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#92400E" }}>
+                  Proposal belum bisa dibuat atau diunggah
+                </Typography>
+              </Box>
+              <Typography sx={{ fontSize: 12.5, color: "#8d6e00", mb: 1.5, pl: 2.5, lineHeight: 1.6 }}>
                 Proposal baru dapat di-upload setelah semua anggota tim menyetujui undangan dan dosen pembimbing menyetujui pengajuan.
               </Typography>
-              <Box sx={{ display: "grid", gap: 1 }}>
+              <Box sx={{ display: "grid", gap: 0.8, pl: 2.5 }}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
                   <Typography sx={{ fontSize: 13, color: "#6d4c41" }}>Status anggota tim</Typography>
-                  <Typography sx={{ fontSize: 13, fontWeight: 700, color: anggotaAccepted ? "#2e7d32" : "#c62828" }}>
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, color: anggotaAccepted ? COLORS.success : COLORS.error }}>
                     {anggotaAccepted ? "Semua disetujui" : "Masih menunggu"}
                   </Typography>
                 </Box>
                 <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
                   <Typography sx={{ fontSize: 13, color: "#6d4c41" }}>Status pembimbing</Typography>
-                  <Typography sx={{ fontSize: 13, fontWeight: 700, color: pembimbingDisetujui ? "#2e7d32" : pembimbingDitolak ? "#c62828" : "#f57f17" }}>
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, color: pembimbingDisetujui ? COLORS.success : pembimbingDitolak ? COLORS.error : COLORS.warning }}>
                     {pembimbingDisetujui ? "Disetujui" : pembimbingDitolak ? "Ditolak" : status?.data?.pembimbing ? "Menunggu respon" : "Belum diajukan"}
                   </Typography>
                 </Box>
               </Box>
             </Box>
           )}
+
           {isReadOnly && (
-            <Box sx={{ mb: 3, p: 2, borderRadius: "12px", backgroundColor: "#e3f2fd", border: "1px solid #90caf9" }}>
-              <Typography sx={{ fontSize: 14, color: "#1565c0", fontWeight: 500 }}>
-                Proposal sudah diajukan dan tidak bisa diedit. Status: <strong>{getStatusInfo(status.data.proposal.status).label}</strong>
+            <Box sx={{ mb: 3, p: 2.5, borderRadius: "12px", backgroundColor: COLORS.primaryLight, border: `1.5px solid ${COLORS.primaryMuted}`, display: "flex", gap: 1.5 }}>
+              <Box sx={{ width: 8, height: 8, mt: 0.6, borderRadius: "50%", background: COLORS.primary, flexShrink: 0 }} />
+              <Typography sx={{ fontSize: 13, color: COLORS.primaryDark }}>
+                Proposal sudah diajukan dan tidak bisa diedit. Status:{" "}
+                <strong>{getStatusInfo(status.data.proposal.status).label}</strong>
               </Typography>
             </Box>
           )}
 
-          <Paper sx={{ p: 4, mb: 3, borderRadius: "16px", border: "1px solid #f0f0f0" }}>
-            <Typography sx={{ fontSize: 20, fontWeight: 700, mb: 3 }}>Detail Proposal</Typography>
-
-            <Box sx={{ mb: 3 }}>
-              <Typography sx={{ fontWeight: 600, mb: 1 }}>
-                Judul Proposal {canEdit && <span style={{ color: "red" }}>*</span>}
-              </Typography>
-              <TextField
-                fullWidth multiline rows={2}
-                placeholder="Masukkan judul proposal Anda"
-                value={form.judul}
-                onChange={(e) => { setForm({ ...form, judul: e.target.value }); setErrors({ ...errors, judul: "" }); }}
-                error={!!errors.judul} helperText={errors.judul}
-                disabled={!canEdit || submitting}
-                inputProps={{ maxLength: 200 }}
-                sx={roundedField}
+          <Paper elevation={0} sx={{ mb: 3, borderRadius: "20px", border: "1.5px solid #E5E7EB", overflow: "hidden" }}>
+            <Box sx={{ height: 5, background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
+            <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
+              <SectionHeader
+                icon={Description}
+                title="Detail Proposal"
+                subtitle="Informasi dan berkas proposal tim"
+                gradient={`linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)`}
               />
-              <Typography sx={{ fontSize: 12, color: "#999", mt: 0.5 }}>{form.judul.length}/200 karakter</Typography>
-            </Box>
 
-            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, mb: 3 }}>
-              <Box>
-                <Typography sx={{ fontWeight: 600, mb: 1 }}>Program</Typography>
-                <TextField fullWidth value={status?.data?.tim?.keterangan || ""} disabled sx={roundedField} />
-              </Box>
-              <Box>
-                <Typography sx={{ fontWeight: 600, mb: 1 }}>
-                  Kategori Usaha {canEdit && <span style={{ color: "red" }}>*</span>}
-                </Typography>
+              <Box sx={{ mb: 3 }}>
+                <FieldLabel required={canEdit}>Judul Proposal</FieldLabel>
                 <TextField
-                  select fullWidth value={form.id_kategori}
-                  onChange={(e) => { setForm({ ...form, id_kategori: e.target.value }); setErrors({ ...errors, id_kategori: "" }); }}
-                  error={!!errors.id_kategori} helperText={errors.id_kategori}
-                  disabled={!canEdit || submitting} sx={roundedField}
-                >
-                  <MenuItem value="">Pilih kategori usaha</MenuItem>
-                  {kategoriOptions.map((kat) => (
-                    <MenuItem key={kat.id_kategori} value={kat.id_kategori}>{kat.nama_kategori}</MenuItem>
-                  ))}
-                </TextField>
-              </Box>
-            </Box>
-
-            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, mb: 3 }}>
-              <Box>
-                <Typography sx={{ fontWeight: 600, mb: 1 }}>Dosen Pembimbing</Typography>
-                <TextField
-                  fullWidth
-                  value={status?.data?.pembimbing?.nama_dosen || "-"}
-                  disabled
+                  fullWidth multiline rows={2}
+                  placeholder="Masukkan judul proposal Anda"
+                  value={form.judul}
+                  onChange={(e) => { setForm((p) => ({ ...p, judul: e.target.value })); setErrors((p) => ({ ...p, judul: "" })); }}
+                  error={!!errors.judul} helperText={errors.judul}
+                  disabled={!canEdit || submitting}
+                  inputProps={{ maxLength: 200 }}
                   sx={roundedField}
                 />
-              </Box>
-
-              <Box>
-                <Typography sx={{ fontWeight: 600, mb: 1 }}>
-                  Anggaran Dana {canEdit && <span style={{ color: "red" }}>*</span>}
+                <Typography sx={{ fontSize: 12, color: COLORS.slate, mt: 0.5 }}>
+                  {form.judul.length}/200 karakter
                 </Typography>
-                <TextField
-                  fullWidth placeholder="Masukkan anggaran dana"
-                  value={formatRupiah(form.modal_diajukan)}
-                  onChange={handleModalChange}
-                  error={!!errors.modal_diajukan} helperText={errors.modal_diajukan}
-                  disabled={!canEdit || submitting} sx={roundedField}
-                  InputProps={{ startAdornment: <Typography sx={{ mr: 1, color: "#555" }}>Rp</Typography> }}
-                />
               </Box>
-            </Box>
 
-            <Box sx={{ mb: 3 }}>
-              <Typography sx={{ fontWeight: 600, mb: 1 }}>
-                Upload Proposal {canEdit && <span style={{ color: "red" }}>*</span>}
-              </Typography>
-              {isReadOnly && status.data.proposal.file_proposal ? (
-                <FileBox fileName={status.data.proposal.file_proposal} isExisting showDownload />
-              ) : filePreview ? (
-                <>
-                  <FileBox fileName={filePreview.name} isExisting={filePreview.isExisting} canRemove={canEdit && !submitting} />
-                  {fileNameError && !filePreview.isExisting && (
-                    <Box sx={{ mt: 1.5, p: 1.5, borderRadius: "10px", backgroundColor: "#fce4ec", border: "1px solid #ef9a9a" }}>
-                      <Typography sx={{ fontSize: 12, color: "#c62828", fontWeight: 700, mb: 0.5 }}>Format Nama File Tidak Valid</Typography>
-                      <Typography sx={{ fontSize: 12, color: "#c62828" }}>{fileNameError}</Typography>
-                    </Box>
-                  )}
-                  {errors.file && <Typography sx={{ color: "error.main", fontSize: 12, mt: 1 }}>{errors.file}</Typography>}
-                </>
-              ) : (
-                <>
-                  <Box
-                    component="label" htmlFor="file-upload"
-                    sx={{
-                      border: "2px dashed", borderColor: errors.file ? "#d32f2f" : "#e0e0e0",
-                      borderRadius: "14px", p: 5, textAlign: "center",
-                      backgroundColor: "#fafafa",
-                      cursor: canEdit && !submitting ? "pointer" : "not-allowed",
-                      transition: "all 0.2s",
-                      "&:hover": canEdit && !submitting ? { backgroundColor: "#f0f4ff", borderColor: "#0D59F2" } : {},
-                      display: "block",
-                    }}
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3, mb: 3 }}>
+                <Box>
+                  <FieldLabel>Program</FieldLabel>
+                  <ReadonlyField value={status?.data?.tim?.keterangan} />
+                </Box>
+                <Box>
+                  <FieldLabel required={canEdit}>Kategori Usaha</FieldLabel>
+                  <TextField
+                    select fullWidth value={form.id_kategori}
+                    onChange={(e) => { setForm((p) => ({ ...p, id_kategori: e.target.value })); setErrors((p) => ({ ...p, id_kategori: "" })); }}
+                    error={!!errors.id_kategori} helperText={errors.id_kategori}
+                    disabled={!canEdit || submitting}
+                    sx={roundedField}
                   >
-                    <input type="file" accept="application/pdf" onChange={handleFileChange}
-                      style={{ display: "none" }} id="file-upload" disabled={!canEdit || submitting} />
-                    <Box sx={{ width: 56, height: 56, borderRadius: "50%", backgroundColor: "#e3f2fd", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 1.5 }}>
-                      <CloudUpload sx={{ fontSize: 28, color: "#1565c0" }} />
+                    <MenuItem value="">Pilih kategori usaha</MenuItem>
+                    {kategoriOptions.map((kat) => (
+                      <MenuItem key={kat.id_kategori} value={kat.id_kategori}>{kat.nama_kategori}</MenuItem>
+                    ))}
+                  </TextField>
+                </Box>
+              </Box>
+
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3, mb: 3 }}>
+                <Box>
+                  <FieldLabel>Dosen Pembimbing</FieldLabel>
+                  <ReadonlyField value={status?.data?.pembimbing?.nama_dosen} />
+                </Box>
+                <Box>
+                  <FieldLabel required={canEdit}>Anggaran Dana</FieldLabel>
+                  <TextField
+                    fullWidth
+                    placeholder="Masukkan anggaran dana"
+                    value={formatRupiah(form.modal_diajukan)}
+                    onChange={handleModalChange}
+                    error={!!errors.modal_diajukan} helperText={errors.modal_diajukan}
+                    disabled={!canEdit || submitting}
+                    sx={roundedField}
+                    InputProps={{ startAdornment: <Typography sx={{ mr: 1, color: COLORS.slate }}>Rp</Typography> }}
+                  />
+                </Box>
+              </Box>
+
+              <Box sx={{ mb: 3 }}>
+                <FieldLabel required={canEdit}>Upload Proposal</FieldLabel>
+                {isReadOnly && status.data.proposal.file_proposal ? (
+                  <FileBox fileName={status.data.proposal.file_proposal} isExisting showDownload />
+                ) : filePreview ? (
+                  <>
+                    <FileBox
+                      fileName={filePreview.name}
+                      isExisting={filePreview.isExisting}
+                      canRemove={canEdit && !submitting}
+                      onRemove={handleRemoveFile}
+                    />
+                    {fileNameError && !filePreview.isExisting && (
+                      <Box sx={{ mt: 1.5, p: 1.5, borderRadius: "10px", backgroundColor: COLORS.errorLight, border: `1.5px solid #FCA5A5` }}>
+                        <Typography sx={{ fontSize: 12, color: COLORS.error, fontWeight: 700, mb: 0.5 }}>
+                          Format Nama File Tidak Valid
+                        </Typography>
+                        <Typography sx={{ fontSize: 12, color: COLORS.error }}>{fileNameError}</Typography>
+                      </Box>
+                    )}
+                    {errors.file && <Typography sx={{ color: "error.main", fontSize: 12, mt: 1 }}>{errors.file}</Typography>}
+                  </>
+                ) : (
+                  <>
+                    <Box
+                      component="label" htmlFor="file-upload"
+                      onDragOver={handleDragOver}
+                      onDragEnter={handleDragEnter}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      sx={{
+                        border: "2px dashed",
+                        borderColor: isDragging ? COLORS.primary : errors.file ? COLORS.error : "#e0e0e0",
+                        borderRadius: "14px", p: 5, textAlign: "center",
+                        backgroundColor: isDragging ? COLORS.primaryLight : "#fafafa",
+                        cursor: canEdit && !submitting ? "pointer" : "not-allowed",
+                        transition: "all 0.2s",
+                        "&:hover": canEdit && !submitting
+                          ? { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary }
+                          : {},
+                        display: "block",
+                      }}
+                    >
+                      <input
+                        type="file" accept="application/pdf"
+                        onChange={handleFileChange}
+                        style={{ display: "none" }}
+                        id="file-upload"
+                        disabled={!canEdit || submitting}
+                      />
+                      <Box sx={{
+                        width: 56, height: 56, borderRadius: "50%",
+                        backgroundColor: COLORS.primaryLight,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        mx: "auto", mb: 1.5,
+                      }}>
+                        <CloudUpload sx={{ fontSize: 28, color: COLORS.primary }} />
+                      </Box>
+                      <Typography sx={{ color: "#444", fontWeight: 600, mb: 0.5 }}>
+                        Klik atau seret file PDF ke sini
+                      </Typography>
+                      <Typography sx={{ fontSize: 12, color: COLORS.slate }}>Maksimal 10 MB · Format PDF</Typography>
+                      <Typography sx={{ fontSize: 11, color: "#aaa", mt: 0.5 }}>
+                        Nama file: <strong>Program_Nama Tim_Judul Proposal.pdf</strong>
+                      </Typography>
                     </Box>
-                    <Typography sx={{ color: "#444", fontWeight: 600, mb: 0.5 }}>Klik atau seret file PDF ke sini</Typography>
-                    <Typography sx={{ fontSize: 12, color: "#999" }}>Maksimal 10 MB · Format PDF</Typography>
-                    <Typography sx={{ fontSize: 11, color: "#aaa", mt: 0.5 }}>
-                      Nama file: <strong>Program_Nama Tim_Judul Proposal.pdf</strong>
-                    </Typography>
-                  </Box>
-                  {errors.file && <Typography sx={{ color: "error.main", fontSize: 12, mt: 1 }}>{errors.file}</Typography>}
-                </>
+                    {errors.file && (
+                      <Typography sx={{ color: "error.main", fontSize: 12, mt: 1 }}>{errors.file}</Typography>
+                    )}
+                  </>
+                )}
+              </Box>
+
+              {si && (
+                <Box>
+                  <FieldLabel>Status Proposal</FieldLabel>
+                  <StatusPill label={si.label} backgroundColor={si.backgroundColor} />
+                </Box>
               )}
             </Box>
-
-            {si && (
-              <Box>
-                <Typography sx={{ fontWeight: 600, mb: 1.5 }}>Status Proposal</Typography>
-                <StatusPill label={si.label} backgroundColor={si.backgroundColor} />
-              </Box>
-            )}
           </Paper>
 
-          <Paper sx={{ p: 4, mb: 3, borderRadius: "16px", border: "1px solid #f0f0f0" }}>
-            <Typography sx={{ fontSize: 20, fontWeight: 700, mb: 3 }}>Anggota Tim</Typography>
-            <MemberTable members={status.data.anggota.members} />
+          <Paper elevation={0} sx={{ mb: 3, borderRadius: "20px", border: "1.5px solid #E5E7EB", overflow: "hidden" }}>
+            <Box sx={{ height: 5, background: `linear-gradient(90deg, ${COLORS.secondary}, ${COLORS.accent})` }} />
+            <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
+              <SectionHeader
+                icon={Group}
+                title="Anggota Tim"
+                subtitle="Daftar anggota tim pengusul"
+                gradient={`linear-gradient(135deg, ${COLORS.secondary} 0%, ${COLORS.accent} 100%)`}
+              />
+              <MemberTable members={status.data.anggota.members} />
+            </Box>
           </Paper>
 
-          <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
+          <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1.5, flexWrap: "wrap" }}>
             <Button
               onClick={() => navigate("/mahasiswa/proposal")}
               disabled={submitting}
-              sx={{ textTransform: "none", borderRadius: "50px", px: 4, py: 1.2, fontWeight: 600, backgroundColor: "#FDB022", color: "#fff", "&:hover": { backgroundColor: "#e09a1a" } }}
+              sx={{
+                px: 4, py: 1.3, textTransform: "none", fontWeight: 700,
+                borderRadius: "10px", fontSize: 14,
+                backgroundColor: COLORS.warning, color: "#fff",
+                "&:hover": { backgroundColor: "#B45309" },
+                "&:disabled": { backgroundColor: "#E5E7EB", color: "#9CA3AF" },
+              }}
             >
               Kembali
             </Button>
+
             {canEdit && (
               <>
                 <Button
                   variant="contained"
-                  onClick={handleSave} disabled={submitting}
-                  sx={{ textTransform: "none", borderRadius: "50px", px: 4, py: 1.2, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" } }}
+                  onClick={handleSave}
+                  disabled={submitting}
+                  sx={{
+                    px: 4, py: 1.3, textTransform: "none", fontWeight: 700,
+                    borderRadius: "10px", fontSize: 14,
+                    backgroundColor: COLORS.primary,
+                    "&:hover": { backgroundColor: COLORS.primaryDark },
+                    "&:disabled": { backgroundColor: "#E5E7EB", color: "#9CA3AF" },
+                  }}
                 >
                   {submitting ? "Menyimpan..." : "Simpan"}
                 </Button>
+
                 {isDraft && status?.data?.proposal && (
                   <Button
                     variant="contained"
-                    onClick={handleSubmit} disabled={submitting}
-                    sx={{ textTransform: "none", borderRadius: "50px", px: 4, py: 1.2, fontWeight: 600, backgroundColor: "#2e7d32", "&:hover": { backgroundColor: "#1b5e20" } }}
+                    onClick={handleSubmit}
+                    disabled={submitting}
+                    sx={{
+                      px: 4, py: 1.3, textTransform: "none", fontWeight: 700,
+                      borderRadius: "10px", fontSize: 14,
+                      backgroundColor: COLORS.success,
+                      "&:hover": { backgroundColor: "#047857" },
+                      "&:disabled": { backgroundColor: "#E5E7EB", color: "#9CA3AF" },
+                    }}
                   >
                     {submitting ? "Mengajukan..." : "Simpan & Ajukan"}
                   </Button>

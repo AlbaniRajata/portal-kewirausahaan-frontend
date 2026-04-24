@@ -5,10 +5,10 @@ import {
   CircularProgress, Alert, IconButton, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow,
 } from "@mui/material";
-import { Add, Delete, Search, PersonAdd, RestartAlt } from "@mui/icons-material";
+import { Add, Delete, Search, PersonAdd, RestartAlt, Groups, Shield } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
-import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
+import MahasiswaNavbar from "../../components/layouts/MahasiswaNavbar";
 import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import {
@@ -17,9 +17,72 @@ import {
 } from "../../api/mahasiswa";
 import { getAllProgram } from "../../api/public";
 
-const roundedField = {
-  "& .MuiOutlinedInput-root": { borderRadius: "15px" },
+const COLORS = {
+  primary:      "#0D59F2",
+  primaryLight: "#E0F2FE",
+  primaryDark:  "#0369A1",
+  primaryMuted: "#93C5FD",
+  secondary:    "#2563EB",
+  accent:       "#3B82F6",
+  slate:        "#64748B",
+  slateLight:   "#F1F5F9",
+  success:      "#059669",
+  successLight: "#ECFDF5",
+  warning:      "#D97706",
+  warningLight: "#FFFBEB",
+  error:        "#DC2626",
+  errorLight:   "#FEF2F2",
 };
+
+const roundedField = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "12px",
+    backgroundColor: "#fff",
+    transition: "box-shadow 0.2s",
+    "&:hover fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused": { boxShadow: `0 0 0 3px ${COLORS.primaryLight}` },
+  },
+};
+
+const SectionHeader = ({ icon: Icon, title, subtitle, gradient }) => (
+  <Box sx={{
+    display: "flex", alignItems: "center", gap: 2, mb: 3,
+    p: 2.5, borderRadius: "14px",
+    background: gradient,
+  }}>
+    <Box sx={{
+      width: 44, height: 44, borderRadius: "12px",
+      background: "rgba(255,255,255,0.25)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      backdropFilter: "blur(4px)",
+    }}>
+      <Icon sx={{ color: "#fff", fontSize: 22 }} />
+    </Box>
+    <Box>
+      <Typography sx={{ fontSize: 17, fontWeight: 700, color: "#fff", lineHeight: 1.2 }}>{title}</Typography>
+      {subtitle && <Typography sx={{ fontSize: 12, color: "rgba(255,255,255,0.8)", mt: 0.3 }}>{subtitle}</Typography>}
+    </Box>
+  </Box>
+);
+
+const FieldLabel = ({ children, required }) => (
+  <Typography sx={{ fontWeight: 600, mb: 0.8, fontSize: 13, color: "#374151", display: "flex", gap: 0.4 }}>
+    {children}
+    {required && <span style={{ color: COLORS.error }}>*</span>}
+  </Typography>
+);
+
+const StatusPill = ({ label, backgroundColor }) => (
+  <Box sx={{
+    display: "inline-flex", alignItems: "center",
+    px: 1.5, py: 0.4, borderRadius: "50px",
+    backgroundColor, color: "#fff",
+    fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
+  }}>
+    {label}
+  </Box>
+);
 
 const getProgramStatus = (item) => {
   if (!item.pendaftaran_mulai || !item.pendaftaran_selesai)
@@ -33,40 +96,29 @@ const getProgramStatus = (item) => {
 };
 
 const tableHeadCell = {
-  fontWeight: 700, fontSize: 13, color: "#000",
-  backgroundColor: "#fafafa", borderBottom: "2px solid #f0f0f0", py: 2,
+  fontWeight: 700, fontSize: 13, color: "#1F2937",
+  backgroundColor: COLORS.slateLight, borderBottom: `2px solid #E5E7EB`, py: 2,
 };
 
 const tableBodyRow = {
-  "&:hover": { backgroundColor: "#f8f9ff" },
-  "& td": { borderBottom: "1px solid #f5f5f5", py: 2 },
+  "&:hover": { backgroundColor: "#F8FAFF" },
+  "& td": { borderBottom: "1px solid #F3F4F6", py: 2 },
 };
 
-const StatusPill = ({ label, backgroundColor }) => (
-  <Box sx={{
-    display: "inline-flex", alignItems: "center",
-    px: 1.5, py: 0.4, borderRadius: "50px",
-    backgroundColor, color: "#fff",
-    fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
-  }}>
-    {label}
-  </Box>
-);
-
 const getStatusInfo = (status, peran) => {
-  if (peran === 1) return { label: "Otomatis", backgroundColor: "#2e7d32" };
+  if (peran === 1) return { label: "Otomatis", backgroundColor: COLORS.success };
   switch (status) {
-    case 0: return { label: "Menunggu", backgroundColor: "#f57f17" };
-    case 1: return { label: "Disetujui", backgroundColor: "#2e7d32" };
-    case 2: return { label: "Ditolak", backgroundColor: "#c62828" };
-    default: return { label: "Unknown", backgroundColor: "#666" };
+    case 0: return { label: "Menunggu", backgroundColor: COLORS.warning };
+    case 1: return { label: "Disetujui", backgroundColor: COLORS.success };
+    case 2: return { label: "Ditolak", backgroundColor: COLORS.error };
+    default: return { label: "Unknown", backgroundColor: COLORS.slate };
   }
 };
 
 const getPeranInfo = (peran) => {
   return peran === 1
-    ? { label: "Ketua", backgroundColor: "#3949ab" }
-    : { label: "Anggota", backgroundColor: "#555" };
+    ? { label: "Ketua", backgroundColor: COLORS.primary }
+    : { label: "Anggota", backgroundColor: COLORS.slate };
 };
 
 const INBIS_ID = 2;
@@ -144,11 +196,10 @@ export default function AnggotaTimPage() {
         }));
       }
     } catch {
-        await Swal.fire({
-          icon: "error",
-          title: "Gagal Memuat",
-          text: "Gagal memuat opsi program. Silahkan refresh halaman.",
-        });
+      await Swal.fire({
+        icon: "error", title: "Gagal Memuat",
+        text: "Gagal memuat opsi program. Silahkan refresh halaman.",
+      });
     } finally {
       setLoadingProgram(false);
     }
@@ -200,11 +251,7 @@ export default function AnggotaTimPage() {
 
   const handleSelectMahasiswa = (index, mahasiswa) => {
     const updated = [...formTim.anggota];
-    updated[index] = {
-      nim: mahasiswa.nim,
-      nama_lengkap: mahasiswa.nama_lengkap,
-      id_user: mahasiswa.id_user,
-    };
+    updated[index] = { nim: mahasiswa.nim, nama_lengkap: mahasiswa.nama_lengkap, id_user: mahasiswa.id_user };
     setFormTim({ ...formTim, anggota: updated });
     setNimResults((p) => ({ ...p, [index]: [] }));
     setNamaResults((p) => ({ ...p, [index]: [] }));
@@ -212,10 +259,7 @@ export default function AnggotaTimPage() {
   };
 
   const handleAddAnggota = () => {
-    setFormTim({
-      ...formTim,
-      anggota: [...formTim.anggota, { nim: "", nama_lengkap: "", id_user: null }],
-    });
+    setFormTim({ ...formTim, anggota: [...formTim.anggota, { nim: "", nama_lengkap: "", id_user: null }] });
   };
 
   const handleRemoveAnggota = (index) => {
@@ -253,7 +297,7 @@ export default function AnggotaTimPage() {
       title: "Konfirmasi Pengajuan",
       text: "Pastikan data anggota tim sudah benar. Ajukan sekarang?",
       icon: "question", showCancelButton: true,
-      confirmButtonColor: "#0D59F2", cancelButtonColor: "#d33",
+      confirmButtonColor: COLORS.primary, cancelButtonColor: COLORS.error,
       confirmButtonText: "Ya, Ajukan", cancelButtonText: "Batal",
     });
     if (!result.isConfirmed) return;
@@ -325,7 +369,7 @@ export default function AnggotaTimPage() {
       title: "Konfirmasi",
       text: `Kirim undangan ke "${newAnggota.nama_lengkap}"?`,
       icon: "question", showCancelButton: true,
-      confirmButtonColor: "#0D59F2", cancelButtonColor: "#d33",
+      confirmButtonColor: COLORS.primary, cancelButtonColor: COLORS.error,
       confirmButtonText: "Ya, Undang", cancelButtonText: "Batal",
     });
     if (!result.isConfirmed) return;
@@ -356,7 +400,7 @@ export default function AnggotaTimPage() {
       title: "Reset Tim?",
       html: "Tim akan <strong>dihapus permanen</strong> dan Anda dapat membuat tim baru.<br/>Data yang sudah ada akan hilang.",
       icon: "warning", showCancelButton: true,
-      confirmButtonColor: "#d33", cancelButtonColor: "#666",
+      confirmButtonColor: COLORS.error, cancelButtonColor: COLORS.slate,
       confirmButtonText: "Ya, Reset", cancelButtonText: "Batal",
     });
     if (!result.isConfirmed) return;
@@ -377,9 +421,24 @@ export default function AnggotaTimPage() {
     }
   };
 
+  const MahasiswaOption = ({ option }) => (
+    <Box sx={{ py: 0.5 }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{option.nim || option.nama_lengkap}</Typography>
+        {option.sudah_punya_tim && (
+          <Box sx={{ px: 1, py: 0.2, borderRadius: "50px", backgroundColor: COLORS.errorLight, border: `1.5px solid #FCA5A5` }}>
+            <Typography sx={{ fontSize: 10, color: COLORS.error, fontWeight: 700 }}>Sudah dalam tim lain</Typography>
+          </Box>
+        )}
+      </Box>
+      <Typography sx={{ fontSize: 12, color: "#555" }}>{option.nama_lengkap || option.nim}</Typography>
+      <Typography sx={{ fontSize: 11, color: COLORS.slate }}>{option.jenjang} {option.nama_prodi}</Typography>
+    </Box>
+  );
+
   if (loading) {
     return (
-      <BodyLayout Sidebar={SidebarMahasiswa}>
+      <BodyLayout Sidebar={MahasiswaNavbar}>
         <Box sx={{ position: "relative", minHeight: "60vh" }}>
           <LoadingScreen message="Memuat data tim..." overlay minHeight="60vh" />
         </Box>
@@ -397,28 +456,56 @@ export default function AnggotaTimPage() {
     const hasRejected = timDetail?.anggota?.some((item) => item.peran === 2 && item.status === 2);
 
     return (
-      <BodyLayout Sidebar={SidebarMahasiswa}>
+      <BodyLayout Sidebar={MahasiswaNavbar}>
         <PageTransition>
           <Box>
-            <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Anggota Tim</Typography>
-            <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>Detail tim Anda</Typography>
+            <Box sx={{ mb: 4 }}>
+              <Typography sx={{ fontSize: 36, fontWeight: 800, color: "#1F2937", mb: 0.5 }}>
+                Anggota Tim
+              </Typography>
+              <Typography sx={{ fontSize: 16, color: "#6B7280" }}>
+                Detail dan manajemen anggota tim Anda
+              </Typography>
+            </Box>
 
             {timStatus?.isKetua && allApproved && (
-              <Alert severity="success" sx={{ mb: 3, borderRadius: "12px" }}>
-                Semua anggota telah menyetujui undangan. Tim Anda sudah lengkap.
-              </Alert>
+              <Box sx={{
+                mb: 3, p: 2.5, borderRadius: "14px",
+                background: COLORS.successLight,
+                border: `1.5px solid #6EE7B7`,
+                display: "flex", gap: 1.5, alignItems: "flex-start",
+              }}>
+                <Box sx={{ width: 8, height: 8, mt: 0.8, borderRadius: "50%", background: COLORS.success, flexShrink: 0 }} />
+                <Typography sx={{ fontSize: 13.5, color: "#065F46", fontWeight: 600 }}>
+                  Semua anggota telah menyetujui undangan. Tim Anda sudah lengkap.
+                </Typography>
+              </Box>
             )}
+
             {timStatus?.isKetua && !allApproved && !hasRejected && (
-              <Alert severity="info" sx={{ mb: 3, borderRadius: "12px" }}>
-                Anda sudah mengajukan anggota tim. Menunggu persetujuan anggota.
-              </Alert>
+              <Box sx={{
+                mb: 3, p: 2.5, borderRadius: "14px",
+                background: COLORS.primaryLight,
+                border: `1.5px solid ${COLORS.primaryMuted}`,
+                display: "flex", gap: 1.5, alignItems: "flex-start",
+              }}>
+                <Box sx={{ width: 8, height: 8, mt: 0.8, borderRadius: "50%", background: COLORS.primary, flexShrink: 0 }} />
+                <Typography sx={{ fontSize: 13.5, color: COLORS.primaryDark, fontWeight: 600 }}>
+                  Anda sudah mengajukan anggota tim. Menunggu persetujuan anggota.
+                </Typography>
+              </Box>
             )}
+
             {timStatus?.isKetua && hasRejected && (
-              <Box sx={{ mb: 3, p: 2.5, borderRadius: "12px", backgroundColor: "#fce4ec", border: "1px solid #ef9a9a" }}>
-                <Typography sx={{ fontSize: 14, fontWeight: 700, color: "#c62828", mb: 1 }}>
+              <Box sx={{
+                mb: 3, p: 2.5, borderRadius: "14px",
+                background: COLORS.errorLight,
+                border: `1.5px solid #FCA5A5`,
+              }}>
+                <Typography sx={{ fontSize: 14, fontWeight: 700, color: COLORS.error, mb: 0.5 }}>
                   Ada anggota yang menolak undangan
                 </Typography>
-                <Typography sx={{ fontSize: 13, color: "#c62828", mb: 2 }}>
+                <Typography sx={{ fontSize: 13, color: "#7F1D1D", mb: 2, lineHeight: 1.6 }}>
                   Anda dapat mengundang anggota baru sebagai pengganti, atau mengajukan ulang tim dari awal.
                 </Typography>
                 <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
@@ -426,8 +513,10 @@ export default function AnggotaTimPage() {
                     size="small" variant="contained"
                     onClick={() => setShowAddAnggota((v) => !v)}
                     sx={{
-                      textTransform: "none", borderRadius: "50px", fontWeight: 600, fontSize: 13, px: 2.5,
-                      backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" },
+                      textTransform: "none", borderRadius: "10px", fontWeight: 600, fontSize: 13, px: 2.5,
+                      background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
+                      boxShadow: "none",
+                      "&:hover": { background: `linear-gradient(135deg, ${COLORS.primaryDark}, ${COLORS.primary})`, boxShadow: "none" },
                     }}
                   >
                     {showAddAnggota ? "Tutup Form" : "Undang Anggota Baru"}
@@ -436,9 +525,9 @@ export default function AnggotaTimPage() {
                     size="small" variant="outlined"
                     onClick={handleResetTim}
                     sx={{
-                      textTransform: "none", borderRadius: "50px", fontWeight: 600, fontSize: 13, px: 2.5,
-                      borderColor: "#d33", color: "#d33",
-                      "&:hover": { backgroundColor: "rgba(211,51,51,0.06)", borderColor: "#d33" },
+                      textTransform: "none", borderRadius: "10px", fontWeight: 600, fontSize: 13, px: 2.5,
+                      borderColor: COLORS.error, color: COLORS.error,
+                      "&:hover": { backgroundColor: COLORS.errorLight, borderColor: COLORS.error },
                     }}
                   >
                     Ajukan Ulang Tim
@@ -446,186 +535,198 @@ export default function AnggotaTimPage() {
                 </Box>
               </Box>
             )}
+
             {timStatus?.isAnggota && (
-              <Alert severity="success" sx={{ mb: 3, borderRadius: "12px" }}>
-                Anda adalah anggota dari tim ini.
-              </Alert>
+              <Box sx={{
+                mb: 3, p: 2.5, borderRadius: "14px",
+                background: COLORS.successLight,
+                border: `1.5px solid #6EE7B7`,
+                display: "flex", gap: 1.5, alignItems: "flex-start",
+              }}>
+                <Box sx={{ width: 8, height: 8, mt: 0.8, borderRadius: "50%", background: COLORS.success, flexShrink: 0 }} />
+                <Typography sx={{ fontSize: 13.5, color: "#065F46", fontWeight: 600 }}>
+                  Anda adalah anggota dari tim ini.
+                </Typography>
+              </Box>
             )}
 
             {showAddAnggota && (
-              <Paper sx={{ p: 3, mb: 3, borderRadius: "16px", border: "1.5px solid #90caf9", backgroundColor: "#f5faff" }}>
-                <Typography sx={{ fontWeight: 700, fontSize: 15, mb: 0.5 }}>Undang Anggota Baru</Typography>
-                <Typography sx={{ fontSize: 13, color: "#777", mb: 2.5 }}>
-                  Cari mahasiswa dan kirim undangan untuk menggantikan anggota yang ditolak.
-                </Typography>
-                <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2, mb: 2 }}>
-                  <Box>
-                    <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 1 }}>NIM</Typography>
-                    <Autocomplete
-                      freeSolo filterOptions={(x) => x}
-                      options={newNimOptions}
-                      getOptionLabel={(option) => typeof option === "string" ? option : option.nim || ""}
-                      getOptionDisabled={(option) => !!option.sudah_punya_tim}
-                      onInputChange={(e, value) => handleSearchNewNim(value)}
-                      onChange={(e, value) => { if (value && typeof value === "object") handleSelectNewMahasiswa(value); }}
-                      value={newAnggota.nim} disabled={addingAnggota} loading={searching}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params} placeholder="Cari berdasarkan NIM"
-                          error={!!addAnggotaError} sx={roundedField}
-                          InputProps={{
-                            ...params.InputProps,
-                            endAdornment: (
-                              <>
-                                {searching ? <CircularProgress size={20} /> : <Search sx={{ color: "#bbb", fontSize: 20 }} />}
-                                {params.InputProps.endAdornment}
-                              </>
-                            ),
-                          }}
-                        />
-                      )}
-                      renderOption={(props, option) => (
-                        <li {...props} style={{ ...props.style, opacity: 1 }}>
-                          <Box sx={{ py: 0.5 }}>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                              <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{option.nim}</Typography>
-                              {option.sudah_punya_tim && (
-                                <Box sx={{ px: 1, py: 0.2, borderRadius: "50px", backgroundColor: "#fbe9e7", border: "1px solid #ef9a9a" }}>
-                                  <Typography sx={{ fontSize: 10, color: "#c62828", fontWeight: 700 }}>Sudah dalam tim lain</Typography>
-                                </Box>
-                              )}
-                            </Box>
-                            <Typography sx={{ fontSize: 12, color: "#555" }}>{option.nama_lengkap}</Typography>
-                            <Typography sx={{ fontSize: 11, color: "#999" }}>{option.jenjang} {option.nama_prodi}</Typography>
-                          </Box>
-                        </li>
-                      )}
-                    />
+              <Paper elevation={0} sx={{
+                mb: 3, borderRadius: "20px",
+                border: `1.5px solid ${COLORS.primaryMuted}`,
+                overflow: "hidden",
+              }}>
+                <Box sx={{ height: 4, background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
+                <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
+                  <SectionHeader
+                    icon={PersonAdd}
+                    title="Undang Anggota Baru"
+                    subtitle="Cari mahasiswa dan kirim undangan pengganti"
+                    gradient={`linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)`}
+                  />
+                  <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3, mb: 3 }}>
+                    <Box>
+                      <FieldLabel>NIM</FieldLabel>
+                      <Autocomplete
+                        freeSolo filterOptions={(x) => x}
+                        options={newNimOptions}
+                        getOptionLabel={(option) => typeof option === "string" ? option : option.nim || ""}
+                        getOptionDisabled={(option) => !!option.sudah_punya_tim}
+                        onInputChange={(e, value) => handleSearchNewNim(value)}
+                        onChange={(e, value) => { if (value && typeof value === "object") handleSelectNewMahasiswa(value); }}
+                        value={newAnggota.nim} disabled={addingAnggota} loading={searching}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params} placeholder="Cari berdasarkan NIM"
+                            error={!!addAnggotaError} sx={roundedField}
+                            InputProps={{
+                              ...params.InputProps,
+                              endAdornment: (
+                                <>
+                                  {searching ? <CircularProgress size={20} /> : <Search sx={{ color: "#bbb", fontSize: 20 }} />}
+                                  {params.InputProps.endAdornment}
+                                </>
+                              ),
+                            }}
+                          />
+                        )}
+                        renderOption={(props, option) => (
+                          <li {...props} style={{ ...props.style, opacity: 1 }}>
+                            <MahasiswaOption option={option} />
+                          </li>
+                        )}
+                      />
+                    </Box>
+                    <Box>
+                      <FieldLabel>Nama Lengkap</FieldLabel>
+                      <Autocomplete
+                        freeSolo filterOptions={(x) => x}
+                        options={newNamaOptions}
+                        getOptionLabel={(option) => typeof option === "string" ? option : option.nama_lengkap || ""}
+                        getOptionDisabled={(option) => !!option.sudah_punya_tim}
+                        onInputChange={(e, value) => handleSearchNewNama(value)}
+                        onChange={(e, value) => { if (value && typeof value === "object") handleSelectNewMahasiswa(value); }}
+                        value={newAnggota.nama_lengkap} disabled={addingAnggota} loading={searching}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params} placeholder="Cari berdasarkan nama" sx={roundedField}
+                            InputProps={{
+                              ...params.InputProps,
+                              endAdornment: (
+                                <>
+                                  {searching ? <CircularProgress size={20} /> : <Search sx={{ color: "#bbb", fontSize: 20 }} />}
+                                  {params.InputProps.endAdornment}
+                                </>
+                              ),
+                            }}
+                          />
+                        )}
+                        renderOption={(props, option) => (
+                          <li {...props} style={{ ...props.style, opacity: 1 }}>
+                            <MahasiswaOption option={option} />
+                          </li>
+                        )}
+                      />
+                    </Box>
                   </Box>
-                  <Box>
-                    <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 1 }}>Nama Lengkap</Typography>
-                    <Autocomplete
-                      freeSolo filterOptions={(x) => x}
-                      options={newNamaOptions}
-                      getOptionLabel={(option) => typeof option === "string" ? option : option.nama_lengkap || ""}
-                      getOptionDisabled={(option) => !!option.sudah_punya_tim}
-                      onInputChange={(e, value) => handleSearchNewNama(value)}
-                      onChange={(e, value) => { if (value && typeof value === "object") handleSelectNewMahasiswa(value); }}
-                      value={newAnggota.nama_lengkap} disabled={addingAnggota} loading={searching}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params} placeholder="Cari berdasarkan nama" sx={roundedField}
-                          InputProps={{
-                            ...params.InputProps,
-                            endAdornment: (
-                              <>
-                                {searching ? <CircularProgress size={20} /> : <Search sx={{ color: "#bbb", fontSize: 20 }} />}
-                                {params.InputProps.endAdornment}
-                              </>
-                            ),
-                          }}
-                        />
-                      )}
-                      renderOption={(props, option) => (
-                        <li {...props} style={{ ...props.style, opacity: 1 }}>
-                          <Box sx={{ py: 0.5 }}>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                              <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{option.nama_lengkap}</Typography>
-                              {option.sudah_punya_tim && (
-                                <Box sx={{ px: 1, py: 0.2, borderRadius: "50px", backgroundColor: "#fbe9e7", border: "1px solid #ef9a9a" }}>
-                                  <Typography sx={{ fontSize: 10, color: "#c62828", fontWeight: 700 }}>Sudah dalam tim lain</Typography>
-                                </Box>
-                              )}
-                            </Box>
-                            <Typography sx={{ fontSize: 12, color: "#555" }}>{option.nim}</Typography>
-                            <Typography sx={{ fontSize: 11, color: "#999" }}>{option.jenjang} {option.nama_prodi}</Typography>
-                          </Box>
-                        </li>
-                      )}
-                    />
+                  {addAnggotaError && (
+                    <Typography sx={{ color: COLORS.error, fontSize: 12, mb: 2 }}>{addAnggotaError}</Typography>
+                  )}
+                  <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1.5, flexWrap: "wrap" }}>
+                    <Button
+                      onClick={() => {
+                        setShowAddAnggota(false);
+                        setNewAnggota({ nim: "", nama_lengkap: "", id_user: null });
+                        setAddAnggotaError("");
+                      }}
+                      sx={{
+                        textTransform: "none", borderRadius: "10px", px: 3, fontWeight: 600, fontSize: 14,
+                        backgroundColor: COLORS.error, color: "#fff",
+                        "&:hover": { backgroundColor: "#B91C1C" },
+                      }}
+                    >
+                      Batal
+                    </Button>
+                    <Button
+                      variant="contained" onClick={handleUndangAnggota} disabled={addingAnggota}
+                      sx={{
+                        px: 4, py: 1.3, textTransform: "none", fontWeight: 700, borderRadius: "10px", fontSize: 14,
+                        backgroundColor: COLORS.primary,
+                        "&:hover": { backgroundColor: COLORS.primaryDark },
+                        "&:disabled": { backgroundColor: "#E5E7EB", color: "#9CA3AF" },
+                      }}
+                    >
+                      {addingAnggota ? "Mengirim..." : "Kirim Undangan"}
+                    </Button>
                   </Box>
-                </Box>
-                {addAnggotaError && (
-                  <Typography sx={{ color: "error.main", fontSize: 12, mb: 1.5 }}>{addAnggotaError}</Typography>
-                )}
-                <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1.5 }}>
-                  <Button
-                    onClick={() => {
-                      setShowAddAnggota(false);
-                      setNewAnggota({ nim: "", nama_lengkap: "", id_user: null });
-                      setAddAnggotaError("");
-                    }}
-                    sx={{
-                      textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600,
-                      color: "#666", border: "1.5px solid #e0e0e0",
-                      "&:hover": { backgroundColor: "#f5f5f5" },
-                    }}
-                  >
-                    Batal
-                  </Button>
-                  <Button
-                    variant="contained" onClick={handleUndangAnggota} disabled={addingAnggota}
-                    sx={{
-                      textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600,
-                      backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" },
-                    }}
-                  >
-                    {addingAnggota ? "Mengirim..." : "Kirim Undangan"}
-                  </Button>
                 </Box>
               </Paper>
             )}
 
-            <Paper sx={{ p: 4, borderRadius: "16px", border: "1px solid #f0f0f0" }}>
-              <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, mb: 4 }}>
-                <Box>
-                  <Typography sx={{ fontWeight: 600, mb: 1 }}>Nama Tim</Typography>
-                  <TextField fullWidth value={timDetail?.nama_tim || ""} disabled sx={roundedField} />
+            <Paper elevation={0} sx={{
+              borderRadius: "20px",
+              border: "1.5px solid #E5E7EB",
+              overflow: "hidden",
+            }}>
+              <Box sx={{ height: 5, background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
+              <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
+                <SectionHeader
+                  icon={Groups}
+                  title="Detail Tim"
+                  subtitle="Informasi dan daftar anggota tim"
+                  gradient={`linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)`}
+                />
+
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3, mb: 4 }}>
+                  <Box>
+                    <FieldLabel>Nama Tim</FieldLabel>
+                    <TextField fullWidth value={timDetail?.nama_tim || ""} disabled sx={roundedField} />
+                  </Box>
+                  <Box>
+                    <FieldLabel>Program</FieldLabel>
+                    <TextField fullWidth value={timDetail?.keterangan || ""} disabled sx={roundedField} />
+                  </Box>
                 </Box>
-                <Box>
-                  <Typography sx={{ fontWeight: 600, mb: 1 }}>Program</Typography>
-                  <TextField fullWidth value={timDetail?.keterangan || ""} disabled sx={roundedField} />
-                </Box>
+
+                <Typography sx={{ fontWeight: 700, fontSize: 15, mb: 2, color: "#1F2937" }}>Daftar Anggota</Typography>
+
+                <TableContainer sx={{ borderRadius: "14px", border: "1.5px solid #E5E7EB", overflow: "hidden", overflowX: "auto" }}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        {["Nama Lengkap", "NIM", "Prodi", "Peran", "Status"].map((h, i) => (
+                          <TableCell key={i} sx={tableHeadCell}>{h}</TableCell>
+                        ))}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {timDetail?.anggota?.map((item, index) => {
+                        const peranInfo = getPeranInfo(item.peran);
+                        const statusInfo = getStatusInfo(item.status, item.peran);
+                        return (
+                          <TableRow key={index} sx={tableBodyRow}>
+                            <TableCell>
+                              <Typography sx={{ fontWeight: 600, fontSize: 14, color: "#1F2937" }}>{item.nama_lengkap}</Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography sx={{ fontSize: 13, color: COLORS.slate }}>{item.nim}</Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography sx={{ fontSize: 13, color: COLORS.slate }}>{item.nama_prodi}</Typography>
+                            </TableCell>
+                            <TableCell>
+                              <StatusPill label={peranInfo.label} backgroundColor={peranInfo.backgroundColor} />
+                            </TableCell>
+                            <TableCell>
+                              <StatusPill label={statusInfo.label} backgroundColor={statusInfo.backgroundColor} />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
               </Box>
-
-              <Typography sx={{ fontWeight: 700, fontSize: 15, mb: 2 }}>Daftar Anggota</Typography>
-
-              <TableContainer sx={{ borderRadius: "12px", border: "1px solid #f0f0f0", overflow: "hidden" }}>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      {["Nama Lengkap", "NIM", "Prodi", "Peran", "Status"].map((h, i) => (
-                        <TableCell key={i} sx={tableHeadCell}>{h}</TableCell>
-                      ))}
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {timDetail?.anggota?.map((item, index) => {
-                      const peranInfo = getPeranInfo(item.peran);
-                      const statusInfo = getStatusInfo(item.status, item.peran);
-                      return (
-                        <TableRow key={index} sx={tableBodyRow}>
-                          <TableCell>
-                            <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{item.nama_lengkap}</Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography sx={{ fontSize: 13 }}>{item.nim}</Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography sx={{ fontSize: 13 }}>{item.nama_prodi}</Typography>
-                          </TableCell>
-                          <TableCell>
-                            <StatusPill label={peranInfo.label} backgroundColor={peranInfo.backgroundColor} />
-                          </TableCell>
-                          <TableCell>
-                            <StatusPill label={statusInfo.label} backgroundColor={statusInfo.backgroundColor} />
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </TableContainer>
             </Paper>
           </Box>
         </PageTransition>
@@ -634,269 +735,270 @@ export default function AnggotaTimPage() {
   }
 
   return (
-    <BodyLayout Sidebar={SidebarMahasiswa}>
+    <BodyLayout Sidebar={MahasiswaNavbar}>
       <PageTransition>
         <Box>
-          <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Anggota Tim</Typography>
-          <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>
-            Lengkapi form di bawah ini untuk mengajukan anggota tim
-          </Typography>
+          <Box sx={{ mb: 4 }}>
+            <Typography sx={{ fontSize: 36, fontWeight: 800, color: "#1F2937", mb: 0.5 }}>
+              Anggota Tim
+            </Typography>
+            <Typography sx={{ fontSize: 16, color: "#6B7280" }}>
+              Lengkapi form di bawah ini untuk mengajukan anggota tim
+            </Typography>
+          </Box>
 
-          <Paper sx={{ p: 4, borderRadius: "16px", border: "1px solid #f0f0f0" }}>
-            <Typography sx={{ fontSize: 20, fontWeight: 700, mb: 3 }}>Pengajuan Anggota Tim</Typography>
+          <Paper elevation={0} sx={{
+            mb: 3, borderRadius: "20px",
+            border: "1.5px solid #E5E7EB",
+            overflow: "hidden",
+          }}>
+            <Box sx={{ height: 5, background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
 
-            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, mb: 4 }}>
-              <Box>
-                <Typography sx={{ fontWeight: 600, mb: 1 }}>
-                  Nama Tim <span style={{ color: "#ef5350" }}>*</span>
-                </Typography>
-                <TextField
-                  fullWidth placeholder="Masukkan nama tim Anda"
-                  value={formTim.nama_tim}
-                  onChange={(e) => {
-                    setFormTim({ ...formTim, nama_tim: e.target.value });
-                    setErrors((prev) => ({ ...prev, nama_tim: "" }));
-                  }}
-                  error={!!errors.nama_tim} helperText={errors.nama_tim}
-                  disabled={submitting} sx={roundedField}
-                />
-              </Box>
-              <Box>
-                <Typography sx={{ fontWeight: 600, mb: 1 }}>
-                  Program <span style={{ color: "#ef5350" }}>*</span>
-                </Typography>
-                {loadingProgram ? (
-                  <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
-                    <CircularProgress size={24} />
-                  </Box>
-                ) : (
-                  <>
-                    <Autocomplete
-                      options={programOptions}
-                      value={formTim.id_program}
-                      onChange={(e, value) => handleProgramChange(value)}
-                      getOptionLabel={(option) => option.label || ""}
-                      getOptionDisabled={(option) => !option.status?.open}
-                      isOptionEqualToValue={(option, value) => option.id === value.id}
-                      disabled={submitting}
-                      renderOption={(props, option) => (
-                        <li {...props} style={{ ...props.style, opacity: 1 }}>
-                          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", gap: 1 }}>
-                            <Typography sx={{ fontSize: 14 }}>{option.label}</Typography>
-                            <Box sx={{
-                              px: 1, py: 0.2, borderRadius: "50px",
-                              backgroundColor: option.status?.color,
-                              flexShrink: 0,
-                            }}>
-                              <Typography sx={{ fontSize: 10, fontWeight: 700, color: "#fff" }}>
-                                {option.status?.label}
-                              </Typography>
+            <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
+              <SectionHeader
+                icon={Shield}
+                title="Pengajuan Anggota Tim"
+                subtitle="Isi nama tim, pilih program, dan tambahkan anggota"
+                gradient={`linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)`}
+              />
+
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3, mb: 4 }}>
+                <Box>
+                  <FieldLabel required>Nama Tim</FieldLabel>
+                  <TextField
+                    fullWidth placeholder="Masukkan nama tim Anda"
+                    value={formTim.nama_tim}
+                    onChange={(e) => {
+                      setFormTim({ ...formTim, nama_tim: e.target.value });
+                      setErrors((prev) => ({ ...prev, nama_tim: "" }));
+                    }}
+                    error={!!errors.nama_tim} helperText={errors.nama_tim}
+                    disabled={submitting} sx={roundedField}
+                  />
+                </Box>
+                <Box>
+                  <FieldLabel required>Program</FieldLabel>
+                  {loadingProgram ? (
+                    <Box sx={{ display: "flex", alignItems: "center", py: 2 }}>
+                      <CircularProgress size={22} sx={{ color: COLORS.primary }} />
+                    </Box>
+                  ) : (
+                    <>
+                      <Autocomplete
+                        options={programOptions}
+                        value={formTim.id_program}
+                        onChange={(e, value) => handleProgramChange(value)}
+                        getOptionLabel={(option) => option.label || ""}
+                        getOptionDisabled={(option) => !option.status?.open}
+                        isOptionEqualToValue={(option, value) => option.id === value.id}
+                        disabled={submitting}
+                        renderOption={(props, option) => (
+                          <li {...props} style={{ ...props.style, opacity: 1 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", gap: 1 }}>
+                              <Typography sx={{ fontSize: 14 }}>{option.label}</Typography>
+                              <Box sx={{ px: 1, py: 0.2, borderRadius: "50px", backgroundColor: option.status?.color, flexShrink: 0 }}>
+                                <Typography sx={{ fontSize: 10, fontWeight: 700, color: "#fff" }}>
+                                  {option.status?.label}
+                                </Typography>
+                              </Box>
                             </Box>
-                          </Box>
-                        </li>
-                      )}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params} placeholder="Pilih program"
-                          error={!!errors.id_program} helperText={errors.id_program}
-                          sx={roundedField}
-                        />
-                      )}
-                    />
-
-                    {checkingEligibility && (
-                      <Box sx={{ mt: 1.5, display: "flex", alignItems: "center", gap: 1 }}>
-                        <CircularProgress size={14} />
-                        <Typography sx={{ fontSize: 13, color: "#777" }}>Memeriksa eligibilitas...</Typography>
-                      </Box>
-                    )}
-
-                    {!checkingEligibility && inbisEligibility !== null && (
-                      <Box sx={{
-                        mt: 1.5, p: 2, borderRadius: "12px",
-                        backgroundColor: inbisEligibility.eligible ? "#e8f5e9" : "#fce4ec",
-                        border: `1px solid ${inbisEligibility.eligible ? "#a5d6a7" : "#ef9a9a"}`,
-                      }}>
-                        {inbisEligibility.eligible ? (
-                          <Typography sx={{ fontSize: 13, color: "#2e7d32", fontWeight: 600 }}>
-                            Anda memenuhi syarat untuk mendaftar program INBIS.
-                          </Typography>
-                        ) : (
-                          <>
-                            <Typography sx={{ fontSize: 13, color: "#c62828", fontWeight: 700, mb: 0.5 }}>
-                              Anda tidak eligible untuk mendaftar program ini
-                            </Typography>
-                            <Typography sx={{ fontSize: 13, color: "#c62828" }}>
-                              {inbisEligibility.alasan}
-                            </Typography>
-                            {inbisEligibility.monev_progress && (
-                              <Typography sx={{ fontSize: 12, color: "#c62828", mt: 0.5 }}>
-                                Progress Monev PMW: {inbisEligibility.monev_progress.disetujui}/{inbisEligibility.monev_progress.total} luaran disetujui
-                              </Typography>
-                            )}
-                          </>
+                          </li>
                         )}
-                      </Box>
-                    )}
-                  </>
+                        renderInput={(params) => (
+                          <TextField
+                            {...params} placeholder="Pilih program"
+                            error={!!errors.id_program} helperText={errors.id_program}
+                            sx={roundedField}
+                          />
+                        )}
+                      />
+
+                      {checkingEligibility && (
+                        <Box sx={{ mt: 1.5, display: "flex", alignItems: "center", gap: 1 }}>
+                          <CircularProgress size={14} sx={{ color: COLORS.primary }} />
+                          <Typography sx={{ fontSize: 13, color: COLORS.slate }}>Memeriksa eligibilitas...</Typography>
+                        </Box>
+                      )}
+
+                      {!checkingEligibility && inbisEligibility !== null && (
+                        <Box sx={{
+                          mt: 1.5, p: 2, borderRadius: "12px",
+                          backgroundColor: inbisEligibility.eligible ? COLORS.successLight : COLORS.errorLight,
+                          border: `1.5px solid ${inbisEligibility.eligible ? "#6EE7B7" : "#FCA5A5"}`,
+                        }}>
+                          {inbisEligibility.eligible ? (
+                            <Typography sx={{ fontSize: 13, color: "#065F46", fontWeight: 600 }}>
+                              Anda memenuhi syarat untuk mendaftar program INBIS.
+                            </Typography>
+                          ) : (
+                            <>
+                              <Typography sx={{ fontSize: 13, color: COLORS.error, fontWeight: 700, mb: 0.5 }}>
+                                Anda tidak eligible untuk mendaftar program ini
+                              </Typography>
+                              <Typography sx={{ fontSize: 13, color: "#7F1D1D" }}>
+                                {inbisEligibility.alasan}
+                              </Typography>
+                              {inbisEligibility.monev_progress && (
+                                <Typography sx={{ fontSize: 12, color: "#7F1D1D", mt: 0.5 }}>
+                                  Progress Monev PMW: {inbisEligibility.monev_progress.disetujui}/{inbisEligibility.monev_progress.total} luaran disetujui
+                                </Typography>
+                              )}
+                            </>
+                          )}
+                        </Box>
+                      )}
+                    </>
+                  )}
+                </Box>
+              </Box>
+
+              <Box sx={{ mb: 3 }}>
+                <Typography sx={{ fontWeight: 700, fontSize: 15, mb: 1, color: "#1F2937" }}>Daftar Anggota</Typography>
+                {errors.anggota && (
+                  <Typography sx={{ color: COLORS.error, fontSize: 12, mb: 2 }}>{errors.anggota}</Typography>
                 )}
               </Box>
-            </Box>
 
-            <Typography sx={{ fontWeight: 700, fontSize: 15, mb: 2 }}>Daftar Anggota</Typography>
+              {formTim.anggota.map((item, index) => {
+                const selectedIds = new Set(
+                  formTim.anggota.filter((_, i) => i !== index).map((a) => a.id_user).filter(Boolean)
+                );
+                const filteredNimOptions = (nimResults[index] || []).filter((o) => !selectedIds.has(o.id_user));
+                const filteredNamaOptions = (namaResults[index] || []).filter((o) => !selectedIds.has(o.id_user));
 
-            {errors.anggota && (
-              <Typography sx={{ color: "error.main", fontSize: 12, mb: 2 }}>{errors.anggota}</Typography>
-            )}
-
-            {formTim.anggota.map((item, index) => {
-              const selectedIds = new Set(
-                formTim.anggota
-                  .filter((_, i) => i !== index)
-                  .map((a) => a.id_user)
-                  .filter(Boolean)
-              );
-              const filteredNimOptions = (nimResults[index] || []).filter((o) => !selectedIds.has(o.id_user));
-              const filteredNamaOptions = (namaResults[index] || []).filter((o) => !selectedIds.has(o.id_user));
-
-              return (
-                <Box
-                  key={index}
-                  sx={{ mb: 2, p: 2.5, border: "1.5px solid #f0f0f0", borderRadius: "14px", backgroundColor: "#fafafa" }}
-                >
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                    <Typography sx={{ fontWeight: 700, fontSize: 14, color: "#444" }}>
-                      Anggota {index + 1}
-                    </Typography>
-                    {formTim.anggota.length > 2 && (
-                      <IconButton
-                        size="small" onClick={() => handleRemoveAnggota(index)} disabled={submitting}
-                        sx={{
-                          color: "#e53935", backgroundColor: "rgba(229,57,53,0.06)",
-                          borderRadius: "8px", "&:hover": { backgroundColor: "rgba(229,57,53,0.12)" },
-                        }}
-                      >
-                        <Delete fontSize="small" />
-                      </IconButton>
-                    )}
-                  </Box>
-
-                  <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
-                    <Box>
-                      <Typography sx={{ fontSize: 14, fontWeight: 600, mb: 1 }}>NIM</Typography>
-                      <Autocomplete
-                        freeSolo filterOptions={(x) => x}
-                        options={filteredNimOptions}
-                        getOptionLabel={(option) => typeof option === "string" ? option : option.nim || ""}
-                        getOptionDisabled={(option) => !!option.sudah_punya_tim}
-                        onInputChange={(e, value) => handleSearchByNim(index, value)}
-                        onChange={(e, value) => { if (value && typeof value === "object") handleSelectMahasiswa(index, value); }}
-                        value={item.nim} disabled={submitting} loading={searching}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params} placeholder="Cari berdasarkan NIM"
-                            error={!!errors[`anggota_${index}`]} helperText={errors[`anggota_${index}`]}
-                            sx={roundedField}
-                            InputProps={{
-                              ...params.InputProps,
-                              endAdornment: (
-                                <>
-                                  {searching ? <CircularProgress size={20} /> : <Search sx={{ color: "#bbb", fontSize: 20 }} />}
-                                  {params.InputProps.endAdornment}
-                                </>
-                              ),
-                            }}
-                          />
-                        )}
-                        renderOption={(props, option) => (
-                          <li {...props} style={{ ...props.style, opacity: 1 }}>
-                            <Box sx={{ py: 0.5 }}>
-                              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{option.nim}</Typography>
-                                {option.sudah_punya_tim && (
-                                  <Box sx={{ px: 1, py: 0.2, borderRadius: "50px", backgroundColor: "#fbe9e7", border: "1px solid #ef9a9a" }}>
-                                    <Typography sx={{ fontSize: 10, color: "#c62828", fontWeight: 700 }}>Sudah dalam tim lain</Typography>
-                                  </Box>
-                                )}
-                              </Box>
-                              <Typography sx={{ fontSize: 12, color: "#555" }}>{option.nama_lengkap}</Typography>
-                              <Typography sx={{ fontSize: 11, color: "#999" }}>{option.jenjang} {option.nama_prodi}</Typography>
-                            </Box>
-                          </li>
-                        )}
-                      />
+                return (
+                  <Box
+                    key={index}
+                    sx={{
+                      mb: 2.5, p: 3,
+                      border: `1.5px solid ${errors[`anggota_${index}`] ? "#FCA5A5" : "#E5E7EB"}`,
+                      borderRadius: "16px",
+                      background: errors[`anggota_${index}`] ? COLORS.errorLight : COLORS.slateLight,
+                      transition: "border-color 0.2s, background 0.2s",
+                    }}
+                  >
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2.5 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                        <Box sx={{
+                          width: 30, height: 30, borderRadius: "8px",
+                          background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                        }}>
+                          <Typography sx={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>{index + 1}</Typography>
+                        </Box>
+                        <Typography sx={{ fontWeight: 700, fontSize: 14, color: "#374151" }}>
+                          Anggota {index + 1}
+                        </Typography>
+                      </Box>
+                      {formTim.anggota.length > 2 && (
+                        <IconButton
+                          size="small" onClick={() => handleRemoveAnggota(index)} disabled={submitting}
+                          sx={{
+                            color: COLORS.error, backgroundColor: COLORS.errorLight,
+                            borderRadius: "8px",
+                            "&:hover": { backgroundColor: "#FEE2E2" },
+                          }}
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      )}
                     </Box>
-                    <Box>
-                      <Typography sx={{ fontSize: 14, fontWeight: 600, mb: 1 }}>Nama Lengkap</Typography>
-                      <Autocomplete
-                        freeSolo filterOptions={(x) => x}
-                        options={filteredNamaOptions}
-                        getOptionLabel={(option) => typeof option === "string" ? option : option.nama_lengkap || ""}
-                        getOptionDisabled={(option) => !!option.sudah_punya_tim}
-                        onInputChange={(e, value) => handleSearchByNama(index, value)}
-                        onChange={(e, value) => { if (value && typeof value === "object") handleSelectMahasiswa(index, value); }}
-                        value={item.nama_lengkap} disabled={submitting} loading={searching}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params} placeholder="Cari berdasarkan nama"
-                            sx={roundedField}
-                            InputProps={{
-                              ...params.InputProps,
-                              endAdornment: (
-                                <>
-                                  {searching ? <CircularProgress size={20} /> : <Search sx={{ color: "#bbb", fontSize: 20 }} />}
-                                  {params.InputProps.endAdornment}
-                                </>
-                              ),
-                            }}
-                          />
-                        )}
-                        renderOption={(props, option) => (
-                          <li {...props} style={{ ...props.style, opacity: 1 }}>
-                            <Box sx={{ py: 0.5 }}>
-                              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{option.nama_lengkap}</Typography>
-                                {option.sudah_punya_tim && (
-                                  <Box sx={{ px: 1, py: 0.2, borderRadius: "50px", backgroundColor: "#fbe9e7", border: "1px solid #ef9a9a" }}>
-                                    <Typography sx={{ fontSize: 10, color: "#c62828", fontWeight: 700 }}>Sudah dalam tim lain</Typography>
-                                  </Box>
-                                )}
-                              </Box>
-                              <Typography sx={{ fontSize: 12, color: "#555" }}>{option.nim}</Typography>
-                              <Typography sx={{ fontSize: 11, color: "#999" }}>{option.jenjang} {option.nama_prodi}</Typography>
-                            </Box>
-                          </li>
-                        )}
-                      />
+
+                    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2.5 }}>
+                      <Box>
+                        <FieldLabel>NIM</FieldLabel>
+                        <Autocomplete
+                          freeSolo filterOptions={(x) => x}
+                          options={filteredNimOptions}
+                          getOptionLabel={(option) => typeof option === "string" ? option : option.nim || ""}
+                          getOptionDisabled={(option) => !!option.sudah_punya_tim}
+                          onInputChange={(e, value) => handleSearchByNim(index, value)}
+                          onChange={(e, value) => { if (value && typeof value === "object") handleSelectMahasiswa(index, value); }}
+                          value={item.nim} disabled={submitting} loading={searching}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params} placeholder="Cari berdasarkan NIM"
+                              error={!!errors[`anggota_${index}`]} helperText={errors[`anggota_${index}`]}
+                              sx={roundedField}
+                              InputProps={{
+                                ...params.InputProps,
+                                endAdornment: (
+                                  <>
+                                    {searching ? <CircularProgress size={20} /> : <Search sx={{ color: "#bbb", fontSize: 20 }} />}
+                                    {params.InputProps.endAdornment}
+                                  </>
+                                ),
+                              }}
+                            />
+                          )}
+                          renderOption={(props, option) => (
+                            <li {...props} style={{ ...props.style, opacity: 1 }}>
+                              <MahasiswaOption option={option} />
+                            </li>
+                          )}
+                        />
+                      </Box>
+                      <Box>
+                        <FieldLabel>Nama Lengkap</FieldLabel>
+                        <Autocomplete
+                          freeSolo filterOptions={(x) => x}
+                          options={filteredNamaOptions}
+                          getOptionLabel={(option) => typeof option === "string" ? option : option.nama_lengkap || ""}
+                          getOptionDisabled={(option) => !!option.sudah_punya_tim}
+                          onInputChange={(e, value) => handleSearchByNama(index, value)}
+                          onChange={(e, value) => { if (value && typeof value === "object") handleSelectMahasiswa(index, value); }}
+                          value={item.nama_lengkap} disabled={submitting} loading={searching}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params} placeholder="Cari berdasarkan nama" sx={roundedField}
+                              InputProps={{
+                                ...params.InputProps,
+                                endAdornment: (
+                                  <>
+                                    {searching ? <CircularProgress size={20} /> : <Search sx={{ color: "#bbb", fontSize: 20 }} />}
+                                    {params.InputProps.endAdornment}
+                                  </>
+                                ),
+                              }}
+                            />
+                          )}
+                          renderOption={(props, option) => (
+                            <li {...props} style={{ ...props.style, opacity: 1 }}>
+                              <MahasiswaOption option={option} />
+                            </li>
+                          )}
+                        />
+                      </Box>
                     </Box>
                   </Box>
-                </Box>
-              );
-            })}
+                );
+              })}
 
-            <Button
-              onClick={handleAddAnggota} disabled={submitting}
-              sx={{
-                mb: 3, textTransform: "none", borderRadius: "50px",
-                color: "#0D59F2", border: "1.5px dashed rgba(13,89,242,0.3)",
-                px: 2.5, py: 0.8, width: "100%",
-                "&:hover": { backgroundColor: "rgba(13,89,242,0.04)", borderColor: "rgba(13,89,242,0.6)" },
-              }}
-            >
-              Tambah Anggota
-            </Button>
-
-            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
               <Button
-                variant="contained" onClick={handleSubmit} disabled={submitting}
+                onClick={handleAddAnggota} disabled={submitting}
                 sx={{
-                  px: 4, py: 1.2, textTransform: "none", fontWeight: 600,
-                  borderRadius: "50px", backgroundColor: "#0D59F2",
-                  "&:hover": { backgroundColor: "#0846c7" },
+                  mb: 4, textTransform: "none", borderRadius: "12px",
+                  color: COLORS.primary, border: `1.5px dashed rgba(13,89,242,0.35)`,
+                  px: 3, py: 1.2, width: "100%", fontWeight: 600, fontSize: 14,
+                  "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
                 }}
               >
-                {submitting ? "Mengajukan..." : "Ajukan Anggota Tim"}
+                Tambah Anggota
               </Button>
+
+              <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                <Button
+                  variant="contained" onClick={handleSubmit} disabled={submitting}
+                  sx={{
+                    px: 4, py: 1.3, textTransform: "none", fontWeight: 700, borderRadius: "10px", fontSize: 14,
+                    backgroundColor: COLORS.primary,
+                    "&:hover": { backgroundColor: COLORS.primaryDark },
+                    "&:disabled": { backgroundColor: "#E5E7EB", color: "#9CA3AF" },
+                  }}
+                >
+                  {submitting ? "Mengajukan..." : "Ajukan Anggota Tim"}
+                </Button>
+              </Box>
             </Box>
           </Paper>
         </Box>

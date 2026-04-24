@@ -1,62 +1,125 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  Box,
-  Paper,
-  Typography,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  IconButton,
-  LinearProgress,
-  Chip,
+  Box, Paper, Typography, Button,
+  Dialog, DialogTitle, DialogContent, DialogActions,
+  TextField, IconButton, LinearProgress, Chip,
 } from "@mui/material";
 import {
-  Close,
-  CheckCircle,
-  Cancel,
-  HourglassEmpty,
-  RadioButtonUnchecked,
-  AttachFile,
-  Link as LinkIcon,
-  AssignmentTurnedIn,
+  Close, CheckCircle, Cancel, HourglassEmpty,
+  RadioButtonUnchecked, AttachFile, Link as LinkIcon,
+  AssignmentTurnedIn, FormatListBulleted,
 } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
-import SidebarMahasiswa from "../../components/layouts/MahasiswaSidebar";
+import MahasiswaNavbar from "../../components/layouts/MahasiswaNavbar";
 import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import { getLuaranMahasiswa, submitLuaran } from "../../api/mahasiswa";
+import { downloadFile } from "../../utils/download";
 
-const STATUS_MAP = {
-  0: {
-    label: "Belum Dikerjakan",
-    bg: "#757575",
-    icon: <RadioButtonUnchecked sx={{ fontSize: 16 }} />,
-  },
-  1: {
-    label: "Submitted",
-    bg: "#f57f17",
-    icon: <HourglassEmpty sx={{ fontSize: 16 }} />,
-  },
-  2: {
-    label: "Disetujui",
-    bg: "#2e7d32",
-    icon: <CheckCircle sx={{ fontSize: 16 }} />,
-  },
-  3: {
-    label: "Ditolak",
-    bg: "#c62828",
-    icon: <Cancel sx={{ fontSize: 16 }} />,
+const COLORS = {
+  primary:      "#0D59F2",
+  primaryLight: "#E0F2FE",
+  primaryDark:  "#0369A1",
+  primaryMuted: "#93C5FD",
+  secondary:    "#2563EB",
+  accent:       "#3B82F6",
+  slate:        "#64748B",
+  slateLight:   "#F1F5F9",
+  success:      "#059669",
+  successLight: "#ECFDF5",
+  warning:      "#D97706",
+  warningLight: "#FFFBEB",
+  error:        "#DC2626",
+  errorLight:   "#FEF2F2",
+};
+
+const roundedField = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "12px",
+    backgroundColor: "#fff",
+    transition: "box-shadow 0.2s",
+    "&:hover fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused": { boxShadow: `0 0 0 3px ${COLORS.primaryLight}` },
   },
 };
 
+const SectionHeader = ({ icon: Icon, title, subtitle, gradient }) => (
+  <Box sx={{
+    display: "flex", alignItems: "center", gap: 2, mb: 3,
+    p: 2.5, borderRadius: "14px",
+    background: gradient,
+  }}>
+    <Box sx={{
+      width: 44, height: 44, borderRadius: "12px",
+      background: "rgba(255,255,255,0.25)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      backdropFilter: "blur(4px)",
+    }}>
+      <Icon sx={{ color: "#fff", fontSize: 22 }} />
+    </Box>
+    <Box>
+      <Typography sx={{ fontSize: 17, fontWeight: 700, color: "#fff", lineHeight: 1.2 }}>{title}</Typography>
+      {subtitle && <Typography sx={{ fontSize: 12, color: "rgba(255,255,255,0.8)", mt: 0.3 }}>{subtitle}</Typography>}
+    </Box>
+  </Box>
+);
+
+const FieldLabel = ({ children }) => (
+  <Typography sx={{ fontWeight: 600, mb: 0.8, fontSize: 13, color: "#374151" }}>
+    {children}
+  </Typography>
+);
+
+const StatusPill = ({ status }) => {
+  const s = STATUS_MAP[status ?? 0];
+  return (
+    <Box sx={{
+      display: "inline-flex", alignItems: "center", gap: 0.5,
+      px: 1.5, py: 0.4, borderRadius: "50px",
+      backgroundColor: s.bg, color: "#fff",
+      fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
+    }}>
+      {s.icon}
+      {s.label}
+    </Box>
+  );
+};
+
+const InfoBox = ({ children, type = "info" }) => {
+  const styles = {
+    info: { bg: COLORS.primaryLight, border: COLORS.primaryMuted, dot: COLORS.primary, text: COLORS.primaryDark },
+    warning: { bg: COLORS.warningLight, border: "#FDE68A", dot: COLORS.warning, text: "#92400E" },
+    error: { bg: COLORS.errorLight, border: "#FCA5A5", dot: COLORS.error, text: "#7F1D1D" },
+    success: { bg: COLORS.successLight, border: "#6EE7B7", dot: COLORS.success, text: "#065F46" },
+  };
+  const s = styles[type] || styles.info;
+  return (
+    <Box sx={{
+      mb: 3, p: 2.5, borderRadius: "14px",
+      background: s.bg, border: `1.5px solid ${s.border}`,
+      display: "flex", gap: 1.5, alignItems: "flex-start",
+    }}>
+      <Box sx={{ width: 8, height: 8, mt: 0.8, borderRadius: "50%", background: s.dot, flexShrink: 0 }} />
+      <Typography sx={{ fontSize: 13.5, color: s.text, fontWeight: 600, lineHeight: 1.6 }}>
+        {children}
+      </Typography>
+    </Box>
+  );
+};
+
+const STATUS_MAP = {
+  0: { label: "Belum Dikerjakan", bg: COLORS.slate, icon: <RadioButtonUnchecked sx={{ fontSize: 16 }} /> },
+  1: { label: "Submitted", bg: COLORS.warning, icon: <HourglassEmpty sx={{ fontSize: 16 }} /> },
+  2: { label: "Disetujui", bg: COLORS.success, icon: <CheckCircle sx={{ fontSize: 16 }} /> },
+  3: { label: "Ditolak", bg: COLORS.error, icon: <Cancel sx={{ fontSize: 16 }} /> },
+};
+
 const TIPE_MAP = {
-  1: { label: "File", bg: "#1565c0" },
+  1: { label: "File", bg: COLORS.primary },
   2: { label: "Link", bg: "#6a1b9a" },
-  3: { label: "File & Link", bg: "#2e7d32" },
+  3: { label: "File & Link", bg: COLORS.success },
 };
 
 const formatDate = (dateString) => {
@@ -72,46 +135,6 @@ const formatDate = (dateString) => {
 
 const isDeadlineLewat = (deadline) =>
   deadline && new Date() > new Date(deadline);
-
-const StatusPill = ({ status }) => {
-  const s = STATUS_MAP[status ?? 0];
-  return (
-    <Box
-      sx={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 0.5,
-        px: 1.5,
-        py: 0.4,
-        borderRadius: "50px",
-        backgroundColor: s.bg,
-        color: "#fff",
-        fontSize: 12,
-        fontWeight: 700,
-        whiteSpace: "nowrap",
-      }}
-    >
-      {s.icon}
-      {s.label}
-    </Box>
-  );
-};
-
-const InfoBox = ({ children, color, borderColor, bgColor }) => (
-  <Box
-    sx={{
-      mb: 3,
-      p: 2,
-      borderRadius: "12px",
-      backgroundColor: bgColor,
-      border: `1px solid ${borderColor}`,
-    }}
-  >
-    <Typography sx={{ fontSize: 14, color, fontWeight: 500 }}>
-      {children}
-    </Typography>
-  </Box>
-);
 
 const swalOptions = {
   customClass: { container: "swal-over-dialog" },
@@ -302,7 +325,7 @@ export default function MonevPage() {
 
   if (loading) {
     return (
-      <BodyLayout Sidebar={SidebarMahasiswa}>
+      <BodyLayout Sidebar={MahasiswaNavbar}>
         <Box sx={{ position: "relative", minHeight: "60vh" }}>
           <LoadingScreen message="Memuat data monev..." overlay minHeight="60vh" />
         </Box>
@@ -311,141 +334,71 @@ export default function MonevPage() {
   }
 
   return (
-    <BodyLayout Sidebar={SidebarMahasiswa}>
+    <BodyLayout Sidebar={MahasiswaNavbar}>
       <PageTransition>
         <Box>
-          <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>
-            Monitoring dan Evaluasi
-          </Typography>
-          <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>
-            Pantau dan kumpulkan luaran kegiatan program Anda
-          </Typography>
+
+          <Box sx={{ mb: 4 }}>
+            <Typography sx={{ fontSize: 36, fontWeight: 800, color: "#1F2937", mb: 0.5 }}>
+              Monitoring & Evaluasi
+            </Typography>
+            <Typography sx={{ fontSize: 16, color: "#6B7280" }}>
+              Pantau dan kumpulkan luaran kegiatan program Anda
+            </Typography>
+          </Box>
 
           {statusMessage && (
-            <InfoBox color="#f57f17" borderColor="#ffe082" bgColor="#fff8e1">
-              {statusMessage}
-            </InfoBox>
+            <InfoBox type="warning">{statusMessage}</InfoBox>
           )}
 
           {!statusMessage && data && (
             <>
               {data.tim.peran !== 1 && (
-                <InfoBox
-                  color="#1565c0"
-                  borderColor="#90caf9"
-                  bgColor="#e3f2fd"
-                >
-                  Hanya ketua tim yang dapat mengumpulkan luaran. Anda dapat
-                  memantau progress di halaman ini.
+                <InfoBox type="info">
+                  Hanya ketua tim yang dapat mengumpulkan luaran. Anda dapat memantau progress di halaman ini.
                 </InfoBox>
               )}
 
-              <Paper
-                sx={{
-                  p: 3,
-                  mb: 3,
-                  borderRadius: "16px",
-                  border: "1px solid #f0f0f0",
-                }}
-              >
-                <Typography sx={{ fontSize: 16, fontWeight: 700, mb: 2 }}>
-                  Progress Luaran
-                </Typography>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 2,
-                    mb: 1.5,
-                  }}
-                >
-                  <LinearProgress
-                    variant="determinate"
-                    value={
-                      data.progress.total > 0
-                        ? Math.round(
-                            (data.progress.disetujui / data.progress.total) *
-                              100,
-                          )
-                        : 0
-                    }
-                    sx={{
-                      flex: 1,
-                      height: 10,
-                      borderRadius: 5,
-                      backgroundColor: "#f0f0f0",
-                      "& .MuiLinearProgress-bar": {
-                        backgroundColor:
-                          data.progress.disetujui === data.progress.total &&
-                          data.progress.total > 0
-                            ? "#2e7d32"
-                            : "#0D59F2",
-                        borderRadius: 5,
-                      },
-                    }}
+              <Paper elevation={0} sx={{ borderRadius: "20px", border: "1.5px solid #E5E7EB", overflow: "hidden", mb: 3 }}>
+                <Box sx={{ height: 5, background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
+                <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
+                  <SectionHeader
+                    icon={FormatListBulleted}
+                    title="Progress Luaran"
+                    subtitle="Pantau achievement luaran kegiatan"
+                    gradient={`linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)`}
                   />
-                  <Typography
-                    sx={{
-                      fontSize: 14,
-                      fontWeight: 700,
-                      color: "#555",
-                      minWidth: 48,
-                    }}
-                  >
-                    {data.progress.total > 0
-                      ? Math.round(
-                          (data.progress.disetujui / data.progress.total) * 100,
-                        )
-                      : 0}
-                    %
-                  </Typography>
-                </Box>
-                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-                  {[
-                    {
-                      label: "Total",
-                      value: data.progress.total,
-                      bg: "#424242",
-                    },
-                    {
-                      label: "Disetujui",
-                      value: data.progress.disetujui,
-                      bg: "#1b5e20",
-                    },
-                    {
-                      label: "Submitted",
-                      value: data.progress.submitted,
-                      bg: "#f57f17",
-                    },
-                    {
-                      label: "Ditolak",
-                      value: data.progress.ditolak,
-                      bg: "#c62828",
-                    },
-                    {
-                      label: "Belum",
-                      value: data.progress.belum,
-                      bg: "#757575",
-                    },
-                  ].map((item) => (
-                    <Box
-                      key={item.label}
-                      sx={{ display: "flex", alignItems: "center", gap: 0.75 }}
-                    >
-                      <Chip
-                        label={item.value}
-                        size="small"
-                        sx={{
-                          backgroundColor: item.bg,
-                          color: "#fff",
-                          fontWeight: 700,
-                        }}
-                      />
-                      <Typography sx={{ fontSize: 13, color: "#777" }}>
-                        {item.label}
-                      </Typography>
-                    </Box>
-                  ))}
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+                    <LinearProgress
+                      variant="determinate"
+                      value={data.progress.total > 0 ? Math.round((data.progress.disetujui / data.progress.total) * 100) : 0}
+                      sx={{
+                        flex: 1, height: 10, borderRadius: 5,
+                        backgroundColor: COLORS.slateLight,
+                        "& .MuiLinearProgress-bar": {
+                          backgroundColor: data.progress.disetujui === data.progress.total && data.progress.total > 0 ? COLORS.success : COLORS.primary,
+                          borderRadius: 5,
+                        },
+                      }}
+                    />
+                    <Typography sx={{ fontSize: 15, fontWeight: 700, color: "#1F2937", minWidth: 52 }}>
+                      {data.progress.total > 0 ? Math.round((data.progress.disetujui / data.progress.total) * 100) : 0}%
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", overflowX: "auto", pb: 1 }}>
+                    {[
+                      { label: "Total", value: data.progress.total, bg: COLORS.slate },
+                      { label: "Disetujui", value: data.progress.disetujui, bg: COLORS.success },
+                      { label: "Submitted", value: data.progress.submitted, bg: COLORS.warning },
+                      { label: "Ditolak", value: data.progress.ditolak, bg: COLORS.error },
+                      { label: "Belum", value: data.progress.belum, bg: "#9CA3AF" },
+                    ].map((item) => (
+                      <Box key={item.label} sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                        <Chip label={item.value} size="small" sx={{ backgroundColor: item.bg, color: "#fff", fontWeight: 700 }} />
+                        <Typography sx={{ fontSize: 13, color: COLORS.slate }}>{item.label}</Typography>
+                      </Box>
+                    ))}
+                  </Box>
                 </Box>
               </Paper>
 
@@ -456,260 +409,86 @@ export default function MonevPage() {
                   const bisa = canSubmitLuaran(luaran);
 
                   return (
-                    <Paper
-                      key={luaran.id_luaran}
-                      sx={{
-                        p: 3,
-                        borderRadius: "16px",
-                        border: `1px solid ${luaran.status === 2 ? "#a5d6a7" : luaran.status === 1 ? "#ffe082" : "#f0f0f0"}`,
-                        backgroundColor:
-                          luaran.status === 2
-                            ? "#f9fffe"
-                            : luaran.status === 1
-                              ? "#fffdf5"
-                              : "#fff",
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "flex-start",
-                          mb: 2,
-                        }}
-                      >
-                        <Box sx={{ flex: 1, mr: 2 }}>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1.5,
-                              mb: 0.5,
-                            }}
-                          >
-                            <Typography sx={{ fontWeight: 700, fontSize: 16 }}>
-                              {luaran.nama_luaran}
-                            </Typography>
-                            <Chip
-                              label={tipe.label}
-                              size="small"
-                              sx={{
-                                backgroundColor: tipe.bg,
-                                color: "#fff",
-                                fontWeight: 700,
-                                fontSize: 11,
-                              }}
-                            />
+                    <Paper key={luaran.id_luaran} elevation={0} sx={{
+                      borderRadius: "20px", border: "1.5px solid #E5E7EB",
+                      overflow: "hidden",
+                      background: luaran.status === 2 ? COLORS.successLight : luaran.status === 3 ? COLORS.errorLight : "#fff",
+                    }}>
+                      <Box sx={{ height: 4, background: luaran.status === 2 ? `linear-gradient(90deg, ${COLORS.success}, #34D399)` : luaran.status === 3 ? `linear-gradient(90deg, ${COLORS.error}, #FCA5A5)` : `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
+                      <Box sx={{ p: { xs: 2.5, sm: 3 } }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
+                          <Box sx={{ flex: 1, mr: 2 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 0.5 }}>
+                              <Typography sx={{ fontWeight: 700, fontSize: 16, color: "#1F2937" }}>{luaran.nama_luaran}</Typography>
+                              <Chip label={tipe.label} size="small" sx={{ backgroundColor: tipe.bg, color: "#fff", fontWeight: 700, fontSize: 11 }} />
+                            </Box>
+                            {luaran.keterangan && <Typography sx={{ fontSize: 13, color: COLORS.slate }}>{luaran.keterangan}</Typography>}
                           </Box>
-                          {luaran.keterangan && (
-                            <Typography sx={{ fontSize: 13, color: "#777" }}>
-                              {luaran.keterangan}
-                            </Typography>
-                          )}
+                          <StatusPill status={luaran.status ?? 0} />
                         </Box>
-                        <StatusPill status={luaran.status ?? 0} />
-                      </Box>
 
-                      <Box
-                        sx={{
-                          display: "grid",
-                          gridTemplateColumns: "1fr 1fr",
-                          gap: 2,
-                          mb: 2,
-                        }}
-                      >
-                        <Box>
-                          <Typography
-                            sx={{ fontSize: 11, color: "#888", mb: 0.25 }}
-                          >
-                            Deadline
-                          </Typography>
-                          <Typography
-                            sx={{
-                              fontSize: 13,
-                              fontWeight: 600,
-                              color:
-                                lewat && luaran.status !== 2
-                                  ? "#c62828"
-                                  : "#333",
-                            }}
-                          >
-                            {formatDate(luaran.deadline)}
-                          </Typography>
-                          {lewat && luaran.status !== 2 && (
-                            <Typography
-                              sx={{
-                                fontSize: 11,
-                                color: "#c62828",
-                                fontWeight: 600,
-                              }}
-                            >
-                              Sudah Lewat
-                            </Typography>
-                          )}
-                        </Box>
-                        {luaran.submitted_at && (
+                        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2, mb: 2 }}>
                           <Box>
-                            <Typography
-                              sx={{ fontSize: 11, color: "#888", mb: 0.25 }}
-                            >
-                              Dikumpulkan
+                            <Typography sx={{ fontSize: 11, color: COLORS.slate, mb: 0.25 }}>Deadline</Typography>
+                            <Typography sx={{ fontSize: 13, fontWeight: 600, color: lewat && luaran.status !== 2 ? COLORS.error : "#333" }}>
+                              {formatDate(luaran.deadline)}
                             </Typography>
-                            <Typography sx={{ fontSize: 13, fontWeight: 600 }}>
-                              {formatDate(luaran.submitted_at)}
-                            </Typography>
+                            {lewat && luaran.status !== 2 && <Typography sx={{ fontSize: 11, color: COLORS.error, fontWeight: 600 }}>Sudah Lewat</Typography>}
                           </Box>
-                        )}
-                      </Box>
-
-                      {luaran.id_luaran_tim && (
-                        <Box
-                          sx={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 1,
-                            mb: 2,
-                          }}
-                        >
-                          {luaran.file_luaran && (
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                              }}
-                            >
-                              <AttachFile
-                                sx={{ fontSize: 16, color: "#1565c0" }}
-                              />
-                              <Button
-                                component="a"
-                                href={`${import.meta.env.VITE_API_URL.replace("/api", "")}/uploads/luaran/${luaran.file_luaran}`}
-                                target="_blank"
-                                size="small"
-                                sx={{
-                                  textTransform: "none",
-                                  fontSize: 12,
-                                  fontWeight: 600,
-                                  color: "#0D59F2",
-                                  p: 0,
-                                  minWidth: 0,
-                                  "&:hover": {
-                                    backgroundColor: "transparent",
-                                    textDecoration: "underline",
-                                  },
-                                }}
-                              >
-                                {luaran.file_luaran}
-                              </Button>
+                          {luaran.submitted_at && (
+                            <Box>
+                              <Typography sx={{ fontSize: 11, color: COLORS.slate, mb: 0.25 }}>Dikumpulkan</Typography>
+                              <Typography sx={{ fontSize: 13, fontWeight: 600, color: "#1F2937" }}>{formatDate(luaran.submitted_at)}</Typography>
                             </Box>
                           )}
-                          {luaran.link_luaran?.length > 0 &&
-                            luaran.link_luaran.map((url, idx) => (
-                              <Box
-                                key={idx}
-                                sx={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: 1,
-                                }}
-                              >
-                                <LinkIcon
-                                  sx={{ fontSize: 16, color: "#6a1b9a" }}
-                                />
-                                <Button
-                                  component="a"
-                                  href={url}
-                                  target="_blank"
-                                  size="small"
-                                  sx={{
-                                    textTransform: "none",
-                                    fontSize: 12,
-                                    fontWeight: 600,
-                                    color: "#6a1b9a",
-                                    p: 0,
-                                    minWidth: 0,
-                                    "&:hover": {
-                                      backgroundColor: "transparent",
-                                      textDecoration: "underline",
-                                    },
-                                  }}
-                                >
+                        </Box>
+
+                        {luaran.id_luaran_tim && (
+                          <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mb: 2 }}>
+                            {luaran.file_luaran && (
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                <AttachFile sx={{ fontSize: 16, color: COLORS.primary }} />
+                                <Button onClick={() => downloadFile(luaran.file_luaran, "luaran")} size="small" sx={{
+                                  textTransform: "none", fontSize: 12, fontWeight: 600, color: COLORS.primary, p: 0, minWidth: 0,
+                                  "&:hover": { backgroundColor: "transparent", textDecoration: "underline" },
+                                }}>
+                                  {luaran.file_luaran}
+                                </Button>
+                              </Box>
+                            )}
+                            {luaran.link_luaran?.length > 0 && luaran.link_luaran.map((url, idx) => (
+                              <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                <LinkIcon sx={{ fontSize: 16, color: "#6a1b9a" }} />
+                                <Button component="a" href={url} target="_blank" rel="noopener noreferrer" size="small" sx={{
+                                  textTransform: "none", fontSize: 12, fontWeight: 600, color: "#6a1b9a", p: 0, minWidth: 0,
+                                  "&:hover": { backgroundColor: "transparent", textDecoration: "underline" },
+                                }}>
                                   {url}
                                 </Button>
                               </Box>
                             ))}
-                          {luaran.catatan_admin && (
-                            <Box
-                              sx={{
-                                p: 1.5,
-                                backgroundColor: "#fce4ec",
-                                borderRadius: "8px",
-                                border: "1px solid #ef9a9a",
-                              }}
-                            >
-                              <Typography
-                                sx={{
-                                  fontSize: 11,
-                                  color: "#c62828",
-                                  fontWeight: 700,
-                                  mb: 0.25,
-                                }}
-                              >
-                                Catatan Admin
-                              </Typography>
-                              <Typography sx={{ fontSize: 13 }}>
-                                {luaran.catatan_admin}
-                              </Typography>
-                            </Box>
-                          )}
-                        </Box>
-                      )}
+                            {luaran.catatan_admin && (
+                              <Box sx={{ p: 2, backgroundColor: COLORS.errorLight, borderRadius: "12px", border: `1.5px solid #FCA5A5` }}>
+                                <Typography sx={{ fontSize: 12, color: COLORS.error, fontWeight: 700, mb: 0.5 }}>Catatan Admin</Typography>
+                                <Typography sx={{ fontSize: 13, color: "#7F1D1D" }}>{luaran.catatan_admin}</Typography>
+                              </Box>
+                            )}
+                          </Box>
+                        )}
 
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "flex-end",
-                          alignItems: "center",
-                        }}
-                      >
-                        {bisa ? (
-                          <Button
-                            variant="contained"
-                            size="small"
-                            onClick={() => handleOpenSubmit(luaran)}
-                            disabled={submitting}
-                            sx={{
-                              textTransform: "none",
-                              borderRadius: "50px",
-                              fontSize: 13,
-                              fontWeight: 600,
-                              px: 3,
-                              backgroundColor:
-                                luaran.status === 3 ? "#f57f17" : "#0D59F2",
-                              "&:hover": {
-                                backgroundColor:
-                                  luaran.status === 3 ? "#e65100" : "#0846c7",
-                              },
-                            }}
-                          >
-                            {luaran.status === 3
-                              ? "Kumpulkan Ulang"
-                              : "Kumpulkan"}
-                          </Button>
-                        ) : lewat &&
-                          luaran.status !== 2 &&
-                          luaran.status !== 1 ? (
-                          <Typography
-                            sx={{
-                              fontSize: 12,
-                              color: "#c62828",
-                              fontWeight: 600,
-                            }}
-                          >
-                            Deadline telah lewat
-                          </Typography>
-                        ) : null}
+                        <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
+                          {bisa ? (
+                            <Button variant="contained" size="small" onClick={() => handleOpenSubmit(luaran)} disabled={submitting} sx={{
+                              textTransform: "none", borderRadius: "10px", fontSize: 13, fontWeight: 700,
+                              backgroundColor: luaran.status === 3 ? COLORS.warning : COLORS.primary,
+                              "&:hover": { backgroundColor: luaran.status === 3 ? "#B45309" : COLORS.primaryDark },
+                            }}>
+                              {luaran.status === 3 ? "Kumpulkan Ulang" : "Kumpulkan"}
+                            </Button>
+                          ) : lewat && luaran.status !== 2 && luaran.status !== 1 ? (
+                            <Typography sx={{ fontSize: 12, color: COLORS.error, fontWeight: 600 }}>Deadline telah lewat</Typography>
+                          ) : null}
+                        </Box>
                       </Box>
                     </Paper>
                   );
@@ -719,267 +498,109 @@ export default function MonevPage() {
           )}
 
           {!statusMessage && (!data || data.luaran?.length === 0) && (
-            <Paper
-              sx={{
-                py: 10,
-                borderRadius: "16px",
-                border: "1px solid #f0f0f0",
-                textAlign: "center",
-              }}
-            >
-              <Box
-                sx={{
-                  width: 100,
-                  height: 100,
-                  borderRadius: "50%",
-                  backgroundColor: "#f5f5f5",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  mx: "auto",
-                  mb: 3,
-                }}
-              >
-                <AssignmentTurnedIn sx={{ fontSize: 48, color: "#ccc" }} />
+            <Paper elevation={0} sx={{ borderRadius: "20px", border: "1.5px solid #E5E7EB", overflow: "hidden" }}>
+              <Box sx={{ height: 5, background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
+              <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
+                <SectionHeader
+                  icon={AssignmentTurnedIn}
+                  title="Belum Ada Luaran"
+                  subtitle="Data luaran kegiatan akan muncul di sini"
+                  gradient={`linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)`}
+                />
+                <Box sx={{ py: 8, textAlign: "center" }}>
+                  <Box sx={{
+                    width: 100, height: 100, borderRadius: "50%",
+                    background: `linear-gradient(135deg, ${COLORS.slateLight}, #E2E8F0)`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    mx: "auto", mb: 3, border: `3px solid ${COLORS.primaryMuted}`,
+                  }}>
+                    <AssignmentTurnedIn sx={{ fontSize: 48, color: COLORS.slate }} />
+                  </Box>
+                  <Typography sx={{ fontSize: 22, fontWeight: 800, color: "#1F2937", mb: 1 }}>Belum Ada Luaran</Typography>
+                  <Typography sx={{ fontSize: 14, color: COLORS.slate, maxWidth: 420, mx: "auto", lineHeight: 1.7 }}>
+                    Luaran kegiatan akan muncul di sini setelah admin menetapkannya
+                  </Typography>
+                </Box>
               </Box>
-              <Typography
-                sx={{ fontSize: 20, fontWeight: 700, color: "#444", mb: 1 }}
-              >
-                Belum Ada Luaran
-              </Typography>
-              <Typography sx={{ fontSize: 14, color: "#999" }}>
-                Luaran kegiatan akan muncul di sini setelah admin menetapkannya
-              </Typography>
             </Paper>
           )}
         </Box>
 
-        <Dialog
-          open={openSubmit}
-          onClose={handleCloseSubmit}
-          maxWidth="sm"
-          fullWidth
-          PaperProps={{ sx: { borderRadius: "16px" } }}
-        >
+        <Dialog open={openSubmit} onClose={handleCloseSubmit} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: "16px" } }}>
+          <Box sx={{ height: 5, background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
           <DialogTitle sx={{ pb: 1 }}>
             <Box sx={{ pr: 4 }}>
-              <Typography sx={{ fontWeight: 700, fontSize: 16 }}>
-                {selectedLuaran?.status === 3
-                  ? "Kumpulkan Ulang Luaran"
-                  : "Kumpulkan Luaran"}
+              <Typography sx={{ fontWeight: 700, fontSize: 18, color: "#1F2937" }}>
+                {selectedLuaran?.status === 3 ? "Kumpulkan Ulang Luaran" : "Kumpulkan Luaran"}
               </Typography>
-              {selectedLuaran && (
-                <Typography sx={{ fontSize: 13, color: "#777", mt: 0.25 }}>
-                  {selectedLuaran.nama_luaran}
-                </Typography>
-              )}
+              {selectedLuaran && <Typography sx={{ fontSize: 13, color: COLORS.slate, mt: 0.25 }}>{selectedLuaran.nama_luaran}</Typography>}
             </Box>
-            <IconButton
-              onClick={handleCloseSubmit}
-              sx={{ position: "absolute", right: 12, top: 8, color: "#888" }}
-            >
+            <IconButton onClick={handleCloseSubmit} sx={{ position: "absolute", right: 12, top: 8, color: "#888" }}>
               <Close />
             </IconButton>
           </DialogTitle>
 
           <DialogContent dividers sx={{ px: 3, py: 3 }}>
             {selectedLuaran?.status === 3 && selectedLuaran?.catatan_admin && (
-              <Box
-                sx={{
-                  mb: 3,
-                  p: 2,
-                  backgroundColor: "#fce4ec",
-                  borderRadius: "12px",
-                  border: "1px solid #ef9a9a",
-                }}
-              >
-                <Typography
-                  sx={{
-                    fontSize: 12,
-                    color: "#c62828",
-                    fontWeight: 700,
-                    mb: 0.5,
-                  }}
-                >
-                  Catatan Penolakan Admin
-                </Typography>
-                <Typography sx={{ fontSize: 13 }}>
-                  {selectedLuaran.catatan_admin}
-                </Typography>
+              <Box sx={{ mb: 3, p: 2, backgroundColor: COLORS.errorLight, borderRadius: "12px", border: `1.5px solid #FCA5A5` }}>
+                <Typography sx={{ fontSize: 12, color: COLORS.error, fontWeight: 700, mb: 0.5 }}>Catatan Penolakan Admin</Typography>
+                <Typography sx={{ fontSize: 13, color: "#7F1D1D" }}>{selectedLuaran.catatan_admin}</Typography>
               </Box>
             )}
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
               {(selectedLuaran?.tipe === 1 || selectedLuaran?.tipe === 3) && (
                 <Box>
-                  <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>
-                    File Luaran (PDF){" "}
-                    <span style={{ color: "#ef5350" }}>*</span>
-                  </Typography>
+                  <FieldLabel>File Luaran (PDF) <span style={{ color: COLORS.error }}>*</span></FieldLabel>
                   {selectedLuaran?.file_luaran && !file && (
-                    <Box
-                      sx={{
-                        mb: 1.5,
-                        p: 1.5,
-                        borderRadius: "10px",
-                        backgroundColor: "#f0f4ff",
-                        border: "1px solid #90caf9",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                      }}
-                    >
-                      <AttachFile sx={{ fontSize: 16, color: "#1565c0" }} />
-                      <Typography
-                        sx={{ fontSize: 12, color: "#1565c0", fontWeight: 600 }}
-                      >
-                        File sebelumnya: {selectedLuaran.file_luaran}
-                      </Typography>
+                    <Box sx={{ mb: 1.5, p: 1.5, borderRadius: "10px", backgroundColor: COLORS.primaryLight, border: `1.5px solid ${COLORS.primaryMuted}`, display: "flex", alignItems: "center", gap: 1 }}>
+                      <AttachFile sx={{ fontSize: 16, color: COLORS.primary }} />
+                      <Typography sx={{ fontSize: 12, color: COLORS.primary, fontWeight: 600 }}>File sebelumnya: {selectedLuaran.file_luaran}</Typography>
                     </Box>
                   )}
-                  <Box
-                    component="label"
-                    htmlFor="file-luaran-upload"
-                    sx={{
-                      border: `2px dashed ${fileError ? "#d32f2f" : "#e0e0e0"}`,
-                      borderRadius: "12px",
-                      p: 3,
-                      textAlign: "center",
-                      backgroundColor: "#fafafa",
-                      cursor: "pointer",
-                      display: "block",
-                      transition: "all 0.2s",
-                      "&:hover": {
-                        backgroundColor: "#f0f4ff",
-                        borderColor: "#0D59F2",
-                      },
-                    }}
-                  >
-                    <input
-                      type="file"
-                      accept="application/pdf"
-                      id="file-luaran-upload"
-                      style={{ display: "none" }}
-                      onChange={handleFileChange}
-                    />
+                  <Box component="label" htmlFor="file-luaran-upload" sx={{
+                    border: `2px dashed ${fileError ? COLORS.error : "#E5E7EB"}`,
+                    borderRadius: "12px", p: 3, textAlign: "center",
+                    backgroundColor: "#fafafa", cursor: "pointer", display: "block", transition: "all 0.2s",
+                    "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
+                  }}>
+                    <input type="file" accept="application/pdf" id="file-luaran-upload" style={{ display: "none" }} onChange={handleFileChange} />
                     {file ? (
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: 1,
-                        }}
-                      >
-                        <AttachFile sx={{ fontSize: 18, color: "#1565c0" }} />
-                        <Typography
-                          sx={{
-                            fontSize: 13,
-                            fontWeight: 600,
-                            color: "#1565c0",
-                          }}
-                        >
-                          {file.name}
-                        </Typography>
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1 }}>
+                        <AttachFile sx={{ fontSize: 18, color: COLORS.primary }} />
+                        <Typography sx={{ fontSize: 13, fontWeight: 600, color: COLORS.primary }}>{file.name}</Typography>
                       </Box>
                     ) : (
                       <>
-                        <Typography
-                          sx={{
-                            fontSize: 13,
-                            color: "#555",
-                            fontWeight: 600,
-                            mb: 0.5,
-                          }}
-                        >
-                          Klik untuk pilih file PDF
-                        </Typography>
-                        <Typography sx={{ fontSize: 12, color: "#999" }}>
-                          Maksimal 10 MB
-                        </Typography>
+                        <Typography sx={{ fontSize: 13, color: COLORS.slate, fontWeight: 600, mb: 0.5 }}>Klik untuk pilih file PDF</Typography>
+                        <Typography sx={{ fontSize: 12, color: COLORS.slate }}>Maksimal 10 MB</Typography>
                       </>
                     )}
                   </Box>
-                  {fileError && (
-                    <Typography
-                      sx={{ fontSize: 12, color: "#d32f2f", mt: 0.5 }}
-                    >
-                      {fileError}
-                    </Typography>
-                  )}
+                  {fileError && <Typography sx={{ fontSize: 12, color: COLORS.error, mt: 0.5 }}>{fileError}</Typography>}
                 </Box>
               )}
 
               {(selectedLuaran?.tipe === 2 || selectedLuaran?.tipe === 3) && (
                 <Box>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      mb: 0.75,
-                    }}
-                  >
-                    <Typography sx={{ fontSize: 13, fontWeight: 600 }}>
-                      Link URL <span style={{ color: "#ef5350" }}>*</span>
-                    </Typography>
-                    <Button
-                      size="small"
-                      onClick={handleAddLink}
-                      sx={{
-                        textTransform: "none",
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: "#0D59F2",
-                        p: 0,
-                        minWidth: 0,
-                        "&:hover": { backgroundColor: "transparent" },
-                      }}
-                    >
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
+                    <FieldLabel>Link URL <span style={{ color: COLORS.error }}>*</span></FieldLabel>
+                    <Button size="small" onClick={handleAddLink} sx={{
+                      textTransform: "none", fontSize: 12, fontWeight: 600, color: COLORS.primary, p: 0, minWidth: 0,
+                      "&:hover": { backgroundColor: "transparent" },
+                    }}>
                       + Tambah Link
                     </Button>
                   </Box>
-                  <Box
-                    sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}
-                  >
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                     {links.map((l, idx) => (
-                      <Box
-                        key={idx}
-                        sx={{
-                          display: "flex",
-                          gap: 1,
-                          alignItems: "flex-start",
-                        }}
-                      >
-                        <TextField
-                          fullWidth
-                          placeholder="https://..."
-                          value={l}
-                          onChange={(e) =>
-                            handleChangeLink(idx, e.target.value)
-                          }
-                          error={!!linksError[idx]}
-                          helperText={linksError[idx]}
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              borderRadius: "12px",
-                            },
-                          }}
-                        />
+                      <Box key={idx} sx={{ display: "flex", gap: 1, alignItems: "flex-start" }}>
+                        <TextField fullWidth placeholder="https://..." value={l} onChange={(e) => handleChangeLink(idx, e.target.value)} error={!!linksError[idx]} helperText={linksError[idx]} sx={roundedField} />
                         {links.length > 1 && (
-                          <IconButton
-                            size="small"
-                            onClick={() => handleRemoveLink(idx)}
-                            sx={{
-                              mt: 0.5,
-                              color: "#e53935",
-                              backgroundColor: "rgba(229,57,53,0.06)",
-                              borderRadius: "8px",
-                              "&:hover": {
-                                backgroundColor: "rgba(229,57,53,0.12)",
-                              },
-                            }}
-                          >
+                          <IconButton size="small" onClick={() => handleRemoveLink(idx)} sx={{
+                            mt: 0.5, color: COLORS.error, backgroundColor: COLORS.errorLight, borderRadius: "8px",
+                            "&:hover": { backgroundColor: "#FEE2E2" },
+                          }}>
                             <Close fontSize="small" />
                           </IconButton>
                         )}
@@ -991,34 +612,20 @@ export default function MonevPage() {
             </Box>
           </DialogContent>
 
-          <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-            <Button
-              onClick={handleCloseSubmit}
-              sx={{
-                textTransform: "none",
-                borderRadius: "50px",
-                px: 4,
-                fontWeight: 600,
-                backgroundColor: "#FDB022",
-                color: "#fff",
-                "&:hover": { backgroundColor: "#e09a1a" },
-              }}
-            >
+          <DialogActions sx={{ px: 3, py: 2, gap: 1.5, justifyContent: "flex-end" }}>
+            <Button onClick={handleCloseSubmit} sx={{
+              textTransform: "none", borderRadius: "10px", px: 3, fontWeight: 600,
+              backgroundColor: COLORS.error, color: "#fff",
+              "&:hover": { backgroundColor: "#B91C1C" },
+            }}>
               Batal
             </Button>
-            <Button
-              variant="contained"
-              onClick={handleSubmit}
-              disabled={submitting}
-              sx={{
-                textTransform: "none",
-                borderRadius: "50px",
-                px: 4,
-                fontWeight: 600,
-                backgroundColor: "#0D59F2",
-                "&:hover": { backgroundColor: "#0846c7" },
-              }}
-            >
+            <Button variant="contained" onClick={handleSubmit} disabled={submitting} sx={{
+              textTransform: "none", borderRadius: "10px", px: 4, py: 1.2, fontWeight: 700,
+              backgroundColor: COLORS.primary,
+              "&:hover": { backgroundColor: COLORS.primaryDark },
+              "&:disabled": { backgroundColor: "#E5E7EB", color: "#9CA3AF" },
+            }}>
               {submitting ? "Mengumpulkan..." : "Kumpulkan"}
             </Button>
           </DialogActions>

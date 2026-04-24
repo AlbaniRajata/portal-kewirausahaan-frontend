@@ -97,8 +97,8 @@ export default function RegisterMahasiswaPage() {
       setErrors((prev) => ({ ...prev, foto_ktm: "Format file harus JPG, JPEG, PNG, atau PDF" }));
       return;
     }
-    if (file.size > 10 * 1024 * 1024) {
-      setErrors((prev) => ({ ...prev, foto_ktm: "Ukuran file maksimal 10MB" }));
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors((prev) => ({ ...prev, foto_ktm: "Ukuran file maksimal 5MB" }));
       return;
     }
     handleChange("foto_ktm", file);

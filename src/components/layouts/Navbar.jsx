@@ -5,13 +5,14 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useAuthStore } from "../../store/authStore";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { getProfile } from "../../api/public";
 import { logoutUser } from "../../api/auth";
 import { setAccessToken } from "../../api/axios";
 
-export default function Navbar({ onToggleSidebar, sidebarCollapsed }) {
+export default function Navbar({ onToggleSidebar, sidebarCollapsed, hasSidebar = true }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout, refreshToken } = useAuthStore();
   const [anchorEl, setAnchorEl] = useState(false);
   const [profile, setProfile] = useState(null);
@@ -27,8 +28,10 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed }) {
         // profil gagal dimuat, tampilkan data dari store saja
       }
     })();
-    return () => { active = false; };
-  }, []);
+    return () => {
+      active = false;
+    };
+  }, [location.key, user]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
@@ -36,12 +39,11 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed }) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const baseUrl = import.meta.env.VITE_API_URL.replace("/api", "");
-  const displayName = profile?.nama_lengkap || user?.nama_lengkap || "User";
-  const photoUrl = profile?.foto ? `/uploads/profil/${profile.foto}` : null;
+  const displayName = user?.nama_lengkap || profile?.nama_lengkap || "User";
+  const photoUrl = user?.foto ? `/uploads/profil/${user.foto}` : (profile?.foto ? `/uploads/profil/${profile.foto}` : null);
   const currentProgram = profile?.current_program?.trim() || "";
   const roleName = profile?.nama_role?.trim() || "";
-  const navbarTitle = currentProgram;
+  const navbarTitle = currentProgram || "Program Kewirausahaan";
   const displaySubtitle = profile?.keterangan?.trim() || roleName || "";
 
   const handleLogout = async () => {
@@ -62,7 +64,9 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed }) {
         height: 73,
         position: "fixed",
         top: scrolled ? 12 : 0,
-        left: scrolled ? (sidebarCollapsed ? 94 : 274) : (sidebarCollapsed ? 70 : 250),
+        left: hasSidebar
+          ? (scrolled ? (sidebarCollapsed ? 94 : 274) : (sidebarCollapsed ? 70 : 250))
+          : (scrolled ? 24 : 0),
         right: scrolled ? 24 : 0,
         zIndex: 100,
         px: 3,
@@ -73,33 +77,33 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed }) {
         boxShadow: scrolled ? "0px 4px 16px -4px rgba(0,0,0,0.12)" : "none",
         border: scrolled ? "1.5px solid rgba(0,0,0,0.10)" : "1.5px solid transparent",
         borderRadius: scrolled ? "24px" : 0,
-        paddingLeft: scrolled ? 3 : 3,
-        paddingRight: scrolled ? 3 : 3,
         transition: "left 0.3s ease, right 0.3s ease, top 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease, border-radius 0.3s ease, border-color 0.3s ease",
       }}
     >
       <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0, flex: 1, pr: 1.5 }}>
-        <Box
-          onClick={onToggleSidebar}
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            height: scrolled ? 46 : 46,
-            px: scrolled ? 0 : 1.5,
-            borderRadius: scrolled ? "50px" : "18px",
-            border: scrolled ? "1.5px solid transparent" : "1.5px solid rgba(0,0,0,0.12)",
-            backgroundColor: scrolled ? "transparent" : "#ffffff",
-            boxShadow: scrolled ? "none" : "0 1px 4px rgba(0,0,0,0.06)",
-            cursor: "pointer",
-            transition: "all 0.3s ease",
-            "&:hover": {
-              backgroundColor: scrolled ? "rgba(0,0,0,0.04)" : "rgba(0,0,0,0.02)",
-            },
-          }}
-        >
-          <MenuIcon sx={{ fontSize: 20, color: "#555" }} />
-        </Box>
+        {hasSidebar && (
+          <Box
+            onClick={onToggleSidebar}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: 46,
+              px: scrolled ? 0 : 1.5,
+              borderRadius: scrolled ? "50px" : "18px",
+              border: scrolled ? "1.5px solid transparent" : "1.5px solid rgba(0,0,0,0.12)",
+              backgroundColor: scrolled ? "transparent" : "#ffffff",
+              boxShadow: scrolled ? "none" : "0 1px 4px rgba(0,0,0,0.06)",
+              cursor: "pointer",
+              transition: "all 0.3s ease",
+              "&:hover": {
+                backgroundColor: scrolled ? "rgba(0,0,0,0.04)" : "rgba(0,0,0,0.02)",
+              },
+            }}
+          >
+            <MenuIcon sx={{ fontSize: 20, color: "#555" }} />
+          </Box>
+        )}
 
         <Box
           sx={{
@@ -206,7 +210,7 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed }) {
         <Box
           sx={{
             position: "absolute",
-            top: "calc(100% + 8px)",
+            top: "calc(100% + 10px)",
             right: 0,
             minWidth: "100%",
             borderRadius: "16px",
