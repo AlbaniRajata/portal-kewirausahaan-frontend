@@ -6,7 +6,7 @@ import {
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import BodyLayout from "../../components/layouts/BodyLayout";
-import DosenSidebar from "../../components/layouts/DosenSidebar";
+import DosenNavbar from "../../components/layouts/DosenNavbar";
 import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import {
@@ -141,6 +141,43 @@ export default function DashboardDosenPage() {
 
   const { profile, pengajuan, bimbingan, monev } = data;
 
+const COLORS = {
+    primary:      "#0D59F2",
+    primaryLight: "#E0F2FE",
+    primaryDark:  "#0369A1",
+    primaryMuted: "#93C5FD",
+    secondary:    "#2563EB",
+    accent:       "#3B82F6",
+    slate:        "#64748B",
+    slateLight:   "#F1F5F9",
+    success:      "#059669",
+    successLight: "#ECFDF5",
+    warning:      "#D97706",
+    warningLight: "#FFFBEB",
+    error:        "#DC2626",
+    errorLight:   "#FEF2F2",
+  };
+
+  const SectionHeader = ({ icon: Icon, title, subtitle, gradient }) => (
+    <Box sx={{
+      display: "flex", alignItems: "center", gap: 2, mb: 3,
+      p: 2.5, borderRadius: "14px",
+      background: gradient,
+    }}>
+      <Box sx={{
+        width: 44, height: 44, borderRadius: "12px",
+        background: "rgba(255,255,255,0.25)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        backdropFilter: "blur(4px)",
+      }}>
+        <Icon sx={{ color: "#fff", fontSize: 22 }} />
+      </Box>
+      <Box>
+        <Typography sx={{ fontSize: 17, fontWeight: 700, color: "#fff", lineHeight: 1.2 }}>{title}</Typography>
+        {subtitle && <Typography sx={{ fontSize: 12, color: "rgba(255,255,255,0.8)", mt: 0.3 }}>{subtitle}</Typography>}
+      </Box>
+    </Box>
+  );
   const pengajuanMenunggu  = pengajuan.filter((p) => p.status === 0).length;
   const pengajuanDisetujui = pengajuan.filter((p) => p.status === 1).length;
   const pengajuanDitolak   = pengajuan.filter((p) => p.status === 2).length;
@@ -217,7 +254,7 @@ export default function DashboardDosenPage() {
 
   if (loading) {
     return (
-      <BodyLayout Sidebar={DosenSidebar}>
+      <BodyLayout Sidebar={DosenNavbar}>
         <Box sx={{ position: "relative", minHeight: "60vh" }}>
           <LoadingScreen message="Memuat data..." overlay minHeight="60vh" />
         </Box>
@@ -226,7 +263,7 @@ export default function DashboardDosenPage() {
   }
 
   return (
-    <BodyLayout Sidebar={DosenSidebar}>
+    <BodyLayout Sidebar={DosenNavbar}>
       <PageTransition>
         <Box>
 
