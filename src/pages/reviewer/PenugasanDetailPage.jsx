@@ -1,15 +1,26 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import { Box, Paper, Tabs, Tab, Button, Divider } from "@mui/material";
+import { Box, Paper, Tabs, Tab, Button, Typography } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
-import ReviewerSidebar from "../../components/layouts/ReviewerSidebar";
+import ReviewerNavbar from "../../components/layouts/ReviewerNavbar";
 import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import DetailPenugasanTab from "../../components/reviewer/DetailPenugasanTab";
 import FormPenilaianTab from "../../components/reviewer/FormPenilaianTab";
 import { getDetailPenugasan, acceptPenugasan, rejectPenugasan } from "../../api/reviewer";
+
+const COLORS = {
+  primary:      "#0D59F2",
+  primaryLight: "#E0F2FE",
+  primaryDark:  "#0369A1",
+  accent:       "#3B82F6",
+  secondary:    "#2563EB",
+  success:      "#059669",
+  warning:      "#D97706",
+  error:        "#DC2626",
+};
 
 const toNumberOrNull = (value) => {
   const num = Number(value);
@@ -21,7 +32,6 @@ const isAcceptedStatus = (status) => [1, 3, 4].includes(Number(status));
 const isTahap2BlockedByPairApproval = (item) => {
   const tahap = toNumberOrNull(item?.urutan_tahap ?? item?.tahap);
   if (tahap !== 2) return false;
-
   const statusReviewer = toNumberOrNull(item?.status_reviewer);
   const statusJuri = toNumberOrNull(item?.status_juri);
   return !(isAcceptedStatus(statusReviewer) && isAcceptedStatus(statusJuri));
@@ -40,9 +50,7 @@ export default function PenugasanDetailPage() {
   const tabParam = searchParams.get("tab");
   const [activeTab, setActiveTab] = useState(parseInt(tabParam) || 0);
 
-  useEffect(() => {
-    setActiveTab(parseInt(tabParam) || 0);
-  }, [tabParam]);
+  useEffect(() => { setActiveTab(parseInt(tabParam) || 0); }, [tabParam]);
 
   const fetchDetail = useCallback(async () => {
     try {
@@ -51,19 +59,11 @@ export default function PenugasanDetailPage() {
       if (response.success) {
         setPenugasan(response.data);
       } else {
-        await Swal.fire({
-          icon: "warning", title: "Peringatan",
-          text: response.message || "Gagal memuat detail penugasan",
-          confirmButtonText: "OK",
-        });
+        await Swal.fire({ icon: "warning", title: "Peringatan", text: response.message || "Gagal memuat detail penugasan", confirmButtonText: "OK" });
         navigate("/reviewer/penugasan");
       }
     } catch {
-      await Swal.fire({
-        icon: "error", title: "Gagal Memuat",
-        text: "Gagal memuat detail penugasan. Silahkan coba lagi.",
-        confirmButtonText: "OK",
-      });
+      await Swal.fire({ icon: "error", title: "Gagal Memuat", text: "Gagal memuat detail penugasan. Silahkan coba lagi.", confirmButtonText: "OK" });
       navigate("/reviewer/penugasan");
     } finally {
       setLoading(false);
@@ -82,7 +82,7 @@ export default function PenugasanDetailPage() {
       title: "Konfirmasi",
       html: `Terima penugasan untuk proposal:<br/><br/><b>${penugasan.judul}</b>?`,
       icon: "question", showCancelButton: true,
-      confirmButtonColor: "#0D59F2", cancelButtonColor: "#d33",
+      confirmButtonColor: COLORS.primary, cancelButtonColor: "#d33",
       confirmButtonText: "Ya, Terima", cancelButtonText: "Batal",
     });
     if (!result.isConfirmed) return;
@@ -121,7 +121,7 @@ export default function PenugasanDetailPage() {
 
   if (loading) {
     return (
-      <BodyLayout Sidebar={ReviewerSidebar}>
+      <BodyLayout Sidebar={ReviewerNavbar}>
         <Box sx={{ position: "relative", minHeight: "60vh" }}>
           <LoadingScreen message="Memuat detail penugasan..." overlay minHeight="60vh" />
         </Box>
@@ -134,35 +134,49 @@ export default function PenugasanDetailPage() {
   const blockedByPairApproval = isTahap2BlockedByPairApproval(penugasan);
 
   return (
-    <BodyLayout Sidebar={ReviewerSidebar}>
+    <BodyLayout Sidebar={ReviewerNavbar}>
       <PageTransition>
         <Box>
+
           <Button
             onClick={() => navigate("/reviewer/penugasan")}
             startIcon={<ArrowBack />}
             sx={{
-              borderRadius: "50px",
-              textTransform: "none", color: "#777", fontSize: 13,
-              fontWeight: 500, p: 0, mb: 2, minWidth: 0,
-              "&:hover": { backgroundColor: "transparent", color: "#0D59F2" },
+              borderRadius: "50px", textTransform: "none",
+              color: "#777", fontSize: 13, fontWeight: 500,
+              p: 0, mb: 2, minWidth: 0,
+              "&:hover": { backgroundColor: "transparent", color: COLORS.primary },
             }}
           >
             Kembali ke Daftar Penugasan
           </Button>
 
-          <Paper sx={{ borderRadius: "16px", border: "1px solid #f0f0f0", overflow: "hidden" }}>
-            <Box sx={{ borderBottom: "1px solid #f0f0f0" }}>
+          <Box sx={{ mb: 4 }}>
+            <Typography sx={{ fontSize: 36, fontWeight: 800, color: "#1F2937", mb: 0.5 }}>
+              Detail Penugasan
+            </Typography>
+            <Typography sx={{ fontSize: 16, color: "#6B7280" }}>
+              {penugasan.judul}
+            </Typography>
+          </Box>
+
+          <Paper elevation={0} sx={{ borderRadius: "20px", border: "1.5px solid #E5E7EB", overflow: "hidden" }}>
+            <Box sx={{ height: 5, background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
+            <Box sx={{ borderBottom: "1.5px solid #E5E7EB" }}>
               <Tabs
                 value={activeTab}
                 onChange={handleTabChange}
                 sx={{
-                  px: 2,
+                  px: 3,
                   "& .MuiTab-root": {
                     textTransform: "none", fontSize: 14, fontWeight: 500,
-                    color: "#888", minHeight: 52,
-                    "&.Mui-selected": { fontWeight: 700, color: "#0D59F2" },
+                    color: "#9CA3AF", minHeight: 56,
+                    "&.Mui-selected": { fontWeight: 700, color: COLORS.primary },
                   },
-                  "& .MuiTabs-indicator": { backgroundColor: "#0D59F2", height: 3, borderRadius: "3px 3px 0 0" },
+                  "& .MuiTabs-indicator": {
+                    backgroundColor: COLORS.primary, height: 3,
+                    borderRadius: "3px 3px 0 0",
+                  },
                 }}
               >
                 <Tab label="Detail Penugasan" />
@@ -173,7 +187,7 @@ export default function PenugasanDetailPage() {
               </Tabs>
             </Box>
 
-            <Box sx={{ p: 4 }}>
+            <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
               {activeTab === 0 && (
                 <DetailPenugasanTab
                   penugasan={penugasan}
@@ -187,42 +201,49 @@ export default function PenugasanDetailPage() {
               )}
             </Box>
           </Paper>
+
           <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 3 }}>
             {activeTab === 1 && formActions && !formActions.isSubmitted && (
               <>
                 <Button
-                  variant="contained"
                   onClick={() => navigate("/reviewer/penugasan")}
                   sx={{
-                    textTransform: "none", borderRadius: "50px",
-                    px: 4, py: 1.2, fontWeight: 600,
-                    backgroundColor: "#FDB022", "&:hover": { backgroundColor: "#e09a1a" },
+                    textTransform: "none", borderRadius: "12px",
+                    px: 4, py: 1.3, fontWeight: 700, fontSize: 14,
+                    background: COLORS.warning, color: "#fff",
+                    boxShadow: "0 4px 15px rgba(217,119,6,0.3)",
+                    "&:hover": { boxShadow: "0 6px 20px rgba(217,119,6,0.4)" },
                   }}
                 >
                   Kembali
                 </Button>
                 <Button
-                  variant="contained"
                   onClick={formActions.handleSimpanDraft}
                   disabled={formActions.saving || formActions.submitting}
                   sx={{
-                    textTransform: "none", borderRadius: "50px",
-                    px: 3, py: 1.2, fontWeight: 600,
-                    backgroundColor: "#0D59F2", color: "#fff",
-                    "&:hover": { backgroundColor: "#0a47c4" },
+                    textTransform: "none", borderRadius: "12px",
+                    px: 3, py: 1.3, fontWeight: 700, fontSize: 14,
+                    background: `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)`,
+                    color: "#fff",
+                    boxShadow: "0 4px 15px rgba(13,89,242,0.3)",
+                    "&:hover": { boxShadow: "0 6px 20px rgba(13,89,242,0.4)" },
+                    "&:disabled": { opacity: 0.7, color: "#fff" },
                   }}
                 >
                   {formActions.saving ? "Menyimpan..." : "Simpan"}
                 </Button>
                 {formActions.canSubmit && (
                   <Button
-                    variant="contained"
                     onClick={formActions.handleSubmit}
                     disabled={formActions.saving || formActions.submitting}
                     sx={{
-                      textTransform: "none", borderRadius: "50px",
-                      px: 3, py: 1.2, fontWeight: 600,
-                      backgroundColor: "#2e7d32", "&:hover": { backgroundColor: "#1b5e20" },
+                      textTransform: "none", borderRadius: "12px",
+                      px: 3, py: 1.3, fontWeight: 700, fontSize: 14,
+                      background: `linear-gradient(135deg, ${COLORS.success} 0%, #34D399 100%)`,
+                      color: "#fff",
+                      boxShadow: "0 4px 15px rgba(5,150,105,0.3)",
+                      "&:hover": { boxShadow: "0 6px 20px rgba(5,150,105,0.4)" },
+                      "&:disabled": { opacity: 0.7, color: "#fff" },
                     }}
                   >
                     {formActions.submitting ? "Memproses..." : "Simpan dan Ajukan"}
@@ -232,18 +253,20 @@ export default function PenugasanDetailPage() {
             )}
             {!(activeTab === 1 && formActions && !formActions.isSubmitted) && (
               <Button
-                variant="contained"
                 onClick={() => navigate("/reviewer/penugasan")}
                 sx={{
-                  textTransform: "none", borderRadius: "50px",
-                  px: 4, py: 1.2, fontWeight: 600,
-                  backgroundColor: "#FDB022", "&:hover": { backgroundColor: "#e09a1a" },
+                  textTransform: "none", borderRadius: "12px",
+                  px: 4, py: 1.3, fontWeight: 700, fontSize: 14,
+                  background: COLORS.warning, color: "#fff",
+                  boxShadow: "0 4px 15px rgba(217,119,6,0.3)",
+                  "&:hover": { boxShadow: "0 6px 20px rgba(217,119,6,0.4)" },
                 }}
               >
-                Kembali ke Daftar Penugasan
+                Kembali
               </Button>
             )}
           </Box>
+
         </Box>
       </PageTransition>
     </BodyLayout>

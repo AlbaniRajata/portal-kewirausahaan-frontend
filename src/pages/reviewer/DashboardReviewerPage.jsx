@@ -1,18 +1,16 @@
 import { useState, useEffect } from "react";
-import { Box, Typography, Avatar } from "@mui/material";
+import { Box, Typography, Avatar, LinearProgress } from "@mui/material";
 import {
   AssignmentOutlined, CheckCircleOutlined, CancelOutlined,
   PendingActionsOutlined, ArrowForward, RateReviewOutlined,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import BodyLayout from "../../components/layouts/BodyLayout";
-import ReviewerSidebar from "../../components/layouts/ReviewerSidebar";
+import ReviewerNavbar from "../../components/layouts/ReviewerNavbar";
 import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import { getProfile, getListPenugasan } from "../../api/reviewer";
 import { useAuthStore } from "../../store/authStore";
-
-const API_URL = import.meta.env.VITE_API_URL?.replace("/api", "");
 
 const greet = () => {
   const h = new Date().getHours();
@@ -165,8 +163,18 @@ export default function DashboardReviewerPage() {
   const sudahDinilai       = penugasan.filter((p) => p.status === 4).length;
   const ditolak            = penugasan.filter((p) => p.status === 2).length;
 
+  const totalTindaklanjut = menungguKonfirmasi + menungguPenilaian;
+
+  const penilaianPercent = totalPenugasan > 0
+    ? Math.round((sudahDinilai / totalPenugasan) * 100)
+    : 0;
+
   const perluTindaklanjut = penugasan
     .filter((p) => p.status === 0 || p.status === 1 || p.status === 3)
+    .sort((a, b) => new Date(b.assigned_at || b.created_at) - new Date(a.assigned_at || a.created_at))
+    .slice(0, 5);
+
+  const recentPenugasan = [...penugasan]
     .sort((a, b) => new Date(b.assigned_at || b.created_at) - new Date(a.assigned_at || a.created_at))
     .slice(0, 5);
 
@@ -182,32 +190,32 @@ export default function DashboardReviewerPage() {
     {
       icon: <PendingActionsOutlined sx={{ fontSize: 20, color: "#f57f17" }} />,
       label: "Perlu Ditindaklanjuti",
-      value: menungguKonfirmasi + menungguPenilaian,
+      value: totalTindaklanjut,
       sub: `${menungguKonfirmasi} menunggu konfirmasi · ${menungguPenilaian} belum dinilai`,
       accent: "#f57f17",
       path: "/reviewer/penugasan",
     },
     {
-      icon: <CheckCircleOutlined sx={{ fontSize: 20, color: "#2e7d32" }} />,
+      icon: <CheckCircleOutlined sx={{ fontSize: 20, color: "#059669" }} />,
       label: "Sudah Dinilai",
       value: sudahDinilai,
       sub: sudahDinilai > 0 ? "Penilaian telah disubmit" : "Belum ada penilaian",
-      accent: "#2e7d32",
+      accent: "#059669",
       path: null,
     },
     {
-      icon: <CancelOutlined sx={{ fontSize: 20, color: "#c62828" }} />,
+      icon: <CancelOutlined sx={{ fontSize: 20, color: "#DC2626" }} />,
       label: "Ditolak",
       value: ditolak,
       sub: ditolak > 0 ? "Penugasan yang ditolak" : "Tidak ada penolakan",
-      accent: "#c62828",
+      accent: "#DC2626",
       path: null,
     },
   ];
 
   if (loading) {
     return (
-      <BodyLayout Sidebar={ReviewerSidebar}>
+      <BodyLayout Sidebar={ReviewerNavbar}>
         <Box sx={{ position: "relative", minHeight: "60vh" }}>
           <LoadingScreen message="Memuat dashboard reviewer..." overlay minHeight="60vh" />
         </Box>
@@ -216,7 +224,7 @@ export default function DashboardReviewerPage() {
   }
 
   return (
-    <BodyLayout Sidebar={ReviewerSidebar}>
+    <BodyLayout Sidebar={ReviewerNavbar}>
       <PageTransition>
         <Box>
 
@@ -247,7 +255,7 @@ export default function DashboardReviewerPage() {
                 </Typography>
               </Box>
 
-              {(menungguKonfirmasi + menungguPenilaian) > 0 && (
+              {totalTindaklanjut > 0 && (
                 <Box sx={{
                   ml: { xs: 0, md: "auto" }, width: { xs: "100%", md: "auto" },
                   px: 2.5, py: 1.2, borderRadius: "50px",
@@ -256,7 +264,7 @@ export default function DashboardReviewerPage() {
                   backdropFilter: "blur(4px)",
                 }}>
                   <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>
-                    {menungguKonfirmasi + menungguPenilaian} perlu ditindaklanjuti
+                    {totalTindaklanjut} perlu ditindaklanjuti
                   </Typography>
                 </Box>
               )}
@@ -277,44 +285,168 @@ export default function DashboardReviewerPage() {
             ))}
           </Box>
 
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" }, gap: 2.5, mb: 2.5 }}>
+
+            <Box sx={{
+              p: { xs: 2.5, md: 4 }, borderRadius: "20px",
+              background: "#fff",
+              border: "1px solid #f0f0f0",
+              boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+            }}>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1.5, mb: 3 }}>
+                <Box>
+                  <Typography sx={{ fontSize: 16, fontWeight: 800, color: "#1a1a1a" }}>
+                    Perlu Ditindaklanjuti
+                  </Typography>
+                  <Typography sx={{ fontSize: 13, color: "#aaa" }}>
+                    Penugasan yang menunggu konfirmasi atau penilaian
+                  </Typography>
+                </Box>
+                <Box
+                  onClick={() => navigate("/reviewer/penugasan")}
+                  sx={{ display: "flex", alignItems: "center", gap: 0.5, cursor: "pointer", color: "#0D59F2", "&:hover": { opacity: 0.7 } }}
+                >
+                  <Typography sx={{ fontSize: 13, fontWeight: 600 }}>Lihat semua</Typography>
+                  <ArrowForward sx={{ fontSize: 16 }} />
+                </Box>
+              </Box>
+
+              {perluTindaklanjut.length === 0 ? (
+                <Box sx={{ textAlign: "center", py: 5 }}>
+                  <CheckCircleOutlined sx={{ fontSize: 40, color: "#e0e0e0", mb: 1.5 }} />
+                  <Typography sx={{ fontSize: 14, color: "#bbb" }}>Semua penugasan sudah ditindaklanjuti</Typography>
+                </Box>
+              ) : (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                  {perluTindaklanjut.map((item) => (
+                    <PenugasanItem
+                      key={`${item.tahap}-${item.id_distribusi}`}
+                      item={item}
+                      onClick={() => navigate(`/reviewer/penugasan/${item.id_distribusi}`)}
+                    />
+                  ))}
+                </Box>
+              )}
+            </Box>
+
+            <Box
+              onClick={() => navigate("/reviewer/penugasan")}
+              sx={{
+                p: { xs: 2.5, md: 3 },
+                borderRadius: "20px",
+                background: "#fff",
+                border: "1px solid #f0f0f0",
+                boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+                cursor: "pointer",
+                transition: "transform 0.2s, box-shadow 0.2s",
+                "&:hover": { transform: "translateY(-2px)", boxShadow: "0 8px 24px rgba(0,0,0,0.09)" },
+              }}
+            >
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, gap: 2, flexWrap: "wrap" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+                  <Box sx={{
+                    width: 38, height: 38, borderRadius: "12px",
+                    backgroundColor: "#0D59F218",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    <RateReviewOutlined sx={{ fontSize: 20, color: "#0D59F2" }} />
+                  </Box>
+                  <Box>
+                    <Typography sx={{ fontSize: 15, fontWeight: 800, color: "#1a1a1a" }}>Progress Penilaian</Typography>
+                    <Typography sx={{ fontSize: 12, color: "#999" }}>{totalPenugasan} total penugasan</Typography>
+                  </Box>
+                </Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "#0D59F2" }}>
+                  <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{penilaianPercent}%</Typography>
+                  <ArrowForward sx={{ fontSize: 16 }} />
+                </Box>
+              </Box>
+
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.25 }}>
+                <LinearProgress
+                  variant="determinate"
+                  value={penilaianPercent}
+                  sx={{
+                    flex: 1, height: 8, borderRadius: 6,
+                    backgroundColor: "#f0f0f0",
+                    "& .MuiLinearProgress-bar": { borderRadius: 6, backgroundColor: "#0D59F2" },
+                  }}
+                />
+                <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#666", minWidth: 58, textAlign: "right" }}>
+                  {sudahDinilai}/{totalPenugasan}
+                </Typography>
+              </Box>
+
+              <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                <Typography sx={{ fontSize: 12, color: "#2e7d32", fontWeight: 700 }}>Selesai: {sudahDinilai}</Typography>
+                <Typography sx={{ fontSize: 12, color: "#1565c0", fontWeight: 700 }}>Draft: {penugasan.filter((p) => p.status === 3).length}</Typography>
+                <Typography sx={{ fontSize: 12, color: "#f57f17", fontWeight: 700 }}>Menunggu: {menungguKonfirmasi}</Typography>
+                <Typography sx={{ fontSize: 12, color: "#c62828", fontWeight: 700 }}>Ditolak: {ditolak}</Typography>
+              </Box>
+            </Box>
+
+          </Box>
+
           <Box sx={{
-            p: { xs: 2.5, md: 4 }, borderRadius: "20px",
+            p: { xs: 2.5, md: 3 },
+            borderRadius: "20px",
             background: "#fff",
             border: "1px solid #f0f0f0",
             boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
           }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1.5, mb: 3 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2.5, gap: 1.5 }}>
               <Box>
                 <Typography sx={{ fontSize: 16, fontWeight: 800, color: "#1a1a1a" }}>
-                  Perlu Ditindaklanjuti
+                  Penugasan Terbaru
                 </Typography>
-                <Typography sx={{ fontSize: 13, color: "#aaa" }}>
-                  Penugasan yang menunggu konfirmasi atau penilaian
+                <Typography sx={{ fontSize: 12, color: "#999" }}>
+                  Riwayat penugasan penilaian terbaru
                 </Typography>
               </Box>
               <Box
                 onClick={() => navigate("/reviewer/penugasan")}
                 sx={{ display: "flex", alignItems: "center", gap: 0.5, cursor: "pointer", color: "#0D59F2", "&:hover": { opacity: 0.7 } }}
               >
-                <Typography sx={{ fontSize: 13, fontWeight: 600 }}>Lihat semua</Typography>
-                <ArrowForward sx={{ fontSize: 16 }} />
+                <Typography sx={{ fontSize: 12, fontWeight: 700 }}>Lihat semua</Typography>
+                <ArrowForward sx={{ fontSize: 15 }} />
               </Box>
             </Box>
 
-            {perluTindaklanjut.length === 0 ? (
-              <Box sx={{ textAlign: "center", py: 5 }}>
-                <CheckCircleOutlined sx={{ fontSize: 40, color: "#e0e0e0", mb: 1.5 }} />
-                <Typography sx={{ fontSize: 14, color: "#bbb" }}>Semua penugasan sudah ditindaklanjuti</Typography>
+            {recentPenugasan.length === 0 ? (
+              <Box sx={{ textAlign: "center", py: 4 }}>
+                <AssignmentOutlined sx={{ fontSize: 36, color: "#e0e0e0", mb: 1 }} />
+                <Typography sx={{ fontSize: 13, color: "#bbb" }}>Belum ada penugasan</Typography>
               </Box>
             ) : (
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                {perluTindaklanjut.map((item) => (
-                  <PenugasanItem
-                    key={`${item.tahap}-${item.id_distribusi}`}
-                    item={item}
-                    onClick={() => navigate(`/reviewer/penugasan/${item.id_distribusi}`)}
-                  />
-                ))}
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+                {recentPenugasan.map((item) => {
+                  const si = STATUS_CONFIG[item.status];
+                  const tahapLabel = TAHAP_LABEL[item.tahap] || `Tahap ${item.tahap}`;
+                  return (
+                    <Box
+                      key={`recent-${item.tahap}-${item.id_distribusi}`}
+                      onClick={() => navigate(`/reviewer/penugasan/${item.id_distribusi}`)}
+                      sx={{
+                        p: 1.5, borderRadius: "12px",
+                        border: "1px solid #f3f3f3", backgroundColor: "#fafafa",
+                        cursor: "pointer",
+                        "&:hover": { backgroundColor: "#f0f4ff" },
+                      }}
+                    >
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1 }}>
+                        <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#1a1a1a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {item.nama_tim || item.judul || "-"}
+                        </Typography>
+                        <Box sx={{ px: 1.2, py: 0.3, borderRadius: "50px", backgroundColor: si?.backgroundColor || "#9e9e9e", flexShrink: 0 }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, color: "#fff" }}>{si?.label || "-"}</Typography>
+                        </Box>
+                      </Box>
+                      <Typography sx={{ fontSize: 12, color: "#888" }}>
+                        {tahapLabel} · {formatTime(item.assigned_at || item.created_at)}
+                      </Typography>
+                    </Box>
+                  );
+                })}
               </Box>
             )}
           </Box>
