@@ -157,7 +157,6 @@ export const getJuriList = async (filters = {}) => {
   return res.data;
 };
 
-// Satu endpoint gabungan per proposal (menggantikan 2 endpoint lama reviewer/juri terpisah)
 export const getPanelTahap2History = async (id_program) => {
   const res = await api.get(`/admin/program/${id_program}/panel/tahap2/history`);
   return res.data;
@@ -533,7 +532,6 @@ export const reviewLuaranTim = async (id_luaran_tim, payload) => {
   return res.data;
 };
 
-// Pemerataan Pembimbing APIs
 export const getProposalPembimbing = async (id_program) => {
   const params = new URLSearchParams();
   if (id_program) params.append("id_program", id_program);

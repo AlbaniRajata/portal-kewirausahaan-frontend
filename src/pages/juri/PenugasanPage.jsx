@@ -3,42 +3,110 @@ import {
   Box, Paper, Typography, TextField, MenuItem,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Button, Dialog, DialogTitle, DialogContent,
-  DialogActions, IconButton,
+  DialogActions, IconButton, InputAdornment,
 } from "@mui/material";
-import { Close } from "@mui/icons-material";
-import AssignmentIcon from "@mui/icons-material/Assignment";
+import { Close, Assignment, FilterList, Search } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
-import JuriSidebar from "../../components/layouts/JuriSidebar";
+import JuriNavbar from "../../components/layouts/JuriNavbar";
 import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import { getListPenugasan, acceptPenugasan, rejectPenugasan } from "../../api/juri";
 
-const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "12px" } };
-const tableHeadCell = { fontWeight: 700, fontSize: 13, color: "#000", backgroundColor: "#fafafa", borderBottom: "2px solid #f0f0f0", py: 2 };
-const tableBodyRow = { "& td": { borderBottom: "1px solid #f5f5f5", py: 2 } };
+const COLORS = {
+  primary:      "#0D59F2",
+  primaryLight: "#E0F2FE",
+  primaryDark:  "#0369A1",
+  primaryMuted: "#93C5FD",
+  secondary:    "#2563EB",
+  accent:       "#3B82F6",
+  slate:        "#64748B",
+  slateLight:   "#F1F5F9",
+  success:      "#059669",
+  successLight: "#ECFDF5",
+  warning:      "#D97706",
+  warningLight: "#FFFBEB",
+  error:        "#DC2626",
+  errorLight:   "#FEF2F2",
+};
+
+const roundedField = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "12px",
+    backgroundColor: "#fff",
+    transition: "box-shadow 0.2s",
+    "&:hover fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused": { boxShadow: `0 0 0 3px ${COLORS.primaryLight}` },
+  },
+};
+
+const tableHeadCell = {
+  fontWeight: 700, fontSize: 13, color: "#000",
+  backgroundColor: "#fafafa", borderBottom: "2px solid #f0f0f0", py: 2,
+};
+
+const tableBodyRow = {
+  "&:hover": { backgroundColor: "#f8f9ff" },
+  "& td": { borderBottom: "1px solid #f5f5f5", py: 2 },
+};
+
+const SectionHeader = ({ icon: Icon, title, subtitle, gradient }) => (
+  <Box sx={{
+    display: "flex", alignItems: "center", gap: 2, mb: 3,
+    p: 2.5, borderRadius: "14px", background: gradient,
+  }}>
+    <Box sx={{
+      width: 44, height: 44, borderRadius: "12px",
+      background: "rgba(255,255,255,0.25)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      backdropFilter: "blur(4px)",
+    }}>
+      <Icon sx={{ color: "#fff", fontSize: 22 }} />
+    </Box>
+    <Box>
+      <Typography sx={{ fontSize: 17, fontWeight: 700, color: "#fff", lineHeight: 1.2 }}>{title}</Typography>
+      {subtitle && <Typography sx={{ fontSize: 12, color: "rgba(255,255,255,0.8)", mt: 0.3 }}>{subtitle}</Typography>}
+    </Box>
+  </Box>
+);
 
 const StatusPill = ({ label, backgroundColor }) => (
-  <Box sx={{ display: "inline-flex", alignItems: "center", px: 1.5, py: 0.4, borderRadius: "50px", backgroundColor, color: "#fff", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" }}>
+  <Box sx={{
+    display: "inline-flex", alignItems: "center",
+    px: 1.5, py: 0.4, borderRadius: "50px",
+    backgroundColor, color: "#fff",
+    fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
+  }}>
     {label}
   </Box>
+);
+
+const FieldLabel = ({ children, required }) => (
+  <Typography sx={{ fontWeight: 600, mb: 0.8, fontSize: 13, color: "#374151", display: "flex", gap: 0.4 }}>
+    {children}
+    {required && <span style={{ color: COLORS.error }}>*</span>}
+  </Typography>
 );
 
 const getStatusInfo = (status) => {
   const map = {
     0: { label: "Menunggu Response", backgroundColor: "#f57f17" },
-    1: { label: "Disetujui",         backgroundColor: "#2e7d32" },
-    2: { label: "Ditolak",           backgroundColor: "#c62828" },
-    3: { label: "Draft Penilaian",   backgroundColor: "#1565c0" },
+    1: { label: "Disetujui",         backgroundColor: COLORS.success },
+    2: { label: "Ditolak",           backgroundColor: COLORS.error },
+    3: { label: "Draft Penilaian",   backgroundColor: COLORS.secondary },
     4: { label: "Selesai Dinilai",   backgroundColor: "#6a1b9a" },
   };
-  return map[status] || { label: "Unknown", backgroundColor: "#757575" };
+  return map[status] || { label: "Unknown", backgroundColor: COLORS.slate };
 };
 
 const formatDate = (d) => {
   if (!d) return "-";
-  return new Date(d).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  return new Date(d).toLocaleDateString("id-ID", {
+    day: "2-digit", month: "short", year: "numeric",
+    hour: "2-digit", minute: "2-digit",
+  });
 };
 
 const formatRupiah = (v) => {
@@ -53,11 +121,12 @@ const toNumberOrNull = (value) => {
 
 const isAcceptedStatus = (status) => [1, 3, 4].includes(Number(status));
 
-export default function PenugasanPage() {
+export default function PenugasanJuriPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [penugasan, setPenugasan] = useState([]);
   const [statusFilter, setStatusFilter] = useState("");
+  const [search, setSearch] = useState("");
   const [rejectDialog, setRejectDialog] = useState({ open: false, penugasan: null });
   const [catatan, setCatatan] = useState("");
   const [errors, setErrors] = useState({});
@@ -72,17 +141,14 @@ export default function PenugasanPage() {
       if (response.success) {
         const list = response.data.penugasan || [];
         setPenugasan(list);
-
         if (list.length > 0) {
           const details = list.map((item) => {
             const tahap = toNumberOrNull(item?.urutan_tahap ?? item?.tahap);
             const statusReviewer = toNumberOrNull(item?.status_reviewer);
             const statusJuri = toNumberOrNull(item?.status_juri);
             const blocked = tahap === 2 && !(isAcceptedStatus(statusReviewer) && isAcceptedStatus(statusJuri));
-
             return [item.id_distribusi, { tahap, statusReviewer, statusJuri, blocked }];
           });
-
           setPairApprovalMap(Object.fromEntries(details));
         }
       } else {
@@ -99,9 +165,10 @@ export default function PenugasanPage() {
 
   const handleAccept = async (item) => {
     const result = await Swal.fire({
-      title: "Konfirmasi", html: `Terima penugasan untuk proposal:<br/><br/><b>${item.judul}</b>?`,
+      title: "Konfirmasi",
+      html: `Terima penugasan untuk proposal:<br/><br/><b>${item.judul}</b>?`,
       icon: "question", showCancelButton: true,
-      confirmButtonColor: "#0D59F2", cancelButtonColor: "#d33",
+      confirmButtonColor: COLORS.success, cancelButtonColor: "#d33",
       confirmButtonText: "Ya, Terima", cancelButtonText: "Batal",
     });
     if (!result.isConfirmed) return;
@@ -125,12 +192,16 @@ export default function PenugasanPage() {
   const handleCloseReject = () => { setRejectDialog({ open: false, penugasan: null }); setCatatan(""); setErrors({}); };
 
   const handleReject = async () => {
-    if (!catatan || catatan.trim().length < 5) { setErrors({ catatan: "Catatan penolakan minimal 5 karakter" }); return; }
+    if (!catatan || catatan.trim().length < 5) {
+      setErrors({ catatan: "Catatan penolakan minimal 5 karakter" });
+      return;
+    }
     setRejectDialog((prev) => ({ ...prev, open: false }));
     const result = await Swal.fire({
-      title: "Konfirmasi", html: `Tolak penugasan untuk proposal:<br/><br/><b>${rejectDialog.penugasan.judul}</b>?`,
+      title: "Konfirmasi",
+      html: `Tolak penugasan untuk proposal:<br/><br/><b>${rejectDialog.penugasan.judul}</b>?`,
       icon: "warning", showCancelButton: true,
-      confirmButtonColor: "#d33", cancelButtonColor: "#666",
+      confirmButtonColor: COLORS.error, cancelButtonColor: "#666",
       confirmButtonText: "Ya, Tolak", cancelButtonText: "Batal",
     });
     if (!result.isConfirmed) { setRejectDialog((prev) => ({ ...prev, open: true })); return; }
@@ -139,7 +210,8 @@ export default function PenugasanPage() {
       const response = await rejectPenugasan(rejectDialog.penugasan.id_distribusi, catatan.trim());
       if (response.success) {
         Swal.fire({ icon: "success", title: "Berhasil", text: response.message, timer: 2000, timerProgressBar: true, showConfirmButton: false });
-        handleCloseReject(); fetchPenugasan();
+        handleCloseReject();
+        fetchPenugasan();
       } else {
         Swal.fire({ icon: "error", title: "Gagal", text: response.message, confirmButtonText: "OK" });
         setRejectDialog((prev) => ({ ...prev, open: true }));
@@ -152,159 +224,344 @@ export default function PenugasanPage() {
     }
   };
 
+  const filtered = penugasan.filter((item) => {
+    const q = search.toLowerCase();
+    return (
+      (item.judul         || "").toLowerCase().includes(q) ||
+      (item.nama_tim      || "").toLowerCase().includes(q) ||
+      (item.keterangan    || "").toLowerCase().includes(q) ||
+      (item.nama_kategori || "").toLowerCase().includes(q)
+    );
+  });
+
   const blockedTahap2Count = penugasan.filter((item) => pairApprovalMap[item.id_distribusi]?.blocked).length;
 
   return (
-    <BodyLayout Sidebar={JuriSidebar}>
+    <BodyLayout Sidebar={JuriNavbar}>
       <PageTransition>
         <Box>
+
           <Box sx={{ mb: 4 }}>
-            <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Penugasan Saya</Typography>
-            <Typography sx={{ fontSize: 14, color: "#777" }}>Kelola penugasan penilaian wawancara proposal</Typography>
+            <Typography sx={{ fontSize: 36, fontWeight: 800, color: "#1F2937", mb: 0.5 }}>
+              Penugasan Saya
+            </Typography>
+            <Typography sx={{ fontSize: 16, color: "#6B7280" }}>
+              Kelola penugasan penilaian wawancara proposal
+            </Typography>
           </Box>
 
-          <Paper sx={{ p: 3, mb: 3, borderRadius: "16px", border: "1px solid #f0f0f0" }}>
-            <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 2 }}>Filter Penugasan</Typography>
-            <Box sx={{ maxWidth: 400 }}>
-              <TextField select fullWidth label="Status" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} sx={roundedField}>
-                <MenuItem value="">Semua Status</MenuItem>
-                <MenuItem value="0">Menunggu Response</MenuItem>
-                <MenuItem value="1">Disetujui</MenuItem>
-                <MenuItem value="2">Ditolak</MenuItem>
-                <MenuItem value="3">Draft Penilaian</MenuItem>
-                <MenuItem value="4">Selesai Dinilai</MenuItem>
-              </TextField>
+          <Paper elevation={0} sx={{ mb: 3, borderRadius: "20px", border: "1.5px solid #E5E7EB", overflow: "hidden" }}>
+            <Box sx={{ height: 5, background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
+            <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
+              <SectionHeader
+                icon={FilterList}
+                title="Filter Penugasan"
+                subtitle="Saring berdasarkan status atau kata kunci"
+                gradient={`linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)`}
+              />
+              <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                <Box sx={{ minWidth: 200, flex: "1 1 auto" }}>
+                  <TextField
+                    select fullWidth label="Status"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    sx={roundedField}
+                  >
+                    <MenuItem value="">Semua Status</MenuItem>
+                    <MenuItem value="0">Menunggu Response</MenuItem>
+                    <MenuItem value="1">Disetujui</MenuItem>
+                    <MenuItem value="2">Ditolak</MenuItem>
+                    <MenuItem value="3">Draft Penilaian</MenuItem>
+                    <MenuItem value="4">Selesai Dinilai</MenuItem>
+                  </TextField>
+                </Box>
+                <Box sx={{ minWidth: 280, flex: "2 1 auto" }}>
+                  <TextField
+                    fullWidth label="Cari"
+                    placeholder="Cari judul, tim, program, kategori..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Search sx={{ fontSize: 18, color: COLORS.slate }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={roundedField}
+                  />
+                </Box>
+              </Box>
             </Box>
           </Paper>
 
           {blockedTahap2Count > 0 && (
-            <Paper
-              sx={{
-                mb: 2,
-                px: 3,
-                py: 2,
-                borderRadius: "16px",
-                border: "1px solid #ffe082",
-                backgroundColor: "#fff8e1",
-              }}
-            >
-              <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#8a6d3b", mb: 0.25 }}>
-                Penilaian tahap 2 belum aktif untuk sebagian penugasan.
-              </Typography>
-              <Typography sx={{ fontSize: 13, color: "#8a6d3b" }}>
-                {blockedTahap2Count} penugasan menunggu reviewer dan juri sama-sama menyetujui penugasan.
-              </Typography>
-            </Paper>
+            <Box sx={{
+              mb: 3, p: 2.5, borderRadius: "12px",
+              backgroundColor: COLORS.warningLight, border: `1.5px solid #FCD34D`,
+              display: "flex", gap: 1.5, alignItems: "flex-start",
+            }}>
+              <Box sx={{ width: 8, height: 8, mt: 0.5, borderRadius: "50%", background: COLORS.warning, flexShrink: 0 }} />
+              <Box>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: COLORS.warning, mb: 0.25 }}>
+                  Penilaian tahap 2 belum aktif untuk sebagian penugasan.
+                </Typography>
+                <Typography sx={{ fontSize: 13, color: "#92400E" }}>
+                  {blockedTahap2Count} penugasan menunggu reviewer dan juri sama-sama menyetujui penugasan.
+                </Typography>
+              </Box>
+            </Box>
           )}
 
-          <Paper sx={{ overflow: "hidden", borderRadius: "16px", border: "1px solid #f0f0f0" }}>
-            {loading ? (
-              <Box sx={{ position: "relative", minHeight: 320 }}>
-                <LoadingScreen message="Memuat penugasan juri..." overlay minHeight="320px" />
-              </Box>
-            ) : penugasan.length === 0 ? (
-              <Box sx={{ py: 10, textAlign: "center" }}>
-                <Box sx={{ width: 100, height: 100, borderRadius: "50%", backgroundColor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 3 }}>
-                  <AssignmentIcon sx={{ fontSize: 48, color: "#ccc" }} />
+          <Paper elevation={0} sx={{ borderRadius: "20px", border: "1.5px solid #E5E7EB", overflow: "hidden" }}>
+            <Box sx={{ height: 5, background: `linear-gradient(90deg, ${COLORS.secondary}, ${COLORS.success})` }} />
+            <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
+              <SectionHeader
+                icon={Assignment}
+                title="Daftar Penugasan"
+                subtitle={`${filtered.length} penugasan ditemukan`}
+                gradient={`linear-gradient(135deg, ${COLORS.secondary} 0%, ${COLORS.success} 100%)`}
+              />
+
+              {loading ? (
+                <Box sx={{ position: "relative", minHeight: 320 }}>
+                  <LoadingScreen message="Memuat penugasan juri..." overlay minHeight="320px" />
                 </Box>
-                <Typography sx={{ fontSize: 20, fontWeight: 700, color: "#444", mb: 1 }}>Belum Ada Penugasan</Typography>
-                <Typography sx={{ fontSize: 14, color: "#999" }}>Penugasan penilaian yang diberikan akan muncul di sini</Typography>
-              </Box>
-            ) : (
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      {["Judul Proposal", "Nama Tim", "Program", "Kategori", "Modal", "Timeline Penilaian", "Status", "Aksi"].map((h, i) => (
-                        <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 7 && { textAlign: "center" }) }}>{h}</TableCell>
-                      ))}
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {penugasan.map((item) => {
-                      const si = getStatusInfo(item.status);
-                      return (
-                        <TableRow key={item.id_distribusi} sx={tableBodyRow}>
-                          <TableCell><Typography sx={{ fontWeight: 600, fontSize: 14, maxWidth: 220, lineHeight: 1.4 }}>{item.judul}</Typography></TableCell>
-                          <TableCell><Typography sx={{ fontSize: 13 }}>{item.nama_tim}</Typography></TableCell>
-                          <TableCell><Typography sx={{ fontSize: 13 }}>{item.keterangan}</Typography></TableCell>
-                          <TableCell><Typography sx={{ fontSize: 13 }}>{item.nama_kategori}</Typography></TableCell>
-                          <TableCell><Typography sx={{ fontSize: 13 }}>{formatRupiah(item.modal_diajukan)}</Typography></TableCell>
-                          <TableCell>
-                            {item.penilaian_mulai && item.penilaian_selesai ? (
-                              <Box>
-                                <Typography sx={{ fontSize: 13, fontWeight: 500 }}>{formatDate(item.penilaian_mulai)}</Typography>
-                                <Typography sx={{ fontSize: 11, color: "#bbb" }}>s/d</Typography>
-                                <Typography sx={{ fontSize: 13, fontWeight: 500 }}>{formatDate(item.penilaian_selesai)}</Typography>
+              ) : filtered.length === 0 ? (
+                <Box sx={{ textAlign: "center", py: 8 }}>
+                  <Box sx={{
+                    width: 90, height: 90, borderRadius: "50%",
+                    backgroundColor: COLORS.slateLight,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    mx: "auto", mb: 2.5,
+                  }}>
+                    <Assignment sx={{ fontSize: 44, color: "#CBD5E1" }} />
+                  </Box>
+                  <Typography sx={{ fontSize: 18, fontWeight: 700, color: "#374151", mb: 0.5 }}>
+                    Belum Ada Penugasan
+                  </Typography>
+                  <Typography sx={{ fontSize: 14, color: COLORS.slate }}>
+                    {search || statusFilter ? "Tidak ada penugasan yang sesuai filter" : "Penugasan penilaian yang diberikan akan muncul di sini"}
+                  </Typography>
+                </Box>
+              ) : (
+                <TableContainer sx={{ borderRadius: "12px", border: "1px solid #f0f0f0", overflow: "hidden", overflowX: "auto" }}>
+                  <Table sx={{ minWidth: 900 }}>
+                    <TableHead>
+                      <TableRow>
+                        {["Judul Proposal", "Nama Tim", "Program", "Kategori", "Modal", "Timeline Penilaian", "Status", "Aksi"].map((h, i) => (
+                          <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 7 && { textAlign: "center" }) }}>{h}</TableCell>
+                        ))}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {filtered.map((item) => {
+                        const si = getStatusInfo(item.status);
+                        return (
+                          <TableRow key={item.id_distribusi} sx={tableBodyRow}>
+                            <TableCell>
+                              <Typography sx={{ fontWeight: 600, fontSize: 14, maxWidth: 220, lineHeight: 1.4 }}>{item.judul}</Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography sx={{ fontSize: 13 }}>{item.nama_tim}</Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography sx={{ fontSize: 13 }}>{item.keterangan}</Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography sx={{ fontSize: 13 }}>{item.nama_kategori}</Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography sx={{ fontSize: 13 }}>{formatRupiah(item.modal_diajukan)}</Typography>
+                            </TableCell>
+                            <TableCell>
+                              {item.penilaian_mulai && item.penilaian_selesai ? (
+                                <Box>
+                                  <Typography sx={{ fontSize: 13, fontWeight: 500 }}>{formatDate(item.penilaian_mulai)}</Typography>
+                                  <Typography sx={{ fontSize: 11, color: "#CBD5E1" }}>s/d</Typography>
+                                  <Typography sx={{ fontSize: 13, fontWeight: 500 }}>{formatDate(item.penilaian_selesai)}</Typography>
+                                </Box>
+                              ) : (
+                                <Typography sx={{ fontSize: 13, color: "#CBD5E1" }}>-</Typography>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <StatusPill label={si.label} backgroundColor={si.backgroundColor} />
+                            </TableCell>
+                            <TableCell align="center">
+                              <Box sx={{ display: "inline-flex", gap: 1, flexWrap: "wrap", justifyContent: "center" }}>
+                                {item.status === 0 && (
+                                  <>
+                                    <Button
+                                      size="small" variant="contained"
+                                      onClick={() => handleOpenReject(item)}
+                                      disabled={submitting}
+                                      sx={{
+                                        textTransform: "none", borderRadius: "10px",
+                                        fontSize: 12, fontWeight: 600, px: 2,
+                                        background: COLORS.error,
+                                        boxShadow: "none",
+                                        "&:hover": { background: `linear-gradient(135deg, #B91C1C, ${COLORS.error})`, boxShadow: "none" },
+                                        "&:disabled": { background: "#E5E7EB", color: "#9CA3AF", boxShadow: "none" },
+                                      }}
+                                    >
+                                      Tolak
+                                    </Button>
+                                    <Button
+                                      size="small" variant="contained"
+                                      onClick={() => handleAccept(item)}
+                                      disabled={submitting}
+                                      sx={{
+                                        textTransform: "none", borderRadius: "10px",
+                                        fontSize: 12, fontWeight: 600, px: 2,
+                                        background: COLORS.success,
+                                        boxShadow: "none",
+                                        "&:hover": { background: `linear-gradient(135deg, #047857, ${COLORS.success})`, boxShadow: "none" },
+                                        "&:disabled": { background: "#E5E7EB", color: "#9CA3AF", boxShadow: "none" },
+                                      }}
+                                    >
+                                      {submitting ? "Memproses..." : "Terima"}
+                                    </Button>
+                                  </>
+                                )}
+                                {item.status !== 0 && (
+                                  <>
+                                    <Button
+                                      size="small" variant="outlined"
+                                      onClick={() => navigate(`/juri/penugasan/${item.id_distribusi}?tab=0`)}
+                                      sx={{
+                                        textTransform: "none", borderRadius: "10px",
+                                        fontSize: 12, fontWeight: 600, px: 2,
+                                        borderColor: COLORS.primary, color: COLORS.primary,
+                                        "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
+                                      }}
+                                    >
+                                      Detail
+                                    </Button>
+                                    <Button
+                                      size="small" variant="contained"
+                                      onClick={() => navigate(`/juri/penugasan/${item.id_distribusi}?tab=1`)}
+                                      disabled={![1, 3].includes(item.status) || !!pairApprovalMap[item.id_distribusi]?.blocked}
+                                      sx={{
+                                        textTransform: "none", borderRadius: "10px",
+                                        fontSize: 12, fontWeight: 600, px: 2,
+                                        background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
+                                        boxShadow: "none",
+                                        "&:hover": { background: `linear-gradient(135deg, ${COLORS.primaryDark}, ${COLORS.primary})`, boxShadow: "none" },
+                                        "&:disabled": { background: "#E5E7EB", color: "#9CA3AF", boxShadow: "none" },
+                                      }}
+                                    >
+                                      Nilai
+                                    </Button>
+                                  </>
+                                )}
                               </Box>
-                            ) : <Typography sx={{ fontSize: 13, color: "#bbb" }}>-</Typography>}
-                          </TableCell>
-                          <TableCell><StatusPill label={si.label} backgroundColor={si.backgroundColor} /></TableCell>
-                          <TableCell>
-                            <Box sx={{ display: "flex", gap: 1, justifyContent: "center", flexWrap: "wrap" }}>
-                              {item.status === 0 && (
-                                <>
-                                  <Button size="small" variant="outlined" onClick={() => handleOpenReject(item)} disabled={submitting}
-                                    sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12, fontWeight: 600, px: 2, borderColor: "#e53935", color: "#e53935", "&:hover": { backgroundColor: "rgba(229,57,53,0.06)", borderColor: "#e53935" } }}>
-                                    Tolak
-                                  </Button>
-                                  <Button size="small" variant="contained" onClick={() => handleAccept(item)} disabled={submitting}
-                                    sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12, fontWeight: 600, px: 2, backgroundColor: "#2e7d32", "&:hover": { backgroundColor: "#1b5e20" } }}>
-                                    Terima
-                                  </Button>
-                                </>
-                              )}
-                              {item.status !== 0 && (
-                                <>
-                                  <Button size="small" variant="outlined" onClick={() => navigate(`/juri/penugasan/${item.id_distribusi}?tab=0`)}
-                                    sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12, fontWeight: 600, px: 2, borderColor: "#0D59F2", color: "#0D59F2", "&:hover": { backgroundColor: "#f0f4ff" } }}>
-                                    Detail
-                                  </Button>
-                                  <Button size="small" variant="contained" onClick={() => navigate(`/juri/penugasan/${item.id_distribusi}?tab=1`)} disabled={![1, 3].includes(item.status) || !!pairApprovalMap[item.id_distribusi]?.blocked}
-                                    sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12, fontWeight: 600, px: 2, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" } }}>
-                                    Nilai
-                                  </Button>
-                                </>
-                              )}
-                            </Box>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </Box>
           </Paper>
 
           <Box sx={{ mt: 2 }}>
-            <Typography sx={{ fontSize: 13, color: "#999" }}>Total: {penugasan.length} penugasan</Typography>
+            <Typography sx={{ fontSize: 13, color: COLORS.slate }}>Total: {penugasan.length} penugasan</Typography>
           </Box>
 
-          <Dialog open={rejectDialog.open} onClose={handleCloseReject} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: "16px" } }}>
-            <DialogTitle sx={{ pb: 1 }}>
-              <Typography sx={{ fontWeight: 700, fontSize: 16 }}>Tolak Penugasan</Typography>
-              <IconButton onClick={handleCloseReject} sx={{ position: "absolute", right: 12, top: 8, color: "#888" }}><Close /></IconButton>
-            </DialogTitle>
-            <DialogContent dividers sx={{ px: 3, py: 3 }}>
-              <Box sx={{ p: 2.5, backgroundColor: "#fce4ec", borderRadius: "12px", border: "1px solid #ef9a9a", mb: 3 }}>
-                <Typography sx={{ fontSize: 12, color: "#c62828", fontWeight: 700, mb: 0.5 }}>Proposal yang akan ditolak</Typography>
-                <Typography sx={{ fontSize: 14, fontWeight: 600 }}>{rejectDialog.penugasan?.judul}</Typography>
-              </Box>
-              <Box>
-                <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Catatan Penolakan <span style={{ color: "#ef5350" }}>*</span></Typography>
-                <TextField fullWidth multiline rows={4} placeholder="Masukkan catatan penolakan (minimal 5 karakter)..." value={catatan}
-                  onChange={(e) => { setCatatan(e.target.value); setErrors({}); }} error={!!errors.catatan} helperText={errors.catatan}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }} />
-              </Box>
-            </DialogContent>
-            <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-              <Button onClick={handleCloseReject} sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, color: "#666", border: "1.5px solid #e0e0e0", "&:hover": { backgroundColor: "#f5f5f5" } }}>Batal</Button>
-              <Button variant="contained" onClick={handleReject} sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, backgroundColor: "#e53935", "&:hover": { backgroundColor: "#c62828" } }}>Tolak Penugasan</Button>
-            </DialogActions>
-          </Dialog>
         </Box>
       </PageTransition>
+
+      <Dialog
+        open={rejectDialog.open}
+        onClose={handleCloseReject}
+        maxWidth="sm" fullWidth
+        PaperProps={{ sx: { borderRadius: "20px", overflow: "hidden" } }}
+      >
+        <Box sx={{ height: 5, background: `linear-gradient(90deg, ${COLORS.error}, #EF4444)` }} />
+        <DialogTitle sx={{ pb: 1.5, pt: 2.5, px: 3 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Box sx={{
+              width: 36, height: 36, borderRadius: "10px",
+              background: `linear-gradient(135deg, ${COLORS.error}, #EF4444)`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <Close sx={{ color: "#fff", fontSize: 18 }} />
+            </Box>
+            <Typography sx={{ fontWeight: 700, fontSize: 16, color: "#1F2937" }}>Tolak Penugasan</Typography>
+          </Box>
+          <IconButton
+            onClick={handleCloseReject}
+            sx={{ position: "absolute", right: 12, top: 14, color: COLORS.slate, borderRadius: "10px", "&:hover": { backgroundColor: COLORS.slateLight } }}
+          >
+            <Close />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent dividers sx={{ px: 3, py: 3 }}>
+          <Box sx={{
+            mb: 3, p: 2.5, borderRadius: "12px",
+            backgroundColor: COLORS.errorLight, border: `1.5px solid #FCA5A5`,
+            display: "flex", gap: 1.5, alignItems: "flex-start",
+          }}>
+            <Box sx={{ width: 8, height: 8, mt: 0.5, borderRadius: "50%", background: COLORS.error, flexShrink: 0 }} />
+            <Box>
+              <Typography sx={{ fontSize: 12, color: COLORS.error, fontWeight: 700, mb: 0.3 }}>
+                Proposal yang akan ditolak
+              </Typography>
+              <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#991B1B" }}>
+                {rejectDialog.penugasan?.judul}
+              </Typography>
+            </Box>
+          </Box>
+          <FieldLabel required>Catatan Penolakan</FieldLabel>
+          <TextField
+            fullWidth multiline rows={4}
+            placeholder="Masukkan catatan penolakan (minimal 5 karakter)..."
+            value={catatan}
+            onChange={(e) => { setCatatan(e.target.value); setErrors({}); }}
+            error={!!errors.catatan} helperText={errors.catatan}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "12px", backgroundColor: "#fff",
+                "&:hover fieldset": { borderColor: COLORS.error },
+                "&.Mui-focused fieldset": { borderColor: COLORS.error },
+                "&.Mui-focused": { boxShadow: `0 0 0 3px ${COLORS.errorLight}` },
+              },
+            }}
+          />
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, py: 2.5, gap: 1 }}>
+          <Button
+            onClick={handleCloseReject}
+            sx={{
+              textTransform: "none", borderRadius: "12px", px: 3, py: 1,
+              fontWeight: 700, fontSize: 14, color: COLORS.slate,
+              border: `1.5px solid #CBD5E1`,
+              "&:hover": { backgroundColor: COLORS.slateLight },
+            }}
+          >
+            Batal
+          </Button>
+          <Button
+            variant="contained" onClick={handleReject} disabled={!!submitting}
+            sx={{
+              textTransform: "none", borderRadius: "12px", px: 3, py: 1,
+              fontWeight: 700, fontSize: 14,
+              background: `linear-gradient(135deg, ${COLORS.error}, #EF4444)`,
+              boxShadow: `0 4px 15px rgba(220,38,38,0.35)`,
+              "&:hover": { background: `linear-gradient(135deg, #B91C1C, ${COLORS.error})`, boxShadow: `0 6px 20px rgba(220,38,38,0.45)` },
+              "&:disabled": { background: "#E5E7EB", color: "#9CA3AF", boxShadow: "none" },
+            }}
+          >
+            {submitting ? "Memproses..." : "Tolak Penugasan"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
     </BodyLayout>
   );
 }

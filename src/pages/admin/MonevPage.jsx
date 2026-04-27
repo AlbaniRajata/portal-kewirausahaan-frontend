@@ -223,12 +223,12 @@ export default function MonevPage() {
             <Box sx={{ display: "flex", gap: 2 }}>
               {selectedProgram && (
                 <Button
-                  variant="outlined"
+                  variant="contained"
                   onClick={() => navigate(`/admin/monev/${selectedProgram.id_program}/progress`)}
                   sx={{
                     textTransform: "none", borderRadius: "50px",
                     fontWeight: 600, px: 3, py: 1.2, fontSize: 14,
-                    borderColor: "#0D59F2", color: "#0D59F2",
+                    backgroundColor: "#fff", color: "#0D59F2", border: "1px solid #0D59F2",
                     "&:hover": { backgroundColor: "#f0f4ff" },
                   }}
                 >
