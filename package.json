@@ -7,29 +7,71 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@fontsource/poppins": "^5.2.7",
     "@mui/icons-material": "^7.3.7",
     "@mui/material": "^7.3.7",
+    "@tanstack/react-virtual": "^3.13.24",
     "axios": "^1.13.4",
+    "crypto-js": "^4.2.0",
+    "googleapis": "^171.4.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.71.1",
     "react-router-dom": "^7.13.0",
+    "recharts": "^3.8.0",
+    "sonner": "^2.0.7",
+    "sweetalert2": "^11.26.18",
+    "xlsx": "^0.18.5",
+    "xlsx-js-style": "^1.2.0",
     "zustand": "^5.0.10"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.1",
+    "@vitejs/plugin-react": "^5.2.0",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
-    "vite": "^7.2.4"
+    "jsdom": "^29.0.2",
+    "vite": "^7.2.4",
+    "vitest": "^4.1.4"
+  },
+  "vitest": {
+    "environment": "jsdom",
+    "globals": true,
+    "setupFiles": [
+      "./src/test/setup.js"
+    ],
+    "include": [
+      "src/test/**/*.test.{js,jsx}"
+    ],
+    "coverage": {
+      "provider": "v8",
+      "reporter": [
+        "text",
+        "json",
+        "html"
+      ],
+      "include": [
+        "src/**/*.{js,jsx}"
+      ],
+      "exclude": [
+        "src/main.jsx",
+        "src/App.jsx",
+        "src/test/**"
+      ]
+    }
   }
 }
