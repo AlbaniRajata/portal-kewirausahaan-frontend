@@ -18,14 +18,19 @@ const roundedField = {
   "& .MuiOutlinedInput-root": { borderRadius: "15px" },
 };
 
-const roleRouteMap = {
-  admin: "/admin/verifikasi",
-  "super admin": "/admin/verifikasi",
-  mahasiswa: "/mahasiswa/biodata",
-  dosen: "/dosen/biodata",
-  reviewer: "/reviewer/penugasan",
-  juri: "/juri/penugasan",
-};
+  const roleRouteMap = {
+    admin: "/admin/verifikasi",
+    "super admin": "/admin/verifikasi",
+    mahasiswa: "/mahasiswa/biodata",
+    dosen: "/dosen/biodata",
+    reviewer: "/reviewer/penugasan",
+    juri: "/juri/penugasan",
+  };
+  
+  const getRouteForRole = (role) => {
+    const normalizedRole = role?.toLowerCase();
+    return roleRouteMap[normalizedRole] || "/";
+  };
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -77,7 +82,7 @@ export default function LoginPage() {
         showConfirmButton: false,
         allowOutsideClick: false,
       });
-      const route = roleRouteMap[res.data.user.role] || "/";
+      const route = getRouteForRole(res.data.user.role);
       navigate(route);
     } catch (err) {
       const message = getErrorMessage(err, "Login gagal. Coba lagi.");
