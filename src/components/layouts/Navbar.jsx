@@ -10,13 +10,12 @@ import { getProfile } from "../../api/public";
 import { logoutUser } from "../../api/auth";
 import { setAccessToken } from "../../api/axios";
 
-export default function Navbar({ onToggleSidebar, sidebarCollapsed, hasSidebar = true }) {
+export default function Navbar({ onToggleSidebar, sidebarCollapsed, hasSidebar = true, isMobile = false }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout, refreshToken } = useAuthStore();
   const [anchorEl, setAnchorEl] = useState(false);
   const [profile, setProfile] = useState(null);
-  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -32,12 +31,6 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed, hasSidebar =
       active = false;
     };
   }, [location.key, user]);
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const displayName = user?.nama_lengkap || profile?.nama_lengkap || "User";
   const photoUrl = user?.foto ? `/uploads/profil/${user.foto}` : (profile?.foto ? `/uploads/profil/${profile.foto}` : null);
@@ -61,26 +54,24 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed, hasSidebar =
   return (
     <Box
       sx={{
-        height: 73,
+        height: { xs: 56, sm: 64 },
         position: "fixed",
-        top: scrolled ? 12 : 0,
-        left: hasSidebar
-          ? (scrolled ? (sidebarCollapsed ? 94 : 274) : (sidebarCollapsed ? 70 : 250))
-          : (scrolled ? 24 : 0),
-        right: scrolled ? 24 : 0,
+        top: { xs: 8, sm: 12 },
+        left: isMobile ? 8 : (hasSidebar ? (sidebarCollapsed ? 82 : 262) : 12),
+        right: { xs: 8, sm: 12 },
         zIndex: 100,
-        px: 3,
+        px: { xs: 1.5, sm: 2 },
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        backgroundColor: scrolled ? "#ffffff" : "transparent",
-        boxShadow: scrolled ? "0px 4px 16px -4px rgba(0,0,0,0.12)" : "none",
-        border: scrolled ? "1.5px solid rgba(0,0,0,0.10)" : "1.5px solid transparent",
-        borderRadius: scrolled ? "24px" : 0,
-        transition: "left 0.3s ease, right 0.3s ease, top 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease, border-radius 0.3s ease, border-color 0.3s ease",
+        backgroundColor: "#ffffff",
+        boxShadow: "0px 4px 20px rgba(0,0,0,0.08)",
+        borderRadius: "50px",
+        transition: "left 0.3s ease",
+        width: isMobile ? "auto" : undefined,
       }}
     >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0, flex: 1, pr: 1.5 }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 1.5 }, minWidth: 0, flex: 1, pr: 1.5, overflow: "hidden" }}>
         {hasSidebar && (
           <Box
             onClick={onToggleSidebar}
@@ -88,20 +79,18 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed, hasSidebar =
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              height: 46,
-              px: scrolled ? 0 : 1.5,
-              borderRadius: scrolled ? "50px" : "18px",
-              border: scrolled ? "1.5px solid transparent" : "1.5px solid rgba(0,0,0,0.12)",
-              backgroundColor: scrolled ? "transparent" : "#ffffff",
-              boxShadow: scrolled ? "none" : "0 1px 4px rgba(0,0,0,0.06)",
+              width: { xs: 36, sm: 40 },
+              height: { xs: 36, sm: 40 },
+              borderRadius: "50%",
               cursor: "pointer",
-              transition: "all 0.3s ease",
+              transition: "all 0.2s ease",
+              flexShrink: 0,
               "&:hover": {
-                backgroundColor: scrolled ? "rgba(0,0,0,0.04)" : "rgba(0,0,0,0.02)",
+                backgroundColor: "#e8e8e8",
               },
             }}
           >
-            <MenuIcon sx={{ fontSize: 20, color: "#555" }} />
+            <MenuIcon sx={{ fontSize: { xs: 18, sm: 20 }, color: "#555" }} />
           </Box>
         )}
 
@@ -109,20 +98,16 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed, hasSidebar =
           sx={{
             display: "flex",
             alignItems: "center",
-            minHeight: 46,
-            px: scrolled ? 0 : 2,
+            minHeight: { xs: 36, sm: 40 },
+            px: { xs: 1, sm: 2 },
             minWidth: 0,
-            maxWidth: { xs: 190, sm: 300, md: 460 },
-            borderRadius: scrolled ? "50px" : "18px",
-            border: scrolled ? "1.5px solid transparent" : "1.5px solid rgba(0,0,0,0.12)",
-            backgroundColor: scrolled ? "transparent" : "#ffffff",
-            boxShadow: scrolled ? "none" : "0 1px 4px rgba(0,0,0,0.06)",
-            transition: "all 0.3s ease",
+            maxWidth: { xs: 140, sm: 300, md: 460 },
+            overflow: "hidden",
           }}
         >
           <Typography
             sx={{
-              fontSize: 15,
+              fontSize: { xs: 13, sm: 15 },
               fontWeight: 700,
               color: "#1a1a2e",
               whiteSpace: "nowrap",
@@ -136,40 +121,37 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed, hasSidebar =
         </Box>
       </Box>
 
-      <Box sx={{ position: "relative" }}>
+      <Box sx={{ position: "relative", flexShrink: 0 }}>
         <Box
           onClick={() => setAnchorEl(!anchorEl)}
           sx={{
             display: "flex",
             alignItems: "center",
-            gap: 1.5,
+            gap: { xs: 0.5, sm: 1.5 },
             minWidth: 0,
-            maxWidth: { xs: 190, sm: 280, md: 360 },
+            maxWidth: { xs: 80, sm: 280, md: 360 },
             cursor: "pointer",
-            px: scrolled ? 0 : 1.5,
-            py: scrolled ? 0 : 0.6,
-            borderRadius: scrolled ? "50px" : "18px",
-            border: scrolled ? "1.5px solid transparent" : "1.5px solid rgba(0,0,0,0.12)",
-            backgroundColor: scrolled ? "transparent" : "#ffffff",
-            boxShadow: scrolled ? "none" : "0 1px 4px rgba(0,0,0,0.06)",
-            transition: "all 0.3s ease",
-            "&:hover": { backgroundColor: scrolled ? "rgba(0,0,0,0.015)" : "rgba(0,0,0,0.015)" },
+            px: { xs: 0.5, sm: 1.5 },
+            py: 0.5,
+            borderRadius: "50px",
+            transition: "all 0.2s ease",
+            "&:hover": { backgroundColor: "#e8e8e8" },
           }}
         >
           <Avatar
             src={photoUrl || undefined}
             imgProps={{ crossOrigin: "anonymous" }}
-            sx={{ width: 36, height: 36, bgcolor: "#0D59F2", fontSize: 13, fontWeight: 700 }}
+            sx={{ width: { xs: 32, sm: 36 }, height: { xs: 32, sm: 36 }, bgcolor: "#0D59F2", fontSize: { xs: 11, sm: 13 }, fontWeight: 700 }}
           >
             {!photoUrl &&
               (displayName.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase()
-                || <AccountCircleIcon sx={{ fontSize: 36 }} />)}
+                || <AccountCircleIcon sx={{ fontSize: { xs: 32, sm: 36 } }} />)}
           </Avatar>
 
-          <Box sx={{ minWidth: 0, maxWidth: { xs: 96, sm: 150, md: 220 } }}>
+          <Box sx={{ minWidth: 0, maxWidth: { xs: 40, sm: 150, md: 220 }, display: { xs: "none", sm: "block" } }}>
             <Typography
               sx={{
-                fontSize: 13,
+                fontSize: { sm: 13, md: 14 },
                 fontWeight: 700,
                 color: "#1a1a2e",
                 lineHeight: 1.3,
@@ -186,7 +168,7 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed, hasSidebar =
                   fontSize: 11,
                   color: "#888",
                   lineHeight: 1.2,
-                  display: { xs: "none", sm: "block" },
+                  display: { sm: "block" },
                   whiteSpace: "nowrap",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
@@ -200,9 +182,10 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed, hasSidebar =
           <KeyboardArrowDownIcon
             sx={{
               color: "#999",
-              fontSize: 18,
+              fontSize: { xs: 14, sm: 18 },
               transform: anchorEl ? "rotate(180deg)" : "rotate(0deg)",
               transition: "transform 0.25s ease",
+              ml: { xs: 0.5, sm: 0 },
             }}
           />
         </Box>
@@ -210,18 +193,17 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed, hasSidebar =
         <Box
           sx={{
             position: "absolute",
-            top: "calc(100% + 10px)",
+            top: "calc(100% + 8px)",
             right: 0,
-            minWidth: "100%",
-            borderRadius: "16px",
-            border: "1.5px solid rgba(0,0,0,0.10)",
+            minWidth: 160,
+            borderRadius: "12px",
             backgroundColor: "#ffffff",
-            boxShadow: "0px 4px 16px -4px rgba(0,0,0,0.12)",
+            boxShadow: "0px 4px 20px rgba(0,0,0,0.12)",
             overflow: "hidden",
-            maxHeight: anchorEl ? "60px" : "0px",
             opacity: anchorEl ? 1 : 0,
+            transform: anchorEl ? "translateY(0)" : "translateY(-8px)",
             pointerEvents: anchorEl ? "auto" : "none",
-            transition: "max-height 0.25s ease, opacity 0.2s ease",
+            transition: "opacity 0.2s ease, transform 0.2s ease",
           }}
         >
           <Box
@@ -230,14 +212,14 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed, hasSidebar =
               display: "flex",
               alignItems: "center",
               gap: 1.5,
-              px: 1.5,
-              py: 1.2,
+              px: 2,
+              py: 1.5,
               cursor: "pointer",
-              "&:hover": { backgroundColor: "rgba(229,57,53,0.05)" },
+              "&:hover": { backgroundColor: "rgba(229,57,53,0.08)" },
             }}
           >
-            <LogoutIcon sx={{ fontSize: 17, color: "#e53935" }} />
-            <Typography sx={{ fontSize: 13, fontWeight: 600, color: "#e53935" }}>
+            <LogoutIcon sx={{ fontSize: 18, color: "#e53935" }} />
+            <Typography sx={{ fontSize: 14, fontWeight: 500, color: "#e53935" }}>
               Logout
             </Typography>
           </Box>
