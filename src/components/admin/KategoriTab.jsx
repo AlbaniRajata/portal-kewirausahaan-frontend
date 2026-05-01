@@ -1,37 +1,58 @@
-import { useState, useEffect, useCallback } from "react";
+﻿import { useState, useEffect, useCallback } from "react";
 import {
   Box, Typography, Button, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow,
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  TextField, IconButton, Tooltip,
+  Dialog, DialogContent, DialogActions,
+  TextField, IconButton,
 } from "@mui/material";
-import { Close, Category } from "@mui/icons-material";
+import { Close } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import LoadingScreen from "../common/LoadingScreen";
 import { getKategori, createKategori, updateKategori, deleteKategori } from "../../api/admin";
 
-const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "15px" } };
+const COLORS = {
+  primary: "#0D59F2",
+  primaryLight: "#E0F2FE",
+  primaryDark: "#0369A1",
+  primaryMuted: "#93C5FD",
+  secondary: "#2563EB",
+  accent: "#3B82F6",
+  slate: "#64748B",
+  slateLight: "#F1F5F9",
+  success: "#059669",
+  successLight: "#ECFDF5",
+  warning: "#D97706",
+  warningLight: "#FFFBEB",
+  error: "#DC2626",
+  errorLight: "#FEF2F2",
+};
+
+const roundedField = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "12px",
+    backgroundColor: "#fff",
+    transition: "all 0.2s ease-in-out",
+    "&:hover fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary, borderWidth: "2px" },
+    "&.Mui-focused": { boxShadow: `0 0 0 4px ${COLORS.primaryLight}` },
+  },
+  "& .MuiInputLabel-root.Mui-focused": { color: COLORS.primary, fontWeight: 700 },
+};
 
 const tableHeadCell = {
-  fontWeight: 700, fontSize: 13, color: "#000",
-  backgroundColor: "#fafafa", borderBottom: "2px solid #f0f0f0", py: 2,
+  fontWeight: 800,
+  fontSize: 12,
+  color: "#475569",
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+  backgroundColor: "#F8FAFC",
+  borderBottom: `2px solid ${COLORS.primaryMuted}`,
+  py: 2.5,
 };
 
-const tableBodyRow = { "& td": { borderBottom: "1px solid #f5f5f5", py: 2 } };
-
-const stickyAksiHead = {
-  ...tableHeadCell,
-  textAlign: "center",
-  position: "sticky", right: 0,
-  backgroundColor: "#fafafa", zIndex: 2,
-  boxShadow: "-2px 0 6px rgba(0,0,0,0.04)",
-};
-
-const stickyAksiCell = {
-  position: "sticky", right: 0,
-  backgroundColor: "#fff", zIndex: 1,
-  boxShadow: "-2px 0 6px rgba(0,0,0,0.04)",
-  borderBottom: "1px solid #f5f5f5", py: 2,
+const tableBodyRow = {
+  "&:hover": { backgroundColor: "#F1F5F9/50" },
+  "& td": { borderBottom: "1.5px solid #E2E8F0", py: 2 },
 };
 
 const emptyForm = { nama_kategori: "", keterangan: "" };
@@ -50,7 +71,7 @@ export default function KategoriTab() {
       const res = await getKategori();
       setList(res.data || []);
     } catch {
-      Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat kategori", confirmButtonColor: "#0D59F2" });
+      Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat kategori", confirmButtonColor: COLORS.primary });
     } finally {
       setLoading(false);
     }
@@ -94,7 +115,7 @@ export default function KategoriTab() {
       text: currentDialog.mode === "create" ? "Tambah kategori baru?" : "Simpan perubahan kategori?",
       icon: "question",
       showCancelButton: true,
-      confirmButtonColor: "#0D59F2", cancelButtonColor: "#d33",
+      confirmButtonColor: COLORS.primary, cancelButtonColor: "#d33",
       confirmButtonText: "Ya, Simpan", cancelButtonText: "Tidak",
     });
 
@@ -114,7 +135,7 @@ export default function KategoriTab() {
       await Swal.fire({ icon: "success", title: "Berhasil", text: currentDialog.mode === "create" ? "Kategori berhasil ditambahkan" : "Kategori berhasil diperbarui", timer: 2000, timerProgressBar: true, showConfirmButton: false });
       fetchData();
     } catch (err) {
-      Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Gagal menyimpan kategori", confirmButtonColor: "#0D59F2" });
+      Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Gagal menyimpan kategori", confirmButtonColor: COLORS.primary });
     } finally {
       setSubmitting(false);
     }
@@ -137,18 +158,26 @@ export default function KategoriTab() {
       await Swal.fire({ icon: "success", title: "Berhasil", text: "Kategori berhasil dihapus", timer: 2000, timerProgressBar: true, showConfirmButton: false });
       fetchData();
     } catch (err) {
-      Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Gagal menghapus kategori", confirmButtonColor: "#0D59F2" });
+      Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Gagal menghapus kategori", confirmButtonColor: COLORS.primary });
     }
   };
 
   return (
     <Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography sx={{ fontSize: 18, fontWeight: 700 }}>Kategori Proposal</Typography>
+      <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center", mb: 3, gap: 2, flexWrap: "wrap" }}>
         <Button
           variant="contained"
           onClick={handleOpenCreate}
-          sx={{ textTransform: "none", borderRadius: "50px", px: 3, py: 1.2, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}
+          sx={{
+            textTransform: "none", borderRadius: "12px", px: { xs: 2, sm: 3 }, py: 1.2, fontWeight: 700,
+            backgroundColor: COLORS.primary,
+            boxShadow: "0 4px 12px rgba(13, 89, 242, 0.2)",
+            width: { xs: "100%", sm: "auto" },
+            "&:hover": { 
+              backgroundColor: COLORS.primaryDark,
+              boxShadow: "0 6px 16px rgba(13, 89, 242, 0.3)",
+            },
+          }}
         >
           Tambah Kategori
         </Button>
@@ -159,70 +188,90 @@ export default function KategoriTab() {
           <LoadingScreen message="Memuat kategori..." overlay minHeight="320px" />
         </Box>
       ) : list.length === 0 ? (
-        <Box sx={{ textAlign: "center", py: 10 }}>
-          <Box sx={{ width: 100, height: 100, borderRadius: "50%", backgroundColor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 3 }}>
-            <Category sx={{ fontSize: 48, color: "#ccc" }} />
-          </Box>
-          <Typography sx={{ fontSize: 20, fontWeight: 700, color: "#444", mb: 1 }}>Belum ada kategori</Typography>
-          <Typography sx={{ fontSize: 14, color: "#999" }}>Klik Tambah Kategori untuk menambahkan kategori</Typography>
-        </Box>
+        <Paper elevation={0} sx={{ p: 8, textAlign: "center", borderRadius: "20px", border: "1.5px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
+          <Typography sx={{ fontSize: 20, fontWeight: 800, color: "#1E293B", mb: 1 }}>Belum ada kategori</Typography>
+          <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 500 }}>Klik Tambah Kategori untuk menambahkan kategori baru</Typography>
+        </Paper>
       ) : (
-        <TableContainer sx={{ borderRadius: "12px", border: "1px solid #f0f0f0", overflow: "auto" }}>
-          <Table>
+        <TableContainer sx={{ borderRadius: "16px", border: "1.5px solid #E2E8F0", overflow: "hidden", overflowX: "auto", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}>
+          <Table sx={{ minWidth: 600 }}>
             <TableHead>
               <TableRow>
-                {["Nama Kategori", "Keterangan"].map((h, i) => (
-                  <TableCell key={i} sx={tableHeadCell}>{h}</TableCell>
+                {["NAMA KATEGORI", "KETERANGAN", "AKSI"].map((h, i) => (
+                  <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 0 && { pl: { xs: 1.5, sm: 3 } }) }}>{h}</TableCell>
                 ))}
-                <TableCell sx={stickyAksiHead}>Aksi</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {list.map((item) => (
-                <TableRow key={item.id_kategori} sx={tableBodyRow}>
-                  <TableCell>
-                    <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{item.nama_kategori}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography sx={{ fontSize: 13, color: "#666" }}>{item.keterangan || "-"}</Typography>
-                  </TableCell>
-                  <TableCell sx={stickyAksiCell}>
-                    <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
-                      <Tooltip title="Edit Kategori">
-                        <Button size="small" variant="outlined" onClick={() => handleOpenEdit(item)}
-                          sx={{ textTransform: "none", color: "#0D59F2", borderColor: "#e3f2fd", borderRadius: "50px", "&:hover": { backgroundColor: "#f0f4ff", borderColor: "#0D59F2" } }}>
+                  <TableRow key={item.id_kategori} sx={tableBodyRow}>
+                    <TableCell sx={{ pl: { xs: 1.5, sm: 3 } }}>
+                      <Typography sx={{ fontWeight: 700, fontSize: { xs: 13, sm: 14 }, color: "#1E293B" }}>{item.nama_kategori}</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography sx={{ fontSize: { xs: 12, sm: 13 }, color: COLORS.slate, fontWeight: 500 }}>{item.keterangan || "-"}</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: "flex", gap: { xs: 0.5, sm: 1 }, justifyContent: "center", flexWrap: "wrap" }}>
+                        <Button 
+                          size="small" 
+                          variant="outlined" 
+                          onClick={() => handleOpenEdit(item)}
+                          sx={{
+                            textTransform: "none",
+                            color: COLORS.primary,
+                            borderColor: COLORS.primaryMuted,
+                            borderRadius: "10px",
+                            fontWeight: 700,
+                            fontSize: { xs: 11, sm: 12 },
+                            px: { xs: 1, sm: 2 },
+                            "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary }
+                          }}
+                        >
                           Edit
                         </Button>
-                      </Tooltip>
-                      <Tooltip title="Hapus Kategori">
-                        <Button size="small" variant="outlined" color="error" onClick={() => handleDelete(item)}
-                          sx={{ textTransform: "none", borderColor: "#fce4ec", borderRadius: "50px", "&:hover": { backgroundColor: "rgba(229,57,53,0.06)", borderColor: "#e53935" } }}>
+                        <Button 
+                          size="small" 
+                          variant="outlined" 
+                          color="error" 
+                          onClick={() => handleDelete(item)}
+                          sx={{
+                            textTransform: "none",
+                            borderColor: COLORS.errorLight,
+                            borderRadius: "10px",
+                            fontWeight: 700,
+                            fontSize: { xs: 11, sm: 12 },
+                            px: { xs: 1, sm: 2 },
+                            "&:hover": { backgroundColor: COLORS.errorLight, borderColor: COLORS.error }
+                          }}
+                        >
                           Hapus
                         </Button>
-                      </Tooltip>
-                    </Box>
-                  </TableCell>
-                </TableRow>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
               ))}
             </TableBody>
           </Table>
         </TableContainer>
       )}
 
-      <Dialog open={dialog.open} onClose={handleCloseDialog} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: "16px" } }}>
-        <DialogTitle sx={{ pb: 1 }}>
-          <Typography sx={{ fontWeight: 700, fontSize: 16 }}>
-            {dialog.mode === "create" ? "Tambah Kategori" : "Edit Kategori"}
-          </Typography>
-          <IconButton onClick={handleCloseDialog} sx={{ position: "absolute", right: 12, top: 8, color: "#888" }}>
+      <Dialog open={dialog.open} onClose={handleCloseDialog} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: { xs: "16px", sm: "24px" }, overflow: "hidden" } }}>
+        <Box sx={{ p: { xs: 1.5, sm: 2 }, display: "flex", alignItems: "center", justifyContent: "space-between", background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`, color: "#fff" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, px: 1 }}>
+            <Typography sx={{ fontWeight: 800, fontSize: { xs: 16, sm: 18 } }}>
+              {dialog.mode === "create" ? "Tambah Kategori" : "Edit Kategori"}
+            </Typography>
+          </Box>
+          <IconButton onClick={handleCloseDialog} sx={{ color: "#fff", "&:hover": { backgroundColor: "rgba(255,255,255,0.2)" } }}>
             <Close />
           </IconButton>
-        </DialogTitle>
+        </Box>
 
-        <DialogContent dividers sx={{ px: 3, py: 3 }}>
+        <DialogContent sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 3, sm: 4 } }}>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             <Box>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Nama Kategori <span style={{ color: "#ef5350" }}>*</span></Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1, color: "#334155" }}>Nama Kategori <span style={{ color: COLORS.error }}>*</span></Typography>
               <TextField
                 fullWidth placeholder="Contoh: Teknologi"
                 value={form.nama_kategori}
@@ -232,7 +281,7 @@ export default function KategoriTab() {
               />
             </Box>
             <Box>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Keterangan</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1, color: "#334155" }}>Keterangan</Typography>
               <TextField
                 fullWidth multiline rows={3}
                 placeholder="Deskripsi singkat kategori (opsional)"
@@ -244,15 +293,41 @@ export default function KategoriTab() {
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-          <Button onClick={handleCloseDialog} disabled={submitting}
-            sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, color: "#666", border: "1.5px solid #e0e0e0", "&:hover": { backgroundColor: "#f5f5f5" } }}>
-            Batal
-          </Button>
-          <Button variant="contained" onClick={handleSave} disabled={submitting}
-            sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}>
-            {submitting ? "Menyimpan..." : "Simpan"}
-          </Button>
+        <DialogActions sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 2, sm: 3 }, backgroundColor: "#F8FAFC", borderTop: "1.5px solid #E2E8F0", gap: 1.5, flexDirection: { xs: "column", sm: "row" }, "& > button": { width: { xs: "100%", sm: "auto" } }}}>
+          <>
+            <Button 
+              variant="contained"
+              onClick={handleCloseDialog} 
+              disabled={submitting}
+              sx={{
+                textTransform: "none", borderRadius: "12px", px: 3, fontWeight: 700,
+                backgroundColor: COLORS.error,
+                boxShadow: "0 4px 12px rgba(220,38,38,0.2)",
+                "&:hover": { 
+                  backgroundColor: "#B91C1C",
+                  boxShadow: "0 6px 16px rgba(220,38,38,0.3)",
+                },
+              }}
+            >
+              Batal
+            </Button>
+            <Button
+              variant="contained" 
+              onClick={handleSave} 
+              disabled={submitting}
+              sx={{
+                textTransform: "none", borderRadius: "12px", px: 4, fontWeight: 700,
+                backgroundColor: COLORS.primary,
+                boxShadow: "0 4px 12px rgba(13, 89, 242, 0.2)",
+                "&:hover": { 
+                  backgroundColor: COLORS.primaryDark,
+                  boxShadow: "0 6px 16px rgba(13, 89, 242, 0.3)",
+                },
+              }}
+            >
+              {submitting ? "Menyimpan..." : "Simpan Perubahan"}
+            </Button>
+          </>
         </DialogActions>
       </Dialog>
     </Box>

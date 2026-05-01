@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   Box, Paper, Typography, Tabs, Tab, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Button, Dialog, DialogTitle,
-  DialogContent, DialogActions, TextField, MenuItem, CircularProgress,
+  DialogContent, DialogActions, TextField, MenuItem,
   IconButton, Pagination, InputAdornment, Divider, Chip,
 } from "@mui/material";
 import { Close, PersonAdd, Search, Groups } from "@mui/icons-material";
@@ -13,54 +13,107 @@ import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import { getMyProgram, getTimList, getTimDetail, getPesertaList, getPesertaDetail } from "../../api/admin";
 
-const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "15px" } };
-
-const tableHeadCell = {
-  fontWeight: 700, fontSize: 13, color: "#000",
-  backgroundColor: "#fafafa", borderBottom: "2px solid #f0f0f0", py: 2,
+const COLORS = {
+  primary:      "#0D59F2",
+  primaryLight: "#E0F2FE",
+  primaryDark:  "#0369A1",
+  primaryMuted: "#93C5FD",
+  secondary:    "#2563EB",
+  accent:       "#3B82F6",
+  slate:        "#64748B",
+  slateLight:   "#F1F5F9",
+  success:      "#059669",
+  successLight: "#ECFDF5",
+  warning:      "#D97706",
+  warningLight: "#FFFBEB",
+  error:        "#DC2626",
+  errorLight:   "#FEF2F2",
 };
 
-const tableBodyRow = { "& td": { borderBottom: "1px solid #f5f5f5", py: 2 } };
+const roundedField = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "12px",
+    backgroundColor: "#fff",
+    transition: "box-shadow 0.2s",
+    "&:hover fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused": { boxShadow: `0 0 0 3px ${COLORS.primaryLight}` },
+  },
+};
+
+const tableHeadCell = {
+  fontWeight: 700,
+  fontSize: 12,
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+  color: "#374151",
+  backgroundColor: "#F8FAFC",
+  borderBottom: `2px solid ${COLORS.primaryMuted}`,
+  py: 2,
+  px: 2,
+  whiteSpace: "nowrap",
+};
+
+const tableBodyRow = {
+  "& td": { borderBottom: `1px solid ${COLORS.slateLight}`, py: 2, px: 2 },
+  "&:hover": { backgroundColor: "#F8FAFC" },
+};
 
 const ANGGOTA_STATUS = {
-  0: { label: "Menunggu",  backgroundColor: "#f57f17" },
-  1: { label: "Disetujui", backgroundColor: "#2e7d32" },
-  2: { label: "Ditolak",   backgroundColor: "#c62828" },
+  0: { label: "Menunggu",  colorType: "warning" },
+  1: { label: "Disetujui", colorType: "success" },
+  2: { label: "Ditolak",   colorType: "error" },
 };
 
 const LOLOS_STATUS = {
-  0: { label: "Belum Dinilai", backgroundColor: "#757575" },
-  1: { label: "Lolos",         backgroundColor: "#2e7d32" },
-  2: { label: "Tidak Lolos",   backgroundColor: "#c62828" },
+  0: { label: "Belum Dinilai", colorType: "slate" },
+  1: { label: "Lolos",         colorType: "success" },
+  2: { label: "Tidak Lolos",   colorType: "error" },
 };
 
 const PROPOSAL_STATUS = {
-  0: { label: "Draft",                       backgroundColor: "#757575" },
-  1: { label: "Diajukan",                    backgroundColor: "#0D59F2" },
-  2: { label: "Ditugaskan Reviewer Tahap 1", backgroundColor: "#6a1b9a" },
-  3: { label: "Tidak Lolos Desk Evaluasi",   backgroundColor: "#c62828" },
-  4: { label: "Lolos Desk Evaluasi",         backgroundColor: "#2e7d32" },
-  5: { label: "Panel Wawancara",             backgroundColor: "#e65100" },
-  6: { label: "Tidak Lolos Wawancara",       backgroundColor: "#c62828" },
-  7: { label: "Lolos Wawancara",             backgroundColor: "#2e7d32" },
-  8: { label: "Pembimbing Diajukan",         backgroundColor: "#00695c" },
-  9: { label: "Pembimbing Disetujui",        backgroundColor: "#1b5e20" },
+  0: { label: "Draft",                       colorType: "slate" },
+  1: { label: "Diajukan",                    colorType: "primary" },
+  2: { label: "Ditugaskan Reviewer Tahap 1", colorType: "info" },
+  3: { label: "Tidak Lolos Desk Evaluasi",   colorType: "error" },
+  4: { label: "Lolos Desk Evaluasi",         colorType: "success" },
+  5: { label: "Panel Wawancara",             colorType: "warning" },
+  6: { label: "Tidak Lolos Wawancara",       colorType: "error" },
+  7: { label: "Lolos Wawancara",             colorType: "success" },
+  8: { label: "Pembimbing Diajukan",         colorType: "primary" },
+  9: { label: "Pembimbing Disetujui",        colorType: "success" },
 };
 
-const StatusPill = ({ label, backgroundColor }) => (
-  <Box sx={{
-    display: "inline-flex", alignItems: "center",
-    px: 1.5, py: 0.4, borderRadius: "50px",
-    backgroundColor, color: "#fff", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
-  }}>
-    {label}
-  </Box>
-);
+const COLOR_TYPE_MAP = {
+  warning:   { bg: COLORS.warningLight,  text: COLORS.warning },
+  success:   { bg: COLORS.successLight,  text: COLORS.success },
+  error:     { bg: COLORS.errorLight,    text: COLORS.error },
+  primary:   { bg: COLORS.primaryLight,  text: COLORS.primary },
+  info:      { bg: "#E0F2FE",            text: "#0284C7" },
+  slate:     { bg: COLORS.slateLight,    text: COLORS.slate },
+};
+
+const StatusPill = ({ label, colorType = "slate" }) => {
+  const colors = COLOR_TYPE_MAP[colorType] || COLOR_TYPE_MAP.slate;
+  return (
+    <Box sx={{
+      display: "inline-flex", alignItems: "center",
+      px: 1.5, py: 0.5, borderRadius: "8px",
+      backgroundColor: colors.bg, color: colors.text,
+      fontSize: 11, fontWeight: 800,
+      whiteSpace: "nowrap", textTransform: "uppercase", letterSpacing: "0.02em",
+    }}>
+      {label}
+    </Box>
+  );
+};
 
 const DetailRow = ({ label, value }) => (
   <Box>
-    <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>{label}</Typography>
-    <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{value || "-"}</Typography>
+    <Typography sx={{ fontSize: 11, fontWeight: 700, color: COLORS.slate, textTransform: "uppercase", letterSpacing: "0.05em", mb: 0.75 }}>
+      {label}
+    </Typography>
+    <Typography sx={{ fontWeight: 600, fontSize: 14, color: "#1E293B" }}>{value || "-"}</Typography>
   </Box>
 );
 
@@ -74,33 +127,30 @@ const formatCurrency = (v) => {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(v);
 };
 
-const getDosenPembimbingName = (item) => {
-  return (
-    item?.nama_dosen ||
-    item?.nama_pembimbing ||
-    item?.dosen_pembimbing ||
-    item?.pembimbing?.nama_dosen ||
-    item?.pembimbing?.nama_lengkap ||
-    item?.pengajuan_pembimbing?.nama_dosen ||
-    "-"
-  );
-};
+const getDosenPembimbingName = (item) =>
+  item?.nama_dosen ||
+  item?.nama_pembimbing ||
+  item?.dosen_pembimbing ||
+  item?.pembimbing?.nama_dosen ||
+  item?.pembimbing?.nama_lengkap ||
+  item?.pengajuan_pembimbing?.nama_dosen ||
+  "-";
 
 export default function TimPesertaPage() {
-  const [activeTab, setActiveTab] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [timList, setTimList] = useState([]);
-  const [pesertaList, setPesertaList] = useState([]);
-  const [programList, setProgramList] = useState([]);
-  const [page, setPage] = useState(1);
+  const [activeTab, setActiveTab]       = useState(0);
+  const [loading, setLoading]           = useState(true);
+  const [timList, setTimList]           = useState([]);
+  const [pesertaList, setPesertaList]   = useState([]);
+  const [programList, setProgramList]   = useState([]);
+  const [page, setPage]                 = useState(1);
   const rowsPerPage = 10;
 
   const [filters, setFilters] = useState({ search: "", id_program: "", tahun: "" });
 
-  const [openDetail, setOpenDetail] = useState(false);
-  const [detailData, setDetailData] = useState(null);
+  const [openDetail, setOpenDetail]       = useState(false);
+  const [detailData, setDetailData]       = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedItem, setSelectedItem]   = useState(null);
 
   useEffect(() => {
     getMyProgram()
@@ -112,24 +162,21 @@ export default function TimPesertaPage() {
         }
       })
       .catch(() => {
-        Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat data program", confirmButtonColor: "#0D59F2" });
+        Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat data program", confirmButtonColor: COLORS.primary });
       });
   }, []);
 
   const fetchTim = useCallback(async () => {
     setLoading(true);
     try {
-      if (!filters.id_program) {
-        setTimList([]);
-        return;
-      }
+      if (!filters.id_program) { setTimList([]); return; }
       const params = {};
       if (filters.id_program) params.id_program = filters.id_program;
       if (filters.search) params.search = filters.search;
       const res = await getTimList(params);
       setTimList(res.data || []);
     } catch {
-      Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat data tim", confirmButtonColor: "#0D59F2" });
+      Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat data tim", confirmButtonColor: COLORS.primary });
     } finally {
       setLoading(false);
     }
@@ -138,17 +185,14 @@ export default function TimPesertaPage() {
   const fetchPeserta = useCallback(async () => {
     setLoading(true);
     try {
-      if (!filters.id_program) {
-        setPesertaList([]);
-        return;
-      }
+      if (!filters.id_program) { setPesertaList([]); return; }
       const params = {};
       if (filters.id_program) params.id_program = filters.id_program;
       if (filters.search) params.search = filters.search;
       const res = await getPesertaList(params);
       setPesertaList(res.data || []);
     } catch {
-      Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat data peserta", confirmButtonColor: "#0D59F2" });
+      Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat data peserta", confirmButtonColor: COLORS.primary });
     } finally {
       setLoading(false);
     }
@@ -169,7 +213,7 @@ export default function TimPesertaPage() {
       const res = await getTimDetail(item.id_tim);
       setDetailData(res.data);
     } catch {
-      Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat detail tim", confirmButtonColor: "#0D59F2" });
+      Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat detail tim", confirmButtonColor: COLORS.primary });
       setOpenDetail(false);
     } finally {
       setLoadingDetail(false);
@@ -185,7 +229,7 @@ export default function TimPesertaPage() {
       const res = await getPesertaDetail(item.id_user, item.id_program);
       setDetailData(res.data);
     } catch {
-      Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat detail peserta", confirmButtonColor: "#0D59F2" });
+      Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat detail peserta", confirmButtonColor: COLORS.primary });
       setOpenDetail(false);
     } finally {
       setLoadingDetail(false);
@@ -198,47 +242,44 @@ export default function TimPesertaPage() {
     const dateValue = activeTab === 0
       ? (item.created_at || item.tanggal_submit || item.wawancara_at)
       : (item.tahun || item.created_at || item.tanggal_submit);
-
     if (!dateValue) return null;
     if (/^\d{4}$/.test(String(dateValue))) return Number(dateValue);
-
     const year = new Date(dateValue).getFullYear();
     return Number.isNaN(year) ? null : year;
   };
 
   const tahunOptions = Array.from(new Set(
-    currentList
-      .map((item) => getYearFromItem(item))
-      .filter(Boolean)
+    currentList.map((item) => getYearFromItem(item)).filter(Boolean)
   )).sort((a, b) => b - a);
 
   const filteredList = filters.tahun === ""
     ? currentList
     : currentList.filter((item) => getYearFromItem(item) === Number(filters.tahun));
 
-  const totalPages = Math.ceil(filteredList.length / rowsPerPage);
+  const totalPages   = Math.ceil(filteredList.length / rowsPerPage);
   const paginatedList = filteredList.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
+  /* ─── Detail renderers ─── */
   const renderTimDetail = () => {
     if (!detailData) return null;
     const ps = detailData.proposal ? (PROPOSAL_STATUS[detailData.proposal.status] || PROPOSAL_STATUS[0]) : null;
     return (
       <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3 }}>
-          <DetailRow label="Nama Tim" value={detailData.nama_tim} />
-          <DetailRow label="Program" value={detailData.nama_program} />
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3 }}>
+          <DetailRow label="Nama Tim"       value={detailData.nama_tim} />
+          <DetailRow label="Program"        value={detailData.nama_program} />
           <DetailRow label="Tanggal Dibuat" value={formatDate(detailData.created_at)} />
         </Box>
 
-        <Divider />
-        <Typography sx={{ fontWeight: 700, fontSize: 14 }}>Anggota Tim</Typography>
-        {detailData.anggota && detailData.anggota.length > 0 ? (
-          <TableContainer sx={{ borderRadius: "12px", border: "1px solid #f0f0f0" }}>
+        <Divider sx={{ borderColor: COLORS.slateLight }} />
+        <Typography sx={{ fontWeight: 700, fontSize: 14, color: "#1E293B" }}>Anggota Tim</Typography>
+        {detailData.anggota?.length > 0 ? (
+          <TableContainer sx={{ borderRadius: "12px", border: `1.5px solid ${COLORS.slateLight}` }}>
             <Table size="small">
               <TableHead>
                 <TableRow>
                   {["Nama", "NIM", "Peran", "Prodi", "Status"].map((h, i) => (
-                    <TableCell key={i} sx={{ ...tableHeadCell, fontSize: 12 }}>{h}</TableCell>
+                    <TableCell key={i} sx={{ ...tableHeadCell, fontSize: 11 }}>{h}</TableCell>
                   ))}
                 </TableRow>
               </TableHead>
@@ -249,17 +290,15 @@ export default function TimPesertaPage() {
                     <TableRow key={a.id_user} sx={tableBodyRow}>
                       <TableCell>
                         <Typography sx={{ fontWeight: 600, fontSize: 13 }}>{a.nama_lengkap || a.username}</Typography>
-                        <Typography sx={{ fontSize: 11, color: "#aaa" }}>{a.email}</Typography>
+                        <Typography sx={{ fontSize: 11, color: COLORS.slate }}>{a.email}</Typography>
                       </TableCell>
                       <TableCell><Typography sx={{ fontSize: 12 }}>{a.nim}</Typography></TableCell>
                       <TableCell>
-                        <Chip
-                          label={a.peran === 1 ? "Ketua" : "Anggota"} size="small"
-                          sx={{ fontSize: 11, fontWeight: 700, backgroundColor: a.peran === 1 ? "#e3f0ff" : "#f5f5f5", color: a.peran === 1 ? "#0D59F2" : "#555" }}
-                        />
+                        <Chip label={a.peran === 1 ? "Ketua" : "Anggota"} size="small"
+                          sx={{ fontSize: 11, fontWeight: 700, backgroundColor: a.peran === 1 ? COLORS.primaryLight : COLORS.slateLight, color: a.peran === 1 ? COLORS.primary : COLORS.slate }} />
                       </TableCell>
                       <TableCell><Typography sx={{ fontSize: 12 }}>{a.jenjang} {a.nama_prodi}</Typography></TableCell>
-                      <TableCell><StatusPill label={as.label} backgroundColor={as.backgroundColor} /></TableCell>
+                      <TableCell><StatusPill label={as.label} colorType={as.colorType} /></TableCell>
                     </TableRow>
                   );
                 })}
@@ -267,29 +306,28 @@ export default function TimPesertaPage() {
             </Table>
           </TableContainer>
         ) : (
-          <Typography sx={{ fontSize: 13, color: "#999" }}>Belum ada anggota</Typography>
+          <Typography sx={{ fontSize: 13, color: COLORS.slate }}>Belum ada anggota</Typography>
         )}
 
-        <Divider />
-        <Typography sx={{ fontWeight: 700, fontSize: 14 }}>Proposal</Typography>
+        <Divider sx={{ borderColor: COLORS.slateLight }} />
+        <Typography sx={{ fontWeight: 700, fontSize: 14, color: "#1E293B" }}>Proposal</Typography>
         {detailData.proposal ? (
-          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3 }}>
-            <Box sx={{ gridColumn: "1 / -1" }}>
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3 }}>
+            <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
               <DetailRow label="Judul Proposal" value={detailData.proposal.judul} />
             </Box>
-            <DetailRow label="Kategori" value={detailData.proposal.nama_kategori} />
-            <DetailRow label="Modal Diajukan" value={formatCurrency(detailData.proposal.modal_diajukan)} />
+            <DetailRow label="Kategori"         value={detailData.proposal.nama_kategori} />
+            <DetailRow label="Modal Diajukan"   value={formatCurrency(detailData.proposal.modal_diajukan)} />
             <DetailRow label="Dosen Pembimbing" value={getDosenPembimbingName(detailData.proposal)} />
-            <DetailRow label="Tanggal Submit" value={formatDate(detailData.proposal.tanggal_submit)} />
+            <DetailRow label="Tanggal Submit"   value={formatDate(detailData.proposal.tanggal_submit)} />
             <DetailRow label="Jadwal Wawancara" value={formatDate(detailData.proposal.wawancara_at)} />
             <Box>
-              <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Status Proposal</Typography>
-              {ps && <StatusPill label={ps.label} backgroundColor={ps.backgroundColor} />}
+              <Typography sx={{ fontSize: 11, fontWeight: 700, color: COLORS.slate, textTransform: "uppercase", letterSpacing: "0.05em", mb: 0.75 }}>Status Proposal</Typography>
+              {ps && <StatusPill label={ps.label} colorType={ps.colorType} />}
             </Box>
-            
           </Box>
         ) : (
-          <Typography sx={{ fontSize: 13, color: "#999" }}>Belum ada proposal</Typography>
+          <Typography sx={{ fontSize: 13, color: COLORS.slate }}>Belum ada proposal</Typography>
         )}
       </Box>
     );
@@ -297,76 +335,73 @@ export default function TimPesertaPage() {
 
   const renderPesertaDetail = () => {
     if (!detailData) return null;
-    const ls = LOLOS_STATUS[detailData.status_lolos] || LOLOS_STATUS[0];
-    const as = detailData.status_anggota !== undefined ? (ANGGOTA_STATUS[detailData.status_anggota] || ANGGOTA_STATUS[0]) : null;
-    const ps = detailData.proposal ? (PROPOSAL_STATUS[detailData.proposal.status] || PROPOSAL_STATUS[0]) : null;
+    const ls = LOLOS_STATUS[detailData.status_lolos]      || LOLOS_STATUS[0];
+    const as = detailData.status_anggota !== undefined     ? (ANGGOTA_STATUS[detailData.status_anggota] || ANGGOTA_STATUS[0]) : null;
+    const ps = detailData.proposal                         ? (PROPOSAL_STATUS[detailData.proposal.status] || PROPOSAL_STATUS[0]) : null;
     return (
       <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3 }}>
-          <DetailRow label="Nama Lengkap" value={detailData.nama_lengkap} />
-          <DetailRow label="Username" value={detailData.username} />
-          <DetailRow label="Email" value={detailData.email} />
-          <DetailRow label="NIM" value={detailData.nim} />
-          <DetailRow label="No. HP" value={detailData.no_hp} />
-          <DetailRow label="Tahun Masuk" value={detailData.tahun_masuk} />
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3 }}>
+          <DetailRow label="Nama Lengkap"  value={detailData.nama_lengkap} />
+          <DetailRow label="Username"      value={detailData.username} />
+          <DetailRow label="Email"         value={detailData.email} />
+          <DetailRow label="NIM"           value={detailData.nim} />
+          <DetailRow label="No. HP"        value={detailData.no_hp} />
+          <DetailRow label="Tahun Masuk"   value={detailData.tahun_masuk} />
           <DetailRow label="Program Studi" value={`${detailData.jenjang} ${detailData.nama_prodi}`} />
-          <DetailRow label="Jurusan" value={detailData.nama_jurusan} />
-          <DetailRow label="Kampus" value={detailData.nama_kampus} />
-          <DetailRow label="Program" value={detailData.nama_program} />
-          <DetailRow label="Tahun Daftar" value={detailData.tahun} />
+          <DetailRow label="Jurusan"       value={detailData.nama_jurusan} />
+          <DetailRow label="Kampus"        value={detailData.nama_kampus} />
+          <DetailRow label="Program"       value={detailData.nama_program} />
+          <DetailRow label="Tahun Daftar"  value={detailData.tahun} />
           <Box>
-            <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Status Lolos</Typography>
-            <StatusPill label={ls.label} backgroundColor={ls.backgroundColor} />
+            <Typography sx={{ fontSize: 11, fontWeight: 700, color: COLORS.slate, textTransform: "uppercase", letterSpacing: "0.05em", mb: 0.75 }}>Status Lolos</Typography>
+            <StatusPill label={ls.label} colorType={ls.colorType} />
           </Box>
         </Box>
 
-        <Divider />
-        <Typography sx={{ fontWeight: 700, fontSize: 14 }}>Informasi Tim</Typography>
-        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3 }}>
+        <Divider sx={{ borderColor: COLORS.slateLight }} />
+        <Typography sx={{ fontWeight: 700, fontSize: 14, color: "#1E293B" }}>Informasi Tim</Typography>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3 }}>
           <DetailRow label="Nama Tim" value={detailData.nama_tim} />
           <Box>
-            <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Peran di Tim</Typography>
+            <Typography sx={{ fontSize: 11, fontWeight: 700, color: COLORS.slate, textTransform: "uppercase", letterSpacing: "0.05em", mb: 0.75 }}>Peran di Tim</Typography>
             {detailData.peran !== undefined && detailData.peran !== null ? (
-              <Chip
-                label={detailData.peran === 1 ? "Ketua" : "Anggota"} size="small"
-                sx={{ fontSize: 12, fontWeight: 700, backgroundColor: detailData.peran === 1 ? "#e3f0ff" : "#f5f5f5", color: detailData.peran === 1 ? "#0D59F2" : "#555" }}
-              />
-            ) : <Typography sx={{ fontSize: 14, fontWeight: 600 }}>-</Typography>}
+              <Chip label={detailData.peran === 1 ? "Ketua" : "Anggota"} size="small"
+                sx={{ fontSize: 12, fontWeight: 700, backgroundColor: detailData.peran === 1 ? COLORS.primaryLight : COLORS.slateLight, color: detailData.peran === 1 ? COLORS.primary : COLORS.slate }} />
+            ) : <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#1E293B" }}>-</Typography>}
           </Box>
           {as && (
             <Box>
-              <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Status Keanggotaan</Typography>
-              <StatusPill label={as.label} backgroundColor={as.backgroundColor} />
+              <Typography sx={{ fontSize: 11, fontWeight: 700, color: COLORS.slate, textTransform: "uppercase", letterSpacing: "0.05em", mb: 0.75 }}>Status Keanggotaan</Typography>
+              <StatusPill label={as.label} colorType={as.colorType} />
             </Box>
           )}
           {detailData.catatan_anggota && (
-            <Box sx={{ gridColumn: "1 / -1", p: 2, backgroundColor: "#fce4ec", borderRadius: "12px", border: "1px solid #ef9a9a" }}>
-              <Typography sx={{ fontSize: 12, color: "#c62828", fontWeight: 700, mb: 0.5 }}>Catatan</Typography>
-              <Typography sx={{ fontSize: 13 }}>{detailData.catatan_anggota}</Typography>
+            <Box sx={{ gridColumn: { sm: "1 / -1" }, p: 2.5, backgroundColor: COLORS.errorLight, borderRadius: "12px", border: `1.5px solid ${COLORS.error}20` }}>
+              <Typography sx={{ fontSize: 12, color: COLORS.error, fontWeight: 700, mb: 0.5 }}>Catatan</Typography>
+              <Typography sx={{ fontSize: 13, color: "#7F1D1D" }}>{detailData.catatan_anggota}</Typography>
             </Box>
           )}
         </Box>
 
-        <Divider />
-        <Typography sx={{ fontWeight: 700, fontSize: 14 }}>Proposal Tim</Typography>
+        <Divider sx={{ borderColor: COLORS.slateLight }} />
+        <Typography sx={{ fontWeight: 700, fontSize: 14, color: "#1E293B" }}>Proposal Tim</Typography>
         {detailData.proposal ? (
-          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3 }}>
-            <Box sx={{ gridColumn: "1 / -1" }}>
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3 }}>
+            <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
               <DetailRow label="Judul Proposal" value={detailData.proposal.judul} />
             </Box>
-            <DetailRow label="Kategori" value={detailData.proposal.nama_kategori} />
-            <DetailRow label="Modal Diajukan" value={formatCurrency(detailData.proposal.modal_diajukan)} />
+            <DetailRow label="Kategori"         value={detailData.proposal.nama_kategori} />
+            <DetailRow label="Modal Diajukan"   value={formatCurrency(detailData.proposal.modal_diajukan)} />
             <DetailRow label="Dosen Pembimbing" value={getDosenPembimbingName(detailData.proposal)} />
-            <DetailRow label="Tanggal Submit" value={formatDate(detailData.proposal.tanggal_submit)} />
+            <DetailRow label="Tanggal Submit"   value={formatDate(detailData.proposal.tanggal_submit)} />
             <DetailRow label="Jadwal Wawancara" value={formatDate(detailData.proposal.wawancara_at)} />
             <Box>
-              <Typography sx={{ fontSize: 12, color: "#888", mb: 0.5 }}>Status Proposal</Typography>
-              {ps && <StatusPill label={ps.label} backgroundColor={ps.backgroundColor} />}
+              <Typography sx={{ fontSize: 11, fontWeight: 700, color: COLORS.slate, textTransform: "uppercase", letterSpacing: "0.05em", mb: 0.75 }}>Status Proposal</Typography>
+              {ps && <StatusPill label={ps.label} colorType={ps.colorType} />}
             </Box>
-            
           </Box>
         ) : (
-          <Typography sx={{ fontSize: 13, color: "#999" }}>Belum ada proposal</Typography>
+          <Typography sx={{ fontSize: 13, color: COLORS.slate }}>Belum ada proposal</Typography>
         )}
       </Box>
     );
@@ -375,91 +410,165 @@ export default function TimPesertaPage() {
   return (
     <BodyLayout Sidebar={AdminSidebar}>
       <PageTransition>
-        <Box>
-          <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Tim & Peserta</Typography>
-          <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>Data tim dan peserta program</Typography>
+        <Box sx={{ px: 1, py: 1 }}>
+          {/* Page Header */}
+          <Box sx={{ mb: 4 }}>
+            <Typography sx={{ fontSize: { xs: 26, sm: 32, md: 36 }, fontWeight: 800, color: "#1F2937", mb: 0.5 }}>
+              Tim & Peserta
+            </Typography>
+            <Typography sx={{ fontSize: { xs: 14, sm: 16 }, color: "#6B7280" }}>
+              Manajemen data tim dan peserta program kewirausahaan
+            </Typography>
+          </Box>
 
-          <Paper sx={{ borderRadius: "16px", border: "1px solid #f0f0f0", overflow: "hidden" }}>
-            <Box sx={{ borderBottom: "1px solid #f0f0f0" }}>
+          <Paper sx={{
+            borderRadius: "20px",
+            border: "1.5px solid #E5E7EB",
+            overflow: "hidden",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+          }}>
+            {/* Accent bar */}
+            <Box sx={{ height: 4, background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
+
+            {/* Tabs */}
+            <Box sx={{ borderBottom: "1px solid #F1F5F9", backgroundColor: "#fff" }}>
               <Tabs
                 value={activeTab}
                 onChange={(e, v) => { setActiveTab(v); setPage(1); }}
+                variant="scrollable"
+                scrollButtons="auto"
                 sx={{
-                  px: 2,
-                  "& .MuiTab-root": { textTransform: "none", fontSize: 14, fontWeight: 500, color: "#888", minHeight: 52, "&.Mui-selected": { fontWeight: 700, color: "#0D59F2" } },
-                  "& .MuiTabs-indicator": { backgroundColor: "#0D59F2", height: 3, borderRadius: "3px 3px 0 0" },
+                  px: { xs: 2, sm: 3 },
+                  "& .MuiTab-root": {
+                    textTransform: "none", fontSize: { xs: 13, sm: 14 }, fontWeight: 600,
+                    color: COLORS.slate, minHeight: 60, transition: "all 0.2s",
+                    "&.Mui-selected": { color: COLORS.primary },
+                  },
+                  "& .MuiTabs-indicator": { backgroundColor: COLORS.primary, height: 3, borderRadius: "3px 3px 0 0" },
                 }}
               >
-                <Tab label="Tim" />
-                <Tab label="Peserta Program" />
+                <Tab label="Data Tim" />
+                <Tab label="Daftar Peserta" />
               </Tabs>
             </Box>
 
-            <Box sx={{ p: 3 }}>
-              <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap", alignItems: "center" }}>
+            <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
+              {/* Filter Bar */}
+              <Box sx={{
+                display: "flex",
+                gap: { xs: 1.25, sm: 2 },
+                mb: 4,
+                flexWrap: "wrap",
+                alignItems: { xs: "stretch", sm: "center" },
+                flexDirection: { xs: "column", sm: "row" },
+              }}>
                 <TextField
                   size="small"
                   placeholder={activeTab === 0 ? "Cari nama tim, ketua..." : "Cari nama, email, NIM..."}
                   value={filters.search}
                   onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                  InputProps={{ startAdornment: <InputAdornment position="start"><Search sx={{ fontSize: 18, color: "#aaa" }} /></InputAdornment> }}
-                  sx={{ ...roundedField, minWidth: 240, flex: "1 1 240px" }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Search sx={{ fontSize: 20, color: COLORS.slate }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    ...roundedField,
+                    width: { xs: "100%", sm: "auto" },
+                    minWidth: { sm: 260 },
+                    flex: { sm: "1 1 260px" },
+                  }}
                 />
                 <TextField
-                  select size="small" label="Program"
+                  select size="small"
                   value={filters.id_program}
                   onChange={(e) => setFilters({ ...filters, id_program: e.target.value })}
                   disabled
-                  InputLabelProps={{ shrink: true }}
-                  sx={{ ...roundedField, minWidth: 220 }}
+                  sx={{
+                    ...roundedField,
+                    width: { xs: "100%", sm: "auto" },
+                    minWidth: { sm: 200 },
+                    flex: { sm: "0 1 200px" },
+                  }}
                 >
                   {programList.map((p) => (
-                    <MenuItem key={p.id_program} value={p.id_program}>{p.keterangan}</MenuItem>
+                    <MenuItem key={p.id_program} value={p.id_program} sx={{ fontSize: 13 }}>{p.keterangan}</MenuItem>
                   ))}
                 </TextField>
                 <TextField
-                  select size="small" label="Tahun"
+                  select size="small"
                   value={filters.tahun}
                   onChange={(e) => setFilters({ ...filters, tahun: e.target.value })}
-                  InputLabelProps={{ shrink: true }}
-                  sx={{ ...roundedField, minWidth: 160 }}
+                  SelectProps={{
+                    displayEmpty: true,
+                    renderValue: (v) => (
+                      <span style={{ fontSize: 14, color: !v ? "#9CA3AF" : "inherit" }}>
+                        {!v ? "Semua Tahun" : v}
+                      </span>
+                    ),
+                  }}
+                  sx={{
+                    ...roundedField,
+                    width: { xs: "100%", sm: "auto" },
+                    minWidth: { sm: 150 },
+                    flex: { sm: "0 1 150px" },
+                  }}
                 >
-                  <MenuItem value="">Semua Tahun</MenuItem>
+                  <MenuItem value="" sx={{ fontSize: 13 }}>Semua Tahun</MenuItem>
                   {tahunOptions.map((tahun) => (
-                    <MenuItem key={tahun} value={String(tahun)}>{tahun}</MenuItem>
+                    <MenuItem key={tahun} value={String(tahun)} sx={{ fontSize: 13 }}>{tahun}</MenuItem>
                   ))}
                 </TextField>
               </Box>
 
+              {/* Content */}
               {loading ? (
-                <Box sx={{ position: "relative", minHeight: 320 }}>
-                  <LoadingScreen message="Memuat data tim dan peserta..." overlay minHeight="320px" />
+                <Box sx={{ position: "relative", minHeight: 400 }}>
+                  <LoadingScreen message="Memuat data..." overlay minHeight="400px" />
                 </Box>
               ) : paginatedList.length === 0 ? (
-                <Box sx={{ textAlign: "center", py: 10 }}>
-                  <Box sx={{ width: 100, height: 100, borderRadius: "50%", backgroundColor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 3 }}>
+                <Box sx={{ textAlign: "center", py: 12 }}>
+                  <Box sx={{
+                    width: 120, height: 120, borderRadius: "50%",
+                    backgroundColor: COLORS.slateLight,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    mx: "auto", mb: 3,
+                  }}>
                     {activeTab === 0
-                      ? <Groups sx={{ fontSize: 48, color: "#ccc" }} />
-                      : <PersonAdd sx={{ fontSize: 48, color: "#ccc" }} />
+                      ? <Groups sx={{ fontSize: 52, color: COLORS.primaryMuted }} />
+                      : <PersonAdd sx={{ fontSize: 52, color: COLORS.primaryMuted }} />
                     }
                   </Box>
-                  <Typography sx={{ fontSize: 20, fontWeight: 700, color: "#444", mb: 1 }}>
+                  <Typography sx={{ fontSize: 22, fontWeight: 800, color: "#1F2937", mb: 1 }}>
                     Tidak ada data {activeTab === 0 ? "tim" : "peserta"}
                   </Typography>
-                  <Typography sx={{ fontSize: 14, color: "#999" }}>Data akan muncul di sini</Typography>
+                  <Typography sx={{ fontSize: 16, color: COLORS.slate }}>
+                    {filters.search ? "Coba kata kunci pencarian lain" : "Belum ada data yang terdaftar pada program ini"}
+                  </Typography>
                 </Box>
               ) : (
                 <>
-                  <TableContainer sx={{ borderRadius: "12px", border: "1px solid #f0f0f0", overflow: "auto", mb: 3 }}>
+                  <TableContainer sx={{
+                    borderRadius: "16px",
+                    border: `1.5px solid ${COLORS.slateLight}`,
+                    overflow: "auto",
+                    mb: 4,
+                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)",
+                    "& table": { minWidth: { xs: 800, sm: 900 } },
+                    "&::-webkit-scrollbar": { height: 6 },
+                    "&::-webkit-scrollbar-thumb": { backgroundColor: COLORS.slateLight, borderRadius: "3px" },
+                  }}>
                     <Table>
                       <TableHead>
                         <TableRow>
                           {activeTab === 0
-                            ? ["Nama Tim", "Program", "Ketua", "Dosen Pembimbing", "Anggota", "Proposal", "Aksi"].map((h, i) => (
-                                <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 6 && { textAlign: "center" }) }}>{h}</TableCell>
+                            ? ["NAMA TIM", "PROGRAM", "KETUA", "DOSEN PEMBIMBING", "ANGGOTA", "PROPOSAL", "AKSI"].map((h, i) => (
+                                <TableCell key={i} sx={tableHeadCell}>{h}</TableCell>
                               ))
-                            : ["Nama Peserta", "NIM", "Program", "Tim", "Dosen Pembimbing", "Peran", "Status Lolos", "Aksi"].map((h, i) => (
-                                <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 7 && { textAlign: "center" }) }}>{h}</TableCell>
+                            : ["NAMA PESERTA", "NIM", "PROGRAM", "TIM", "DOSEN PEMBIMBING", "PERAN", "STATUS LOLOS", "AKSI"].map((h, i) => (
+                                <TableCell key={i} sx={tableHeadCell}>{h}</TableCell>
                               ))
                           }
                         </TableRow>
@@ -471,25 +580,30 @@ export default function TimPesertaPage() {
                               return (
                                 <TableRow key={item.id_tim} sx={tableBodyRow}>
                                   <TableCell>
-                                    <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{item.nama_tim}</Typography>
+                                    <Typography sx={{ fontWeight: 700, fontSize: 14, color: "#1E293B" }}>{item.nama_tim}</Typography>
                                   </TableCell>
-                                  <TableCell><Typography sx={{ fontSize: 13 }}>{item.nama_program}</Typography></TableCell>
+                                  <TableCell><Typography sx={{ fontSize: 13, color: "#475569" }}>{item.nama_program}</Typography></TableCell>
                                   <TableCell>
-                                    <Typography sx={{ fontSize: 13, fontWeight: 600 }}>{item.nama_ketua || "-"}</Typography>
-                                    {item.nim_ketua && <Typography sx={{ fontSize: 11, color: "#aaa" }}>{item.nim_ketua}</Typography>}
+                                    <Typography sx={{ fontSize: 13, fontWeight: 600, color: "#1E293B" }}>{item.nama_ketua || "-"}</Typography>
+                                    {item.nim_ketua && <Typography sx={{ fontSize: 11, color: COLORS.slate }}>{item.nim_ketua}</Typography>}
                                   </TableCell>
-                                  <TableCell><Typography sx={{ fontSize: 13 }}>{getDosenPembimbingName(item)}</Typography></TableCell>
-                                  <TableCell><Typography sx={{ fontSize: 13 }}>{item.jumlah_anggota} orang</Typography></TableCell>
+                                  <TableCell><Typography sx={{ fontSize: 13, color: "#475569", whiteSpace: "nowrap" }}>{getDosenPembimbingName(item)}</Typography></TableCell>
+                                  <TableCell><Typography sx={{ fontSize: 13, color: "#475569" }}>{item.jumlah_anggota} orang</Typography></TableCell>
                                   <TableCell>
                                     {proposalStatus
-                                      ? <StatusPill label={proposalStatus.label} backgroundColor={proposalStatus.backgroundColor} />
-                                      : <Typography sx={{ fontSize: 12, color: "#aaa" }}>Belum ada</Typography>
+                                      ? <StatusPill label={proposalStatus.label} colorType={proposalStatus.colorType} />
+                                      : <Typography sx={{ fontSize: 12, color: COLORS.slate }}>Belum ada</Typography>
                                     }
                                   </TableCell>
                                   <TableCell align="center">
                                     <Button size="small" variant="outlined"
                                       onClick={() => handleViewTimDetail(item)}
-                                      sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12, fontWeight: 600, px: 2, borderColor: "#0D59F2", color: "#0D59F2", "&:hover": { backgroundColor: "#f0f4ff" } }}
+                                      sx={{
+                                        textTransform: "none", borderRadius: "10px",
+                                        fontSize: 12, fontWeight: 700, px: 2,
+                                        color: COLORS.primary, borderColor: COLORS.primaryMuted,
+                                        "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
+                                      }}
                                     >
                                       Detail
                                     </Button>
@@ -502,25 +616,30 @@ export default function TimPesertaPage() {
                               return (
                                 <TableRow key={`${item.id_user}-${item.id_program}`} sx={tableBodyRow}>
                                   <TableCell>
-                                    <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{item.nama_lengkap || item.username}</Typography>
-                                    <Typography sx={{ fontSize: 11, color: "#aaa" }}>@{item.username}</Typography>
+                                    <Typography sx={{ fontWeight: 700, fontSize: 14, color: "#1E293B" }}>{item.nama_lengkap || item.username}</Typography>
+                                    <Typography sx={{ fontSize: 11, color: COLORS.slate }}>@{item.username}</Typography>
                                   </TableCell>
-                                  <TableCell><Typography sx={{ fontSize: 13 }}>{item.nim}</Typography></TableCell>
-                                  <TableCell><Typography sx={{ fontSize: 13 }}>{item.nama_program}</Typography></TableCell>
-                                  <TableCell><Typography sx={{ fontSize: 13 }}>{item.nama_tim || "-"}</Typography></TableCell>
-                                  <TableCell><Typography sx={{ fontSize: 13 }}>{getDosenPembimbingName(item)}</Typography></TableCell>
+                                  <TableCell><Typography sx={{ fontSize: 13, color: "#475569" }}>{item.nim}</Typography></TableCell>
+                                  <TableCell><Typography sx={{ fontSize: 13, color: "#475569" }}>{item.nama_program}</Typography></TableCell>
+                                  <TableCell><Typography sx={{ fontSize: 13, color: "#475569" }}>{item.nama_tim || "-"}</Typography></TableCell>
+                                  <TableCell><Typography sx={{ fontSize: 13, color: "#475569", whiteSpace: "nowrap" }}>{getDosenPembimbingName(item)}</Typography></TableCell>
                                   <TableCell>
                                     {item.peran !== undefined && item.peran !== null
                                       ? <Chip label={item.peran === 1 ? "Ketua" : "Anggota"} size="small"
-                                          sx={{ fontSize: 11, fontWeight: 700, backgroundColor: item.peran === 1 ? "#e3f0ff" : "#f5f5f5", color: item.peran === 1 ? "#0D59F2" : "#555" }} />
-                                      : <Typography sx={{ fontSize: 12, color: "#aaa" }}>-</Typography>
+                                          sx={{ fontSize: 11, fontWeight: 700, backgroundColor: item.peran === 1 ? COLORS.primaryLight : COLORS.slateLight, color: item.peran === 1 ? COLORS.primary : COLORS.slate }} />
+                                      : <Typography sx={{ fontSize: 12, color: COLORS.slate }}>-</Typography>
                                     }
                                   </TableCell>
-                                  <TableCell><StatusPill label={ls.label} backgroundColor={ls.backgroundColor} /></TableCell>
+                                  <TableCell><StatusPill label={ls.label} colorType={ls.colorType} /></TableCell>
                                   <TableCell align="center">
                                     <Button size="small" variant="outlined"
                                       onClick={() => handleViewPesertaDetail(item)}
-                                      sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12, fontWeight: 600, px: 2, borderColor: "#0D59F2", color: "#0D59F2", "&:hover": { backgroundColor: "#f0f4ff" } }}
+                                      sx={{
+                                        textTransform: "none", borderRadius: "10px",
+                                        fontSize: 12, fontWeight: 700, px: 2,
+                                        color: COLORS.primary, borderColor: COLORS.primaryMuted,
+                                        "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
+                                      }}
                                     >
                                       Detail
                                     </Button>
@@ -533,54 +652,97 @@ export default function TimPesertaPage() {
                     </Table>
                   </TableContainer>
 
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Typography sx={{ fontSize: 13, color: "#777" }}>
-                      Menampilkan {((page - 1) * rowsPerPage) + 1}–{Math.min(page * rowsPerPage, filteredList.length)} dari {filteredList.length} data
+                  {/* Pagination */}
+                  <Box sx={{
+                    display: "flex",
+                    flexDirection: { xs: "column", sm: "row" },
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 2,
+                  }}>
+                    <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 500 }}>
+                      Menampilkan <b>{((page - 1) * rowsPerPage) + 1}–{Math.min(page * rowsPerPage, filteredList.length)}</b> dari <b>{filteredList.length}</b> data
                     </Typography>
-                    <Pagination count={totalPages} page={page} onChange={(e, v) => setPage(v)} color="primary" shape="rounded" showFirstButton showLastButton />
+                    <Pagination
+                      count={totalPages}
+                      page={page}
+                      onChange={(e, v) => setPage(v)}
+                      color="primary"
+                      shape="rounded"
+                      sx={{
+                        "& .MuiPaginationItem-root": {
+                          fontWeight: 600,
+                          borderRadius: "8px",
+                          "&.Mui-selected": {
+                            background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.secondary})`,
+                            color: "#fff",
+                            "&:hover": { background: `linear-gradient(135deg, ${COLORS.primaryDark}, ${COLORS.secondary})` },
+                          },
+                        },
+                      }}
+                    />
                   </Box>
                 </>
               )}
             </Box>
           </Paper>
 
-          <Dialog open={openDetail} onClose={() => setOpenDetail(false)} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: "16px" } }}>
-            <DialogTitle sx={{ pb: 1 }}>
-              <Box sx={{ pr: 4 }}>
-                <Typography sx={{ fontWeight: 700, fontSize: 16 }}>
+          {/* Dialog Detail */}
+          <Dialog
+            open={openDetail}
+            onClose={() => setOpenDetail(false)}
+            maxWidth="md"
+            fullWidth
+            PaperProps={{ sx: { borderRadius: "24px", boxShadow: "0 20px 40px rgba(0,0,0,0.1)", overflow: "hidden", m: { xs: 1, sm: 2 }, maxHeight: { xs: "calc(100vh - 16px)", sm: "calc(100vh - 32px)" } } }}
+          >
+            <DialogTitle sx={{ p: 0 }}>
+              <Box sx={{
+                background: `linear-gradient(135deg, ${COLORS.primaryDark} 0%, ${COLORS.primary} 100%)`,
+                p: { xs: 2.5, sm: 3 }, color: "#fff", position: "relative",
+              }}>
+                <Typography sx={{ fontWeight: 800, fontSize: { xs: 16, sm: 18 }, letterSpacing: "-0.01em" }}>
                   {activeTab === 0 ? "Detail Tim" : "Detail Peserta"}
                 </Typography>
                 {selectedItem && (
-                  <Typography sx={{ fontSize: 13, color: "#777", mt: 0.5 }}>
-                    {activeTab === 0
-                      ? selectedItem.nama_tim
-                      : (selectedItem.nama_lengkap || selectedItem.username)
-                    }
+                  <Typography sx={{ fontSize: { xs: 12, sm: 13 }, opacity: 0.9, mt: 0.5, fontWeight: 500 }}>
+                    {activeTab === 0 ? selectedItem.nama_tim : (selectedItem.nama_lengkap || selectedItem.username)}
                   </Typography>
                 )}
+                <IconButton
+                  onClick={() => setOpenDetail(false)}
+                  sx={{ position: "absolute", right: 16, top: 20, color: "#fff", "&:hover": { backgroundColor: "rgba(255,255,255,0.15)" } }}
+                >
+                  <Close sx={{ fontSize: 20 }} />
+                </IconButton>
               </Box>
-              <IconButton onClick={() => setOpenDetail(false)} sx={{ position: "absolute", right: 12, top: 8, color: "#888" }}>
-                <Close />
-              </IconButton>
             </DialogTitle>
-            <DialogContent dividers sx={{ px: 3, py: 3 }}>
-              {loadingDetail
-                ? (
-                  <Box sx={{ position: "relative", minHeight: 220 }}>
-                    <LoadingScreen message="Memuat detail..." overlay minHeight="220px" />
-                  </Box>
-                )
-                : activeTab === 0 ? renderTimDetail() : renderPesertaDetail()
-              }
+
+            <DialogContent sx={{ px: { xs: 2.5, sm: 4 }, py: 3 }}>
+              {loadingDetail ? (
+                <Box sx={{ position: "relative", minHeight: 300 }}>
+                  <LoadingScreen message="Memuat detail..." overlay minHeight="300px" />
+                </Box>
+              ) : (
+                <Box sx={{ mt: 1 }}>
+                  {activeTab === 0 ? renderTimDetail() : renderPesertaDetail()}
+                </Box>
+              )}
             </DialogContent>
-            <DialogActions sx={{ px: 3, py: 2 }}>
+
+            <DialogActions sx={{
+              px: { xs: 2.5, sm: 4 }, py: 3,
+              backgroundColor: "#F8FAFC",
+              borderTop: "1.5px solid #E2E8F0",
+              justifyContent: "flex-end",
+            }}>
               <Button
                 onClick={() => setOpenDetail(false)}
                 variant="contained"
                 sx={{
-                  textTransform: "none", borderRadius: "50px", px: 4,
-                  fontWeight: 600, backgroundColor: "#FDB022",
-                  "&:hover": { backgroundColor: "#e09a1a" },
+                  textTransform: "none", borderRadius: "12px", px: 4, py: 1, fontWeight: 700,
+                  backgroundColor: COLORS.primary,
+                  boxShadow: `0 4px 12px ${COLORS.primary}40`,
+                  "&:hover": { backgroundColor: COLORS.primaryDark, boxShadow: `0 6px 16px ${COLORS.primary}60` },
                 }}
               >
                 Tutup

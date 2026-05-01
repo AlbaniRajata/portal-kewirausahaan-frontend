@@ -6,7 +6,7 @@ import {
   IconButton, Pagination, Tooltip, InputAdornment, Divider,
 } from "@mui/material";
 import {
-  Close, PersonAdd, Search, Visibility, VisibilityOff,
+  Close, Search, Visibility, VisibilityOff,
 } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
@@ -21,33 +21,70 @@ import {
   toggleUserActive, resetPassword, getProdi,
 } from "../../api/admin";
 
-const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "15px" } };
+const COLORS = {
+  primary:      "#0D59F2",
+  primaryLight: "#E0F2FE",
+  primaryDark:  "#0369A1",
+  primaryMuted: "#93C5FD",
+  secondary:    "#2563EB",
+  accent:       "#3B82F6",
+  slate:        "#64748B",
+  slateLight:   "#F1F5F9",
+  success:      "#059669",
+  successLight: "#ECFDF5",
+  warning:      "#D97706",
+  warningLight: "#FFFBEB",
+  error:        "#DC2626",
+  errorLight:    "#ff7070",
+};
+
+const FieldLabel = ({ children, required }) => (
+  <Typography sx={{ fontWeight: 600, mb: 0.8, fontSize: 13, color: "#374151", display: "flex", gap: 0.4 }}>
+    {children}
+    {required && <span style={{ color: COLORS.error }}>*</span>}
+  </Typography>
+);
+
+const roundedField = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "12px",
+    backgroundColor: "#fff",
+    transition: "box-shadow 0.2s",
+    "&:hover fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused": { boxShadow: `0 0 0 3px ${COLORS.primaryLight}` },
+  },
+};
 
 const tableHeadCell = {
-  fontWeight: 700, fontSize: 13, color: "#000",
-  backgroundColor: "#fafafa", borderBottom: "2px solid #f0f0f0", py: 2,
+  fontWeight: 700,
+  fontSize: 13,
+  color: "#374151",
+  backgroundColor: "#F8FAFC",
+  borderBottom: `2px solid ${COLORS.primaryMuted}`,
+  py: 2,
 };
 
-const tableBodyRow = { "& td": { borderBottom: "1px solid #f5f5f5", py: 2 } };
-
-const stickyAksiHead = {
-  ...tableHeadCell, textAlign: "center",
-  position: "sticky", right: 0, backgroundColor: "#fafafa",
-  zIndex: 2, boxShadow: "-2px 0 6px rgba(0,0,0,0.04)",
-};
-
-const stickyAksiCell = {
-  position: "sticky", right: 0, backgroundColor: "#fff", zIndex: 1,
-  boxShadow: "-2px 0 6px rgba(0,0,0,0.04)", borderBottom: "1px solid #f5f5f5", py: 2,
+const tableBodyRow = {
+  "& td": { borderBottom: `1px solid ${COLORS.slateLight}`, py: 2 },
+  "&:hover": { backgroundColor: "#F8FAFC" },
 };
 
 const StatusPill = ({ active }) => (
   <Box sx={{
-    display: "inline-flex", alignItems: "center",
-    px: 1.5, py: 0.4, borderRadius: "50px",
-    backgroundColor: active ? "#2e7d32" : "#757575",
-    color: "#fff", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
+    display: "inline-flex",
+    alignItems: "center",
+    px: 1.5,
+    py: 0.4,
+    borderRadius: "50px",
+    backgroundColor: active ? COLORS.successLight : COLORS.errorLight,
+    color: active ? COLORS.success : COLORS.error,
+    fontSize: 12,
+    fontWeight: 700,
+    whiteSpace: "nowrap",
+    border: `1px solid ${active ? COLORS.success : COLORS.error}20`,
   }}>
+    <Box sx={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: active ? COLORS.success : COLORS.error, mr: 1 }} />
     {active ? "Aktif" : "Nonaktif"}
   </Box>
 );
@@ -283,77 +320,178 @@ export default function KelolaPenggunaPage() {
       html: `<b>${user.nama_lengkap || user.username}</b> akan ${newStatus ? "diaktifkan" : "dinonaktifkan"}.`,
       icon: "question",
       showCancelButton: true,
-      confirmButtonColor: newStatus ? "#2e7d32" : "#d33",
-      cancelButtonColor: "#666",
-      confirmButtonText: "Ya", cancelButtonText: "Batal",
+      confirmButtonColor: newStatus ? COLORS.success : COLORS.error,
+      cancelButtonColor: COLORS.slate,
+      confirmButtonText: "Ya",
+      cancelButtonText: "Batal",
     });
     if (!result.isConfirmed) return;
     try {
       await toggleUserActive(user.id_user, newStatus);
-      await Swal.fire({ icon: "success", title: "Berhasil", text: `Pengguna berhasil ${newStatus ? "diaktifkan" : "dinonaktifkan"}`, timer: 2000, timerProgressBar: true, showConfirmButton: false });
+      await Swal.fire({
+        icon: "success",
+        title: "Berhasil",
+        text: `Pengguna berhasil ${newStatus ? "diaktifkan" : "dinonaktifkan"}`,
+        timer: 2000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+      });
       fetchData(tabKey, filters);
     } catch (err) {
-      Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Terjadi kesalahan", confirmButtonColor: "#0D59F2" });
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: err.response?.data?.message || "Terjadi kesalahan",
+        confirmButtonColor: COLORS.primary,
+      });
     }
   };
 
   const renderFilters = () => (
-    <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap", alignItems: "center" }}>
+    <Box
+      sx={{
+        display: "flex",
+        gap: { xs: 1.25, xl: 2 },
+        mb: 4,
+        alignItems: "center",
+        flexWrap: "wrap",
+        flexDirection: "row",
+        "@media (max-width: 1440px)": {
+          flexDirection: "column",
+          alignItems: "stretch",
+        },
+        "@media (min-width: 1441px)": {
+          flexDirection: "row",
+          alignItems: "center",
+        },
+      }}
+    >
       <TextField
-        size="small" placeholder="Cari nama, email..."
+        size="small"
+        placeholder="Cari nama, email..."
         value={currentFilter.search}
         onChange={(e) => setFilter("search", e.target.value)}
-        InputProps={{ startAdornment: <InputAdornment position="start"><Search sx={{ fontSize: 18, color: "#aaa" }} /></InputAdornment> }}
-        sx={{ ...roundedField, minWidth: 220, flex: "1 1 220px" }}
+        InputProps={{
+          startAdornment: (
+            <IconButton size="small" sx={{ p: 0, mr: 1, color: COLORS.primary }}>
+              <Search sx={{ fontSize: { xs: 18, sm: 20 } }} />
+            </IconButton>
+          ),
+        }}
+        sx={{
+          ...roundedField,
+          width: { xs: "100%", xl: "auto" },
+          minWidth: { xs: "100%", xl: 240 },
+          maxWidth: { xs: "100%", sm: 360, xl: 280 },
+          flex: { xl: "1 1 240px" },
+        }}
       />
       <TextField
-        select size="small" label="Status"
+        select
+        size="small"
         value={currentFilter.is_active}
         onChange={(e) => setFilter("is_active", e.target.value)}
-        InputLabelProps={{ shrink: true }}
-        sx={{ ...roundedField, minWidth: 150 }}
+        SelectProps={{
+          displayEmpty: true,
+          renderValue: (v) => (
+            <span style={{ fontSize: 14, color: !v ? "#9CA3AF" : "inherit" }}>
+              {!v ? "Semua Status" : (v === "true" ? "Aktif" : "Nonaktif")}
+            </span>
+          ),
+        }}
+        sx={{
+          ...roundedField,
+          width: { xs: "100%", xl: "auto" },
+          minWidth: { xs: "100%", xl: 180 },
+          flex: { xl: "0 1 180px" },
+        }}
       >
-        <MenuItem value="">Semua Status</MenuItem>
-        <MenuItem value="true">Aktif</MenuItem>
-        <MenuItem value="false">Nonaktif</MenuItem>
+        <MenuItem value="" sx={{ fontSize: 13 }}>Semua Status</MenuItem>
+        <MenuItem value="true" sx={{ fontSize: 13 }}>Aktif</MenuItem>
+        <MenuItem value="false" sx={{ fontSize: 13 }}>Nonaktif</MenuItem>
       </TextField>
       <TextField
-        select size="small" label="Tahun"
+        select
+        size="small"
         value={currentFilter.tahun}
         onChange={(e) => setFilter("tahun", e.target.value)}
-        InputLabelProps={{ shrink: true }}
-        sx={{ ...roundedField, minWidth: 150 }}
+        SelectProps={{
+          displayEmpty: true,
+          renderValue: (v) => (
+            <span style={{ fontSize: 14, color: !v ? "#9CA3AF" : "inherit" }}>
+              {!v ? "Semua Tahun" : v}
+            </span>
+          ),
+        }}
+        sx={{
+          ...roundedField,
+          width: { xs: "100%", xl: "auto" },
+          minWidth: { xs: "100%", xl: 160 },
+          flex: { xl: "0 1 160px" },
+        }}
       >
-        <MenuItem value="">Semua Tahun</MenuItem>
+        <MenuItem value="" sx={{ fontSize: 13 }}>Semua Tahun</MenuItem>
         {yearOptions.map((tahun) => (
-          <MenuItem key={tahun} value={String(tahun)}>{tahun}</MenuItem>
+          <MenuItem key={tahun} value={String(tahun)} sx={{ fontSize: 13 }}>
+            {tahun}
+          </MenuItem>
         ))}
       </TextField>
 
       {tabKey === "mahasiswa" && (
         <>
           <TextField
-            select size="small" label="Program Studi"
+            select
+            size="small"
             value={currentFilter.id_prodi}
             onChange={(e) => setFilter("id_prodi", e.target.value)}
-            InputLabelProps={{ shrink: true }}
-            sx={{ ...roundedField, minWidth: 200 }}
+            SelectProps={{
+              displayEmpty: true,
+              renderValue: (v) => (
+                <span style={{ fontSize: 14, color: !v ? "#9CA3AF" : "inherit" }}>
+                  {!v ? "Semua Prodi" : prodiList.find(p => p.id_prodi === v)?.nama_prodi || v}
+                </span>
+              ),
+            }}
+            sx={{
+              ...roundedField,
+              width: { xs: "100%", xl: "auto" },
+              minWidth: { xs: "100%", xl: 180 },
+              flex: { xl: "0 1 180px" },
+            }}
           >
-            <MenuItem value="">Semua Prodi</MenuItem>
+            <MenuItem value="" sx={{ fontSize: 13 }}>Semua Prodi</MenuItem>
             {prodiList.map((p) => (
-              <MenuItem key={p.id_prodi} value={p.id_prodi}>{p.jenjang} {p.nama_prodi}</MenuItem>
+              <MenuItem key={p.id_prodi} value={p.id_prodi} sx={{ fontSize: 13 }}>
+                {p.jenjang} {p.nama_prodi}
+              </MenuItem>
             ))}
           </TextField>
           <TextField
-            select size="small" label="Jurusan"
+            select
+            size="small"
             value={currentFilter.id_jurusan}
             onChange={(e) => setFilter("id_jurusan", e.target.value)}
-            InputLabelProps={{ shrink: true }}
-            sx={{ ...roundedField, minWidth: 180 }}
+            SelectProps={{
+              displayEmpty: true,
+              renderValue: (v) => (
+                <span style={{ fontSize: 14, color: !v ? "#9CA3AF" : "inherit" }}>
+                  {!v ? "Semua Jurusan" : jurusanList.find(j => j.id_jurusan === v)?.nama_jurusan || v}
+                </span>
+              ),
+            }}
+            sx={{
+              ...roundedField,
+              width: { xs: "100%", xl: "auto" },
+              minWidth: { xs: "100%", xl: 180 },
+              flex: { xl: "0 1 180px" },
+            }}
           >
-            <MenuItem value="">Semua Jurusan</MenuItem>
+            <MenuItem value="" sx={{ fontSize: 13 }}>Semua Jurusan</MenuItem>
             {jurusanList.map((j) => (
-              <MenuItem key={j.id_jurusan} value={j.id_jurusan}>{j.nama_jurusan}</MenuItem>
+              <MenuItem key={j.id_jurusan} value={j.id_jurusan} sx={{ fontSize: 13 }}>
+                {j.nama_jurusan}
+              </MenuItem>
             ))}
           </TextField>
         </>
@@ -361,24 +499,53 @@ export default function KelolaPenggunaPage() {
 
       {tabKey === "dosen" && (
         <TextField
-          select size="small" label="Program Studi"
+          select
+          size="small"
           value={currentFilter.id_prodi}
           onChange={(e) => setFilter("id_prodi", e.target.value)}
-          InputLabelProps={{ shrink: true }}
-          sx={{ ...roundedField, minWidth: 200 }}
+          SelectProps={{
+            displayEmpty: true,
+            renderValue: (v) => (
+              <span style={{ fontSize: 14, color: !v ? "#9CA3AF" : "inherit" }}>
+                {!v ? "Semua Prodi" : prodiList.find(p => p.id_prodi === v)?.nama_prodi || v}
+              </span>
+            ),
+          }}
+          sx={{
+            ...roundedField,
+            width: { xs: "100%", xl: "auto" },
+            minWidth: { xs: "100%", xl: 200 },
+            flex: { xl: "0 1 200px" },
+          }}
         >
-          <MenuItem value="">Semua Prodi</MenuItem>
+          <MenuItem value="" sx={{ fontSize: 13 }}>Semua Prodi</MenuItem>
           {prodiList.map((p) => (
-            <MenuItem key={p.id_prodi} value={p.id_prodi}>{p.jenjang} {p.nama_prodi}</MenuItem>
+            <MenuItem key={p.id_prodi} value={p.id_prodi} sx={{ fontSize: 13 }}>
+              {p.jenjang} {p.nama_prodi}
+            </MenuItem>
           ))}
         </TextField>
       )}
 
-      <Box sx={{ flex: 1 }} />
       <Button
         variant="contained"
         onClick={handleOpenCreate}
-        sx={{ textTransform: "none", borderRadius: "50px", px: 3, py: 1.2, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" }, whiteSpace: "nowrap" }}
+        sx={{
+          textTransform: "none",
+          borderRadius: "12px",
+          px: { xs: 2, sm: 3 },
+          py: 1.2,
+          fontWeight: 700,
+          backgroundColor: COLORS.primary,
+          boxShadow: "0 4px 12px rgba(13, 89, 242, 0.2)",
+          width: { xs: "100%", xl: "auto" },
+          minWidth: { xl: 150 },
+          ml: { xl: "auto" },
+          "&:hover": { 
+            backgroundColor: COLORS.primaryDark,
+            boxShadow: "0 6px 16px rgba(13, 89, 242, 0.3)",
+          },
+        }}
       >
         Tambah {TABS[activeTab].label}
       </Button>
@@ -386,9 +553,9 @@ export default function KelolaPenggunaPage() {
   );
 
   const renderColumns = () => {
-    if (tabKey === "mahasiswa") return ["Nama Lengkap", "NIM", "Email", "Prodi", "Tahun Masuk", "Status"];
-    if (tabKey === "dosen") return ["Nama Lengkap", "NIP", "Email", "Prodi", "Bidang Keahlian", "Status"];
-    return ["Nama Lengkap", "Email", "Institusi", "Bidang Keahlian", "Status"];
+    if (tabKey === "mahasiswa") return ["NAMA LENGKAP", "NIM", "EMAIL", "PRODI", "TAHUN MASUK", "STATUS", "AKSI"];
+    if (tabKey === "dosen") return ["NAMA LENGKAP", "NIP", "EMAIL", "PRODI", "BIDANG KEAHLIAN", "STATUS", "AKSI"];
+    return ["NAMA LENGKAP", "EMAIL", "INSTITUSI", "BIDANG KEAHLIAN", "STATUS", "AKSI"];
   };
 
   const renderRow = (user) => {
@@ -435,159 +602,291 @@ export default function KelolaPenggunaPage() {
   };
 
   const renderFormFields = (currentDialog, currentForm, currentTabKey) => (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, py: 1 }}>
       {currentDialog.mode === "create" && (
-        <>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3 }}>
           <Box>
-            <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Username <span style={{ color: "#ef5350" }}>*</span></Typography>
-            <TextField fullWidth placeholder="Username"
+            <FieldLabel required>Username</FieldLabel>
+            <TextField
+              fullWidth
+              placeholder="Username"
               value={currentForm.username || ""}
-              onChange={(e) => { setForm({ ...currentForm, username: e.target.value }); setErrors((prev) => ({ ...prev, username: "" })); }}
-              error={!!errors.username} helperText={errors.username} sx={roundedField} />
+              onChange={(e) => {
+                setForm({ ...currentForm, username: e.target.value });
+                setErrors((prev) => ({ ...prev, username: "" }));
+              }}
+              error={!!errors.username}
+              helperText={errors.username}
+              sx={roundedField}
+            />
           </Box>
           <Box>
-            <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Password <span style={{ color: "#ef5350" }}>*</span></Typography>
-            <TextField fullWidth type={showPassword ? "text" : "password"} placeholder="Minimal 8 karakter"
+            <FieldLabel required>Password</FieldLabel>
+            <TextField
+              fullWidth
+              type={showPassword ? "text" : "password"}
+              placeholder="Minimal 8 karakter"
               value={currentForm.password || ""}
-              onChange={(e) => { setForm({ ...currentForm, password: e.target.value }); setErrors((prev) => ({ ...prev, password: "" })); }}
-              error={!!errors.password} helperText={errors.password}
-              InputProps={{ endAdornment: <InputAdornment position="end"><IconButton onClick={() => setShowPassword((s) => !s)} edge="end">{showPassword ? <VisibilityOff /> : <Visibility />}</IconButton></InputAdornment> }}
-              sx={roundedField} />
+              onChange={(e) => {
+                setForm({ ...currentForm, password: e.target.value });
+                setErrors((prev) => ({ ...prev, password: "" }));
+              }}
+              error={!!errors.password}
+              helperText={errors.password}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowPassword((s) => !s)} edge="end" size="small">
+                      {showPassword ? <VisibilityOff sx={{ fontSize: 18 }} /> : <Visibility sx={{ fontSize: 18 }} />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={roundedField}
+            />
           </Box>
-        </>
+        </Box>
       )}
 
-      <Box>
-        <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Nama Lengkap <span style={{ color: "#ef5350" }}>*</span></Typography>
-        <TextField fullWidth placeholder="Nama lengkap"
-          value={currentForm.nama_lengkap || ""}
-          onChange={(e) => { setForm({ ...currentForm, nama_lengkap: e.target.value }); setErrors((prev) => ({ ...prev, nama_lengkap: "" })); }}
-          error={!!errors.nama_lengkap} helperText={errors.nama_lengkap} sx={roundedField} />
-      </Box>
-      <Box>
-        <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Email <span style={{ color: "#ef5350" }}>*</span></Typography>
-        <TextField fullWidth placeholder="email@example.com"
-          value={currentForm.email || ""}
-          onChange={(e) => { setForm({ ...currentForm, email: e.target.value }); setErrors((prev) => ({ ...prev, email: "" })); }}
-          error={!!errors.email} helperText={errors.email} sx={roundedField} />
-      </Box>
-      <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3 }}>
         <Box>
-          <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>No. HP</Typography>
-          <TextField fullWidth placeholder="08xx..."
+          <FieldLabel required>Nama Lengkap</FieldLabel>
+          <TextField
+            fullWidth
+            placeholder="Nama lengkap"
+            value={currentForm.nama_lengkap || ""}
+            onChange={(e) => {
+              setForm({ ...currentForm, nama_lengkap: e.target.value });
+              setErrors((prev) => ({ ...prev, nama_lengkap: "" }));
+            }}
+            error={!!errors.nama_lengkap}
+            helperText={errors.nama_lengkap}
+            sx={roundedField}
+          />
+        </Box>
+        <Box>
+          <FieldLabel required>Email</FieldLabel>
+          <TextField
+            fullWidth
+            placeholder="email@example.com"
+            value={currentForm.email || ""}
+            onChange={(e) => {
+              setForm({ ...currentForm, email: e.target.value });
+              setErrors((prev) => ({ ...prev, email: "" }));
+            }}
+            error={!!errors.email}
+            helperText={errors.email}
+            sx={roundedField}
+          />
+        </Box>
+      </Box>
+
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3 }}>
+        <Box>
+          <FieldLabel>No. WhatsApp</FieldLabel>
+          <TextField
+            fullWidth
+            placeholder="08xx..."
             value={currentForm.no_hp || ""}
             onChange={(e) => setForm({ ...currentForm, no_hp: e.target.value })}
-            sx={roundedField} />
+            sx={roundedField}
+          />
         </Box>
         {currentTabKey === "mahasiswa" && (
           <Box>
-            <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>NIM <span style={{ color: "#ef5350" }}>*</span></Typography>
-            <TextField fullWidth placeholder="NIM mahasiswa"
+            <FieldLabel required>NIM</FieldLabel>
+            <TextField
+              fullWidth
+              placeholder="NIM mahasiswa"
               value={currentForm.nim || ""}
-              onChange={(e) => { setForm({ ...currentForm, nim: e.target.value }); setErrors((prev) => ({ ...prev, nim: "" })); }}
-              error={!!errors.nim} helperText={errors.nim} sx={roundedField} />
+              onChange={(e) => {
+                setForm({ ...currentForm, nim: e.target.value });
+                setErrors((prev) => ({ ...prev, nim: "" }));
+              }}
+              error={!!errors.nim}
+              helperText={errors.nim}
+              sx={roundedField}
+            />
           </Box>
         )}
         {currentTabKey === "dosen" && (
           <Box>
-            <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>NIP <span style={{ color: "#ef5350" }}>*</span></Typography>
-            <TextField fullWidth placeholder="NIP dosen"
+            <FieldLabel required>NIP</FieldLabel>
+            <TextField
+              fullWidth
+              placeholder="NIP dosen"
               value={currentForm.nip || ""}
-              onChange={(e) => { setForm({ ...currentForm, nip: e.target.value }); setErrors((prev) => ({ ...prev, nip: "" })); }}
-              error={!!errors.nip} helperText={errors.nip} sx={roundedField} />
+              onChange={(e) => {
+                setForm({ ...currentForm, nip: e.target.value });
+                setErrors((prev) => ({ ...prev, nip: "" }));
+              }}
+              error={!!errors.nip}
+              helperText={errors.nip}
+              sx={roundedField}
+            />
           </Box>
         )}
       </Box>
 
       {(currentTabKey === "mahasiswa" || currentTabKey === "dosen") && (
-        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3 }}>
           <Box>
-            <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Program Studi <span style={{ color: "#ef5350" }}>*</span></Typography>
-            <TextField select fullWidth value={currentForm.id_prodi || ""}
-              onChange={(e) => { setForm({ ...currentForm, id_prodi: e.target.value }); setErrors((prev) => ({ ...prev, id_prodi: "" })); }}
+            <FieldLabel required>Program Studi</FieldLabel>
+            <TextField
+              select
+              fullWidth
+              value={currentForm.id_prodi || ""}
+              onChange={(e) => {
+                setForm({ ...currentForm, id_prodi: e.target.value });
+                setErrors((prev) => ({ ...prev, id_prodi: "" }));
+              }}
               SelectProps={{
                 displayEmpty: true,
                 renderValue: (selected) => {
-                  if (!selected) return "Pilih prodi";
+                  if (!selected) return <Typography sx={{ color: "#9ca3af", fontSize: 14 }}>Pilih prodi</Typography>;
                   const selectedProdi = prodiList.find((p) => String(p.id_prodi) === String(selected));
-                  const fullLabel = selectedProdi ? `${selectedProdi.jenjang} ${selectedProdi.nama_prodi}` : "Pilih prodi";
-                  return truncateWithEllipsis(fullLabel, 42);
+                  const fullLabel = selectedProdi
+                    ? `${selectedProdi.jenjang} ${selectedProdi.nama_prodi}`
+                    : "Pilih prodi";
+                  return <Typography sx={{ fontSize: 14 }}>{truncateWithEllipsis(fullLabel, 35)}</Typography>;
                 },
               }}
-              error={!!errors.id_prodi} helperText={errors.id_prodi}
-              sx={{
-                ...roundedField,
-                "& .MuiSelect-select": {
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                },
-              }}>
-              <MenuItem value="" disabled>Pilih prodi</MenuItem>
-              {prodiList.map((p) => <MenuItem key={p.id_prodi} value={p.id_prodi}>{p.jenjang} {p.nama_prodi}</MenuItem>)}
+              error={!!errors.id_prodi}
+              helperText={errors.id_prodi}
+              sx={roundedField}
+            >
+              <MenuItem value="" disabled sx={{ fontSize: 14 }}>
+                Pilih prodi
+              </MenuItem>
+              {prodiList.map((p) => (
+                <MenuItem key={p.id_prodi} value={p.id_prodi} sx={{ fontSize: 14 }}>
+                  {p.jenjang} {p.nama_prodi}
+                </MenuItem>
+              ))}
             </TextField>
           </Box>
           {currentTabKey === "mahasiswa" ? (
             <Box>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Tahun Masuk <span style={{ color: "#ef5350" }}>*</span></Typography>
-              <TextField select fullWidth value={currentForm.tahun_masuk || ""}
-                onChange={(e) => { setForm({ ...currentForm, tahun_masuk: e.target.value }); setErrors((prev) => ({ ...prev, tahun_masuk: "" })); }}
-                error={!!errors.tahun_masuk} helperText={errors.tahun_masuk} sx={roundedField}>
-                <MenuItem value="" disabled>Pilih tahun</MenuItem>
-                {TAHUN_OPTIONS.map((y) => <MenuItem key={y} value={y}>{y}</MenuItem>)}
+              <FieldLabel required>Tahun Masuk</FieldLabel>
+              <TextField
+                select
+                fullWidth
+                value={currentForm.tahun_masuk || ""}
+                onChange={(e) => {
+                  setForm({ ...currentForm, tahun_masuk: e.target.value });
+                  setErrors((prev) => ({ ...prev, tahun_masuk: "" }));
+                }}
+                error={!!errors.tahun_masuk}
+                helperText={errors.tahun_masuk}
+                sx={roundedField}
+                SelectProps={{
+                  displayEmpty: true,
+                  renderValue: (v) => <Typography sx={{ fontSize: 14, color: v ? "inherit" : "#9ca3af" }}>{v || "Pilih tahun"}</Typography>,
+                }}
+              >
+                <MenuItem value="" disabled sx={{ fontSize: 14 }}>
+                  Pilih tahun
+                </MenuItem>
+                {TAHUN_OPTIONS.map((y) => (
+                  <MenuItem key={y} value={y} sx={{ fontSize: 14 }}>
+                    {y}
+                  </MenuItem>
+                ))}
               </TextField>
             </Box>
           ) : (
             <Box>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Bidang Keahlian</Typography>
-              <TextField fullWidth placeholder="Bidang keahlian"
+              <FieldLabel>Bidang Keahlian</FieldLabel>
+              <TextField
+                fullWidth
+                placeholder="Bidang keahlian"
                 value={currentForm.bidang_keahlian || ""}
                 onChange={(e) => setForm({ ...currentForm, bidang_keahlian: e.target.value })}
-                sx={roundedField} />
+                sx={roundedField}
+              />
             </Box>
           )}
         </Box>
       )}
 
       {(currentTabKey === "reviewer" || currentTabKey === "juri") && (
-        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3 }}>
           <Box>
-            <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Institusi</Typography>
-            <TextField fullWidth placeholder="Institusi asal"
+            <FieldLabel>Institusi</FieldLabel>
+            <TextField
+              fullWidth
+              placeholder="Institusi asal"
               value={currentForm.institusi || ""}
               onChange={(e) => setForm({ ...currentForm, institusi: e.target.value })}
-              sx={roundedField} />
+              sx={roundedField}
+            />
           </Box>
           <Box>
-            <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Bidang Keahlian</Typography>
-            <TextField fullWidth placeholder="Bidang keahlian"
+            <FieldLabel>Bidang Keahlian</FieldLabel>
+            <TextField
+              fullWidth
+              placeholder="Bidang keahlian"
               value={currentForm.bidang_keahlian || ""}
               onChange={(e) => setForm({ ...currentForm, bidang_keahlian: e.target.value })}
-              sx={roundedField} />
+              sx={roundedField}
+            />
           </Box>
         </Box>
       )}
 
       <Box>
-        <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Alamat</Typography>
-        <TextField fullWidth multiline rows={2} placeholder="Alamat lengkap (opsional)"
+        <FieldLabel>Alamat</FieldLabel>
+        <TextField
+          fullWidth
+          multiline
+          rows={3}
+          placeholder="Alamat lengkap (opsional)"
           value={currentForm.alamat || ""}
           onChange={(e) => setForm({ ...currentForm, alamat: e.target.value })}
-          sx={roundedField} />
+          sx={{
+            ...roundedField,
+            "& .MuiOutlinedInput-root": { ...roundedField["& .MuiOutlinedInput-root"], py: 1.5 },
+          }}
+        />
       </Box>
 
       {currentDialog.mode === "edit" && (
         <>
-          <Divider sx={{ my: 0.5 }} />
-          <Box>
-            <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.25 }}>Reset Password</Typography>
-            <Typography sx={{ fontSize: 12, color: "#999", mb: 0.75 }}>Kosongkan jika tidak ingin mengubah password</Typography>
-            <TextField fullWidth type={showNewPassword ? "text" : "password"} placeholder="Password baru (opsional, min. 8 karakter)"
+          <Divider sx={{ my: 1, borderColor: COLORS.slateLight }} />
+          <Box sx={{
+            p: 3,
+            backgroundColor: COLORS.primaryLight + "30",
+            borderRadius: "16px",
+            border: `1.5px dashed ${COLORS.primaryMuted}`,
+          }}>
+            <Typography sx={{ fontSize: 14, fontWeight: 700, color: COLORS.primaryDark, mb: 0.5 }}>
+              Reset Password
+            </Typography>
+            <Typography sx={{ fontSize: 12, color: COLORS.slate, mb: 2.5 }}>
+              Kosongkan jika tidak ingin mengubah password akun ini.
+            </Typography>
+            <TextField
+              fullWidth
+              type={showNewPassword ? "text" : "password"}
+              placeholder="Password baru (opsional, min. 8 karakter)"
               value={currentForm.new_password || ""}
-              onChange={(e) => { setForm({ ...currentForm, new_password: e.target.value }); setErrors((prev) => ({ ...prev, new_password: "" })); }}
-              error={!!errors.new_password} helperText={errors.new_password}
-              InputProps={{ endAdornment: <InputAdornment position="end"><IconButton onClick={() => setShowNewPassword((s) => !s)} edge="end">{showNewPassword ? <VisibilityOff /> : <Visibility />}</IconButton></InputAdornment> }}
-              sx={roundedField} />
+              onChange={(e) => {
+                setForm({ ...currentForm, new_password: e.target.value });
+                setErrors((prev) => ({ ...prev, new_password: "" }));
+              }}
+              error={!!errors.new_password}
+              helperText={errors.new_password}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowNewPassword((s) => !s)} edge="end" size="small">
+                      {showNewPassword ? <VisibilityOff sx={{ fontSize: 18 }} /> : <Visibility sx={{ fontSize: 18 }} />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={roundedField}
+            />
           </Box>
         </>
       )}
@@ -597,72 +896,153 @@ export default function KelolaPenggunaPage() {
   return (
     <BodyLayout Sidebar={AdminSidebar}>
       <PageTransition>
-        <Box>
-          <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Kelola Pengguna</Typography>
-          <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>Manajemen akun mahasiswa, dosen, reviewer, dan juri</Typography>
+        <Box sx={{ px: 1, py: 1 }}>
+          <Box sx={{ mb: 4 }}>
+            <Typography sx={{ fontSize: 36, fontWeight: 800, color: "#1F2937", mb: 0.5 }}>
+              Kelola Pengguna
+            </Typography>
+            <Typography sx={{ fontSize: 16, color: "#6B7280" }}>
+              Manajemen akun mahasiswa, dosen, reviewer, dan juri dalam sistem
+            </Typography>
+          </Box>
 
-          <Paper sx={{ borderRadius: "16px", border: "1px solid #f0f0f0", overflow: "hidden" }}>
-            <Box sx={{ borderBottom: "1px solid #f0f0f0" }}>
+          <Paper sx={{ 
+            borderRadius: "20px", 
+            border: "1.5px solid #E5E7EB", 
+            overflow: "hidden",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+            position: "relative"
+          }}>
+            <Box sx={{ 
+              height: "4px", 
+              background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` 
+            }} />
+            
+            <Box sx={{ borderBottom: "1px solid #F1F5F9", backgroundColor: "#fff" }}>
               <Tabs
                 value={activeTab}
-                onChange={(e, v) => { setActiveTab(v); setPage(1); }}
+                onChange={(e, v) => {
+                  setActiveTab(v);
+                  setPage(1);
+                }}
+                variant="scrollable"
+                scrollButtons="auto"
                 sx={{
-                  px: 2,
+                  px: 3,
                   "& .MuiTab-root": {
-                    textTransform: "none", fontSize: 14, fontWeight: 500,
-                    color: "#888", minHeight: 52,
-                    "&.Mui-selected": { fontWeight: 700, color: "#0D59F2" },
+                    textTransform: "none", 
+                    fontSize: 14, 
+                    fontWeight: 600,
+                    color: COLORS.slate, 
+                    minHeight: 60,
+                    transition: "all 0.2s",
+                    "&.Mui-selected": { color: COLORS.primary },
                   },
-                  "& .MuiTabs-indicator": { backgroundColor: "#0D59F2", height: 3, borderRadius: "3px 3px 0 0" },
+                  "& .MuiTabs-indicator": {
+                    backgroundColor: COLORS.primary, height: 3, borderRadius: "3px 3px 0 0",
+                  },
                 }}
               >
-                {TABS.map((t, i) => <Tab key={i} label={t.label} />)}
+                {TABS.map((t, i) => (
+                  <Tab key={i} label={t.label} />
+                ))}
               </Tabs>
             </Box>
 
-            <Box sx={{ p: 3 }}>
+            <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
               {renderFilters()}
 
               {loading ? (
-                <Box sx={{ position: "relative", minHeight: 320 }}>
-                  <LoadingScreen message="Memuat data pengguna..." overlay minHeight="320px" />
+                <Box sx={{ position: "relative", minHeight: 400 }}>
+                  <LoadingScreen message="Memuat data pengguna..." overlay minHeight="400px" />
                 </Box>
               ) : paginatedList.length === 0 ? (
-                <Box sx={{ textAlign: "center", py: 10 }}>
-                  <Box sx={{ width: 100, height: 100, borderRadius: "50%", backgroundColor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 3 }}>
-                    <PersonAdd sx={{ fontSize: 48, color: "#ccc" }} />
+                <Box sx={{ textAlign: "center", py: 12 }}>
+                  <Box
+                    sx={{
+                      width: 120,
+                      height: 120,
+                      borderRadius: "50%",
+                      backgroundColor: COLORS.slateLight,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      mx: "auto",
+                      mb: 3,
+                    }}
+                  >
                   </Box>
-                  <Typography sx={{ fontSize: 20, fontWeight: 700, color: "#444", mb: 1 }}>Belum ada {TABS[activeTab].label}</Typography>
-                  <Typography sx={{ fontSize: 14, color: "#999" }}>Klik Tambah {TABS[activeTab].label} untuk menambahkan data</Typography>
+                  <Typography sx={{ fontSize: 22, fontWeight: 800, color: "#1F2937", mb: 1 }}>
+                    Belum ada {TABS[activeTab].label}
+                  </Typography>
+                  <Typography sx={{ fontSize: 16, color: COLORS.slate }}>
+                    Klik tombol di atas untuk menambahkan {TABS[activeTab].label} baru
+                  </Typography>
                 </Box>
               ) : (
                 <>
-                  <TableContainer sx={{ borderRadius: "12px", border: "1px solid #f0f0f0", overflow: "auto", mb: 3 }}>
+                  <TableContainer
+                    sx={{
+                      borderRadius: "16px",
+                      border: `1.5px solid ${COLORS.slateLight}`,
+                      overflow: "auto",
+                      mb: 4,
+                    }}
+                  >
                     <Table>
                       <TableHead>
                         <TableRow>
                           {renderColumns().map((h, i) => (
-                            <TableCell key={i} sx={tableHeadCell}>{h}</TableCell>
+                            <TableCell key={i} sx={tableHeadCell}>
+                              {h}
+                            </TableCell>
                           ))}
-                          <TableCell sx={stickyAksiHead}>Aksi</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {paginatedList.map((user) => (
                           <TableRow key={user.id_user} sx={tableBodyRow}>
                             {renderRow(user)}
-                            <TableCell sx={stickyAksiCell}>
-                              <Box sx={{ display: "flex", gap: 1, justifyContent: "center", flexWrap: "nowrap" }}>
-                                <Tooltip title="Edit">
-                                  <Button size="small" variant="outlined" onClick={() => handleOpenEdit(user)}
-                                    sx={{ textTransform: "none", color: "#0D59F2", borderColor: "#e3f2fd", borderRadius: "50px", "&:hover": { backgroundColor: "#f0f4ff", borderColor: "#0D59F2" } }}>
+                            <TableCell>
+                              <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
+                                <Tooltip title="Edit Data">
+                                  <Button
+                                    size="small"
+                                    variant="outlined"
+                                    onClick={() => handleOpenEdit(user)}
+                                    sx={{
+                                      textTransform: "none",
+                                      color: COLORS.primary,
+                                      borderColor: COLORS.primaryMuted,
+                                      borderRadius: "10px",
+                                      fontWeight: 600,
+                                      fontSize: 12,
+                                      px: 2,
+                                      "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
+                                    }}
+                                  >
                                     Edit
                                   </Button>
                                 </Tooltip>
                                 <Tooltip title={user.is_active ? "Nonaktifkan" : "Aktifkan"}>
-                                  <Button size="small" variant="outlined"
+                                  <Button
+                                    size="small"
+                                    variant="outlined"
+                                    color={user.is_active ? "error" : "success"}
                                     onClick={() => handleToggleActive(user)}
-                                    sx={{ textTransform: "none", borderRadius: "50px", color: user.is_active ? "#c62828" : "#2e7d32", borderColor: user.is_active ? "#fce4ec" : "#e8f5e9", "&:hover": { backgroundColor: user.is_active ? "rgba(198,40,40,0.05)" : "rgba(46,125,50,0.05)" } }}>
+                                    sx={{
+                                      textTransform: "none",
+                                      borderColor: user.is_active ? "#fce4ec" : "#dcfce7",
+                                      borderRadius: "10px",
+                                      fontWeight: 600,
+                                      fontSize: 12,
+                                      px: 2,
+                                      "&:hover": {
+                                        backgroundColor: user.is_active ? "rgba(229,57,53,0.06)" : "rgba(5,150,105,0.06)",
+                                        borderColor: user.is_active ? "#e53935" : "#059669",
+                                      },
+                                    }}
+                                  >
                                     {user.is_active ? "Nonaktifkan" : "Aktifkan"}
                                   </Button>
                                 </Tooltip>
@@ -674,37 +1054,124 @@ export default function KelolaPenggunaPage() {
                     </Table>
                   </TableContainer>
 
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Typography sx={{ fontSize: 13, color: "#777" }}>
-                      Menampilkan {((page - 1) * rowsPerPage) + 1}–{Math.min(page * rowsPerPage, filteredList.length)} dari {filteredList.length} data
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: { xs: "column", sm: "row" },
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 2,
+                    }}
+                  >
+                    <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 500 }}>
+                      Menampilkan <b>{((page - 1) * rowsPerPage) + 1}–{Math.min(page * rowsPerPage, filteredList.length)}</b> dari <b>{filteredList.length}</b> data
                     </Typography>
-                    <Pagination count={totalPages} page={page} onChange={(e, v) => setPage(v)} color="primary" shape="rounded" showFirstButton showLastButton />
+                    <Pagination
+                      count={totalPages}
+                      page={page}
+                      onChange={(e, v) => setPage(v)}
+                      color="primary"
+                      shape="rounded"
+                      size="medium"
+                      sx={{
+                        "& .MuiPaginationItem-root": {
+                          fontWeight: 600,
+                          borderRadius: "8px",
+                          "&.Mui-selected": {
+                            background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.secondary})`,
+                            color: "#fff",
+                            "&:hover": { background: `linear-gradient(135deg, ${COLORS.primaryDark}, ${COLORS.secondary})` },
+                          },
+                        },
+                      }}
+                    />
                   </Box>
                 </>
               )}
             </Box>
           </Paper>
 
-          <Dialog open={dialog.open} onClose={handleCloseDialog} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: "16px" } }}>
-            <DialogTitle sx={{ pb: 1 }}>
-              <Typography sx={{ fontWeight: 700, fontSize: 16 }}>
-                {dialog.mode === "create" ? `Tambah ${TABS[activeTab].label}` : `Edit ${TABS[activeTab].label}`}
-              </Typography>
-              <IconButton onClick={handleCloseDialog} sx={{ position: "absolute", right: 12, top: 8, color: "#888" }}>
-                <Close />
-              </IconButton>
+          <Dialog
+            open={dialog.open}
+            onClose={handleCloseDialog}
+            maxWidth="sm"
+            fullWidth
+            PaperProps={{
+              sx: {
+                borderRadius: "24px",
+                boxShadow: "0 20px 40px rgba(0,0,0,0.1)",
+                overflow: "hidden",
+              },
+            }}
+          >
+            <DialogTitle sx={{ p: 0 }}>
+              <Box sx={{ 
+                background: `linear-gradient(135deg, ${COLORS.primaryDark} 0%, ${COLORS.primary} 100%)`, 
+                p: 3, 
+                color: "#fff",
+                position: "relative"
+              }}>
+                <Typography sx={{ fontWeight: 800, fontSize: 18, letterSpacing: "-0.01em" }}>
+                  {dialog.mode === "create" ? `Tambah ${TABS[activeTab].label}` : `Edit Data ${TABS[activeTab].label}`}
+                </Typography>
+                <Typography sx={{ fontSize: 13, opacity: 0.9, mt: 0.5, fontWeight: 500 }}>
+                  {dialog.mode === "create" ? "Lengkapi informasi di bawah untuk menambahkan akun baru" : "Perbarui informasi akun pengguna terpilih"}
+                </Typography>
+                <IconButton
+                  onClick={handleCloseDialog}
+                  sx={{
+                    position: "absolute", 
+                    right: 16, 
+                    top: 20, 
+                    color: "#fff", 
+                    "&:hover": { backgroundColor: "rgba(255,255,255,0.1)" }
+                  }}
+                >
+                  <Close sx={{ fontSize: 20 }} />
+                </IconButton>
+              </Box>
             </DialogTitle>
-            <DialogContent dividers sx={{ px: 3, py: 3 }}>
-              {renderFormFields(dialog, form, tabKey)}
+            <DialogContent sx={{ px: 4, py: 3 }}>
+              <Box sx={{ mt: 1 }}>
+                {renderFormFields(dialog, form, tabKey)}
+              </Box>
             </DialogContent>
-            <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-              <Button onClick={handleCloseDialog} disabled={submitting}
-                sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, color: "#666", border: "1.5px solid #e0e0e0", "&:hover": { backgroundColor: "#f5f5f5" } }}>
+            <DialogActions sx={{ px: 4, py: 3, backgroundColor: "#F8FAFC", borderTop: "1px solid #E2E8F0" }}>
+              <Button
+                onClick={handleCloseDialog}
+                disabled={submitting}
+                sx={{
+                  textTransform: "none",
+                  borderRadius: "12px",
+                  px: 4,
+                  py: 1,
+                  fontWeight: 700,
+                  color: COLORS.slate,
+                  border: `1.5px solid ${COLORS.slateLight}`,
+                  "&:hover": { backgroundColor: COLORS.slateLight, borderColor: COLORS.slateLight },
+                }}
+              >
                 Batal
               </Button>
-              <Button variant="contained" onClick={handleSave} disabled={submitting}
-                sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}>
-                {submitting ? "Menyimpan..." : "Simpan"}
+              <Button
+                variant="contained"
+                onClick={handleSave}
+                disabled={submitting}
+                sx={{
+                  textTransform: "none",
+                  borderRadius: "12px",
+                  px: 4,
+                  py: 1,
+                  fontWeight: 700,
+                  backgroundColor: COLORS.primary,
+                  boxShadow: `0 4px 12px ${COLORS.primary}40`,
+                  "&:hover": {
+                    backgroundColor: COLORS.primaryDark,
+                    boxShadow: `0 6px 16px ${COLORS.primary}60`,
+                  },
+                }}
+              >
+                {submitting ? "Menyimpan..." : "Simpan Data"}
               </Button>
             </DialogActions>
           </Dialog>

@@ -1,23 +1,73 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import {
-  Box, Typography, Button, Dialog, DialogTitle, DialogContent,
-  DialogActions, TextField, IconButton,
+  Box, Typography, Button, Dialog, DialogContent,
+  DialogActions, TextField, IconButton, Paper,
 } from "@mui/material";
-import { CalendarMonth, Close } from "@mui/icons-material";
+import { Close } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import { setProgramTimeline } from "../../api/admin";
 
-const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "15px" } };
+const COLORS = {
+  primary:      "#0D59F2",
+  primaryLight: "#E0F2FE",
+  primaryDark:  "#0369A1",
+  primaryMuted: "#93C5FD",
+  secondary:    "#2563EB",
+  accent:       "#3B82F6",
+  slate:        "#64748B",
+  slateLight:   "#F1F5F9",
+  success:      "#059669",
+  successLight: "#ECFDF5",
+  warning:      "#D97706",
+  warningLight: "#FFFBEB",
+  error:        "#DC2626",
+  errorLight:    "#ff7070",
+};
 
-const StatusPill = ({ label, backgroundColor }) => (
-  <Box sx={{
-    display: "inline-flex", alignItems: "center",
-    px: 1.5, py: 0.4, borderRadius: "50px",
-    backgroundColor, color: "#fff", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
-  }}>
-    {label}
-  </Box>
-);
+const roundedField = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "12px",
+    backgroundColor: "#fff",
+    transition: "box-shadow 0.2s",
+    "&:hover fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused": { boxShadow: `0 0 0 3px ${COLORS.primaryLight}` },
+  },
+};
+
+const StatusPill = ({ label, type = "primary" }) => {
+  const colorMap = {
+    warning: { bg: COLORS.warningLight, text: COLORS.warning },
+    success: { bg: COLORS.successLight, text: COLORS.success },
+    error: { bg: COLORS.errorLight, text: COLORS.error },
+    primary: { bg: COLORS.primaryLight, text: COLORS.primary },
+    info: { bg: "#E0F2FE", text: "#0284C7" },
+    slate: { bg: COLORS.slateLight, text: COLORS.slate },
+  };
+
+  const colors = colorMap[type] || colorMap.primary;
+
+  return (
+    <Box
+      sx={{
+        display: "inline-flex",
+        alignItems: "center",
+        px: 1.5,
+        py: 0.5,
+        borderRadius: "8px",
+        backgroundColor: colors.bg,
+        color: colors.text,
+        fontSize: 11,
+        fontWeight: 800,
+        whiteSpace: "nowrap",
+        textTransform: "uppercase",
+        letterSpacing: "0.02em",
+      }}
+    >
+      {label}
+    </Box>
+  );
+};
 
 const formatDate = (dateString) => {
   if (!dateString) return "-";
@@ -29,14 +79,14 @@ const formatDate = (dateString) => {
 
 const getTimelineStatus = (prog) => {
   if (!prog.pendaftaran_mulai || !prog.pendaftaran_selesai) {
-    return { label: "Belum Diatur", backgroundColor: "#bdbdbd" };
+    return { label: "Belum Diatur", type: "slate" };
   }
   const now = new Date();
   const mulai = new Date(prog.pendaftaran_mulai);
   const selesai = new Date(prog.pendaftaran_selesai);
-  if (now < mulai) return { label: "Belum Dimulai", backgroundColor: "#1565c0" };
-  if (now >= mulai && now <= selesai) return { label: "Sedang Berjalan", backgroundColor: "#2e7d32" };
-  return { label: "Sudah Ditutup", backgroundColor: "#c62828" };
+  if (now < mulai) return { label: "Belum Dimulai", type: "primary" };
+  if (now >= mulai && now <= selesai) return { label: "Sedang Berjalan", type: "success" };
+  return { label: "Sudah Ditutup", type: "error" };
 };
 
 export default function TimelineProgramTab({ program, onUpdate }) {
@@ -86,8 +136,10 @@ export default function TimelineProgramTab({ program, onUpdate }) {
       text: "Simpan timeline pendaftaran?",
       icon: "question",
       showCancelButton: true,
-      confirmButtonColor: "#0D59F2", cancelButtonColor: "#d33",
-      confirmButtonText: "Ya, Simpan", cancelButtonText: "Batal",
+      confirmButtonColor: COLORS.primary, 
+      cancelButtonColor: "#6B7280",
+      confirmButtonText: "Ya, Simpan", 
+      cancelButtonText: "Batal",
     });
 
     if (!result.isConfirmed) { setOpenDialog(true); return; }
@@ -102,7 +154,7 @@ export default function TimelineProgramTab({ program, onUpdate }) {
       handleCloseDialog();
       onUpdate();
     } catch (err) {
-      Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Gagal menyimpan timeline", confirmButtonColor: "#0D59F2" });
+      Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Gagal menyimpan timeline", confirmButtonColor: COLORS.primary });
       setOpenDialog(true);
     } finally {
       setSubmitting(false);
@@ -111,61 +163,79 @@ export default function TimelineProgramTab({ program, onUpdate }) {
 
   return (
     <Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography sx={{ fontSize: 18, fontWeight: 700 }}>Timeline Pendaftaran</Typography>
+      <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center", mb: 3, gap: 2, flexWrap: "wrap" }}>
         <Button
           variant="contained"
           onClick={handleOpenDialog}
-          sx={{ textTransform: "none", borderRadius: "50px", px: 3, py: 1.2, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}
+          sx={{
+            textTransform: "none", borderRadius: "12px", px: { xs: 2, sm: 3 }, py: 1.2, fontWeight: 700,
+            backgroundColor: COLORS.primary,
+            boxShadow: "0 4px 12px rgba(13, 89, 242, 0.2)",
+            width: { xs: "100%", sm: "auto" },
+            "&:hover": { 
+              backgroundColor: COLORS.primaryDark,
+              boxShadow: "0 6px 16px rgba(13, 89, 242, 0.3)",
+            },
+          }}
         >
           Edit Timeline
         </Button>
       </Box>
 
-      <Box sx={{ p: 3, border: "1.5px solid #f0f0f0", borderRadius: "12px", backgroundColor: "#fafafa" }}>
-        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 3 }}>
+      <Paper elevation={0} sx={{
+        p: { xs: 3, sm: 4 }, 
+        borderRadius: "16px",
+        border: `1.5px solid #E2E8F0`,
+        backgroundColor: "#F8FAFC",
+      }}>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "1.5fr 1fr 1fr 1fr" }, gap: { xs: 3, sm: 4 } }}>
           <Box>
-            <Typography sx={{ fontSize: 12, color: "#888", mb: 0.75 }}>Nama Program</Typography>
-            <Typography sx={{ fontWeight: 700, fontSize: 15 }}>{program.keterangan}</Typography>
+            <Typography sx={{ fontSize: 12, fontWeight: 700, color: COLORS.slate, mb: 1, textTransform: "uppercase", letterSpacing: "0.05em" }}>Nama Program</Typography>
+            <Typography sx={{ fontWeight: 800, fontSize: 16, color: "#1E293B" }}>{program.keterangan}</Typography>
           </Box>
           <Box>
-            <Typography sx={{ fontSize: 12, color: "#888", mb: 0.75 }}>Pendaftaran Mulai</Typography>
-            <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{formatDate(program.pendaftaran_mulai)}</Typography>
+            <Typography sx={{ fontSize: 12, fontWeight: 700, color: COLORS.slate, mb: 1, textTransform: "uppercase", letterSpacing: "0.05em" }}>Pendaftaran Mulai</Typography>
+            <Typography sx={{ fontWeight: 700, fontSize: 14, color: "#334155" }}>{formatDate(program.pendaftaran_mulai)}</Typography>
           </Box>
           <Box>
-            <Typography sx={{ fontSize: 12, color: "#888", mb: 0.75 }}>Pendaftaran Selesai</Typography>
-            <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{formatDate(program.pendaftaran_selesai)}</Typography>
+            <Typography sx={{ fontSize: 12, fontWeight: 700, color: COLORS.slate, mb: 1, textTransform: "uppercase", letterSpacing: "0.05em" }}>Pendaftaran Selesai</Typography>
+            <Typography sx={{ fontWeight: 700, fontSize: 14, color: "#334155" }}>{formatDate(program.pendaftaran_selesai)}</Typography>
           </Box>
           <Box>
-            <Typography sx={{ fontSize: 12, color: "#888", mb: 0.75 }}>Status</Typography>
-            <StatusPill label={status.label} backgroundColor={status.backgroundColor} />
+            <Typography sx={{ fontSize: 12, fontWeight: 700, color: COLORS.slate, mb: 1, textTransform: "uppercase", letterSpacing: "0.05em" }}>Status Saat Ini</Typography>
+            <StatusPill label={status.label} type={status.type} />
           </Box>
         </Box>
-      </Box>
+      </Paper>
 
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: "16px" } }}>
-        <DialogTitle sx={{ pb: 1 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <CalendarMonth sx={{ color: "#0D59F2" }} />
-            <Typography sx={{ fontWeight: 700, fontSize: 16 }}>Edit Timeline Pendaftaran</Typography>
+      <Dialog 
+        open={openDialog} 
+        onClose={handleCloseDialog} 
+        maxWidth="sm" 
+        fullWidth 
+        PaperProps={{ sx: { borderRadius: { xs: "16px", sm: "24px" }, overflow: "hidden" } }}
+      >
+        <Box sx={{ p: { xs: 1.5, sm: 2 }, display: "flex", alignItems: "center", justifyContent: "space-between", background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`, color: "#fff" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, px: 1 }}>
+            <Typography sx={{ fontWeight: 800, fontSize: { xs: 16, sm: 18 } }}>Edit Timeline Pendaftaran</Typography>
           </Box>
-          <IconButton onClick={handleCloseDialog} sx={{ position: "absolute", right: 12, top: 8, color: "#888" }}>
+          <IconButton onClick={handleCloseDialog} sx={{ color: "#fff", "&:hover": { backgroundColor: "rgba(255,255,255,0.2)" } }}>
             <Close />
           </IconButton>
-        </DialogTitle>
+        </Box>
 
-        <DialogContent dividers sx={{ px: 3, py: 3 }}>
+        <DialogContent sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 3, sm: 4 } }}>
           {isOngoing && (
-            <Box sx={{ p: 2, mb: 3, borderRadius: "10px", backgroundColor: "#e3f2fd", border: "1px solid #90caf9" }}>
-              <Typography sx={{ fontSize: 13, color: "#1565c0" }}>
-                Pendaftaran sedang berjalan. Hanya tanggal selesai yang bisa diubah.
+            <Box sx={{ p: 2, mb: 3, borderRadius: "12px", backgroundColor: COLORS.primaryLight, border: `1.5px solid ${COLORS.primaryMuted}`, display: "flex", gap: 1.5 }}>
+              <Typography sx={{ fontSize: 13, color: COLORS.primaryDark, fontWeight: 600, lineHeight: 1.5 }}>
+                Pendaftaran sedang berjalan. Hanya tanggal selesai yang bisa diubah untuk memperpanjang atau memperpendek periode pendaftaran.
               </Typography>
             </Box>
           )}
 
           <Box sx={{ mb: 3 }}>
-            <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>
-              Pendaftaran Mulai <span style={{ color: "#ef5350" }}>*</span>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1, color: "#334155" }}>
+              Pendaftaran Mulai <span style={{ color: COLORS.error }}>*</span>
             </Typography>
             <TextField
               fullWidth type="datetime-local"
@@ -180,8 +250,8 @@ export default function TimelineProgramTab({ program, onUpdate }) {
           </Box>
 
           <Box>
-            <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>
-              Pendaftaran Selesai <span style={{ color: "#ef5350" }}>*</span>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1, color: "#334155" }}>
+              Pendaftaran Selesai <span style={{ color: COLORS.error }}>*</span>
             </Typography>
             <TextField
               fullWidth type="datetime-local"
@@ -196,14 +266,40 @@ export default function TimelineProgramTab({ program, onUpdate }) {
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-          <Button onClick={handleCloseDialog} disabled={submitting}
-            sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, color: "#666", border: "1.5px solid #e0e0e0", "&:hover": { backgroundColor: "#f5f5f5" } }}>
+        <DialogActions sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 2, sm: 3 }, backgroundColor: "#F8FAFC", borderTop: "1.5px solid #E2E8F0", gap: 1.5, flexDirection: { xs: "column", sm: "row" }, "& > button": { width: { xs: "100%", sm: "auto" } } }}>
+          <Button 
+            onClick={handleCloseDialog} 
+            disabled={submitting}
+            variant="contained"
+            sx={{
+              textTransform: "none", borderRadius: "12px", px: 3, fontWeight: 700,
+              backgroundColor: COLORS.error,
+              color: "#fff",
+              boxShadow: "0 4px 12px rgba(220,38,38,0.2)",
+              "&:hover": { 
+                backgroundColor: "#B91C1C",
+                boxShadow: "0 6px 16px rgba(220,38,38,0.3)",
+              },
+            }}
+          >
             Batal
           </Button>
-          <Button variant="contained" onClick={handleSave} disabled={submitting}
-            sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}>
-            {submitting ? "Menyimpan..." : "Simpan"}
+          <Button 
+            variant="contained" 
+            onClick={handleSave} 
+            disabled={submitting}
+            sx={{
+              textTransform: "none", borderRadius: "12px", px: 4, fontWeight: 700,
+              backgroundColor: COLORS.primary,
+              color: "#fff",
+              boxShadow: "0 4px 12px rgba(13, 89, 242, 0.2)",
+              "&:hover": { 
+                backgroundColor: COLORS.primaryDark,
+                boxShadow: "0 6px 16px rgba(13, 89, 242, 0.3)",
+              },
+            }}
+          >
+            {submitting ? "Menyimpan..." : "Simpan Perubahan"}
           </Button>
         </DialogActions>
       </Dialog>

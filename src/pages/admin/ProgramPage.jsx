@@ -13,6 +13,23 @@ import KriteriaPenilaianTab from "../../components/admin/KriteriaPenilaianTab";
 import KategoriTab from "../../components/admin/KategoriTab";
 import { getMyProgram } from "../../api/admin";
 
+const COLORS = {
+  primary:      "#0D59F2",
+  primaryLight: "#E0F2FE",
+  primaryDark:  "#0369A1",
+  primaryMuted: "#93C5FD",
+  secondary:    "#2563EB",
+  accent:       "#3B82F6",
+  slate:        "#64748B",
+  slateLight:   "#F1F5F9",
+  success:      "#059669",
+  successLight: "#ECFDF5",
+  warning:      "#D97706",
+  warningLight: "#FFFBEB",
+  error:        "#DC2626",
+  errorLight:    "#ff7070",
+};
+
 export default function ProgramPage() {
   const [loading, setLoading] = useState(true);
   const [program, setProgram] = useState(null);
@@ -24,7 +41,7 @@ export default function ProgramPage() {
       const res = await getMyProgram();
       setProgram(res.data);
     } catch {
-      Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat data program", confirmButtonColor: "#0D59F2" });
+      Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat data program", confirmButtonColor: COLORS.primary });
     } finally {
       setLoading(false);
     }
@@ -46,7 +63,7 @@ export default function ProgramPage() {
     return (
       <BodyLayout Sidebar={AdminSidebar}>
         <Box sx={{ textAlign: "center", py: 10 }}>
-          <Typography sx={{ fontSize: 16, color: "#888" }}>Program tidak ditemukan</Typography>
+          <Typography sx={{ fontSize: 16, color: COLORS.slate }}>Program tidak ditemukan</Typography>
         </Box>
       </BodyLayout>
     );
@@ -57,26 +74,36 @@ export default function ProgramPage() {
       <PageTransition>
         <Box>
           <Box sx={{ mb: 4 }}>
-            <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Kelola Program</Typography>
-            <Typography sx={{ fontSize: 14, color: "#777" }}>
+            <Typography sx={{ fontSize: 36, fontWeight: 800, color: "#1F2937", mb: 0.5 }}>
+              Kelola Program
+            </Typography>
+            <Typography sx={{ fontSize: 16, color: "#6B7280" }}>
               Atur timeline pendaftaran program, tahap dan kriteria penilaian
             </Typography>
           </Box>
 
-          <Paper sx={{ borderRadius: "16px", border: "1px solid #f0f0f0", overflow: "hidden" }}>
-            <Box sx={{ borderBottom: "1px solid #f0f0f0" }}>
+          <Paper elevation={0} sx={{
+            mb: 3, borderRadius: "20px",
+            border: "1.5px solid #E5E7EB",
+            overflow: "hidden",
+          }}>
+            <Box sx={{ height: 5, background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
+            <Box sx={{ borderBottom: `1px solid ${COLORS.slateLight}`, overflowX: "auto" }}>
               <Tabs
                 value={activeTab}
                 onChange={(e, v) => setActiveTab(v)}
+                variant="scrollable"
+                scrollButtons="auto"
+                allowScrollButtonsMobile
                 sx={{
-                  px: 2,
+                  minHeight: 52,
                   "& .MuiTab-root": {
-                    textTransform: "none", fontSize: 14, fontWeight: 500,
-                    color: "#888", minHeight: 52,
-                    "&.Mui-selected": { fontWeight: 700, color: "#0D59F2" },
+                    textTransform: "none", fontSize: { xs: 13, sm: 14 }, fontWeight: 500,
+                    color: COLORS.slate, minHeight: 52,
+                    "&.Mui-selected": { fontWeight: 700, color: COLORS.primary },
                   },
                   "& .MuiTabs-indicator": {
-                    backgroundColor: "#0D59F2", height: 3, borderRadius: "3px 3px 0 0",
+                    backgroundColor: COLORS.primary, height: 3, borderRadius: "3px 3px 0 0",
                   },
                 }}
               >
@@ -87,7 +114,7 @@ export default function ProgramPage() {
               </Tabs>
             </Box>
 
-            <Box sx={{ p: 4 }}>
+            <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
               {activeTab === 0 && <TimelineProgramTab program={program} onUpdate={fetchProgram} />}
               {activeTab === 1 && <TahapPenilaianTab id_program={program.id_program} />}
               {activeTab === 2 && <KriteriaPenilaianTab id_program={program.id_program} />}

@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+﻿import { useState, useEffect, useCallback } from "react";
 import {
   Box, Typography, Button, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow,
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  TextField, MenuItem, IconButton, Tooltip,
+  Dialog, DialogContent, DialogActions,
+  TextField, MenuItem, IconButton, Paper
 } from "@mui/material";
-import { Close, Assignment } from "@mui/icons-material";
+import { Close } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import LoadingScreen from "../common/LoadingScreen";
 import {
@@ -13,24 +13,74 @@ import {
   createKriteriaPenilaian, updateKriteriaPenilaian, deleteKriteriaPenilaian,
 } from "../../api/admin";
 
-const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "15px" } };
-
-const tableHeadCell = {
-  fontWeight: 700, fontSize: 13, color: "#000",
-  backgroundColor: "#fafafa", borderBottom: "2px solid #f0f0f0", py: 2,
+const COLORS = {
+  primary:      "#0D59F2",
+  primaryLight: "#E0F2FE",
+  primaryDark:  "#0369A1",
+  primaryMuted: "#93C5FD",
+  secondary:    "#2563EB",
+  accent:       "#3B82F6",
+  slate:        "#64748B",
+  slateLight:   "#F1F5F9",
+  success:      "#059669",
+  successLight: "#ECFDF5",
+  warning:      "#D97706",
+  warningLight: "#FFFBEB",
+  error:        "#DC2626",
+  errorLight:    "#ff7070",
 };
 
-const tableBodyRow = { "& td": { borderBottom: "1px solid #f5f5f5", py: 2 } };
+const roundedField = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "12px",
+    backgroundColor: "#fff",
+    transition: "box-shadow 0.2s",
+    "&:hover fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused": { boxShadow: `0 0 0 3px ${COLORS.primaryLight}` },
+  },
+};
 
-const StatusPill = ({ label, backgroundColor }) => (
-  <Box sx={{
-    display: "inline-flex", alignItems: "center",
-    px: 1.5, py: 0.4, borderRadius: "50px",
-    backgroundColor, color: "#fff", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
-  }}>
-    {label}
-  </Box>
-);
+const tableHeadCell = {
+  fontWeight: 700, fontSize: 13, color: "#374151",
+  backgroundColor: "#F8FAFC", borderBottom: `2px solid ${COLORS.primaryMuted}`, py: 2,
+};
+
+const tableBodyRow = { "& td": { borderBottom: `1px solid ${COLORS.slateLight}`, py: 2 } };
+
+const StatusPill = ({ label, type = "primary" }) => {
+  const colorMap = {
+    warning: { bg: COLORS.warningLight, text: COLORS.warning },
+    success: { bg: COLORS.successLight, text: COLORS.success },
+    error: { bg: COLORS.errorLight, text: COLORS.error },
+    primary: { bg: COLORS.primaryLight, text: COLORS.primary },
+    info: { bg: "#E0F2FE", text: "#0284C7" },
+    slate: { bg: COLORS.slateLight, text: COLORS.slate },
+  };
+
+  const colors = colorMap[type] || colorMap.primary;
+
+  return (
+    <Box
+      sx={{
+        display: "inline-flex",
+        alignItems: "center",
+        px: 1.5,
+        py: 0.5,
+        borderRadius: "8px",
+        backgroundColor: colors.bg,
+        color: colors.text,
+        fontSize: 11,
+        fontWeight: 800,
+        whiteSpace: "nowrap",
+        textTransform: "uppercase",
+        letterSpacing: "0.02em",
+      }}
+    >
+      {label}
+    </Box>
+  );
+};
 
 const emptyForm = { nama_kriteria: "", deskripsi: "", bobot: "", urutan: "", status: 1 };
 
@@ -52,7 +102,7 @@ export default function KriteriaPenilaianTab({ id_program }) {
       setTahapList(data);
       if (data.length > 0) setSelectedTahap(data[0].id_tahap);
     } catch {
-      Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat tahap penilaian", confirmButtonColor: "#0D59F2" });
+      Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat tahap penilaian", confirmButtonColor: COLORS.primary });
     } finally {
       setLoading(false);
     }
@@ -132,7 +182,7 @@ export default function KriteriaPenilaianTab({ id_program }) {
       text: currentDialog.mode === "create" ? "Tambah kriteria penilaian baru?" : "Simpan perubahan kriteria?",
       icon: "question",
       showCancelButton: true,
-      confirmButtonColor: "#0D59F2", cancelButtonColor: "#d33",
+      confirmButtonColor: COLORS.primary, cancelButtonColor: "#d33",
       confirmButtonText: "Ya, Simpan", cancelButtonText: "Tidak",
     });
 
@@ -159,7 +209,7 @@ export default function KriteriaPenilaianTab({ id_program }) {
       await Swal.fire({ icon: "success", title: "Berhasil", text: currentDialog.mode === "create" ? "Kriteria berhasil ditambahkan" : "Kriteria berhasil diperbarui", timer: 2000, timerProgressBar: true, showConfirmButton: false });
       fetchKriteria();
     } catch (err) {
-      Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Gagal menyimpan kriteria", confirmButtonColor: "#0D59F2" });
+      Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Gagal menyimpan kriteria", confirmButtonColor: COLORS.primary });
     } finally {
       setSubmitting(false);
     }
@@ -182,7 +232,7 @@ export default function KriteriaPenilaianTab({ id_program }) {
       await Swal.fire({ icon: "success", title: "Berhasil", text: "Kriteria berhasil dihapus", timer: 2000, timerProgressBar: true, showConfirmButton: false });
       fetchKriteria();
     } catch (err) {
-      Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Gagal menghapus kriteria", confirmButtonColor: "#0D59F2" });
+      Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Gagal menghapus kriteria", confirmButtonColor: COLORS.primary });
     }
   };
 
@@ -196,9 +246,9 @@ export default function KriteriaPenilaianTab({ id_program }) {
 
   if (tahapList.length === 0) {
     return (
-      <Box sx={{ p: 2, borderRadius: "10px", backgroundColor: "#e3f2fd", border: "1px solid #90caf9" }}>
-        <Typography sx={{ fontSize: 13, color: "#1565c0" }}>
-          Belum ada tahap penilaian. Silahkan buat tahap terlebih dahulu di tab Tahap Penilaian.
+      <Box sx={{ p: 2, borderRadius: "10px", backgroundColor: COLORS.primaryLight, border: `1px solid ${COLORS.primaryMuted}` }}>
+        <Typography sx={{ fontSize: 13, color: COLORS.primaryDark }}>
+          Belum ada tahap penilaian. Silakan buat tahap terlebih dahulu di tab Tahap Penilaian.
         </Typography>
       </Box>
     );
@@ -213,45 +263,87 @@ export default function KriteriaPenilaianTab({ id_program }) {
 
   return (
     <Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-          <Typography sx={{ fontSize: 16, fontWeight: 600 }}>Pilih Tahap:</Typography>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: { xs: "stretch", sm: "center" }, mb: 3, gap: 2, flexWrap: "wrap", flexDirection: { xs: "column", sm: "row" } }}>
+        <Box sx={{ display: "flex", gap: 2, alignItems: { xs: "stretch", sm: "center" }, flexWrap: "wrap", flexDirection: { xs: "column", sm: "row" }, minWidth: 0 }}>
+          <Typography sx={{ fontSize: { xs: 14, sm: 16 }, fontWeight: 700, color: "#1E293B" }}>Pilih Tahap:</Typography>
           <TextField
-            select size="small" value={selectedTahap}
+            select
+            size="small"
+            value={selectedTahap}
             onChange={(e) => setSelectedTahap(e.target.value)}
-            sx={{ minWidth: 250, ...roundedField }}
+            sx={{
+              minWidth: { xs: "100%", sm: 280 },
+              width: { xs: "100%", sm: 280 },
+              ...roundedField,
+              "& .MuiSelect-select": {
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                display: "block",
+                paddingRight: "36px !important",
+              },
+            }}
+            SelectProps={{
+              renderValue: (value) => {
+                const t = tahapList.find((x) => x.id_tahap === value);
+                const label = t ? `${t.nama_tahap} (Urutan ${t.urutan})` : "";
+                return (
+                  <Box sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{label}</Box>
+                );
+              }
+            }}
           >
             {tahapList.map((tahap) => (
               <MenuItem key={tahap.id_tahap} value={tahap.id_tahap}>
-                {tahap.nama_tahap} (Urutan {tahap.urutan})
+                <Box sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%" }}>
+                  {tahap.nama_tahap} (Urutan {tahap.urutan})
+                </Box>
               </MenuItem>
             ))}
           </TextField>
         </Box>
-        <Button
-          variant="contained"
-          onClick={handleOpenCreate}
-          disabled={isBobotComplete || isBobotExceeded}
-          sx={{ textTransform: "none", borderRadius: "50px", px: 3, py: 1.2, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" }, "&.Mui-disabled": { backgroundColor: "#ccc" } }}
-        >
-          Tambah Kriteria
-        </Button>
+        <Box sx={{ width: { xs: "100%", sm: "auto" } }}>
+          <Button
+            variant="contained"
+            onClick={handleOpenCreate}
+            disabled={isBobotComplete || isBobotExceeded}
+            sx={{
+              textTransform: "none", borderRadius: "12px", px: { xs: 2, sm: 3 }, py: 1.2, fontWeight: 700,
+              backgroundColor: (isBobotComplete || isBobotExceeded) ? "#E2E8F0" : COLORS.primary,
+              boxShadow: (isBobotComplete || isBobotExceeded) ? "none" : "0 4px 12px rgba(13, 89, 242, 0.2)",
+              width: { xs: "100%", sm: "auto" },
+              minWidth: 0,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              "&:hover": { 
+                backgroundColor: (isBobotComplete || isBobotExceeded) ? "#E2E8F0" : COLORS.primaryDark,
+                boxShadow: (isBobotComplete || isBobotExceeded) ? "none" : "0 6px 16px rgba(13, 89, 242, 0.3)",
+              },
+            }}
+          >
+            Tambah Kriteria
+          </Button>
+        </Box>
       </Box>
 
       {(isBobotComplete || isBobotExceeded || totalBobot > 0) && (
         <Box sx={{
-          mb: 2,
+          mb: 3,
           p: 2,
-          borderRadius: "10px",
-          border: `1px solid ${isBobotComplete ? "#66bb6a" : isBobotExceeded ? "#ef5350" : "#ffa726"}`,
-          backgroundColor: isBobotComplete ? "#e8f5e9" : isBobotExceeded ? "#ffebee" : "#fff3e0",
+          borderRadius: "12px",
+          border: `1.5px solid ${isBobotComplete ? COLORS.success : isBobotExceeded ? COLORS.error : COLORS.warning}`,
+          backgroundColor: isBobotComplete ? COLORS.successLight : isBobotExceeded ? COLORS.errorLight : COLORS.warningLight,
+          display: "flex",
+          alignItems: "center",
+          gap: 1.5
         }}>
-          <Typography sx={{ fontSize: 13, fontWeight: 600, color: isBobotComplete ? "#2e7d32" : isBobotExceeded ? "#c62828" : "#e65100" }}>
+          <Typography sx={{ fontSize: 14, fontWeight: 700, color: isBobotComplete ? COLORS.success : isBobotExceeded ? COLORS.error : COLORS.warning }}>
             {isBobotComplete
-              ? `Bobot tahap ${selectedTahapName} sudah lengkap 100%`
+              ? `Status: Bobot tahap ${selectedTahapName} sudah lengkap 100%`
               : isBobotExceeded
-              ? `Bobot tahap ${selectedTahapName} sudah ${totalBobot}% (melebihi 100%)`
-              : `Bobot tahap ${selectedTahapName} kini ${totalBobot}%, masih kurang ${100 - totalBobot}%`}
+              ? `Peringatan: Bobot tahap ${selectedTahapName} sudah ${totalBobot}% (melebihi 100%)`
+              : `Informasi: Bobot tahap ${selectedTahapName} saat ini ${totalBobot}%, kurang ${100 - totalBobot}% lagi`}
           </Typography>
         </Box>
       )}
@@ -261,81 +353,102 @@ export default function KriteriaPenilaianTab({ id_program }) {
           <LoadingScreen message="Memuat kriteria penilaian..." overlay minHeight="320px" />
         </Box>
       ) : kriteriaList.length === 0 ? (
-        <Box sx={{ textAlign: "center", py: 10 }}>
-          <Box sx={{ width: 100, height: 100, borderRadius: "50%", backgroundColor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 3 }}>
-            <Assignment sx={{ fontSize: 48, color: "#ccc" }} />
-          </Box>
-          <Typography sx={{ fontSize: 20, fontWeight: 700, color: "#444", mb: 1 }}>Belum ada kriteria penilaian</Typography>
-          <Typography sx={{ fontSize: 14, color: "#999" }}>Klik Tambah Kriteria untuk menambahkan kriteria penilaian</Typography>
-        </Box>
+        <Paper elevation={0} sx={{ p: 8, textAlign: "center", borderRadius: "20px", border: "1.5px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
+          <Typography sx={{ fontSize: 20, fontWeight: 800, color: "#1E293B", mb: 1 }}>Belum ada kriteria penilaian</Typography>
+          <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 500 }}>Klik Tambah Kriteria untuk menentukan aspek penilaian di tahap ini</Typography>
+        </Paper>
       ) : (
-        <TableContainer sx={{ borderRadius: "12px", border: "1px solid #f0f0f0", overflow: "hidden" }}>
-          <Table>
+        <TableContainer sx={{ borderRadius: "16px", border: "1.5px solid #E2E8F0", overflow: "hidden", overflowX: "auto", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}>
+          <Table sx={{ minWidth: 800 }}>
             <TableHead>
               <TableRow>
-                {["Urutan", "Nama Kriteria", "Deskripsi", "Bobot (%)", "Status", "Aksi"].map((h, i) => (
-                  <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 5 && { textAlign: "center" }) }}>{h}</TableCell>
+                {["URUTAN", "NAMA KRITERIA", "DESKRIPSI", "BOBOT (%)", "STATUS", "AKSI"].map((h, i) => (
+                  <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 5 && { textAlign: "center" }), ...(i === 0 && { pl: { xs: 1.5, sm: 3 } }) }}>{h}</TableCell>
                 ))}
               </TableRow>
             </TableHead>
             <TableBody>
               {kriteriaList.map((kriteria) => (
-                <TableRow key={kriteria.id_kriteria} sx={tableBodyRow}>
-                  <TableCell>
-                    <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{kriteria.urutan}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{kriteria.nama_kriteria}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography sx={{ fontSize: 13, color: "#666" }}>{kriteria.deskripsi || "-"}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography sx={{ fontSize: 14, fontWeight: 600 }}>{kriteria.bobot}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <StatusPill
-                      label={kriteria.status === 1 ? "Aktif" : "Nonaktif"}
-                      backgroundColor={kriteria.status === 1 ? "#2e7d32" : "#757575"}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
-                      <Tooltip title="Edit Kriteria">
-                        <Button size="small" variant="outlined" onClick={() => handleOpenEdit(kriteria)}
-                          sx={{ textTransform: "none", color: "#0D59F2", borderColor: "#e3f2fd", borderRadius: "50px", "&:hover": { backgroundColor: "#f0f4ff", borderColor: "#0D59F2" } }}>
+                  <TableRow key={kriteria.id_kriteria} sx={tableBodyRow}>
+                    <TableCell sx={{ pl: { xs: 1.5, sm: 3 } }}>
+                      <Typography sx={{ fontWeight: 800, fontSize: { xs: 13, sm: 14 }, color: "#1E293B" }}>{kriteria.urutan}</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography sx={{ fontWeight: 700, fontSize: { xs: 13, sm: 14 }, color: "#1E293B" }}>{kriteria.nama_kriteria}</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography sx={{ fontSize: { xs: 12, sm: 13 }, color: COLORS.slate, fontWeight: 500 }}>{kriteria.deskripsi || "-"}</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography sx={{ fontSize: { xs: 13, sm: 14 }, fontWeight: 800, color: COLORS.primary }}>{kriteria.bobot}%</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <StatusPill
+                        label={kriteria.status === 1 ? "Aktif" : "Nonaktif"}
+                        type={kriteria.status === 1 ? "success" : "slate"}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: "flex", gap: { xs: 0.5, sm: 1 }, justifyContent: "center", flexWrap: "wrap" }}>
+                        <Button 
+                          size="small" 
+                          variant="outlined" 
+                          onClick={() => handleOpenEdit(kriteria)}
+                          sx={{
+                            textTransform: "none",
+                            color: COLORS.primary,
+                            borderColor: COLORS.primaryMuted,
+                            borderRadius: "10px",
+                            fontWeight: 700,
+                            fontSize: { xs: 11, sm: 12 },
+                            px: { xs: 1, sm: 2 },
+                            "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary }
+                          }}
+                        >
                           Edit
                         </Button>
-                      </Tooltip>
-                      <Tooltip title="Hapus Kriteria">
-                        <Button size="small" variant="outlined" color="error" onClick={() => handleDelete(kriteria)}
-                          sx={{ textTransform: "none", borderColor: "#fce4ec", borderRadius: "50px", "&:hover": { backgroundColor: "rgba(229,57,53,0.06)", borderColor: "#e53935" } }}>
+                        <Button 
+                          size="small" 
+                          variant="outlined" 
+                          color="error" 
+                          onClick={() => handleDelete(kriteria)}
+                          sx={{
+                            textTransform: "none",
+                            borderColor: COLORS.errorLight,
+                            borderRadius: "10px",
+                            fontWeight: 700,
+                            fontSize: { xs: 11, sm: 12 },
+                            px: { xs: 1, sm: 2 },
+                            "&:hover": { backgroundColor: COLORS.errorLight, borderColor: COLORS.error }
+                          }}
+                        >
                           Hapus
                         </Button>
-                      </Tooltip>
-                    </Box>
-                  </TableCell>
-                </TableRow>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
               ))}
             </TableBody>
           </Table>
         </TableContainer>
       )}
 
-      <Dialog open={dialog.open} onClose={handleCloseDialog} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: "16px" } }}>
-        <DialogTitle sx={{ pb: 1 }}>
-          <Typography sx={{ fontWeight: 700, fontSize: 16 }}>
-            {dialog.mode === "create" ? "Tambah Kriteria Penilaian" : "Edit Kriteria Penilaian"}
-          </Typography>
-          <IconButton onClick={handleCloseDialog} sx={{ position: "absolute", right: 12, top: 8, color: "#888" }}>
+      <Dialog open={dialog.open} onClose={handleCloseDialog} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: { xs: "16px", sm: "24px" }, overflow: "hidden" } }}>
+        <Box sx={{ p: { xs: 1.5, sm: 2 }, display: "flex", alignItems: "center", justifyContent: "space-between", background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`, color: "#fff" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, px: 1 }}>
+            <Typography sx={{ fontWeight: 800, fontSize: { xs: 16, sm: 18 } }}>
+              {dialog.mode === "create" ? "Tambah Kriteria Penilaian" : "Edit Kriteria Penilaian"}
+            </Typography>
+          </Box>
+          <IconButton onClick={handleCloseDialog} sx={{ color: "#fff", "&:hover": { backgroundColor: "rgba(255,255,255,0.2)" } }}>
             <Close />
           </IconButton>
-        </DialogTitle>
+        </Box>
 
-        <DialogContent dividers sx={{ px: 3, py: 3 }}>
+        <DialogContent sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 3, sm: 4 } }}>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             <Box>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Nama Kriteria <span style={{ color: "#ef5350" }}>*</span></Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1, color: "#334155" }}>Nama Kriteria <span style={{ color: COLORS.error }}>*</span></Typography>
               <TextField
                 fullWidth placeholder="Contoh: Deskripsi Bisnis"
                 value={form.nama_kriteria}
@@ -346,7 +459,7 @@ export default function KriteriaPenilaianTab({ id_program }) {
             </Box>
 
             <Box>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Deskripsi</Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1, color: "#334155" }}>Deskripsi</Typography>
               <TextField
                 fullWidth multiline rows={3}
                 placeholder="Deskripsi singkat kriteria penilaian"
@@ -358,7 +471,7 @@ export default function KriteriaPenilaianTab({ id_program }) {
 
             <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
               <Box>
-                <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Bobot (%) <span style={{ color: "#ef5350" }}>*</span></Typography>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1, color: "#334155" }}>Bobot (%) <span style={{ color: COLORS.error }}>*</span></Typography>
                 <TextField
                   fullWidth placeholder="1-100"
                   value={form.bobot}
@@ -369,7 +482,7 @@ export default function KriteriaPenilaianTab({ id_program }) {
                 />
               </Box>
               <Box>
-                <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Urutan <span style={{ color: "#ef5350" }}>*</span></Typography>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1, color: "#334155" }}>Urutan <span style={{ color: COLORS.error }}>*</span></Typography>
                 <TextField
                   fullWidth placeholder="Contoh: 1"
                   value={form.urutan}
@@ -382,7 +495,7 @@ export default function KriteriaPenilaianTab({ id_program }) {
             </Box>
 
             <Box>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Status <span style={{ color: "#ef5350" }}>*</span></Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1, color: "#334155" }}>Status <span style={{ color: COLORS.error }}>*</span></Typography>
               <TextField
                 select fullWidth value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value })}
@@ -395,14 +508,38 @@ export default function KriteriaPenilaianTab({ id_program }) {
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-          <Button onClick={handleCloseDialog} disabled={submitting}
-            sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, color: "#666", border: "1.5px solid #e0e0e0", "&:hover": { backgroundColor: "#f5f5f5" } }}>
+        <DialogActions sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 2, sm: 3 }, backgroundColor: "#F8FAFC", borderTop: "1.5px solid #E2E8F0", gap: 1.5, flexDirection: { xs: "column", sm: "row" }, "& button": { width: { xs: "100%", sm: "auto" } } }}>
+          <Button 
+            variant="contained"
+            onClick={handleCloseDialog} 
+            disabled={submitting}
+            sx={{
+              textTransform: "none", borderRadius: "12px", px: 3, fontWeight: 700,
+              backgroundColor: COLORS.error,
+              boxShadow: "0 4px 12px rgba(220,38,38,0.2)",
+              "&:hover": { 
+                backgroundColor: "#B91C1C",
+                boxShadow: "0 6px 16px rgba(220,38,38,0.3)",
+              },
+            }}
+          >
             Batal
           </Button>
-          <Button variant="contained" onClick={handleSave} disabled={submitting}
-            sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}>
-            {submitting ? "Menyimpan..." : "Simpan"}
+          <Button 
+            variant="contained" 
+            onClick={handleSave} 
+            disabled={submitting}
+            sx={{
+              textTransform: "none", borderRadius: "12px", px: 4, fontWeight: 700,
+              backgroundColor: COLORS.primary,
+              boxShadow: "0 4px 12px rgba(13, 89, 242, 0.2)",
+              "&:hover": { 
+                backgroundColor: COLORS.primaryDark,
+                boxShadow: "0 6px 16px rgba(13, 89, 242, 0.3)",
+              },
+            }}
+          >
+            {submitting ? "Menyimpan..." : "Simpan Perubahan"}
           </Button>
         </DialogActions>
       </Dialog>

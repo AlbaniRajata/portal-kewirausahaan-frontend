@@ -1,35 +1,85 @@
-import { useState, useEffect, useCallback } from "react";
+﻿import { useState, useEffect, useCallback } from "react";
 import {
   Box, Typography, Button, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, Dialog, DialogTitle,
-  DialogContent, DialogActions, TextField, CircularProgress,
+  TableContainer, TableHead, TableRow, Dialog,
+  DialogContent, DialogActions, TextField,
   IconButton, Tooltip,
 } from "@mui/material";
-import { Close, Assignment } from "@mui/icons-material";
+import { Close } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import LoadingScreen from "../common/LoadingScreen";
 import {
   getTahapProgram, createTahapProgram, updateTahapProgram, deleteTahapProgram,
 } from "../../api/admin";
 
-const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "15px" } };
-
-const tableHeadCell = {
-  fontWeight: 700, fontSize: 13, color: "#000",
-  backgroundColor: "#fafafa", borderBottom: "2px solid #f0f0f0", py: 2,
+const COLORS = {
+  primary:      "#0D59F2",
+  primaryLight: "#E0F2FE",
+  primaryDark:  "#0369A1",
+  primaryMuted: "#93C5FD",
+  secondary:    "#2563EB",
+  accent:       "#3B82F6",
+  slate:        "#64748B",
+  slateLight:   "#F1F5F9",
+  success:      "#059669",
+  successLight: "#ECFDF5",
+  warning:      "#D97706",
+  warningLight: "#FFFBEB",
+  error:        "#DC2626",
+  errorLight:    "#ff7070",
 };
 
-const tableBodyRow = { "& td": { borderBottom: "1px solid #f5f5f5", py: 2 } };
+const roundedField = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "12px",
+    backgroundColor: "#fff",
+    transition: "box-shadow 0.2s",
+    "&:hover fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused": { boxShadow: `0 0 0 3px ${COLORS.primaryLight}` },
+  },
+};
 
-const StatusPill = ({ label, backgroundColor }) => (
-  <Box sx={{
-    display: "inline-flex", alignItems: "center",
-    px: 1.5, py: 0.4, borderRadius: "50px",
-    backgroundColor, color: "#fff", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
-  }}>
-    {label}
-  </Box>
-);
+const tableHeadCell = {
+  fontWeight: 700, fontSize: 13, color: "#374151",
+  backgroundColor: "#F8FAFC", borderBottom: `2px solid ${COLORS.primaryMuted}`, py: 2,
+};
+
+const tableBodyRow = { "& td": { borderBottom: `1px solid ${COLORS.slateLight}`, py: 2 } };
+
+const StatusPill = ({ label, type = "primary" }) => {
+  const colorMap = {
+    warning: { bg: COLORS.warningLight, text: COLORS.warning },
+    success: { bg: COLORS.successLight, text: COLORS.success },
+    error: { bg: COLORS.errorLight, text: COLORS.error },
+    primary: { bg: COLORS.primaryLight, text: COLORS.primary },
+    info: { bg: "#E0F2FE", text: "#0284C7" },
+    slate: { bg: COLORS.slateLight, text: COLORS.slate },
+  };
+
+  const colors = colorMap[type] || colorMap.primary;
+
+  return (
+    <Box
+      sx={{
+        display: "inline-flex",
+        alignItems: "center",
+        px: 1.5,
+        py: 0.5,
+        borderRadius: "8px",
+        backgroundColor: colors.bg,
+        color: colors.text,
+        fontSize: 11,
+        fontWeight: 800,
+        whiteSpace: "nowrap",
+        textTransform: "uppercase",
+        letterSpacing: "0.02em",
+      }}
+    >
+      {label}
+    </Box>
+  );
+};
 
 const emptyForm = { nama_tahap: "", urutan: "", penilaian_mulai: "", penilaian_selesai: "" };
 
@@ -42,11 +92,11 @@ const formatDate = (dateString) => {
 };
 
 const getJadwalStatus = (mulai, selesai) => {
-  if (!mulai || !selesai) return { label: "Belum Diatur", backgroundColor: "#bdbdbd" };
+  if (!mulai || !selesai) return { label: "Belum Diatur", type: "slate" };
   const now = new Date();
-  if (now < new Date(mulai)) return { label: "Belum Dimulai", backgroundColor: "#1565c0" };
-  if (now <= new Date(selesai)) return { label: "Sedang Berjalan", backgroundColor: "#2e7d32" };
-  return { label: "Sudah Ditutup", backgroundColor: "#c62828" };
+  if (now < new Date(mulai)) return { label: "Belum Dimulai", type: "primary" };
+  if (now <= new Date(selesai)) return { label: "Sedang Berjalan", type: "success" };
+  return { label: "Sudah Ditutup", type: "error" };
 };
 
 export default function TahapPenilaianTab({ id_program }) {
@@ -63,7 +113,7 @@ export default function TahapPenilaianTab({ id_program }) {
       const res = await getTahapProgram(id_program);
       setTahapList(res.data || []);
     } catch {
-      Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat tahap penilaian", confirmButtonColor: "#0D59F2" });
+      Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat tahap penilaian", confirmButtonColor: COLORS.primary });
     } finally {
       setLoading(false);
     }
@@ -131,8 +181,10 @@ export default function TahapPenilaianTab({ id_program }) {
       text: currentDialog.mode === "create" ? "Tambah tahap penilaian baru?" : "Simpan perubahan jadwal tahap?",
       icon: "question",
       showCancelButton: true,
-      confirmButtonColor: "#0D59F2", cancelButtonColor: "#d33",
-      confirmButtonText: "Ya, Simpan", cancelButtonText: "Tidak",
+      confirmButtonColor: COLORS.primary, 
+      cancelButtonColor: "#6B7280",
+      confirmButtonText: "Ya, Simpan", 
+      cancelButtonText: "Tidak",
     });
 
     if (!result.isConfirmed) {
@@ -159,7 +211,7 @@ export default function TahapPenilaianTab({ id_program }) {
       await Swal.fire({ icon: "success", title: "Berhasil", text: currentDialog.mode === "create" ? "Tahap penilaian berhasil ditambahkan" : "Jadwal tahap berhasil diperbarui", timer: 2000, timerProgressBar: true, showConfirmButton: false });
       fetchTahap();
     } catch (err) {
-      Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Gagal menyimpan tahap", confirmButtonColor: "#0D59F2" });
+      Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Gagal menyimpan tahap", confirmButtonColor: COLORS.primary });
     } finally {
       setSubmitting(false);
     }
@@ -171,8 +223,10 @@ export default function TahapPenilaianTab({ id_program }) {
       html: `Tahap <b>${tahap.nama_tahap}</b> akan dihapus permanen beserta semua data terkait.`,
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d33", cancelButtonColor: "#666",
-      confirmButtonText: "Ya, Hapus", cancelButtonText: "Batal",
+      confirmButtonColor: COLORS.error, 
+      cancelButtonColor: "#6B7280",
+      confirmButtonText: "Ya, Hapus", 
+      cancelButtonText: "Batal",
     });
 
     if (!result.isConfirmed) return;
@@ -182,37 +236,44 @@ export default function TahapPenilaianTab({ id_program }) {
       await Swal.fire({ icon: "success", title: "Berhasil", text: "Tahap penilaian berhasil dihapus", timer: 2000, timerProgressBar: true, showConfirmButton: false });
       fetchTahap();
     } catch (err) {
-      Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Gagal menghapus tahap", confirmButtonColor: "#0D59F2" });
+      Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Gagal menghapus tahap", confirmButtonColor: COLORS.primary });
     }
   };
 
   return (
     <Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography sx={{ fontSize: 18, fontWeight: 700 }}>Tahap Penilaian</Typography>
-        <Tooltip title={!canAddTahap ? "Maksimal 2 tahap penilaian" : ""}>
-          <span>
+      <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center", mb: 3, gap: 2, flexWrap: "wrap" }}>
+        <Box sx={{ width: { xs: "100%", sm: "auto" } }}>
+          <Tooltip 
+            title={!canAddTahap ? "Maksimal 2 tahap penilaian" : ""} 
+            componentsProps={{ root: { style: { display: 'block' } } }}
+          >
             <Button
               variant="contained"
               onClick={handleOpenCreate}
               disabled={!canAddTahap}
               sx={{
-                textTransform: "none", borderRadius: "50px", px: 3, py: 1.2, fontWeight: 600,
-                backgroundColor: canAddTahap ? "#0D59F2" : "#e0e0e0",
-                color: canAddTahap ? "#fff" : "#999",
-                "&:hover": { backgroundColor: canAddTahap ? "#0a47c4" : "#e0e0e0" },
+                textTransform: "none", borderRadius: "12px", px: { xs: 2, sm: 3 }, py: 1.2, fontWeight: 700,
+                backgroundColor: canAddTahap ? COLORS.primary : "#E2E8F0",
+                color: canAddTahap ? "#fff" : "#94A3B8",
+                boxShadow: canAddTahap ? "0 4px 12px rgba(13, 89, 242, 0.2)" : "none",
+                width: { xs: "100%", sm: "auto" },
+                "&:hover": { 
+                  backgroundColor: canAddTahap ? COLORS.primaryDark : "#E2E8F0",
+                  boxShadow: canAddTahap ? "0 6px 16px rgba(13, 89, 242, 0.3)" : "none",
+                },
               }}
             >
               Tambah Tahap
             </Button>
-          </span>
-        </Tooltip>
+          </Tooltip>
+        </Box>
       </Box>
 
       {!canAddTahap && (
-        <Box sx={{ p: 2, mb: 3, borderRadius: "10px", backgroundColor: "#e3f2fd", border: "1px solid #90caf9" }}>
-          <Typography sx={{ fontSize: 13, color: "#1565c0" }}>
-            Sudah terdapat 2 tahap penilaian (maksimal). Hapus salah satu tahap jika ingin menambah tahap baru.
+        <Box sx={{ p: 2, mb: 3, borderRadius: "12px", backgroundColor: COLORS.primaryLight, border: `1.5px solid ${COLORS.primaryMuted}` }}>
+          <Typography sx={{ fontSize: 13, color: COLORS.primaryDark, fontWeight: 600 }}>
+            Sudah terdapat 2 tahap penilaian (maksimal). Hapus salah satu tahap jika ingin menambahkan tahap baru.
           </Typography>
         </Box>
       )}
@@ -222,20 +283,17 @@ export default function TahapPenilaianTab({ id_program }) {
           <LoadingScreen message="Memuat tahap penilaian..." overlay minHeight="320px" />
         </Box>
       ) : tahapList.length === 0 ? (
-        <Box sx={{ textAlign: "center", py: 10 }}>
-          <Box sx={{ width: 100, height: 100, borderRadius: "50%", backgroundColor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 3 }}>
-            <Assignment sx={{ fontSize: 48, color: "#ccc" }} />
-          </Box>
-          <Typography sx={{ fontSize: 20, fontWeight: 700, color: "#444", mb: 1 }}>Belum ada tahap penilaian</Typography>
-          <Typography sx={{ fontSize: 14, color: "#999" }}>Klik Tambah Tahap untuk menambahkan tahap penilaian</Typography>
-        </Box>
+        <Paper elevation={0} sx={{ p: 8, textAlign: "center", borderRadius: "20px", border: "1.5px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
+          <Typography sx={{ fontSize: 20, fontWeight: 800, color: "#1E293B", mb: 1 }}>Belum ada tahap penilaian</Typography>
+          <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 500 }}>Klik Tambah Tahap untuk menentukan alur penilaian program</Typography>
+        </Paper>
       ) : (
-        <TableContainer sx={{ borderRadius: "12px", border: "1px solid #f0f0f0", overflow: "hidden" }}>
-          <Table>
+        <TableContainer sx={{ borderRadius: "16px", border: "1.5px solid #E2E8F0", overflow: "hidden", overflowX: "auto", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}>
+          <Table sx={{ minWidth: 900 }}>
             <TableHead>
               <TableRow>
-                {["Urutan", "Nama Tahap", "Penilaian Mulai", "Penilaian Selesai", "Status Jadwal", "Status", "Aksi"].map((h, i) => (
-                  <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 6 && { textAlign: "center" }) }}>{h}</TableCell>
+                {["URUTAN", "NAMA TAHAP", "PENILAIAN MULAI", "PENILAIAN SELESAI", "STATUS JADWAL", "STATUS", "AKSI"].map((h, i) => (
+                  <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 6 && { textAlign: "center" }), ...(i === 0 && { pl: { xs: 1.5, sm: 3 } }) }}>{h}</TableCell>
                 ))}
               </TableRow>
             </TableHead>
@@ -244,41 +302,63 @@ export default function TahapPenilaianTab({ id_program }) {
                 const jadwalStatus = getJadwalStatus(tahap.penilaian_mulai, tahap.penilaian_selesai);
                 return (
                   <TableRow key={tahap.id_tahap} sx={tableBodyRow}>
-                    <TableCell>
-                      <StatusPill label={`Tahap ${tahap.urutan}`} backgroundColor="#3949ab" />
+                    <TableCell sx={{ pl: { xs: 1.5, sm: 3 } }}>
+                      <StatusPill label={`Tahap ${tahap.urutan}`} type="info" />
                     </TableCell>
                     <TableCell>
-                      <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{tahap.nama_tahap}</Typography>
+                      <Typography sx={{ fontWeight: 700, fontSize: { xs: 13, sm: 14 }, color: "#1E293B" }}>{tahap.nama_tahap}</Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography sx={{ fontSize: 13 }}>{formatDate(tahap.penilaian_mulai)}</Typography>
+                      <Typography sx={{ fontSize: { xs: 12, sm: 13 }, color: COLORS.slate, fontWeight: 600 }}>{formatDate(tahap.penilaian_mulai)}</Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography sx={{ fontSize: 13 }}>{formatDate(tahap.penilaian_selesai)}</Typography>
+                      <Typography sx={{ fontSize: { xs: 12, sm: 13 }, color: COLORS.slate, fontWeight: 600 }}>{formatDate(tahap.penilaian_selesai)}</Typography>
                     </TableCell>
                     <TableCell>
-                      <StatusPill label={jadwalStatus.label} backgroundColor={jadwalStatus.backgroundColor} />
+                      <StatusPill label={jadwalStatus.label} type={jadwalStatus.type} />
                     </TableCell>
                     <TableCell>
                       <StatusPill
                         label={tahap.status === 1 ? "Aktif" : "Nonaktif"}
-                        backgroundColor={tahap.status === 1 ? "#2e7d32" : "#757575"}
+                        type={tahap.status === 1 ? "success" : "slate"}
                       />
                     </TableCell>
                     <TableCell>
-                      <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
-                        <Tooltip title="Edit Jadwal">
-                          <Button size="small" variant="outlined" onClick={() => handleOpenEdit(tahap)}
-                            sx={{ textTransform: "none", color: "#0D59F2", borderColor: "#e3f2fd", borderRadius: "50px", "&:hover": { backgroundColor: "#f0f4ff", borderColor: "#0D59F2" } }}>
-                            Edit
-                          </Button>
-                        </Tooltip>
-                        <Tooltip title="Hapus Tahap">
-                          <Button size="small" variant="outlined" color="error" onClick={() => handleDelete(tahap)}
-                            sx={{ textTransform: "none", borderColor: "#fce4ec", borderRadius: "50px", "&:hover": { backgroundColor: "rgba(229,57,53,0.06)", borderColor: "#e53935" } }}>
-                            Hapus
-                          </Button>
-                        </Tooltip>
+                      <Box sx={{ display: "flex", gap: { xs: 0.5, sm: 1 }, justifyContent: "center", flexWrap: "wrap" }}>
+                        <Button 
+                          size="small" 
+                          variant="outlined" 
+                          onClick={() => handleOpenEdit(tahap)}
+                          sx={{
+                            textTransform: "none",
+                            color: COLORS.primary,
+                            borderColor: COLORS.primaryMuted,
+                            borderRadius: "10px",
+                            fontWeight: 700,
+                            fontSize: { xs: 11, sm: 12 },
+                            px: { xs: 1, sm: 2 },
+                            "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary }
+                          }}
+                        >
+                          Edit
+                        </Button>
+                        <Button 
+                          size="small" 
+                          variant="outlined" 
+                          color="error" 
+                          onClick={() => handleDelete(tahap)}
+                          sx={{
+                            textTransform: "none",
+                            borderColor: COLORS.errorLight,
+                            borderRadius: "10px",
+                            fontWeight: 700,
+                            fontSize: { xs: 11, sm: 12 },
+                            px: { xs: 1, sm: 2 },
+                            "&:hover": { backgroundColor: COLORS.errorLight, borderColor: COLORS.error }
+                          }}
+                        >
+                          Hapus
+                        </Button>
                       </Box>
                     </TableCell>
                   </TableRow>
@@ -289,22 +369,24 @@ export default function TahapPenilaianTab({ id_program }) {
         </TableContainer>
       )}
 
-      <Dialog open={dialog.open} onClose={handleCloseDialog} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: "16px" } }}>
-        <DialogTitle sx={{ pb: 1 }}>
-          <Typography sx={{ fontWeight: 700, fontSize: 16 }}>
-            {dialog.mode === "create" ? "Tambah Tahap Penilaian" : "Edit Jadwal Tahap"}
-          </Typography>
-          <IconButton onClick={handleCloseDialog} sx={{ position: "absolute", right: 12, top: 8, color: "#888" }}>
+      <Dialog open={dialog.open} onClose={handleCloseDialog} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: { xs: "16px", sm: "24px" }, overflow: "hidden" } }}>
+        <Box sx={{ p: { xs: 1.5, sm: 2 }, display: "flex", alignItems: "center", justifyContent: "space-between", background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`, color: "#fff" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, px: 1 }}>
+            <Typography sx={{ fontWeight: 800, fontSize: { xs: 16, sm: 18 } }}>
+              {dialog.mode === "create" ? "Tambah Tahap Penilaian" : "Edit Jadwal Tahap"}
+            </Typography>
+          </Box>
+          <IconButton onClick={handleCloseDialog} sx={{ color: "#fff", "&:hover": { backgroundColor: "rgba(255,255,255,0.2)" } }}>
             <Close />
           </IconButton>
-        </DialogTitle>
+        </Box>
 
-        <DialogContent dividers sx={{ px: 3, py: 3 }}>
+        <DialogContent sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 3, sm: 4 } }}>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             {dialog.mode === "create" ? (
               <>
                 <Box>
-                  <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Nama Tahap <span style={{ color: "#ef5350" }}>*</span></Typography>
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1, color: "#334155" }}>Nama Tahap <span style={{ color: COLORS.error }}>*</span></Typography>
                   <TextField
                     fullWidth placeholder="Contoh: Desk Evaluasi"
                     value={form.nama_tahap}
@@ -314,7 +396,7 @@ export default function TahapPenilaianTab({ id_program }) {
                   />
                 </Box>
                 <Box>
-                  <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Urutan <span style={{ color: "#ef5350" }}>*</span></Typography>
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1, color: "#334155" }}>Urutan <span style={{ color: COLORS.error }}>*</span></Typography>
                   <TextField
                     fullWidth placeholder="Contoh: 1"
                     value={form.urutan}
@@ -326,20 +408,20 @@ export default function TahapPenilaianTab({ id_program }) {
                 </Box>
               </>
             ) : (
-              <>
+              <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
                 <Box>
-                  <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Nama Tahap</Typography>
-                  <TextField fullWidth value={form.nama_tahap} disabled sx={roundedField} />
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1, color: "#334155" }}>Nama Tahap</Typography>
+                  <TextField fullWidth value={form.nama_tahap} disabled sx={{ ...roundedField, "& .MuiOutlinedInput-root": { backgroundColor: "#F1F5F9" } }} />
                 </Box>
                 <Box>
-                  <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Urutan</Typography>
-                  <TextField fullWidth value={`Tahap ${form.urutan}`} disabled sx={roundedField} />
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1, color: "#334155" }}>Urutan</Typography>
+                  <TextField fullWidth value={`Tahap ${form.urutan}`} disabled sx={{ ...roundedField, "& .MuiOutlinedInput-root": { backgroundColor: "#F1F5F9" } }} />
                 </Box>
-              </>
+              </Box>
             )}
 
             <Box>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Penilaian Mulai <span style={{ color: "#ef5350" }}>*</span></Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1, color: "#334155" }}>Penilaian Mulai <span style={{ color: COLORS.error }}>*</span></Typography>
               <TextField
                 fullWidth type="datetime-local"
                 value={form.penilaian_mulai}
@@ -350,7 +432,7 @@ export default function TahapPenilaianTab({ id_program }) {
             </Box>
 
             <Box>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Penilaian Selesai <span style={{ color: "#ef5350" }}>*</span></Typography>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1, color: "#334155" }}>Penilaian Selesai <span style={{ color: COLORS.error }}>*</span></Typography>
               <TextField
                 fullWidth type="datetime-local"
                 value={form.penilaian_selesai}
@@ -362,14 +444,38 @@ export default function TahapPenilaianTab({ id_program }) {
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-          <Button onClick={handleCloseDialog} disabled={submitting}
-            sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, color: "#666", border: "1.5px solid #e0e0e0", "&:hover": { backgroundColor: "#f5f5f5" } }}>
+        <DialogActions sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 2, sm: 3 }, backgroundColor: "#F8FAFC", borderTop: "1.5px solid #E2E8F0", gap: 1.5, flexDirection: { xs: "column", sm: "row" }, "& > button": { width: { xs: "100%", sm: "auto" } } }}>
+          <Button
+            variant="contained"
+            onClick={handleCloseDialog}
+            disabled={submitting}
+            sx={{
+              textTransform: "none", borderRadius: "12px", px: 3, fontWeight: 700,
+              backgroundColor: COLORS.error,
+              boxShadow: "0 4px 12px rgba(220,38,38,0.2)",
+              "&:hover": {
+                backgroundColor: "#B91C1C",
+                boxShadow: "0 6px 16px rgba(220,38,38,0.3)",
+              },
+            }}
+          >
             Batal
           </Button>
-          <Button variant="contained" onClick={handleSave} disabled={submitting}
-            sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}>
-            {submitting ? "Menyimpan..." : "Simpan"}
+          <Button
+            variant="contained"
+            onClick={handleSave}
+            disabled={submitting}
+            sx={{
+              textTransform: "none", borderRadius: "12px", px: 4, fontWeight: 700,
+              backgroundColor: COLORS.primary,
+              boxShadow: "0 4px 12px rgba(13, 89, 242, 0.2)",
+              "&:hover": {
+                backgroundColor: COLORS.primaryDark,
+                boxShadow: "0 6px 16px rgba(13, 89, 242, 0.3)",
+              },
+            }}
+          >
+            {submitting ? "Menyimpan..." : "Simpan Perubahan"}
           </Button>
         </DialogActions>
       </Dialog>

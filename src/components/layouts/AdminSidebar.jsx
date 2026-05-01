@@ -170,7 +170,7 @@ function SidebarContent({ collapsed, onMenuClick, onClose }) {
           px: collapsed ? 0 : 2,
         }}
       >
-        <AccountBalanceIcon sx={{ fontSize: { xs: 28, sm: 32 }, color: "#ffffff", flexShrink: 0 }} />
+        <img src="/logoupapkk.svg" alt="Logo UPA PKK" style={{ height: 32, width: "auto", flexShrink: 0 }} />
         {!collapsed && (
           <Box sx={{ fontWeight: 700, fontSize: { xs: 12, sm: 13 }, color: "#ffffff", lineHeight: 1.2, whiteSpace: "nowrap" }}>
             UPA PKK POLINEMA
@@ -281,7 +281,8 @@ function SidebarContent({ collapsed, onMenuClick, onClose }) {
 
 export default function AdminSidebar({ collapsed, mobileOpen, onMobileClose, isMobile }) {
   const theme = useTheme();
-  const isMobileView = isMobile !== undefined ? isMobile : useMediaQuery(theme.breakpoints.down("md"));
+  const isMobileQuery = useMediaQuery(theme.breakpoints.down("md"));
+  const isMobileView = isMobile !== undefined ? isMobile : isMobileQuery;
 
   if (isMobileView) {
     return (

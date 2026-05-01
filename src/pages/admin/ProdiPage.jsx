@@ -2,10 +2,10 @@ import { useState, useEffect, useCallback } from "react";
 import {
   Box, Paper, Typography, Button, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow,
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  TextField, MenuItem, IconButton, Tooltip, Pagination,
+  Dialog, DialogContent, DialogActions,
+  TextField, MenuItem, IconButton, Pagination,
 } from "@mui/material";
-import { Close, MenuBook } from "@mui/icons-material";
+import { Close, Search } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
@@ -13,14 +13,70 @@ import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import { getProdi, createProdi, updateProdi, deleteProdi, getKampus, getJurusan } from "../../api/admin";
 
-const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "15px" } };
-
-const tableHeadCell = {
-  fontWeight: 700, fontSize: 13, color: "#000",
-  backgroundColor: "#fafafa", borderBottom: "2px solid #f0f0f0", py: 2,
+const COLORS = {
+  primary: "#0D59F2",
+  primaryLight: "#E0F2FE",
+  primaryDark: "#0369A1",
+  primaryMuted: "#93C5FD",
+  secondary: "#2563EB",
+  accent: "#3B82F6",
+  slate: "#64748B",
+  slateLight: "#F1F5F9",
+  success: "#059669",
+  successLight: "#ECFDF5",
+  warning: "#D97706",
+  warningLight: "#FFFBEB",
+  error: "#DC2626",
+  errorLight: "#ff7070",
 };
 
-const tableBodyRow = { "& td": { borderBottom: "1px solid #f5f5f5", py: 2 } };
+const roundedField = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "12px",
+    backgroundColor: "#fff",
+    transition: "all 0.2s ease-in-out",
+    "&:hover fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary, borderWidth: "2px" },
+    "&.Mui-focused": { boxShadow: `0 0 0 4px ${COLORS.primaryLight}` },
+  },
+  "& .MuiInputLabel-root.Mui-focused": { color: COLORS.primary, fontWeight: 700 },
+};
+
+const tableHeadCell = {
+  fontWeight: 800,
+  fontSize: 12,
+  color: "#475569",
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+  backgroundColor: "#F8FAFC",
+  borderBottom: `2px solid ${COLORS.primaryMuted}`,
+  py: 2.5,
+};
+
+const tableBodyRow = {
+  "&:hover": { backgroundColor: "#F1F5F9/50" },
+  "& td": { borderBottom: "1.5px solid #E2E8F0", py: 2 },
+};
+
+const StatusPill = ({ label, type = "slate" }) => {
+  const config = {
+    success: { bg: COLORS.successLight, color: COLORS.success, border: COLORS.success },
+    warning: { bg: COLORS.warningLight, color: COLORS.warning, border: COLORS.warning },
+    error: { bg: COLORS.errorLight, color: COLORS.error, border: COLORS.error },
+    primary: { bg: COLORS.primaryLight, color: COLORS.primary, border: COLORS.primary },
+    slate: { bg: COLORS.slateLight, color: COLORS.slate, border: COLORS.slate },
+  };
+  const style = config[type] || config.slate;
+  return (
+    <Box sx={{
+      display: "inline-flex", alignItems: "center", px: 1.5, py: 0.5, borderRadius: "50px",
+      backgroundColor: style.bg, color: style.color, border: `1px solid ${style.border}`,
+      fontSize: 12, fontWeight: 700, whiteSpace: "nowrap"
+    }}>
+      {label}
+    </Box>
+  );
+};
 
 const JENJANG_OPTIONS = ["D3", "D4", "S2"];
 
@@ -173,218 +229,372 @@ export default function ProdiPage() {
   return (
     <BodyLayout Sidebar={AdminSidebar}>
       <PageTransition>
-        <Box>
-          <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Data Program Studi</Typography>
-          <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>Kelola data program studi yang terdaftar dalam sistem</Typography>
+        <Box sx={{ mb: 4 }}>
+          <Typography sx={{ fontSize: 36, fontWeight: 800, color: "#1F2937", mb: 0.5 }}>
+            Data Program Studi
+          </Typography>
+          <Typography sx={{ fontSize: 16, color: "#6B7280" }}>
+            Kelola data program studi yang terdaftar dalam sistem portal kewirausahaan
+          </Typography>
+        </Box>
 
-          <Paper sx={{ borderRadius: "16px", border: "1px solid #f0f0f0", overflow: "hidden" }}>
-            <Box sx={{ p: 3 }}>
-              <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap", alignItems: "center" }}>
-                <TextField
-                  size="small" placeholder="Cari nama prodi..."
-                  value={search}
-                  onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                  sx={{ ...roundedField, minWidth: 200, flex: "1 1 200px" }}
-                />
-                <TextField
-                  select size="small" label="Kampus"
-                  value={filterKampus}
-                  onChange={(e) => { setFilterKampus(e.target.value); setPage(1); }}
-                  InputLabelProps={{ shrink: true }}
-                  sx={{ ...roundedField, minWidth: 180, flex: "1 1 180px" }}
-                >
-                  <MenuItem value="">Semua Kampus</MenuItem>
-                  {kampusList.map((k) => (
-                    <MenuItem key={k.id_kampus} value={k.id_kampus}>{k.nama_kampus}</MenuItem>
-                  ))}
-                </TextField>
-                <TextField
-                  select size="small" label="Jurusan"
-                  value={filterJurusan}
-                  onChange={(e) => { setFilterJurusan(e.target.value); setPage(1); }}
-                  InputLabelProps={{ shrink: true }}
-                  sx={{ ...roundedField, minWidth: 180, flex: "1 1 180px" }}
-                >
-                  <MenuItem value="">Semua Jurusan</MenuItem>
-                  {jurusanList.map((j) => (
-                    <MenuItem key={j.id_jurusan} value={j.id_jurusan}>{j.nama_jurusan}</MenuItem>
-                  ))}
-                </TextField>
-                <TextField
-                  select size="small" label="Jenjang"
-                  value={filterJenjang}
-                  onChange={(e) => { setFilterJenjang(e.target.value); setPage(1); }}
-                  InputLabelProps={{ shrink: true }}
-                  sx={{ ...roundedField, minWidth: 120, flex: "0 0 120px" }}
-                >
-                  <MenuItem value="">Semua</MenuItem>
-                  {JENJANG_OPTIONS.map((j) => (
-                    <MenuItem key={j} value={j}>{j}</MenuItem>
-                  ))}
-                </TextField>
-                <Button
-                  variant="contained"
-                  onClick={handleOpenCreate}
-                  sx={{ textTransform: "none", borderRadius: "50px", px: 3, py: 1.2, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" }, whiteSpace: "nowrap", flex: "0 0 auto" }}
-                >
-                  Tambah Prodi
-                </Button>
+        <Paper 
+          elevation={0} 
+          sx={{
+            borderRadius: "20px",
+            border: "1.5px solid #E2E8F0",
+            overflow: "hidden",
+            boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+            position: "relative",
+          }}
+        >
+          <Box sx={{ height: "6px", background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
+          
+          <Box sx={{ p: { xs: 3, md: 4 } }}>
+      <Box
+        sx={{
+          display: "flex",
+          gap: { xs: 1.25, xl: 2 },
+          mb: 4,
+          alignItems: "center",
+          flexWrap: "wrap",
+          flexDirection: "row",
+          "@media (max-width: 1650px)": {
+            flexDirection: "column",
+            alignItems: "stretch",
+          },
+          "@media (min-width: 1651px)": {
+            flexDirection: "row",
+            alignItems: "center",
+          },
+        }}
+      >
+              <TextField
+                size="small" placeholder="Cari nama prodi..."
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                InputProps={{
+                  startAdornment: (
+                    <IconButton size="small" sx={{ p: 0, mr: 1, color: COLORS.primary }}>
+                      <Search sx={{ fontSize: { xs: 18, sm: 20 } }} />
+                    </IconButton>
+                  ),
+                }}
+                sx={{
+                  ...roundedField,
+                  width: { xs: "100%", xl: "auto" },
+                  minWidth: { xs: "100%", xl: 260 },
+                  maxWidth: { xs: "100%", sm: 360, xl: 320 },
+                  flex: { xl: "1 1 260px" },
+                }}
+              />
+              <TextField
+                select size="small"
+                value={filterKampus}
+                onChange={(e) => { setFilterKampus(e.target.value); setPage(1); }}
+                sx={{
+                  ...roundedField,
+                  width: { xs: "100%", xl: "auto" },
+                  minWidth: { xs: "100%", xl: 200 },
+                  flex: { xl: "0 1 200px" },
+                }}
+                SelectProps={{
+                  displayEmpty: true,
+                  renderValue: (selected) => (
+                    <span style={{ fontSize: 14, color: !selected ? "#9CA3AF" : "inherit" }}>
+                      {selected || "Semua Kampus"}
+                    </span>
+                  ),
+                }}
+              >
+                <MenuItem value="" sx={{ fontSize: 13 }}>Semua Kampus</MenuItem>
+                {kampusList.map((k) => (
+                  <MenuItem key={k.id_kampus} value={k.id_kampus} sx={{ fontSize: 13 }}>{k.nama_kampus}</MenuItem>
+                ))}
+              </TextField>
+              <TextField
+                select size="small"
+                value={filterJurusan}
+                onChange={(e) => { setFilterJurusan(e.target.value); setPage(1); }}
+                sx={{
+                  ...roundedField,
+                  width: { xs: "100%", xl: "auto" },
+                  minWidth: { xs: "100%", xl: 200 },
+                  flex: { xl: "0 1 200px" },
+                }}
+                SelectProps={{
+                  displayEmpty: true,
+                  renderValue: (selected) => (
+                    <span style={{ fontSize: 14, color: !selected ? "#9CA3AF" : "inherit" }}>
+                      {selected || "Semua Jurusan"}
+                    </span>
+                  ),
+                }}
+              >
+                <MenuItem value="" sx={{ fontSize: 13 }}>Semua Jurusan</MenuItem>
+                {jurusanList.map((j) => (
+                  <MenuItem key={j.id_jurusan} value={j.id_jurusan} sx={{ fontSize: 13 }}>{j.nama_jurusan}</MenuItem>
+                ))}
+              </TextField>
+              <TextField
+                select size="small"
+                value={filterJenjang}
+                onChange={(e) => { setFilterJenjang(e.target.value); setPage(1); }}
+                sx={{
+                  ...roundedField,
+                  width: { xs: "100%", xl: "auto" },
+                  minWidth: { xs: "100%", xl: 220 },
+                  flex: { xl: "0 1 220px" },
+                }}
+                SelectProps={{
+                  displayEmpty: true,
+                  renderValue: (selected) => (
+                    <span style={{ fontSize: 14, color: !selected ? "#9CA3AF" : "inherit" }}>
+                      {selected || "Semua Jenjang"}
+                    </span>
+                  ),
+                }}
+              >
+                <MenuItem value="" sx={{ fontSize: 13 }}>Semua Jenjang</MenuItem>
+                {JENJANG_OPTIONS.map((j) => (
+                  <MenuItem key={j} value={j} sx={{ fontSize: 13 }}>{j}</MenuItem>
+                ))}
+              </TextField>
+              <Button
+                variant="contained"
+                onClick={handleOpenCreate}
+                sx={{
+                  textTransform: "none",
+                  borderRadius: "12px",
+                  px: { xs: 2, sm: 3 },
+                  py: 1.2,
+                  fontWeight: 700,
+                  backgroundColor: COLORS.primary,
+                  boxShadow: "0 4px 12px rgba(13, 89, 242, 0.2)",
+                  width: { xs: "100%", xl: "auto" },
+                  minWidth: { xl: 150 },
+                  ml: { xl: "auto" },
+                  "&:hover": { 
+                    backgroundColor: COLORS.primaryDark,
+                    boxShadow: "0 6px 16px rgba(13, 89, 242, 0.3)",
+                  },
+                }}
+              >
+                Tambah Prodi
+              </Button>
+            </Box>
+
+            {loading ? (
+              <Box sx={{ position: "relative", minHeight: 400 }}>
+                <LoadingScreen message="Memuat data program studi..." overlay minHeight="400px" />
               </Box>
-
-              {loading ? (
-                <Box sx={{ position: "relative", minHeight: 320 }}>
-                  <LoadingScreen message="Memuat data program studi..." overlay minHeight="320px" />
-                </Box>
-              ) : paginatedList.length === 0 ? (
-                <Box sx={{ textAlign: "center", py: 10 }}>
-                  <Box sx={{ width: 100, height: 100, borderRadius: "50%", backgroundColor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 3 }}>
-                    <MenuBook sx={{ fontSize: 48, color: "#ccc" }} />
-                  </Box>
-                  <Typography sx={{ fontSize: 20, fontWeight: 700, color: "#444", mb: 1 }}>
+            ) : paginatedList.length === 0 ? (
+                <Paper elevation={0} sx={{ p: { xs: 5, sm: 10 }, textAlign: "center", borderRadius: "20px", border: "1.5px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
+                  <Typography sx={{ fontSize: { xs: 18, sm: 22 }, fontWeight: 800, color: "#1E293B", mb: 1 }}>
                     {hasFilter ? "Prodi tidak ditemukan" : "Belum ada program studi"}
                   </Typography>
-                  <Typography sx={{ fontSize: 14, color: "#999" }}>
-                    {hasFilter ? "Coba ubah filter pencarian" : "Klik Tambah Prodi untuk menambahkan data"}
+                  <Typography sx={{ fontSize: { xs: 14, sm: 16 }, color: COLORS.slate, fontWeight: 500 }}>
+                    {hasFilter ? "Coba gunakan kata kunci pencarian atau filter lainnya" : "Klik tombol Tambah Prodi untuk mulai menambahkan data"}
                   </Typography>
-                </Box>
-              ) : (
-                <>
-                  <TableContainer sx={{ borderRadius: "12px", border: "1px solid #f0f0f0", overflow: "hidden", mb: 3 }}>
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          {["No", "Nama Prodi", "Jenjang", "Jurusan", "Kampus", "Aksi"].map((h, i) => (
-                            <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 5 && { textAlign: "center" }), ...(i === 0 && { width: 60 }) }}>{h}</TableCell>
-                          ))}
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {paginatedList.map((item, idx) => (
-                          <TableRow key={item.id_prodi} sx={tableBodyRow}>
-                            <TableCell>
-                              <Typography sx={{ fontSize: 13, color: "#888" }}>{(page - 1) * rowsPerPage + idx + 1}</Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{item.nama_prodi}</Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Box sx={{ display: "inline-flex", px: 1.5, py: 0.4, borderRadius: "50px", backgroundColor: "#1565c0", color: "#fff", fontSize: 12, fontWeight: 700 }}>
-                                {item.jenjang}
-                              </Box>
-                            </TableCell>
-                            <TableCell>
-                              <Typography sx={{ fontSize: 13 }}>{item.nama_jurusan}</Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Typography sx={{ fontSize: 13 }}>{item.nama_kampus}</Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
-                                <Tooltip title="Edit">
-                                  <Button size="small" variant="outlined" onClick={() => handleOpenEdit(item)}
-                                    sx={{ textTransform: "none", color: "#0D59F2", borderColor: "#e3f2fd", borderRadius: "50px", "&:hover": { backgroundColor: "#f0f4ff", borderColor: "#0D59F2" } }}>
-                                    Edit
-                                  </Button>
-                                </Tooltip>
-                                <Tooltip title="Hapus">
-                                  <Button size="small" variant="outlined" color="error" onClick={() => handleDelete(item)}
-                                    sx={{ textTransform: "none", borderColor: "#fce4ec", borderRadius: "50px", "&:hover": { backgroundColor: "rgba(229,57,53,0.06)", borderColor: "#e53935" } }}>
-                                    Hapus
-                                  </Button>
-                                </Tooltip>
-                              </Box>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
+                </Paper>
+            ) : (
+              <>
+                <TableContainer sx={{ borderRadius: "16px", border: "1.5px solid #E2E8F0", overflow: "hidden", overflowX: "auto", mb: 4 }}>
+                  <Table sx={{ minWidth: 800 }}>
+                     <TableHead>
+                       <TableRow>
+                         {["NO", "NAMA PRODI", "JENJANG", "JURUSAN", "KAMPUS", "AKSI"].map((h, i) => (
+                           <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 5 && { textAlign: "center" }), ...(i === 0 && { width: 80, pl: { xs: 1.5, sm: 3 } }) }}>{h}</TableCell>
+                         ))}
+                       </TableRow>
+                     </TableHead>
+                     <TableBody>
+                       {paginatedList.map((item, idx) => (
+                         <TableRow key={item.id_prodi} sx={tableBodyRow}>
+                           <TableCell sx={{ pl: { xs: 1.5, sm: 3 } }}>
+                             <Typography sx={{ fontSize: 14, fontWeight: 700, color: COLORS.slate }}>{(page - 1) * rowsPerPage + idx + 1}</Typography>
+                           </TableCell>
+                           <TableCell>
+                             <Typography sx={{ fontWeight: 700, fontSize: { xs: 13, sm: 15 }, color: "#1E293B" }}>{item.nama_prodi}</Typography>
+                           </TableCell>
+                           <TableCell>
+                             <StatusPill label={item.jenjang} type="primary" />
+                           </TableCell>
+                           <TableCell>
+                             <Typography sx={{ fontSize: { xs: 12, sm: 14 }, color: "#334155", fontWeight: 500 }}>{item.nama_jurusan}</Typography>
+                           </TableCell>
+                           <TableCell>
+                             <Typography sx={{ fontSize: { xs: 12, sm: 14 }, color: "#334155", fontWeight: 500 }}>{item.nama_kampus}</Typography>
+                           </TableCell>
+                           <TableCell>
+                             <Box sx={{ display: "flex", gap: { xs: 0.5, sm: 1.5 }, justifyContent: "center", flexWrap: "wrap" }}>
+                               <Button 
+                                 size="small" 
+                                 variant="outlined" 
+                                 onClick={() => handleOpenEdit(item)}
+                                 sx={{
+                                   textTransform: "none",
+                                   color: COLORS.primary,
+                                   borderColor: COLORS.primaryMuted,
+                                   borderRadius: "10px",
+                                   fontWeight: 700,
+                                   fontSize: { xs: 11, sm: 12 },
+                                   px: { xs: 1, sm: 2 },
+                                   "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary }
+                                 }}
+                               >
+                                 Edit
+                               </Button>
+                               <Button 
+                                 size="small" 
+                                 variant="outlined" 
+                                 color="error" 
+                                 onClick={() => handleDelete(item)}
+                                 sx={{
+                                   textTransform: "none",
+                                   borderColor: COLORS.errorLight,
+                                   borderRadius: "10px",
+                                   fontWeight: 700,
+                                   fontSize: { xs: 11, sm: 12 },
+                                   px: { xs: 1, sm: 2 },
+                                   "&:hover": { backgroundColor: COLORS.errorLight, borderColor: COLORS.error }
+                                 }}
+                               >
+                                 Hapus
+                               </Button>
+                             </Box>
+                           </TableCell>
+                         </TableRow>
+                       ))}
+                     </TableBody>
+                  </Table>
+                </TableContainer>
 
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Typography sx={{ fontSize: 13, color: "#777" }}>
-                      Menampilkan {((page - 1) * rowsPerPage) + 1}–{Math.min(page * rowsPerPage, filteredList.length)} dari {filteredList.length} data
-                    </Typography>
-                    <Pagination count={totalPages} page={page} onChange={(e, v) => setPage(v)} color="primary" shape="rounded" showFirstButton showLastButton />
-                  </Box>
-                </>
-              )}
-            </Box>
-          </Paper>
-
-          <Dialog open={dialog.open} onClose={handleCloseDialog} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: "16px" } }}>
-            <DialogTitle sx={{ pb: 1 }}>
-              <Typography sx={{ fontWeight: 700, fontSize: 16 }}>
-                {dialog.mode === "create" ? "Tambah Program Studi" : "Edit Program Studi"}
-              </Typography>
-              <IconButton onClick={handleCloseDialog} sx={{ position: "absolute", right: 12, top: 8, color: "#888" }}>
-                <Close />
-              </IconButton>
-            </DialogTitle>
-            <DialogContent dividers sx={{ px: 3, py: 3 }}>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                <Box>
-                  <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Nama Program Studi <span style={{ color: "#ef5350" }}>*</span></Typography>
-                  <TextField
-                    fullWidth placeholder="Contoh: Teknik Informatika"
-                    value={form.nama_prodi}
-                    onChange={(e) => { setForm({ ...form, nama_prodi: e.target.value }); setErrors({ ...errors, nama_prodi: "" }); }}
-                    error={!!errors.nama_prodi} helperText={errors.nama_prodi}
-                    disabled={submitting} sx={roundedField}
+                <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "space-between", alignItems: { xs: "flex-start", sm: "center" }, gap: 2, px: 1 }}>
+                  <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 600 }}>
+                    Menampilkan <span style={{ color: "#1E293B" }}>{((page - 1) * rowsPerPage) + 1}–{Math.min(page * rowsPerPage, filteredList.length)}</span> dari <span style={{ color: "#1E293B" }}>{filteredList.length}</span> data
+                  </Typography>
+                  <Pagination 
+                    count={totalPages} 
+                    page={page} 
+                    onChange={(e, v) => setPage(v)} 
+                    color="primary" 
+                    shape="rounded"
+                    size="small"
+                    sx={{
+                      "& .MuiPaginationItem-root": {
+                        fontWeight: 700,
+                        borderRadius: "10px",
+                        "&.Mui-selected": {
+                          backgroundColor: COLORS.primary,
+                          color: "#fff",
+                          "&:hover": { backgroundColor: COLORS.primaryDark },
+                        },
+                      },
+                    }}
                   />
                 </Box>
-                <Box>
-                  <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Jenjang <span style={{ color: "#ef5350" }}>*</span></Typography>
-                  <TextField
-                    select fullWidth value={form.jenjang}
-                    onChange={(e) => { setForm({ ...form, jenjang: e.target.value }); setErrors({ ...errors, jenjang: "" }); }}
-                    error={!!errors.jenjang} helperText={errors.jenjang}
-                    disabled={submitting} sx={roundedField}
-                    SelectProps={{ displayEmpty: true }}
-                  >
-                    <MenuItem value="" disabled>Pilih jenjang</MenuItem>
-                    {JENJANG_OPTIONS.map((j) => <MenuItem key={j} value={j}>{j}</MenuItem>)}
-                  </TextField>
-                </Box>
-                <Box>
-                  <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Kampus <span style={{ color: "#ef5350" }}>*</span></Typography>
-                  <TextField
-                    select fullWidth value={form.id_kampus}
-                    onChange={(e) => { setForm({ ...form, id_kampus: e.target.value }); setErrors({ ...errors, id_kampus: "" }); }}
-                    error={!!errors.id_kampus} helperText={errors.id_kampus}
-                    disabled={submitting} sx={roundedField}
-                    SelectProps={{ displayEmpty: true }}
-                  >
-                    <MenuItem value="" disabled>Pilih kampus</MenuItem>
-                    {kampusList.map((k) => <MenuItem key={k.id_kampus} value={k.id_kampus}>{k.nama_kampus}</MenuItem>)}
-                  </TextField>
-                </Box>
-                <Box>
-                  <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Jurusan <span style={{ color: "#ef5350" }}>*</span></Typography>
-                  <TextField
-                    select fullWidth value={form.id_jurusan}
-                    onChange={(e) => { setForm({ ...form, id_jurusan: e.target.value }); setErrors({ ...errors, id_jurusan: "" }); }}
-                    error={!!errors.id_jurusan} helperText={errors.id_jurusan}
-                    disabled={submitting} sx={roundedField}
-                    SelectProps={{ displayEmpty: true }}
-                  >
-                    <MenuItem value="" disabled>Pilih jurusan</MenuItem>
-                    {jurusanList.map((j) => <MenuItem key={j.id_jurusan} value={j.id_jurusan}>{j.nama_jurusan}</MenuItem>)}
-                  </TextField>
-                </Box>
+              </>
+            )}
+          </Box>
+        </Paper>
+
+        <Dialog open={dialog.open} onClose={handleCloseDialog} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: { xs: "16px", sm: "24px" }, overflow: "hidden" } }}>
+          <Box sx={{ p: { xs: 1.5, sm: 2 }, display: "flex", alignItems: "center", justifyContent: "space-between", background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`, color: "#fff" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, px: 1 }}>
+              <Typography sx={{ fontWeight: 800, fontSize: { xs: 16, sm: 18 } }}>
+                {dialog.mode === "create" ? "Tambah Program Studi" : "Edit Program Studi"}
+              </Typography>
+            </Box>
+            <IconButton onClick={handleCloseDialog} sx={{ color: "#fff", "&:hover": { backgroundColor: "rgba(255,255,255,0.2)" } }}>
+              <Close />
+            </IconButton>
+          </Box>
+          <DialogContent sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 3, sm: 4 } }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              <Box>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1, color: "#334155" }}>Nama Program Studi <span style={{ color: COLORS.error }}>*</span></Typography>
+                <TextField
+                  fullWidth placeholder="Contoh: Teknik Informatika"
+                  value={form.nama_prodi}
+                  onChange={(e) => { setForm({ ...form, nama_prodi: e.target.value }); setErrors({ ...errors, nama_prodi: "" }); }}
+                  error={!!errors.nama_prodi} helperText={errors.nama_prodi}
+                  disabled={submitting} sx={roundedField}
+                />
               </Box>
-            </DialogContent>
-            <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-              <Button onClick={handleCloseDialog} disabled={submitting}
-                sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, color: "#666", border: "1.5px solid #e0e0e0", "&:hover": { backgroundColor: "#f5f5f5" } }}>
+              <Box>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1, color: "#334155" }}>Jenjang <span style={{ color: COLORS.error }}>*</span></Typography>
+                <TextField
+                  select fullWidth value={form.jenjang}
+                  onChange={(e) => { setForm({ ...form, jenjang: e.target.value }); setErrors({ ...errors, jenjang: "" }); }}
+                  error={!!errors.jenjang} helperText={errors.jenjang}
+                  disabled={submitting} sx={roundedField}
+                >
+                  <MenuItem value="" disabled>Pilih jenjang</MenuItem>
+                  {JENJANG_OPTIONS.map((j) => <MenuItem key={j} value={j}>{j}</MenuItem>)}
+                </TextField>
+              </Box>
+              <Box>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1, color: "#334155" }}>Kampus <span style={{ color: COLORS.error }}>*</span></Typography>
+                <TextField
+                  select fullWidth value={form.id_kampus}
+                  onChange={(e) => { setForm({ ...form, id_kampus: e.target.value }); setErrors({ ...errors, id_kampus: "" }); }}
+                  error={!!errors.id_kampus} helperText={errors.id_kampus}
+                  disabled={submitting} sx={roundedField}
+                >
+                  <MenuItem value="" disabled>Pilih kampus</MenuItem>
+                  {kampusList.map((k) => <MenuItem key={k.id_kampus} value={k.id_kampus}>{k.nama_kampus}</MenuItem>)}
+                </TextField>
+              </Box>
+              <Box>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1, color: "#334155" }}>Jurusan <span style={{ color: COLORS.error }}>*</span></Typography>
+                <TextField
+                  select fullWidth value={form.id_jurusan}
+                  onChange={(e) => { setForm({ ...form, id_jurusan: e.target.value }); setErrors({ ...errors, id_jurusan: "" }); }}
+                  error={!!errors.id_jurusan} helperText={errors.id_jurusan}
+                  disabled={submitting} sx={roundedField}
+                >
+                  <MenuItem value="" disabled>Pilih jurusan</MenuItem>
+                  {jurusanList.map((j) => <MenuItem key={j.id_jurusan} value={j.id_jurusan}>{j.nama_jurusan}</MenuItem>)}
+                </TextField>
+              </Box>
+            </Box>
+          </DialogContent>
+          <DialogActions sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 2, sm: 3 }, backgroundColor: "#F8FAFC", borderTop: "1.5px solid #E2E8F0", gap: 1.5, flexDirection: { xs: "column", sm: "row" }, "& > button": { width: { xs: "100%", sm: "auto" } } }}>
+              <Button 
+                variant="contained"
+                onClick={handleCloseDialog} 
+                disabled={submitting}
+                sx={{
+                  textTransform: "none", borderRadius: "12px", px: 3, fontWeight: 700,
+                  backgroundColor: COLORS.error,
+                  boxShadow: "0 4px 12px rgba(220,38,38,0.2)",
+                  "&:hover": { 
+                    backgroundColor: "#B91C1C",
+                    boxShadow: "0 6px 16px rgba(220,38,38,0.3)",
+                  },
+                }}
+              >
                 Batal
               </Button>
-              <Button variant="contained" onClick={handleSave} disabled={submitting}
-                sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}>
-                {submitting ? "Menyimpan..." : "Simpan"}
-              </Button>
-            </DialogActions>
-          </Dialog>
-        </Box>
+            <Button 
+              variant="contained" 
+              onClick={handleSave} 
+              disabled={submitting}
+              sx={{
+                textTransform: "none", borderRadius: "12px", px: 4, fontWeight: 700,
+                backgroundColor: COLORS.primary,
+                boxShadow: "0 4px 12px rgba(13, 89, 242, 0.2)",
+                "&:hover": { 
+                  backgroundColor: COLORS.primaryDark,
+                  boxShadow: "0 6px 16px rgba(13, 89, 242, 0.3)",
+                },
+              }}
+            >
+              {submitting ? "Menyimpan..." : "Simpan Perubahan"}
+            </Button>
+          </DialogActions>
+        </Dialog>
       </PageTransition>
     </BodyLayout>
   );
