@@ -5,6 +5,7 @@ import {
   TableHead, TableRow, Dialog, DialogTitle, DialogContent,
   DialogActions, Pagination, Autocomplete,
 } from "@mui/material";
+
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import LoadingScreen from "../common/LoadingScreen";
@@ -18,13 +19,27 @@ import {
   reassignJuriTahap2,
 } from "../../api/admin";
 
+const COLORS = {
+  primary: "#0D59F2",
+  primaryLight: "#E0F2FE",
+  primaryMuted: "#93C5FD",
+  slate: "#64748B",
+  slateLight: "#F1F5F9",
+  success: "#059669",
+  successLight: "#ECFDF5",
+  warning: "#D97706",
+  warningLight: "#FFFBEB",
+  error: "#DC2626",
+  errorLight: "#ff7070",
+};
+
 const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "15px" } };
 
 const tableHeadCell = {
-  fontWeight: 700, fontSize: 13, color: "#000",
-  backgroundColor: "#fafafa", borderBottom: "2px solid #f0f0f0", py: 2,
+  fontWeight: 700, fontSize: 13, color: "#374151",
+  backgroundColor: "#F8FAFC", borderBottom: `2px solid ${COLORS.primaryMuted}`, py: 2,
 };
-const tableBodyRow = { "& td": { borderBottom: "1px solid #f5f5f5", py: 2 } };
+const tableBodyRow = { "& td": { borderBottom: `1px solid ${COLORS.slateLight}`, py: 2 } };
 
 const STATUS_CONFIG = {
   0: { label: "Menunggu Response", backgroundColor: "#f57f17" },
@@ -88,6 +103,7 @@ function PaginationBar({ page, totalPages, setPage, from, to, total }) {
 
 export default function HistoryDistribusiTable({ id_program, tahap, refresh, onError, onSuccess }) {
   const navigate = useNavigate();
+
 
   const [history, setHistory] = useState([]);
   const [filteredHistory, setFilteredHistory] = useState([]);
@@ -270,17 +286,17 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
     const columns = [
       {
         key: "proposal",
-        label: "Proposal",
+        label: "PROPOSAL",
         render: (item) => <Typography sx={{ fontSize: 13, maxWidth: 250 }}>{item.judul}</Typography>,
       },
       {
         key: "tim",
-        label: "Tim",
+        label: "TIM",
         render: (item) => <Typography sx={{ fontSize: 13 }}>{item.nama_tim}</Typography>,
       },
       {
         key: "reviewer",
-        label: "Reviewer",
+        label: "REVIEWER",
         render: (item) => (
           <>
             <Typography sx={{ fontSize: 13, fontWeight: 600 }}>{item.nama_reviewer}</Typography>
@@ -290,7 +306,7 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
       },
       {
         key: "assigned_at",
-        label: "Assigned At",
+        label: "ASSIGNED AT",
         render: (item) => (
           <>
             <Typography sx={{ fontSize: 13 }}>{formatDate(item.assigned_at)}</Typography>
@@ -300,12 +316,12 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
       },
       {
         key: "status",
-        label: "Status",
+        label: "STATUS",
         render: (item) => <StatusPill status={item.status} />,
       },
       {
         key: "aksi",
-        label: "Aksi",
+        label: "AKSI",
         headerSx: { textAlign: "center" },
         cellSx: { textAlign: "center" },
         render: (item) => (
@@ -329,22 +345,41 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
 
     return (
       <Box>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, gap: 2, flexWrap: "wrap" }}>
-          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+        <Box sx={{ mb: 3 }}>
+
+          <Box sx={{
+            display: "flex",
+            gap: { xs: 1.25, sm: 2 },
+            flexDirection: { xs: "column", lg: "row" },
+            alignItems: { xs: "stretch", lg: "center" },
+          }}>
             <TextField
-              select label="Status" value={statusFilter}
+              select
+              size="small"
+              label="Status"
+              value={statusFilter}
               onChange={(e) => { setStatusFilter(e.target.value); setPageMain(1); }}
-              size="small" sx={{ ...roundedField, minWidth: 220 }}
+              sx={{
+                ...roundedField,
+                flex: 1,
+              }}
             >
               <MenuItem value="">Semua Status</MenuItem>
               {Object.entries(STATUS_CONFIG).filter(([key]) => key !== "5").map(([key, cfg]) => (
                 <MenuItem key={key} value={key}>{cfg.label}</MenuItem>
               ))}
             </TextField>
+
             <TextField
-              select label="Tahun" value={tahunFilter}
+              select
+              size="small"
+              label="Tahun"
+              value={tahunFilter}
               onChange={(e) => setTahunFilter(e.target.value)}
-              size="small" sx={{ ...roundedField, minWidth: 180 }}
+              sx={{
+                ...roundedField,
+                flex: 1,
+              }}
             >
               <MenuItem value="">Semua Tahun</MenuItem>
               {tahunOptions.map((tahun) => (
@@ -352,7 +387,17 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
               ))}
             </TextField>
           </Box>
-          <Typography sx={{ fontSize: 13, color: "#777" }}>
+        </Box>
+
+        <Box sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: { xs: "flex-start", sm: "center" },
+          gap: 1,
+          mb: 2,
+          flexDirection: { xs: "column", sm: "row" },
+        }}>
+          <Typography sx={{ fontSize: 13, color: "#777", alignSelf: { xs: "flex-start", sm: "auto" } }}>
             Total: {filteredHistoryByYear.length} distribusi
           </Typography>
         </Box>
@@ -408,33 +453,58 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
 
   return (
     <Box>
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+      <Box sx={{ mb: 2 }}>
+        <Typography sx={{ fontSize: 14, fontWeight: 700, color: "#374151", mb: 1.5 }}>
+          Filter Tahun
+        </Typography>
+
+        <Box sx={{
+          display: "flex",
+          gap: { xs: 1.25, sm: 2 },
+          flexDirection: { xs: "column", lg: "row" },
+          alignItems: { xs: "stretch", lg: "center" },
+        }}>
           <TextField
-            select size="small" label="Tahun" value={tahunFilter}
+            select
+            size="small"
+            label="Tahun"
+            value={tahunFilter}
             onChange={(e) => setTahunFilter(e.target.value)}
-            sx={{ ...roundedField, minWidth: 180 }}
+            sx={{
+              ...roundedField,
+              flex: 1,
+            }}
           >
             <MenuItem value="">Semua Tahun</MenuItem>
             {tahunOptions.map((tahun) => (
               <MenuItem key={tahun} value={String(tahun)}>{tahun}</MenuItem>
             ))}
           </TextField>
-          <Typography sx={{ fontSize: 13, color: "#777" }}>
-            Total: {filteredHistoryPanel.length} proposal
-          </Typography>
         </Box>
+      </Box>
+
+      <Box sx={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: { xs: "flex-start", sm: "center" },
+        gap: 1,
+        mb: 2,
+        flexDirection: { xs: "column", sm: "row" },
+      }}>
+        <Typography sx={{ fontSize: 13, color: "#777", alignSelf: { xs: "flex-start", sm: "auto" } }}>
+          Total: {filteredHistoryPanel.length} proposal
+        </Typography>
       </Box>
 
       <TableContainer sx={{ borderRadius: "12px", border: "1px solid #f0f0f0", overflow: "auto" }}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell sx={tableHeadCell}>Proposal</TableCell>
-              <TableCell sx={tableHeadCell}>Tim</TableCell>
-              <TableCell sx={tableHeadCell}>Reviewer</TableCell>
-              <TableCell sx={tableHeadCell}>Juri</TableCell>
-              <TableCell sx={{ ...tableHeadCell, textAlign: "center" }}>Aksi</TableCell>
+              <TableCell sx={tableHeadCell}>PROPOSAL</TableCell>
+              <TableCell sx={tableHeadCell}>TIM</TableCell>
+              <TableCell sx={tableHeadCell}>REVIEWER</TableCell>
+              <TableCell sx={tableHeadCell}>JURI</TableCell>
+              <TableCell sx={{ ...tableHeadCell, textAlign: "center" }}>AKSI</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>

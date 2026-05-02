@@ -13,26 +13,60 @@ import LoadingScreen from "../../components/common/LoadingScreen";
 import { getProposalDetailAdmin } from "../../api/admin";
 import { downloadFile } from "../../utils/download";
 
-const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "15px" } };
-
-const tableHeadCell = {
-  fontWeight: 700, fontSize: 13, color: "#000",
-  backgroundColor: "#fafafa", borderBottom: "2px solid #f0f0f0", py: 2,
+const COLORS = {
+  primary:      "#0D59F2",
+  primaryLight: "#E0F2FE",
+  primaryDark:  "#0369A1",
+  primaryMuted: "#93C5FD",
+  secondary:    "#2563EB",
+  accent:       "#3B82F6",
+  slate:        "#64748B",
+  slateLight:   "#F1F5F9",
+  warning:      "#D97706",
+  warningLight: "#FFFBEB",
+  error:        "#DC2626",
+  success:      "#059669",
+  successLight: "#ECFDF5",
 };
 
-const tableBodyRow = { "& td": { borderBottom: "1px solid #f5f5f5", py: 2 } };
+const roundedField = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "12px",
+    backgroundColor: "#fff",
+    transition: "box-shadow 0.2s",
+    "&:hover fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused": { boxShadow: `0 0 0 3px ${COLORS.primaryLight}` },
+  },
+};
+
+const tableHeadCell = {
+  fontWeight: 700,
+  fontSize: { xs: 11, sm: 12 },
+  color: "#374151",
+  backgroundColor: "#F8FAFC",
+  borderBottom: `2px solid ${COLORS.primaryMuted}`,
+  py: 2,
+  textTransform: "uppercase",
+  letterSpacing: "0.04em",
+};
+
+const tableBodyRow = {
+  "& td": { borderBottom: `1px solid ${COLORS.slateLight}`, py: 2 },
+  "&:hover": { backgroundColor: "#F8FAFC" },
+};
 
 const statusMap = {
-  0: { label: "Draft",                       backgroundColor: "#666" },
-  1: { label: "Diajukan",                    backgroundColor: "#1565c0" },
-  2: { label: "Ditugaskan ke Reviewer",      backgroundColor: "#3949ab" },
-  3: { label: "Tidak Lolos Desk Evaluasi",   backgroundColor: "#c62828" },
-  4: { label: "Lolos Desk Evaluasi",         backgroundColor: "#2e7d32" },
-  5: { label: "Panel Wawancara",             backgroundColor: "#3949ab" },
-  6: { label: "Tidak Lolos Wawancara",       backgroundColor: "#c62828" },
-  7: { label: "Lolos Wawancara",             backgroundColor: "#2e7d32" },
-  8: { label: "Pembimbing Diajukan",         backgroundColor: "#1565c0" },
-  9: { label: "Pembimbing Disetujui",        backgroundColor: "#2e7d32" },
+  0: { label: "Draft",                       backgroundColor: COLORS.slate },
+  1: { label: "Diajukan",                    backgroundColor: COLORS.primary },
+  2: { label: "Ditugaskan ke Reviewer",      backgroundColor: COLORS.secondary },
+  3: { label: "Tidak Lolos Desk Evaluasi",   backgroundColor: COLORS.error },
+  4: { label: "Lolos Desk Evaluasi",         backgroundColor: COLORS.success },
+  5: { label: "Panel Wawancara",             backgroundColor: COLORS.warning },
+  6: { label: "Tidak Lolos Wawancara",       backgroundColor: COLORS.error },
+  7: { label: "Lolos Wawancara",             backgroundColor: COLORS.success },
+  8: { label: "Pembimbing Diajukan",         backgroundColor: COLORS.primary },
+  9: { label: "Pembimbing Disetujui",        backgroundColor: COLORS.success },
 };
 
 const StatusPill = ({ label, backgroundColor }) => (
@@ -100,14 +134,14 @@ export default function ProposalDetailPage() {
   if (!proposal) {
     return (
       <BodyLayout Sidebar={AdminSidebar}>
-        <Box>
-          <Box sx={{ p: 2, mb: 3, backgroundColor: "#fce4ec", borderRadius: "12px", border: "1px solid #ef9a9a" }}>
-            <Typography sx={{ fontSize: 14, color: "#c62828" }}>Proposal tidak ditemukan</Typography>
+        <Box sx={{ px: 1, py: 1 }}>
+          <Box sx={{ p: 2, mb: 3, backgroundColor: "#FEF2F2", borderRadius: "12px", border: `1.5px solid ${COLORS.error}40` }}>
+            <Typography sx={{ fontSize: 14, color: COLORS.error, fontWeight: 700 }}>Proposal tidak ditemukan</Typography>
           </Box>
           <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
             <Button variant="contained"
               onClick={() => navigate("/admin/proposal")}
-              sx={{ textTransform: "none", borderRadius: "50px", px: 4, py: 1.2, fontWeight: 600, backgroundColor: "#FDB022", "&:hover": { backgroundColor: "#e09a1a" } }}
+              sx={{ textTransform: "none", borderRadius: "12px", px: 4, py: 1.2, fontWeight: 700, backgroundColor: COLORS.warning, "&:hover": { backgroundColor: COLORS.primaryDark } }}
             >
               Kembali
             </Button>
@@ -122,27 +156,27 @@ export default function ProposalDetailPage() {
   return (
     <BodyLayout Sidebar={AdminSidebar}>
       <PageTransition>
-        <Box>
+        <Box sx={{ px: 1, py: 1 }}>
           <Box sx={{ display: "flex", alignItems: "center", mb: 0.5, gap: 1 }}>
             <Button size="small"
               onClick={() => navigate("/admin/proposal")}
               startIcon={<ArrowBack />}
-              sx={{ textTransform: "none", borderRadius: "50px", fontSize: 13, color: "#888", p: 0, minWidth: 0, "&:hover": { backgroundColor: "transparent", color: "#0D59F2" } }}>
+              sx={{ textTransform: "none", borderRadius: "50px", fontSize: 13, color: COLORS.slate, p: 0, minWidth: 0, "&:hover": { backgroundColor: "transparent", color: COLORS.primary } }}>
               Kembali ke Daftar Proposal
             </Button>
           </Box>
-          <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Detail Proposal</Typography>
-          <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>Informasi lengkap proposal kewirausahaan</Typography>
+          <Typography sx={{ fontSize: { xs: 26, sm: 32, md: 36 }, fontWeight: 800, mb: 0.5, color: "#1F2937" }}>Detail Proposal</Typography>
+          <Typography sx={{ fontSize: { xs: 14, sm: 16 }, color: "#6B7280", mb: 4 }}>Informasi lengkap proposal kewirausahaan</Typography>
 
-          <Paper sx={{ p: 4, mb: 3, borderRadius: "16px", border: "1px solid #f0f0f0" }}>
-            <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 3 }}>Informasi Proposal</Typography>
+          <Paper sx={{ p: { xs: 2.5, sm: 4 }, mb: 3, borderRadius: "20px", border: "1.5px solid #E5E7EB", boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
+            <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 3, color: "#1F2937" }}>Informasi Proposal</Typography>
 
             <Box sx={{ mb: 3 }}>
               <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>Judul Proposal</Typography>
               <TextField fullWidth value={proposal.judul} disabled multiline rows={2} sx={roundedField} />
             </Box>
 
-            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, mb: 3 }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3, mb: 3 }}>
               <Box>
                 <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>Program</Typography>
                 <TextField fullWidth value={proposal.keterangan} disabled sx={roundedField} />
@@ -153,7 +187,7 @@ export default function ProposalDetailPage() {
               </Box>
             </Box>
 
-            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, mb: 3 }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3, mb: 3 }}>
               <Box>
                 <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>Modal Diajukan</Typography>
                 <TextField fullWidth value={formatRupiah(proposal.modal_diajukan)} disabled sx={roundedField} />
@@ -177,20 +211,20 @@ export default function ProposalDetailPage() {
             <Box>
               <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>File Proposal</Typography>
               {proposal.file_proposal ? (
-                <Box sx={{ border: "1.5px solid #f0f0f0", borderRadius: "12px", p: 2, display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "#fafafa" }}>
+                <Box sx={{ border: `1.5px solid ${COLORS.slateLight}`, borderRadius: "12px", p: 2, display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2, alignItems: { xs: "flex-start", sm: "center" }, justifyContent: "space-between", backgroundColor: "#fafafa" }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                    <Box sx={{ width: 36, height: 36, borderRadius: "8px", backgroundColor: "#e3f2fd", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <AttachFile sx={{ color: "#1565c0", fontSize: 18 }} />
+                    <Box sx={{ width: 36, height: 36, borderRadius: "8px", backgroundColor: COLORS.primaryLight, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <AttachFile sx={{ color: COLORS.primary, fontSize: 18 }} />
                     </Box>
                     <Box>
                       <Typography sx={{ fontWeight: 600, fontSize: 13 }}>{proposal.file_proposal}</Typography>
-                      <Typography sx={{ fontSize: 11, color: "#2e7d32", fontWeight: 600 }}>File Proposal</Typography>
+                      <Typography sx={{ fontSize: 11, color: COLORS.success, fontWeight: 600 }}>File Proposal</Typography>
                     </Box>
                   </Box>
                   <Button
                     size="small"
                     onClick={() => downloadFile(proposal.file_proposal)}
-                    sx={{ textTransform: "none", borderRadius: "50px", fontSize: 13, fontWeight: 600, color: "#0D59F2", border: "1.5px solid #0D59F2", px: 2, "&:hover": { backgroundColor: "#f0f4ff" } }}
+                    sx={{ textTransform: "none", borderRadius: "12px", fontSize: 13, fontWeight: 700, color: COLORS.primary, border: `1.5px solid ${COLORS.primary}`, px: 2, "&:hover": { backgroundColor: COLORS.primaryLight } }}
                   >
                     Download
                   </Button>
@@ -201,8 +235,8 @@ export default function ProposalDetailPage() {
             </Box>
           </Paper>
 
-          <Paper sx={{ p: 4, mb: 3, borderRadius: "16px", border: "1px solid #f0f0f0" }}>
-            <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 3 }}>Informasi Tim</Typography>
+          <Paper sx={{ p: { xs: 2.5, sm: 4 }, mb: 3, borderRadius: "20px", border: "1.5px solid #E5E7EB", boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
+            <Typography sx={{ fontSize: 18, fontWeight: 700, mb: 3, color: "#1F2937" }}>Informasi Tim</Typography>
 
             <Box sx={{ mb: 3 }}>
               <Typography sx={{ fontWeight: 600, mb: 1, fontSize: 14 }}>Nama Tim</Typography>
@@ -210,7 +244,7 @@ export default function ProposalDetailPage() {
             </Box>
 
             <Typography sx={{ fontWeight: 600, mb: 1.5, fontSize: 14 }}>Anggota Tim</Typography>
-            <TableContainer sx={{ borderRadius: "12px", border: "1px solid #f0f0f0", overflow: "hidden" }}>
+            <TableContainer sx={{ borderRadius: "12px", border: `1.5px solid ${COLORS.slateLight}`, overflow: "hidden" }}>
               <Table>
                 <TableHead>
                   <TableRow>
@@ -237,7 +271,7 @@ export default function ProposalDetailPage() {
                       <TableCell>
                         <StatusPill
                           label={anggota.peran === 1 ? "Ketua" : "Anggota"}
-                          backgroundColor={anggota.peran === 1 ? "#3949ab" : "#555"}
+                          backgroundColor={anggota.peran === 1 ? COLORS.secondary : COLORS.slate}
                         />
                       </TableCell>
                     </TableRow>
@@ -250,9 +284,9 @@ export default function ProposalDetailPage() {
           <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
             <Button variant="contained"
               onClick={() => navigate("/admin/proposal")}
-              sx={{ textTransform: "none", borderRadius: "50px", px: 4, py: 1.2, fontWeight: 600, backgroundColor: "#FDB022", "&:hover": { backgroundColor: "#e09a1a" } }}
+              sx={{ textTransform: "none", borderRadius: "12px", px: 4, py: 1.2, fontWeight: 700, backgroundColor: COLORS.warning, "&:hover": { backgroundColor: COLORS.primaryDark } }}
             >
-              Kembali ke Daftar Proposal
+              Kembali
             </Button>
           </Box>
         </Box>

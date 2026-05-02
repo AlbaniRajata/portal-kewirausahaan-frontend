@@ -1,28 +1,51 @@
-import { Box } from "@mui/material";
-import { useState } from "react";
+import { Box, useMediaQuery, useTheme } from "@mui/material";
+import { useEffect, useState } from "react";
 import Navbar from "./Navbar";
 
 export default function BodyLayout({ children, Sidebar, hideSidebar = false }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
+    if (isMobile) {
+      setMobileOpen((prev) => !prev);
+      return;
+    }
+
+    setSidebarCollapsed((prev) => !prev);
   };
+
+  useEffect(() => {
+    if (!isMobile) {
+      setMobileOpen(false);
+    }
+  }, [isMobile]);
 
   const isNavbarOnlyLayout = Boolean(Sidebar?.hideInBodyLayout);
   const hasCustomTopNavbar = Boolean(Sidebar?.renderAsNavbar);
   const shouldHideSidebar = hideSidebar || !Sidebar || isNavbarOnlyLayout;
+  const sidebarWidth = sidebarCollapsed ? 70 : 250;
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", backgroundColor: "#f5f5f5" }}>
-      {!shouldHideSidebar && Sidebar && <Sidebar collapsed={sidebarCollapsed} />}
-      
+    <Box sx={{ display: "flex", minHeight: "100vh", backgroundColor: "#f5f5f5", position: "relative" }}>
+      {!shouldHideSidebar && Sidebar && (
+        <Sidebar
+          collapsed={sidebarCollapsed}
+          mobileOpen={mobileOpen}
+          onMobileClose={() => setMobileOpen(false)}
+          isMobile={isMobile}
+        />
+      )}
+
       <Box 
         sx={{ 
           flex: 1, 
-          marginLeft: shouldHideSidebar ? 0 : (sidebarCollapsed ? "70px" : "250px"),
+          marginLeft: shouldHideSidebar || isMobile ? 0 : `${sidebarWidth}px`,
           transition: "margin-left 0.3s ease",
           width: "100%",
+          minWidth: 0,
         }}
       >
         {hasCustomTopNavbar ? (
@@ -32,13 +55,16 @@ export default function BodyLayout({ children, Sidebar, hideSidebar = false }) {
             onToggleSidebar={toggleSidebar}
             sidebarCollapsed={sidebarCollapsed}
             hasSidebar={!shouldHideSidebar}
+            isMobile={isMobile}
           />
         )}
         
         <Box
           sx={{
-            marginTop: hasCustomTopNavbar ? { xs: "98px", sm: "102px" } : { xs: "60px", sm: "64px" },
-            p: { xs: 2, sm: 3, md: 4 },
+            marginTop: hasCustomTopNavbar ? { xs: "98px", sm: "102px" } : { xs: "72px", sm: "76px", md: "84px" },
+            p: { xs: 1.5, sm: 2.5, md: 4 },
+            minWidth: 0,
+            width: "100%",
           }}
         >
           {children}

@@ -14,9 +14,32 @@ import {
   getBeritaDetailAdmin, createBerita, updateBerita,
 } from "../../api/admin";
 
-const BASE_URL = import.meta.env.VITE_API_URL.replace("/api", "");
+const COLORS = {
+  primary:      "#0D59F2",
+  primaryLight: "#E0F2FE",
+  primaryDark:  "#0369A1",
+  primaryMuted: "#93C5FD",
+  secondary:    "#2563EB",
+  accent:       "#3B82F6",
+  slate:        "#64748B",
+  slateLight:   "#F1F5F9",
+  warning:      "#D97706",
+  warningLight: "#FFFBEB",
+  error:        "#DC2626",
+  success:      "#059669",
+  successLight: "#ECFDF5",
+};
 
-const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "15px" } };
+const roundedField = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "12px",
+    backgroundColor: "#fff",
+    transition: "box-shadow 0.2s",
+    "&:hover fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused": { boxShadow: `0 0 0 3px ${COLORS.primaryLight}` },
+  },
+};
 
 
 export default function FormBeritaPage() {
@@ -151,29 +174,31 @@ export default function FormBeritaPage() {
   return (
     <BodyLayout Sidebar={AdminSidebar}>
       <PageTransition>
-        <Box>
+        <Box sx={{ px: 1, py: 1 }}>
           <Button size="small"
             onClick={() => navigate("/admin/berita")}
             startIcon={<ArrowBack />}
-            sx={{ textTransform: "none", borderRadius: "50px", fontSize: 13, color: "#888", p: 0, mb: 0.5, minWidth: 0, "&:hover": { backgroundColor: "transparent", color: "#0D59F2" } }}
+            sx={{ textTransform: "none", borderRadius: "50px", fontSize: 13, color: COLORS.slate, p: 0, mb: 1, minWidth: 0, "&:hover": { backgroundColor: "transparent", color: COLORS.primary } }}
           >
             Kembali ke Daftar Berita
           </Button>
 
-          <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>
-            {isEdit ? "Edit Berita" : "Tambah Berita"}
-          </Typography>
-          <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>
-            {isEdit ? `Mengedit: ${existing?.judul || ""}` : "Buat berita baru untuk halaman publik"}
-          </Typography>
+          <Box sx={{ mb: 4 }}>
+            <Typography sx={{ fontSize: { xs: 26, sm: 32, md: 36 }, fontWeight: 800, color: "#1F2937", mb: 0.5 }}>
+              {isEdit ? "Edit Berita" : "Tambah Berita"}
+            </Typography>
+            <Typography sx={{ fontSize: { xs: 14, sm: 16 }, color: "#6B7280" }}>
+              {isEdit ? `Mengedit: ${existing?.judul || ""}` : "Buat berita baru untuk halaman publik"}
+            </Typography>
+          </Box>
 
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 340px" }, gap: 3, alignItems: "start" }}>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-              <Paper sx={{ p: 3, borderRadius: "16px", border: "1px solid #f0f0f0" }}>
+              <Paper sx={{ p: { xs: 2.5, sm: 3.5 }, borderRadius: "20px", border: "1.5px solid #E5E7EB", boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
                 <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 2.5 }}>Konten Berita</Typography>
 
                 <Box sx={{ mb: 3 }}>
-                  <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Judul <span style={{ color: "#ef5350" }}>*</span></Typography>
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1, color: "#334155" }}>Judul <span style={{ color: COLORS.error }}>*</span></Typography>
                   <TextField fullWidth placeholder="Judul berita..."
                     value={form.judul}
                     onChange={(e) => { setForm({ ...form, judul: e.target.value }); setErrors({ ...errors, judul: "" }); }}
@@ -183,7 +208,7 @@ export default function FormBeritaPage() {
                 </Box>
 
                 <Box>
-                  <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Isi Berita</Typography>
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1, color: "#334155" }}>Isi Berita</Typography>
                   <TextField
                     fullWidth multiline rows={14}
                     placeholder="Tulis isi berita di sini..."
@@ -194,7 +219,7 @@ export default function FormBeritaPage() {
                 </Box>
               </Paper>
 
-              <Paper sx={{ p: 3, borderRadius: "16px", border: "1px solid #f0f0f0" }}>
+              <Paper sx={{ p: { xs: 2.5, sm: 3.5 }, borderRadius: "20px", border: "1.5px solid #E5E7EB", boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
                 <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 2.5 }}>Gambar Berita</Typography>
 
                 <Box sx={{ mb: 2 }}>
@@ -203,7 +228,7 @@ export default function FormBeritaPage() {
                     exclusive
                     onChange={(e, val) => { if (val) setGambarMode(val); }}
                     size="small"
-                    sx={{ mb: 2, "& .MuiToggleButton-root": { textTransform: "none", fontSize: 13, px: 2, borderRadius: "8px !important", "&.Mui-selected": { backgroundColor: "#e3f2fd", color: "#0D59F2", fontWeight: 700 } } }}
+                    sx={{ mb: 2, "& .MuiToggleButton-root": { textTransform: "none", fontSize: 13, px: 2, borderRadius: "8px !important", "&.Mui-selected": { backgroundColor: COLORS.primaryLight, color: COLORS.primary, fontWeight: 700 } } }}
                   >
                     <ToggleButton value="upload"><Upload sx={{ fontSize: 16, mr: 0.5 }} />Upload File</ToggleButton>
                     <ToggleButton value="url"><LinkIcon sx={{ fontSize: 16, mr: 0.5 }} />URL Gambar</ToggleButton>
@@ -215,17 +240,17 @@ export default function FormBeritaPage() {
                       <Box
                         onClick={() => fileInputRef.current?.click()}
                         sx={{
-                          border: "2px dashed #e0e0e0", borderRadius: "12px", p: 3,
+                          border: `2px dashed ${COLORS.slateLight}`, borderRadius: "12px", p: 3,
                           textAlign: "center", cursor: "pointer", transition: "all 0.2s",
-                          "&:hover": { borderColor: "#0D59F2", backgroundColor: "#f7faff" },
+                          "&:hover": { borderColor: COLORS.primary, backgroundColor: "#f7faff" },
                         }}
                       >
-                        <AttachFile sx={{ fontSize: 32, color: "#bbb", mb: 1 }} />
-                        <Typography sx={{ fontSize: 13, color: "#888" }}>
+                        <AttachFile sx={{ fontSize: 32, color: "#9CA3AF", mb: 1 }} />
+                        <Typography sx={{ fontSize: 13, color: "#6B7280" }}>
                           {gambarFile ? gambarFile.name : "Klik untuk pilih gambar (JPG, PNG, WEBP)"}
                         </Typography>
                         {!gambarFile && (
-                          <Typography sx={{ fontSize: 12, color: "#bbb", mt: 0.5 }}>Maks. 5MB</Typography>
+                          <Typography sx={{ fontSize: 12, color: "#9CA3AF", mt: 0.5 }}>Maks. 5MB</Typography>
                         )}
                       </Box>
                     </Box>
@@ -233,7 +258,7 @@ export default function FormBeritaPage() {
                     <TextField fullWidth size="small" placeholder="https://example.com/gambar.jpg"
                       value={gambarUrl}
                       onChange={(e) => handleUrlChange(e.target.value)}
-                      InputProps={{ startAdornment: <LinkIcon sx={{ mr: 1, fontSize: 18, color: "#aaa" }} /> }}
+                      InputProps={{ startAdornment: <LinkIcon sx={{ mr: 1, fontSize: 18, color: "#9CA3AF" }} /> }}
                       sx={roundedField}
                     />
                   )}
@@ -251,7 +276,7 @@ export default function FormBeritaPage() {
                     />
                     <Button size="small"
                       onClick={() => { setGambarPreview(""); setGambarFile(null); setGambarUrl(""); }}
-                      sx={{ textTransform: "none", fontSize: 12, color: "#c62828", mt: 1, p: 0 }}
+                        sx={{ textTransform: "none", fontSize: 12, color: COLORS.error, mt: 1, p: 0 }}
                     >
                       Hapus gambar
                     </Button>
@@ -261,11 +286,11 @@ export default function FormBeritaPage() {
             </Box>
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 3, position: { lg: "sticky" }, top: { lg: 24 } }}>
-              <Paper sx={{ p: 3, borderRadius: "16px", border: "1px solid #f0f0f0" }}>
+                <Paper sx={{ p: { xs: 2.5, sm: 3.5 }, borderRadius: "20px", border: "1.5px solid #E5E7EB", boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
                 <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 2.5 }}>Pengaturan</Typography>
 
                 <Box sx={{ mb: 3 }}>
-                  <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 0.75 }}>Status Publikasi</Typography>
+                    <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1, color: "#334155" }}>Status Publikasi</Typography>
                   <TextField select fullWidth size="small"
                     value={form.status}
                     onChange={(e) => setForm({ ...form, status: e.target.value })}
@@ -292,7 +317,7 @@ export default function FormBeritaPage() {
                       </Box>
                       <Box>
                         <Typography sx={{ fontSize: 12, color: "#888" }}>Slug</Typography>
-                        <Typography sx={{ fontSize: 12, color: "#0D59F2", wordBreak: "break-all" }}>/{existing.slug}</Typography>
+                        <Typography sx={{ fontSize: 12, color: COLORS.primary, wordBreak: "break-all" }}>/{existing.slug}</Typography>
                       </Box>
                     </Box>
                   </>
@@ -302,12 +327,12 @@ export default function FormBeritaPage() {
 
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                   <Button fullWidth variant="contained" onClick={handleSave} disabled={submitting}
-                    sx={{ textTransform: "none", borderRadius: "50px", py: 1.2, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}
+                    sx={{ textTransform: "none", borderRadius: "12px", py: 1.2, fontWeight: 700, backgroundColor: COLORS.primary, boxShadow: "0 4px 12px rgba(13,89,242,0.2)", "&:hover": { backgroundColor: COLORS.primaryDark, boxShadow: "0 6px 16px rgba(13,89,242,0.3)" } }}
                   >
                     {submitting ? "Menyimpan..." : isEdit ? "Simpan Perubahan" : "Publikasikan"}
                   </Button>
-                  <Button fullWidth variant="outlined" onClick={() => navigate("/admin/berita")} disabled={submitting}
-                    sx={{ textTransform: "none", borderRadius: "50px", py: 1.2, fontWeight: 600, color: "#666", borderColor: "#e0e0e0", "&:hover": { backgroundColor: "#f5f5f5" } }}
+                  <Button fullWidth variant="contained" onClick={() => navigate("/admin/berita")} disabled={submitting}
+                    sx={{ textTransform: "none", borderRadius: "12px", py: 1.2, fontWeight: 700, backgroundColor: COLORS.error, color: "#fff", boxShadow: "0 4px 12px rgba(220,38,38,0.2)", "&:hover": { backgroundColor: "#B91C1C", boxShadow: "0 6px 16px rgba(220,38,38,0.3)" } }}
                   >
                     Batal
                   </Button>

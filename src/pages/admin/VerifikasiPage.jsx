@@ -276,7 +276,6 @@ export default function VerifikasiPage() {
     <BodyLayout Sidebar={AdminSidebar}>
       <PageTransition>
         <Box sx={{ px: 1, py: 1 }}>
-          {/* Page Header */}
           <Box sx={{ mb: 4 }}>
             <Typography sx={{ fontSize: { xs: 26, sm: 32, md: 36 }, fontWeight: 800, color: "#1F2937", mb: 0.5 }}>
               Verifikasi Pengguna
@@ -292,18 +291,20 @@ export default function VerifikasiPage() {
             overflow: "hidden",
             boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
           }}>
-            {/* Top accent bar */}
             <Box sx={{ height: 4, background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
 
             <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
-              {/* Filter Bar */}
               <Box sx={{
-                display: "flex",
-                gap: { xs: 1.25, sm: 2 },
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "1fr 1fr",
+                  lg: "repeat(3, minmax(0, 1fr))",
+                  xl: "repeat(6, minmax(0, 1fr))",
+                },
+                gap: { xs: 1.25, sm: 1.5, lg: 2 },
                 mb: 4,
-                flexWrap: "wrap",
-                alignItems: { xs: "stretch", sm: "center" },
-                flexDirection: { xs: "column", sm: "row" },
+                alignItems: "stretch",
               }}>
                 <TextField
                   select size="small"
@@ -317,7 +318,7 @@ export default function VerifikasiPage() {
                       </span>
                     ),
                   }}
-                  sx={{ ...roundedField, width: { xs: "100%", sm: "auto" }, minWidth: { sm: 170 }, flex: { sm: "0 1 170px" } }}
+                  sx={{ ...roundedField, width: "100%" }}
                 >
                   <MenuItem value="" sx={{ fontSize: 13 }}>Semua Status</MenuItem>
                   <MenuItem value={0} sx={{ fontSize: 13 }}>Menunggu</MenuItem>
@@ -337,7 +338,7 @@ export default function VerifikasiPage() {
                       </span>
                     ),
                   }}
-                  sx={{ ...roundedField, width: { xs: "100%", sm: "auto" }, minWidth: { sm: 170 }, flex: { sm: "0 1 170px" } }}
+                  sx={{ ...roundedField, width: "100%" }}
                 >
                   <MenuItem value="" sx={{ fontSize: 13 }}>Semua Email</MenuItem>
                   <MenuItem value="true" sx={{ fontSize: 13 }}>Sudah Verified</MenuItem>
@@ -356,7 +357,7 @@ export default function VerifikasiPage() {
                       </span>
                     ),
                   }}
-                  sx={{ ...roundedField, width: { xs: "100%", sm: "auto" }, minWidth: { sm: 200 }, flex: { sm: "0 1 200px" } }}
+                  sx={{ ...roundedField, width: "100%" }}
                 >
                   <MenuItem value="" sx={{ fontSize: 13 }}>Semua Prodi</MenuItem>
                   {prodiOptions.map((p) => (
@@ -372,7 +373,7 @@ export default function VerifikasiPage() {
                   value={filters.tanggal_dari}
                   onChange={(e) => setFilters({ ...filters, tanggal_dari: e.target.value })}
                   InputLabelProps={{ shrink: true }}
-                  sx={{ ...roundedField, width: { xs: "100%", sm: "auto" }, minWidth: { sm: 160 }, flex: { sm: "0 1 160px" } }}
+                  sx={{ ...roundedField, width: "100%" }}
                 />
 
                 <TextField
@@ -381,7 +382,7 @@ export default function VerifikasiPage() {
                   value={filters.tanggal_sampai}
                   onChange={(e) => setFilters({ ...filters, tanggal_sampai: e.target.value })}
                   InputLabelProps={{ shrink: true }}
-                  sx={{ ...roundedField, width: { xs: "100%", sm: "auto" }, minWidth: { sm: 160 }, flex: { sm: "0 1 160px" } }}
+                  sx={{ ...roundedField, width: "100%" }}
                 />
 
                 <TextField
@@ -396,7 +397,7 @@ export default function VerifikasiPage() {
                       </span>
                     ),
                   }}
-                  sx={{ ...roundedField, width: { xs: "100%", sm: "auto" }, minWidth: { sm: 150 }, flex: { sm: "0 1 150px" } }}
+                  sx={{ ...roundedField, width: "100%" }}
                 >
                   <MenuItem value="" sx={{ fontSize: 13 }}>Semua Tahun</MenuItem>
                   {tahunOptions.map((tahun) => (
@@ -405,7 +406,6 @@ export default function VerifikasiPage() {
                 </TextField>
               </Box>
 
-              {/* Table / Empty / Loading */}
               {loading ? (
                 <Box sx={{ position: "relative", minHeight: 400 }}>
                   <LoadingScreen message="Memuat data verifikasi..." overlay minHeight="400px" />
@@ -505,7 +505,6 @@ export default function VerifikasiPage() {
                     </Table>
                   </TableContainer>
 
-                  {/* Pagination */}
                   <Box sx={{
                     display: "flex",
                     flexDirection: { xs: "column", sm: "row" },
@@ -542,13 +541,12 @@ export default function VerifikasiPage() {
             </Box>
           </Paper>
 
-          {/* Dialog Detail */}
           <Dialog
             open={openDetail}
             onClose={() => setOpenDetail(false)}
             maxWidth="md"
             fullWidth
-            PaperProps={{ sx: { borderRadius: "24px", overflow: "hidden", boxShadow: "0 20px 40px rgba(0,0,0,0.1)" } }}
+            PaperProps={{ sx: { borderRadius: { xs: "16px", sm: "24px" }, overflow: "hidden", boxShadow: "0 20px 40px rgba(0,0,0,0.1)" } }}
           >
             <DialogTitle sx={{ p: 0 }}>
               <Box sx={{
@@ -572,7 +570,7 @@ export default function VerifikasiPage() {
               </Box>
             </DialogTitle>
 
-            <DialogContent sx={{ px: { xs: 2.5, sm: 4 }, py: 3 }}>
+            <DialogContent sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 3, sm: 4 } }}>
               {loadingDetail ? (
                 <Box sx={{ position: "relative", minHeight: 220 }}>
                   <LoadingScreen message="Memuat detail pengguna..." overlay minHeight="220px" />
@@ -656,7 +654,7 @@ export default function VerifikasiPage() {
             </DialogContent>
 
             <DialogActions sx={{
-              px: { xs: 2.5, sm: 4 }, py: 3,
+              px: { xs: 2.5, sm: 4 }, py: { xs: 2, sm: 3 },
               backgroundColor: "#F8FAFC",
               borderTop: "1.5px solid #E2E8F0",
               gap: 1.5,
@@ -705,13 +703,12 @@ export default function VerifikasiPage() {
             </DialogActions>
           </Dialog>
 
-          {/* Dialog Tolak */}
           <Dialog
             open={openReject}
             onClose={handleCloseReject}
             maxWidth="sm"
             fullWidth
-            PaperProps={{ sx: { borderRadius: "24px", overflow: "hidden", boxShadow: "0 20px 40px rgba(0,0,0,0.1)" } }}
+            PaperProps={{ sx: { borderRadius: { xs: "16px", sm: "24px" }, overflow: "hidden", boxShadow: "0 20px 40px rgba(0,0,0,0.1)" } }}
           >
             <DialogTitle sx={{ p: 0 }}>
               <Box sx={{
@@ -733,7 +730,7 @@ export default function VerifikasiPage() {
               </Box>
             </DialogTitle>
 
-            <DialogContent sx={{ px: { xs: 2.5, sm: 4 }, py: 3 }}>
+            <DialogContent sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 3, sm: 4 } }}>
               <Box sx={{ mt: 1, display: "flex", flexDirection: "column", gap: 3 }}>
                 <Box sx={{
                   p: 2.5, borderRadius: "12px",
@@ -765,7 +762,7 @@ export default function VerifikasiPage() {
             </DialogContent>
 
             <DialogActions sx={{
-              px: { xs: 2.5, sm: 4 }, py: 3,
+              px: { xs: 2.5, sm: 4 }, py: { xs: 2, sm: 3 },
               backgroundColor: "#F8FAFC",
               borderTop: "1.5px solid #E2E8F0",
               gap: 1.5,

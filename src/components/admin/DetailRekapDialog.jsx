@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Box, Typography, Button, IconButton, CircularProgress,
@@ -12,12 +12,37 @@ import {
 } from "../../api/admin";
 import LoadingScreen from "../common/LoadingScreen";
 
-const tableHeadCell = {
-  fontWeight: 700, fontSize: 13, color: "#000",
-  backgroundColor: "#fafafa", borderBottom: "2px solid #f0f0f0", py: 1.5,
+const COLORS = {
+  primary:      "#0D59F2",
+  primaryLight: "#E0F2FE",
+  primaryDark:  "#0369A1",
+  primaryMuted: "#93C5FD",
+  secondary:    "#2563EB",
+  accent:       "#3B82F6",
+  slate:        "#64748B",
+  slateLight:   "#F1F5F9",
+  warning:      "#D97706",
+  warningLight: "#FFFBEB",
+  error:        "#DC2626",
+  success:      "#059669",
+  successLight: "#ECFDF5",
 };
 
-const tableBodyRow = { "& td": { borderBottom: "1px solid #f5f5f5", py: 1.5 } };
+const tableHeadCell = {
+  fontWeight: 700,
+  fontSize: { xs: 11, sm: 12 },
+  color: "#374151",
+  backgroundColor: "#F8FAFC",
+  borderBottom: `2px solid ${COLORS.primaryMuted}`,
+  py: 1.5,
+  textTransform: "uppercase",
+  letterSpacing: "0.04em",
+};
+
+const tableBodyRow = {
+  "& td": { borderBottom: `1px solid ${COLORS.slateLight}`, py: 1.5 },
+  "&:hover": { backgroundColor: "#F8FAFC" },
+};
 
 const formatDate = (d) => {
   if (!d) return "-";
@@ -29,16 +54,16 @@ const formatDate = (d) => {
 
 function ReviewerCard({ data }) {
   return (
-    <Paper variant="outlined" sx={{ p: 2.5, mb: 2, borderRadius: "12px" }}>
+    <Paper variant="outlined" sx={{ p: 2.5, mb: 2, borderRadius: "12px", borderColor: COLORS.slateLight, backgroundColor: "#FAFBFF" }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
         <Typography sx={{ fontWeight: 700, fontSize: 14 }}>
           {data.reviewer?.nama || data.user?.nama}
         </Typography>
-        <Typography sx={{ fontSize: 12, color: "#888" }}>
+        <Typography sx={{ fontSize: 12, color: COLORS.slate }}>
           Submit: {formatDate(data.submitted_at)}
         </Typography>
       </Box>
-      <TableContainer sx={{ borderRadius: "8px", border: "1px solid #f0f0f0" }}>
+      <TableContainer sx={{ borderRadius: "10px", border: `1.5px solid ${COLORS.slateLight}` }}>
         <Table size="small">
           <TableHead>
             <TableRow>
@@ -54,7 +79,7 @@ function ReviewerCard({ data }) {
                 <TableCell>
                   <Typography sx={{ fontSize: 13 }}>{d.nama_kriteria}</Typography>
                   {d.catatan && (
-                    <Typography sx={{ fontSize: 11, color: "#888", fontStyle: "italic" }}>
+                    <Typography sx={{ fontSize: 11, color: COLORS.slate, fontStyle: "italic" }}>
                       Catatan: {d.catatan}
                     </Typography>
                   )}
@@ -64,9 +89,9 @@ function ReviewerCard({ data }) {
                 <TableCell sx={{ textAlign: "right" }}><Typography sx={{ fontSize: 13, fontWeight: 600 }}>{d.nilai}</Typography></TableCell>
               </TableRow>
             ))}
-            <TableRow sx={{ backgroundColor: "#e3f2fd" }}>
+            <TableRow sx={{ backgroundColor: COLORS.primaryLight }}>
               <TableCell colSpan={3} sx={{ fontWeight: 700, textAlign: "right", fontSize: 13 }}>TOTAL</TableCell>
-              <TableCell sx={{ fontWeight: 700, textAlign: "right", color: "#0D59F2", fontSize: 15 }}>
+              <TableCell sx={{ fontWeight: 700, textAlign: "right", color: COLORS.primary, fontSize: 15 }}>
                 {data.total_nilai}
               </TableCell>
             </TableRow>
@@ -79,8 +104,8 @@ function ReviewerCard({ data }) {
 
 function EmptyInfo({ text }) {
   return (
-    <Box sx={{ p: 2, mb: 2, backgroundColor: "#e3f2fd", borderRadius: "12px" }}>
-      <Typography sx={{ fontSize: 13, color: "#1565c0" }}>{text}</Typography>
+    <Box sx={{ p: 2, mb: 2, backgroundColor: COLORS.primaryLight, borderRadius: "12px", border: `1.5px solid ${COLORS.primaryMuted}` }}>
+      <Typography sx={{ fontSize: 13, color: COLORS.primaryDark, fontWeight: 600 }}>{text}</Typography>
     </Box>
   );
 }
@@ -123,20 +148,23 @@ export default function DetailRekapDialog({
   }, [open, id_proposal, tahap, id_program, isHistory]);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: "16px" } }}>
-      <DialogTitle sx={{ pb: 1 }}>
-        <Box sx={{ pr: 4 }}>
-          <Typography sx={{ fontWeight: 700, fontSize: 16 }}>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: "24px", overflow: "hidden" } }}>
+      <DialogTitle sx={{ p: 0 }}>
+        <Box sx={{
+          background: `linear-gradient(135deg, ${COLORS.primaryDark} 0%, ${COLORS.primary} 100%)`,
+          p: { xs: 2.5, sm: 3 }, color: "#fff", position: "relative",
+        }}>
+          <Typography sx={{ fontWeight: 800, fontSize: 18 }}>
             {isHistory ? "History Detail Penilaian" : "Detail Rekap Penilaian"}
           </Typography>
-          <Typography sx={{ fontSize: 13, color: "#777", mt: 0.5 }}>{judul}</Typography>
+          <Typography sx={{ fontSize: 13, opacity: 0.9, mt: 0.5 }}>{judul}</Typography>
+          <IconButton onClick={onClose} sx={{ position: "absolute", right: 16, top: 20, color: "#fff", "&:hover": { backgroundColor: "rgba(255,255,255,0.15)" } }}>
+            <Close />
+          </IconButton>
         </Box>
-        <IconButton onClick={onClose} sx={{ position: "absolute", right: 12, top: 8, color: "#888" }}>
-          <Close />
-        </IconButton>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ px: 3, py: 3 }}>
+      <DialogContent dividers sx={{ px: { xs: 2.5, sm: 4 }, py: 3 }}>
         {loading ? (
           <Box sx={{ position: "relative", minHeight: 240 }}>
             <LoadingScreen message="Memuat detail rekap..." overlay minHeight="240px" />
@@ -174,15 +202,15 @@ export default function DetailRekapDialog({
 
             <Divider sx={{ my: 3 }} />
 
-            <Paper variant="outlined" sx={{ p: 3, backgroundColor: "#f8f9ff", borderRadius: "12px" }}>
+            <Paper variant="outlined" sx={{ p: 3, backgroundColor: "#f8f9ff", borderRadius: "12px", borderColor: COLORS.slateLight }}>
               <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 2.5 }}>Ringkasan Panel</Typography>
-              <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
                 {[
-                  { label: "Total Reviewer", value: data.total_reviewer ?? 0, bg: "#e3f2fd", color: "#0D59F2" },
-                  { label: "Total Juri", value: data.total_juri ?? 0, bg: "#e8f5e9", color: "#2e7d32" },
+                  { label: "Total Reviewer", value: data.total_reviewer ?? 0, bg: COLORS.primaryLight, color: COLORS.primary },
+                  { label: "Total Juri", value: data.total_juri ?? 0, bg: COLORS.successLight, color: COLORS.success },
                 ].map((item) => (
                   <Box key={item.label} sx={{ textAlign: "center", p: 2.5, backgroundColor: item.bg, borderRadius: "12px" }}>
-                    <Typography sx={{ fontSize: 12, color: "#666", mb: 0.5 }}>{item.label}</Typography>
+                    <Typography sx={{ fontSize: 12, color: COLORS.slate, mb: 0.5 }}>{item.label}</Typography>
                     <Typography sx={{ fontSize: 26, fontWeight: 700, color: item.color }}>{item.value}</Typography>
                   </Box>
                 ))}
@@ -192,9 +220,9 @@ export default function DetailRekapDialog({
         )}
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, py: 2 }}>
+      <DialogActions sx={{ px: { xs: 2.5, sm: 4 }, py: 2.5, backgroundColor: "#F8FAFC", borderTop: `1.5px solid ${COLORS.slateLight}` }}>
         <Button onClick={onClose} variant="contained"
-          sx={{ textTransform: "none", borderRadius: "50px", px: 4, fontWeight: 600, backgroundColor: "#FDB022", "&:hover": { backgroundColor: "#e09a1a" } }}>
+          sx={{ textTransform: "none", borderRadius: "12px", px: 4, fontWeight: 700, backgroundColor: COLORS.primary, boxShadow: "0 4px 12px rgba(13,89,242,0.2)", "&:hover": { backgroundColor: COLORS.primaryDark, boxShadow: "0 6px 16px rgba(13,89,242,0.3)" } }}>
           Tutup
         </Button>
       </DialogActions>

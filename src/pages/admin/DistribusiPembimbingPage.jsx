@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Box, Paper, Typography, Tabs, Tab } from "@mui/material";
+import { Box, Paper, Typography, Tabs, Tab, useMediaQuery, useTheme } from "@mui/material";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
 import PageTransition from "../../components/PageTransition";
@@ -10,6 +10,8 @@ import { getMyProgram } from "../../api/admin";
 import Swal from "sweetalert2";
 
 export default function DistribusiPembimbingPage() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [activeTab, setActiveTab] = useState(0);
   const [program, setProgram] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -66,20 +68,25 @@ export default function DistribusiPembimbingPage() {
             Kelola pembimbing akademik untuk setiap proposal tim
           </Typography>
 
-          <Paper sx={{ borderRadius: "16px", border: "1px solid #f0f0f0", overflow: "hidden" }}>
-            <Box sx={{ borderBottom: "1px solid #f0f0f0" }}>
+          <Paper sx={{ borderRadius: "20px", border: "1.5px solid #E5E7EB", overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.05)", mb: 3 }}>
+            <Box sx={{ height: 4, background: "linear-gradient(90deg, #0D59F2, #3B82F6)" }} />
+            <Box sx={{ borderBottom: "1px solid #eef2f7", backgroundColor: "#fff" }}>
               <Tabs
                 value={activeTab}
                 onChange={(_, v) => setActiveTab(v)}
+                variant={isMobile ? "scrollable" : "standard"}
+                scrollButtons={isMobile ? "auto" : false}
+                allowScrollButtonsMobile
                 sx={{
-                  px: 2,
+                  px: { xs: 1, sm: 2 },
                   "& .MuiTab-root": {
                     textTransform: "none",
-                    fontSize: 14,
-                    fontWeight: 500,
-                    color: "#888",
-                    minHeight: 52,
-                    "&.Mui-selected": { fontWeight: 700, color: "#0D59F2" },
+                    fontSize: { xs: 13, sm: 14 },
+                    fontWeight: 700,
+                    color: "#64748B",
+                    minHeight: 56,
+                    px: { xs: 2, sm: 3 },
+                    "&.Mui-selected": { fontWeight: 800, color: "#0D59F2" },
                   },
                   "& .MuiTabs-indicator": { backgroundColor: "#0D59F2", height: 3, borderRadius: "3px 3px 0 0" },
                 }}
@@ -89,7 +96,7 @@ export default function DistribusiPembimbingPage() {
               </Tabs>
             </Box>
 
-            <Box sx={{ p: 3 }}>
+            <Box sx={{ p: { xs: 2, sm: 3 }, minWidth: 0 }}>
               {activeTab === 0 && <ProposalPembimbingTab id_program={program.id_program} />}
               {activeTab === 1 && <DosenPembimbingTab id_program={program.id_program} />}
             </Box>

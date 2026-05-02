@@ -259,10 +259,12 @@ export default function TimPesertaPage() {
   const totalPages   = Math.ceil(filteredList.length / rowsPerPage);
   const paginatedList = filteredList.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
-  /* ─── Detail renderers ─── */
   const renderTimDetail = () => {
     if (!detailData) return null;
     const ps = detailData.proposal ? (PROPOSAL_STATUS[detailData.proposal.status] || PROPOSAL_STATUS[0]) : null;
+    const propDosen = getDosenPembimbingName(detailData.proposal);
+    const itemDosen = getDosenPembimbingName(detailData);
+    const dosenName = (propDosen && propDosen !== "-") ? propDosen : (itemDosen && itemDosen !== "-") ? itemDosen : detailData.pembimbing?.nama_dosen || detailData.dosen_pembimbing || "-";
     return (
       <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3 }}>
@@ -318,7 +320,7 @@ export default function TimPesertaPage() {
             </Box>
             <DetailRow label="Kategori"         value={detailData.proposal.nama_kategori} />
             <DetailRow label="Modal Diajukan"   value={formatCurrency(detailData.proposal.modal_diajukan)} />
-            <DetailRow label="Dosen Pembimbing" value={getDosenPembimbingName(detailData.proposal)} />
+            <DetailRow label="Dosen Pembimbing" value={dosenName} />
             <DetailRow label="Tanggal Submit"   value={formatDate(detailData.proposal.tanggal_submit)} />
             <DetailRow label="Jadwal Wawancara" value={formatDate(detailData.proposal.wawancara_at)} />
             <Box>
@@ -338,6 +340,9 @@ export default function TimPesertaPage() {
     const ls = LOLOS_STATUS[detailData.status_lolos]      || LOLOS_STATUS[0];
     const as = detailData.status_anggota !== undefined     ? (ANGGOTA_STATUS[detailData.status_anggota] || ANGGOTA_STATUS[0]) : null;
     const ps = detailData.proposal                         ? (PROPOSAL_STATUS[detailData.proposal.status] || PROPOSAL_STATUS[0]) : null;
+    const propDosen2 = getDosenPembimbingName(detailData.proposal);
+    const itemDosen2 = getDosenPembimbingName(detailData);
+    const dosenName = (propDosen2 && propDosen2 !== "-") ? propDosen2 : (itemDosen2 && itemDosen2 !== "-") ? itemDosen2 : detailData.pembimbing?.nama_dosen || detailData.dosen_pembimbing || "-";
     return (
       <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3 }}>
@@ -392,7 +397,7 @@ export default function TimPesertaPage() {
             </Box>
             <DetailRow label="Kategori"         value={detailData.proposal.nama_kategori} />
             <DetailRow label="Modal Diajukan"   value={formatCurrency(detailData.proposal.modal_diajukan)} />
-            <DetailRow label="Dosen Pembimbing" value={getDosenPembimbingName(detailData.proposal)} />
+            <DetailRow label="Dosen Pembimbing" value={dosenName} />
             <DetailRow label="Tanggal Submit"   value={formatDate(detailData.proposal.tanggal_submit)} />
             <DetailRow label="Jadwal Wawancara" value={formatDate(detailData.proposal.wawancara_at)} />
             <Box>
@@ -411,7 +416,6 @@ export default function TimPesertaPage() {
     <BodyLayout Sidebar={AdminSidebar}>
       <PageTransition>
         <Box sx={{ px: 1, py: 1 }}>
-          {/* Page Header */}
           <Box sx={{ mb: 4 }}>
             <Typography sx={{ fontSize: { xs: 26, sm: 32, md: 36 }, fontWeight: 800, color: "#1F2937", mb: 0.5 }}>
               Tim & Peserta
@@ -427,10 +431,8 @@ export default function TimPesertaPage() {
             overflow: "hidden",
             boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
           }}>
-            {/* Accent bar */}
             <Box sx={{ height: 4, background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
 
-            {/* Tabs */}
             <Box sx={{ borderBottom: "1px solid #F1F5F9", backgroundColor: "#fff" }}>
               <Tabs
                 value={activeTab}
@@ -453,14 +455,17 @@ export default function TimPesertaPage() {
             </Box>
 
             <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
-              {/* Filter Bar */}
               <Box sx={{
-                display: "flex",
-                gap: { xs: 1.25, sm: 2 },
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "1fr 1fr",
+                  lg: "repeat(3, minmax(0, 1fr))",
+                  xl: "repeat(12, minmax(0, 1fr))",
+                },
+                gap: { xs: 1.25, sm: 1.5, lg: 2 },
                 mb: 4,
-                flexWrap: "wrap",
-                alignItems: { xs: "stretch", sm: "center" },
-                flexDirection: { xs: "column", sm: "row" },
+                alignItems: "stretch",
               }}>
                 <TextField
                   size="small"
@@ -476,9 +481,8 @@ export default function TimPesertaPage() {
                   }}
                   sx={{
                     ...roundedField,
-                    width: { xs: "100%", sm: "auto" },
-                    minWidth: { sm: 260 },
-                    flex: { sm: "1 1 260px" },
+                    width: "100%",
+                    gridColumn: { xs: "1", sm: "1 / -1", lg: "span 2", xl: "span 6" },
                   }}
                 />
                 <TextField
@@ -488,9 +492,8 @@ export default function TimPesertaPage() {
                   disabled
                   sx={{
                     ...roundedField,
-                    width: { xs: "100%", sm: "auto" },
-                    minWidth: { sm: 200 },
-                    flex: { sm: "0 1 200px" },
+                    width: "100%",
+                    gridColumn: { xs: "1", sm: "span 1", lg: "span 1", xl: "span 3" },
                   }}
                 >
                   {programList.map((p) => (
@@ -511,9 +514,8 @@ export default function TimPesertaPage() {
                   }}
                   sx={{
                     ...roundedField,
-                    width: { xs: "100%", sm: "auto" },
-                    minWidth: { sm: 150 },
-                    flex: { sm: "0 1 150px" },
+                    width: "100%",
+                    gridColumn: { xs: "1", sm: "span 1", lg: "span 1", xl: "span 3" },
                   }}
                 >
                   <MenuItem value="" sx={{ fontSize: 13 }}>Semua Tahun</MenuItem>
@@ -523,7 +525,6 @@ export default function TimPesertaPage() {
                 </TextField>
               </Box>
 
-              {/* Content */}
               {loading ? (
                 <Box sx={{ position: "relative", minHeight: 400 }}>
                   <LoadingScreen message="Memuat data..." overlay minHeight="400px" />
@@ -564,10 +565,10 @@ export default function TimPesertaPage() {
                       <TableHead>
                         <TableRow>
                           {activeTab === 0
-                            ? ["NAMA TIM", "PROGRAM", "KETUA", "DOSEN PEMBIMBING", "ANGGOTA", "PROPOSAL", "AKSI"].map((h, i) => (
+                            ? ["NAMA TIM", "KETUA", "DOSEN PEMBIMBING", "ANGGOTA", "PROPOSAL", "AKSI"].map((h, i) => (
                                 <TableCell key={i} sx={tableHeadCell}>{h}</TableCell>
                               ))
-                            : ["NAMA PESERTA", "NIM", "PROGRAM", "TIM", "DOSEN PEMBIMBING", "PERAN", "STATUS LOLOS", "AKSI"].map((h, i) => (
+                            : ["NAMA PESERTA", "NIM", "TIM", "DOSEN PEMBIMBING", "PERAN", "STATUS LOLOS", "AKSI"].map((h, i) => (
                                 <TableCell key={i} sx={tableHeadCell}>{h}</TableCell>
                               ))
                           }
@@ -582,12 +583,13 @@ export default function TimPesertaPage() {
                                   <TableCell>
                                     <Typography sx={{ fontWeight: 700, fontSize: 14, color: "#1E293B" }}>{item.nama_tim}</Typography>
                                   </TableCell>
-                                  <TableCell><Typography sx={{ fontSize: 13, color: "#475569" }}>{item.nama_program}</Typography></TableCell>
                                   <TableCell>
                                     <Typography sx={{ fontSize: 13, fontWeight: 600, color: "#1E293B" }}>{item.nama_ketua || "-"}</Typography>
                                     {item.nim_ketua && <Typography sx={{ fontSize: 11, color: COLORS.slate }}>{item.nim_ketua}</Typography>}
                                   </TableCell>
-                                  <TableCell><Typography sx={{ fontSize: 13, color: "#475569", whiteSpace: "nowrap" }}>{getDosenPembimbingName(item)}</Typography></TableCell>
+                                  <TableCell>
+                                    <Typography sx={{ fontSize: 13, color: "#475569", whiteSpace: "nowrap" }}>{getDosenPembimbingName(item)}</Typography>
+                                  </TableCell>
                                   <TableCell><Typography sx={{ fontSize: 13, color: "#475569" }}>{item.jumlah_anggota} orang</Typography></TableCell>
                                   <TableCell>
                                     {proposalStatus
@@ -620,8 +622,8 @@ export default function TimPesertaPage() {
                                     <Typography sx={{ fontSize: 11, color: COLORS.slate }}>@{item.username}</Typography>
                                   </TableCell>
                                   <TableCell><Typography sx={{ fontSize: 13, color: "#475569" }}>{item.nim}</Typography></TableCell>
-                                  <TableCell><Typography sx={{ fontSize: 13, color: "#475569" }}>{item.nama_program}</Typography></TableCell>
                                   <TableCell><Typography sx={{ fontSize: 13, color: "#475569" }}>{item.nama_tim || "-"}</Typography></TableCell>
+                                  
                                   <TableCell><Typography sx={{ fontSize: 13, color: "#475569", whiteSpace: "nowrap" }}>{getDosenPembimbingName(item)}</Typography></TableCell>
                                   <TableCell>
                                     {item.peran !== undefined && item.peran !== null
@@ -652,7 +654,6 @@ export default function TimPesertaPage() {
                     </Table>
                   </TableContainer>
 
-                  {/* Pagination */}
                   <Box sx={{
                     display: "flex",
                     flexDirection: { xs: "column", sm: "row" },
@@ -687,13 +688,12 @@ export default function TimPesertaPage() {
             </Box>
           </Paper>
 
-          {/* Dialog Detail */}
           <Dialog
             open={openDetail}
             onClose={() => setOpenDetail(false)}
             maxWidth="md"
             fullWidth
-            PaperProps={{ sx: { borderRadius: "24px", boxShadow: "0 20px 40px rgba(0,0,0,0.1)", overflow: "hidden", m: { xs: 1, sm: 2 }, maxHeight: { xs: "calc(100vh - 16px)", sm: "calc(100vh - 32px)" } } }}
+            PaperProps={{ sx: { borderRadius: { xs: "16px", sm: "24px" }, boxShadow: "0 20px 40px rgba(0,0,0,0.1)", overflow: "hidden", m: { xs: 1, sm: 2 }, maxHeight: { xs: "calc(100vh - 16px)", sm: "calc(100vh - 32px)" } } }}
           >
             <DialogTitle sx={{ p: 0 }}>
               <Box sx={{
@@ -717,7 +717,7 @@ export default function TimPesertaPage() {
               </Box>
             </DialogTitle>
 
-            <DialogContent sx={{ px: { xs: 2.5, sm: 4 }, py: 3 }}>
+            <DialogContent sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 3, sm: 4 } }}>
               {loadingDetail ? (
                 <Box sx={{ position: "relative", minHeight: 300 }}>
                   <LoadingScreen message="Memuat detail..." overlay minHeight="300px" />
@@ -730,7 +730,7 @@ export default function TimPesertaPage() {
             </DialogContent>
 
             <DialogActions sx={{
-              px: { xs: 2.5, sm: 4 }, py: 3,
+              px: { xs: 2.5, sm: 4 }, py: { xs: 2, sm: 3 },
               backgroundColor: "#F8FAFC",
               borderTop: "1.5px solid #E2E8F0",
               justifyContent: "flex-end",

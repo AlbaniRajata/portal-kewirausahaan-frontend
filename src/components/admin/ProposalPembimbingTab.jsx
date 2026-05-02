@@ -27,17 +27,50 @@ import {
   updatePembimbing,
 } from "../../api/admin";
 
+const COLORS = {
+  primary: "#0D59F2",
+  primaryLight: "#E0F2FE",
+  primaryMuted: "#93C5FD",
+  slate: "#64748B",
+  slateLight: "#F1F5F9",
+  success: "#059669",
+  successLight: "#ECFDF5",
+  warning: "#D97706",
+  warningLight: "#ff7070",
+};
+
 const tableHeadCell = {
   fontWeight: 700,
   fontSize: 13,
-  color: "#000",
-  backgroundColor: "#fafafa",
-  borderBottom: "2px solid #f0f0f0",
+  color: "#374151",
+  backgroundColor: "#F8FAFC",
+  borderBottom: `2px solid ${COLORS.primaryMuted}`,
   py: 2,
 };
 
-const tableBodyRow = { "& td": { borderBottom: "1px solid #f5f5f5", py: 2 } };
-const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "15px" } };
+const tableBodyRow = {
+  "& td": { borderBottom: `1px solid ${COLORS.slateLight}`, py: 2 },
+  "&:hover": { backgroundColor: "#F8FAFC" },
+};
+
+const roundedField = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "12px",
+    backgroundColor: "#fff",
+    transition: "box-shadow 0.2s",
+    "&:hover fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused": { boxShadow: `0 0 0 3px ${COLORS.primaryLight}` },
+  },
+};
+
+const statCard = {
+  p: 2,
+  borderRadius: "16px",
+  border: "1px solid #e5e7eb",
+  background: "#fff",
+  boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
+};
 
 export default function ProposalPembimbingTab({ id_program }) {
   const [proposals, setProposals] = useState([]);
@@ -161,15 +194,30 @@ export default function ProposalPembimbingTab({ id_program }) {
 
   return (
     <Box>
-      <TableContainer sx={{ borderRadius: "12px", border: "1px solid #f0f0f0" }}>
+      <Box sx={{ mb: 2.5, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 1.5 }}>
+        <Box sx={{ ...statCard, borderColor: "#d7e9d8", backgroundColor: "#f2faf3" }}>
+          <Typography sx={{ fontSize: 12, color: "#5f7160" }}>Belum Ditentukan</Typography>
+          <Typography sx={{ fontSize: 24, fontWeight: 800, color: COLORS.success }}>{proposals.filter((p) => !p.pembimbing?.id_dosen).length}</Typography>
+        </Box>
+        <Box sx={{ ...statCard, borderColor: "#d7e5fb", backgroundColor: "#f3f7ff" }}>
+          <Typography sx={{ fontSize: 12, color: "#566b93" }}>Sudah Ditentukan</Typography>
+          <Typography sx={{ fontSize: 24, fontWeight: 800, color: COLORS.primary }}>{proposals.filter((p) => p.pembimbing?.id_dosen).length}</Typography>
+        </Box>
+        <Box sx={{ ...statCard, borderColor: "#fde3c7", backgroundColor: "#fff7ee" }}>
+          <Typography sx={{ fontSize: 12, color: "#91653b" }}>Total Proposal</Typography>
+          <Typography sx={{ fontSize: 24, fontWeight: 800, color: COLORS.warning }}>{proposals.length}</Typography>
+        </Box>
+      </Box>
+
+      <TableContainer sx={{ borderRadius: "16px", border: `1.5px solid ${COLORS.slateLight}`, overflow: "auto", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)" }}>
         <Table>
           <TableHead>
             <TableRow sx={{ backgroundColor: "#fafafa" }}>
-              <TableCell sx={tableHeadCell}>Judul Proposal</TableCell>
-              <TableCell sx={tableHeadCell}>Nama Tim</TableCell>
-              <TableCell sx={tableHeadCell}>Kategori</TableCell>
-              <TableCell sx={tableHeadCell}>Dosen Pembimbing</TableCell>
-              <TableCell sx={{ ...tableHeadCell, textAlign: "center", width: "90px" }}>Aksi</TableCell>
+              <TableCell sx={tableHeadCell}>JUDUL PROPOSAL</TableCell>
+              <TableCell sx={tableHeadCell}>NAMA TIM</TableCell>
+              <TableCell sx={tableHeadCell}>KATEGORI</TableCell>
+              <TableCell sx={tableHeadCell}>DOSEN PEMBIMBING</TableCell>
+              <TableCell sx={{ ...tableHeadCell, textAlign: "center", width: "90px" }}>AKSI</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -235,8 +283,8 @@ export default function ProposalPembimbingTab({ id_program }) {
         </Table>
       </TableContainer>
 
-      <Box sx={{ p: 2.5, display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #f0f0f0", gap: 2, flexWrap: "wrap" }}>
-        <Typography sx={{ fontSize: 13, color: "#777" }}>
+      <Box sx={{ mt: 3, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexDirection: { xs: "column", sm: "row" } }}>
+        <Typography sx={{ fontSize: 13, color: COLORS.slate, fontWeight: 500 }}>
           Menampilkan {startDisplay}–{endDisplay} dari {proposals.length} proposal
         </Typography>
         <Pagination
@@ -247,6 +295,16 @@ export default function ProposalPembimbingTab({ id_program }) {
           shape="rounded"
           showFirstButton
           showLastButton
+          sx={{
+            "& .MuiPaginationItem-root": {
+              fontWeight: 600,
+              borderRadius: "8px",
+              "&.Mui-selected": {
+                background: `linear-gradient(135deg, ${COLORS.primary}, #2563EB)`,
+                color: "#fff",
+              },
+            },
+          }}
         />
       </Box>
 
@@ -257,7 +315,7 @@ export default function ProposalPembimbingTab({ id_program }) {
         fullWidth
         PaperProps={{ sx: { borderRadius: "16px" } }}
       >
-        <DialogTitle sx={{ fontWeight: 700, fontSize: 16, pb: 1 }}>Edit Dosen Pembimbing</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 800, fontSize: 16, pb: 1 }}>Edit Dosen Pembimbing</DialogTitle>
         <DialogContent
           sx={{
             pt: 2,
@@ -270,28 +328,28 @@ export default function ProposalPembimbingTab({ id_program }) {
         >
           {selectedProposal && (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <Paper variant="outlined" sx={{ p: 2, borderRadius: "12px", backgroundColor: "#fafafa", border: "1px solid #e0e0e0" }}>
-                <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#666", mb: 1.5, textTransform: "uppercase" }}>
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: "14px", backgroundColor: "#fafafa", border: `1px solid ${COLORS.slateLight}` }}>
+                <Typography sx={{ fontSize: 12, fontWeight: 800, color: COLORS.slate, mb: 1.5, textTransform: "uppercase", letterSpacing: "0.03em" }}>
                   Detail Proposal
                 </Typography>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                   <Box>
-                    <Typography sx={{ fontSize: 11, color: "#999", mb: 0.3 }}>Judul</Typography>
+                    <Typography sx={{ fontSize: 11, color: "#94a3b8", mb: 0.3 }}>Judul</Typography>
                     <Typography sx={{ fontSize: 13, fontWeight: 500 }}>{selectedProposal.judul}</Typography>
                   </Box>
                   <Box>
-                    <Typography sx={{ fontSize: 11, color: "#999", mb: 0.3 }}>Tim</Typography>
+                    <Typography sx={{ fontSize: 11, color: "#94a3b8", mb: 0.3 }}>Tim</Typography>
                     <Typography sx={{ fontSize: 13, fontWeight: 500 }}>{selectedProposal.nama_tim}</Typography>
                   </Box>
                   <Box>
-                    <Typography sx={{ fontSize: 11, color: "#999", mb: 0.3 }}>Kategori</Typography>
+                    <Typography sx={{ fontSize: 11, color: "#94a3b8", mb: 0.3 }}>Kategori</Typography>
                     <Typography sx={{ fontSize: 13, fontWeight: 500 }}>{selectedProposal.nama_kategori}</Typography>
                   </Box>
                 </Box>
               </Paper>
 
               <Box>
-                <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", mb: 1 }}>Pilih Dosen Pembimbing</Typography>
+                <Typography sx={{ fontSize: 12, fontWeight: 800, color: "#1a1a1a", mb: 1 }}>Pilih Dosen Pembimbing</Typography>
                 <TextField
                   select
                   fullWidth
@@ -309,8 +367,8 @@ export default function ProposalPembimbingTab({ id_program }) {
               </Box>
 
               {currentDosenInfo && (
-                <Paper variant="outlined" sx={{ p: 2, borderRadius: "12px", backgroundColor: "#e3f2fd", border: "1px solid #2196f3" }}>
-                  <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#1976d2", mb: 1.5, textTransform: "uppercase" }}>
+                <Paper variant="outlined" sx={{ p: 2, borderRadius: "14px", backgroundColor: "#e3f2fd", border: "1px solid #2196f3" }}>
+                  <Typography sx={{ fontSize: 12, fontWeight: 800, color: "#1976d2", mb: 1.5, textTransform: "uppercase", letterSpacing: "0.03em" }}>
                     Informasi Dosen
                   </Typography>
                   <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
@@ -340,7 +398,7 @@ export default function ProposalPembimbingTab({ id_program }) {
           <Button
             onClick={handleCloseDialog}
             variant="outlined"
-            sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, color: "#666", border: "1.5px solid #e0e0e0", "&:hover": { backgroundColor: "#f5f5f5" } }}
+            sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 700, color: COLORS.slate, border: "1.5px solid #e0e0e0", "&:hover": { backgroundColor: "#f5f5f5" } }}
           >
             Batal
           </Button>
@@ -348,7 +406,7 @@ export default function ProposalPembimbingTab({ id_program }) {
             onClick={handleSaveChanges}
             variant="contained"
             disabled={submitting}
-            sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" }, "&:disabled": { backgroundColor: "#ccc" } }}
+            sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 700, backgroundColor: COLORS.primary, "&:hover": { backgroundColor: "#0a47c4" }, "&:disabled": { backgroundColor: "#ccc" } }}
           >
             {submitting ? "Menyimpan..." : "Simpan"}
           </Button>

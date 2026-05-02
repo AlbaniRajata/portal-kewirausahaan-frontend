@@ -14,16 +14,30 @@ import LoadingScreen from "../common/LoadingScreen";
 import Swal from "sweetalert2";
 import { getDosenPembimbing, getDosenBebanPembimbing } from "../../api/admin";
 
+const COLORS = {
+  primary: "#0D59F2",
+  primaryLight: "#E0F2FE",
+  primaryMuted: "#93C5FD",
+  slate: "#64748B",
+  slateLight: "#F1F5F9",
+  success: "#059669",
+  warning: "#D97706",
+  error: "#DC2626",
+};
+
 const tableHeadCell = {
   fontWeight: 700,
   fontSize: 13,
-  color: "#000",
-  backgroundColor: "#fafafa",
-  borderBottom: "2px solid #f0f0f0",
+  color: "#374151",
+  backgroundColor: "#F8FAFC",
+  borderBottom: `2px solid ${COLORS.primaryMuted}`,
   py: 2,
 };
 
-const tableBodyRow = { "& td": { borderBottom: "1px solid #f5f5f5", py: 2 } };
+const tableBodyRow = {
+  "& td": { borderBottom: `1px solid ${COLORS.slateLight}`, py: 2 },
+  "&:hover": { backgroundColor: "#F8FAFC" },
+};
 
 export default function DosenPembimbingTab({ id_program }) {
   const [dosenList, setDosenList] = useState([]);
@@ -92,33 +106,33 @@ export default function DosenPembimbingTab({ id_program }) {
   return (
     <Box>
       <Box sx={{ mb: 2.5, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 1.5 }}>
-        <Box sx={{ p: 2, borderRadius: "12px", border: "1px solid #d7e9d8", backgroundColor: "#f2faf3" }}>
+        <Box sx={{ p: 2, borderRadius: "16px", border: "1px solid #d7e9d8", backgroundColor: "#f2faf3", boxShadow: "0 4px 16px rgba(0,0,0,0.04)" }}>
           <Typography sx={{ fontSize: 12, color: "#5f7160" }}>Tanpa Bimbingan</Typography>
-          <Typography sx={{ fontSize: 24, fontWeight: 700, color: "#2e7d32" }}>{countTanpaBimbingan}</Typography>
+          <Typography sx={{ fontSize: 24, fontWeight: 800, color: COLORS.success }}>{countTanpaBimbingan}</Typography>
         </Box>
-        <Box sx={{ p: 2, borderRadius: "12px", border: "1px solid #d7e5fb", backgroundColor: "#f3f7ff" }}>
+        <Box sx={{ p: 2, borderRadius: "16px", border: "1px solid #d7e5fb", backgroundColor: "#f3f7ff", boxShadow: "0 4px 16px rgba(0,0,0,0.04)" }}>
           <Typography sx={{ fontSize: 12, color: "#566b93" }}>Ringan (1-2)</Typography>
-          <Typography sx={{ fontSize: 24, fontWeight: 700, color: "#0D59F2" }}>{countRingan}</Typography>
+          <Typography sx={{ fontSize: 24, fontWeight: 800, color: COLORS.primary }}>{countRingan}</Typography>
         </Box>
-        <Box sx={{ p: 2, borderRadius: "12px", border: "1px solid #fde3c7", backgroundColor: "#fff7ee" }}>
+        <Box sx={{ p: 2, borderRadius: "16px", border: "1px solid #fde3c7", backgroundColor: "#fff7ee", boxShadow: "0 4px 16px rgba(0,0,0,0.04)" }}>
           <Typography sx={{ fontSize: 12, color: "#91653b" }}>Sedang (3-4)</Typography>
-          <Typography sx={{ fontSize: 24, fontWeight: 700, color: "#e65100" }}>{countSedang}</Typography>
+          <Typography sx={{ fontSize: 24, fontWeight: 800, color: COLORS.warning }}>{countSedang}</Typography>
         </Box>
-        <Box sx={{ p: 2, borderRadius: "12px", border: "1px solid #f8d4d4", backgroundColor: "#fff4f4" }}>
+        <Box sx={{ p: 2, borderRadius: "16px", border: "1px solid #f8d4d4", backgroundColor: "#fff4f4", boxShadow: "0 4px 16px rgba(0,0,0,0.04)" }}>
           <Typography sx={{ fontSize: 12, color: "#8f4d4d" }}>Berat ({">"}4)</Typography>
-          <Typography sx={{ fontSize: 24, fontWeight: 700, color: "#c62828" }}>{countBerat}</Typography>
+          <Typography sx={{ fontSize: 24, fontWeight: 800, color: COLORS.error }}>{countBerat}</Typography>
         </Box>
       </Box>
 
-      <TableContainer sx={{ borderRadius: "12px", border: "1px solid #f0f0f0" }}>
+      <TableContainer sx={{ borderRadius: "16px", border: `1.5px solid ${COLORS.slateLight}`, overflow: "auto", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)" }}>
         <Table>
           <TableHead>
             <TableRow sx={{ backgroundColor: "#fafafa" }}>
-              <TableCell sx={tableHeadCell}>Nama Lengkap</TableCell>
+              <TableCell sx={tableHeadCell}>NAMA LENGKAP</TableCell>
               <TableCell sx={tableHeadCell}>NIP</TableCell>
-              <TableCell sx={tableHeadCell}>Bidang Keahlian</TableCell>
+              <TableCell sx={tableHeadCell}>BIDANG KEAHLIAN</TableCell>
               <TableCell sx={{ ...tableHeadCell, textAlign: "center", width: "120px" }}>
-                Total Tim Dibimbing
+                TOTAL TIM DIBIMBING
               </TableCell>
             </TableRow>
           </TableHead>
@@ -184,8 +198,8 @@ export default function DosenPembimbingTab({ id_program }) {
         </Table>
       </TableContainer>
 
-      <Box sx={{ p: 2.5, display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #f0f0f0", gap: 2, flexWrap: "wrap" }}>
-        <Typography sx={{ fontSize: 13, color: "#777" }}>
+      <Box sx={{ mt: 3, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexDirection: { xs: "column", sm: "row" } }}>
+        <Typography sx={{ fontSize: 13, color: COLORS.slate, fontWeight: 500 }}>
           Menampilkan {startDisplay}–{endDisplay} dari {dosenMergedData.length} dosen
         </Typography>
         <Pagination
@@ -196,6 +210,16 @@ export default function DosenPembimbingTab({ id_program }) {
           shape="rounded"
           showFirstButton
           showLastButton
+          sx={{
+            "& .MuiPaginationItem-root": {
+              fontWeight: 600,
+              borderRadius: "8px",
+              "&.Mui-selected": {
+                background: `linear-gradient(135deg, ${COLORS.primary}, #2563EB)`,
+                color: "#fff",
+              },
+            },
+          }}
         />
       </Box>
     </Box>

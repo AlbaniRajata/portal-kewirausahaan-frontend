@@ -38,45 +38,77 @@ import {
 } from "../../api/admin";
 import { downloadFile } from "../../utils/download";
 
+const COLORS = {
+  primary:      "#0D59F2",
+  primaryLight: "#E0F2FE",
+  primaryDark:  "#0369A1",
+  primaryMuted: "#93C5FD",
+  secondary:    "#2563EB",
+  accent:       "#3B82F6",
+  slate:        "#64748B",
+  slateLight:   "#F1F5F9",
+  warning:      "#D97706",
+  warningLight: "#FFFBEB",
+  error:        "#DC2626",
+  success:      "#059669",
+  successLight: "#ECFDF5",
+};
+
 const STATUS_MAP = {
   0: {
     label: "Belum Dikerjakan",
-    bg: "#757575",
+    bg: COLORS.slate,
     icon: <RadioButtonUnchecked sx={{ fontSize: 16 }} />,
   },
   1: {
     label: "Submitted",
-    bg: "#f57f17",
+    bg: COLORS.warning,
     icon: <HourglassEmpty sx={{ fontSize: 16 }} />,
   },
   2: {
     label: "Disetujui",
-    bg: "#2e7d32",
+    bg: COLORS.success,
     icon: <CheckCircle sx={{ fontSize: 16 }} />,
   },
   3: {
     label: "Ditolak",
-    bg: "#c62828",
+    bg: COLORS.error,
     icon: <Cancel sx={{ fontSize: 16 }} />,
   },
 };
 
 const TIPE_MAP = {
-  1: { label: "File", bg: "#1565c0" },
-  2: { label: "Link", bg: "#6a1b9a" },
-  3: { label: "File & Link", bg: "#2e7d32" },
+  1: { label: "File", bg: COLORS.primary },
+  2: { label: "Link", bg: "#7C3AED" },
+  3: { label: "File & Link", bg: COLORS.success },
 };
 
 const tableHeadCell = {
   fontWeight: 700,
-  fontSize: 13,
-  color: "#000",
-  backgroundColor: "#fafafa",
-  borderBottom: "2px solid #f0f0f0",
+  fontSize: { xs: 11, sm: 12 },
+  color: "#374151",
+  backgroundColor: "#F8FAFC",
+  borderBottom: `2px solid ${COLORS.primaryMuted}`,
   py: 2,
+  textTransform: "uppercase",
+  letterSpacing: "0.04em",
 };
 
-const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "15px" } };
+const tableBodyRow = {
+  "& td": { borderBottom: `1px solid ${COLORS.slateLight}`, py: 2 },
+  "&:hover": { backgroundColor: "#F8FAFC" },
+};
+
+const roundedField = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "12px",
+    backgroundColor: "#fff",
+    transition: "box-shadow 0.2s",
+    "&:hover fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused": { boxShadow: `0 0 0 3px ${COLORS.primaryLight}` },
+  },
+};
 
 const formatDate = (dateString) => {
   if (!dateString) return "-";
@@ -280,57 +312,68 @@ setTimeout(() => setOpenDetail(true), 200);
   return (
     <BodyLayout Sidebar={AdminSidebar}>
       <PageTransition>
-        <Box>
+        <Box sx={{ px: 1, py: 1 }}>
           <Button
             startIcon={<ArrowBack />}
             onClick={() => navigate("/admin/monev")}
             sx={{
               textTransform: "none",
-              color: "#777",
+              color: COLORS.slate,
               fontSize: 13,
-              fontWeight: 500,
+              fontWeight: 600,
               p: 0,
               mb: 2,
               minWidth: 0,
-              "&:hover": { backgroundColor: "transparent", color: "#0D59F2" },
+              transition: "all 0.2s",
+              "&:hover": { backgroundColor: "transparent", color: COLORS.primary },
             }}
           >
             Kembali
           </Button>
 
-          <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>
-            Progress Luaran Tim
-          </Typography>
-          <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>
-            Monitor dan review pengumpulan luaran per tim
-          </Typography>
-
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, gap: 2, flexWrap: "wrap" }}>
-            <TextField
-              select
-              size="small"
-              label="Tahun"
-              value={tahun}
-              onChange={(e) => setTahun(e.target.value)}
-              sx={{ ...roundedField, minWidth: 160 }}
-            >
-              <MenuItem value="">Semua Tahun</MenuItem>
-              {tahunOptions.map((itemTahun) => (
-                <MenuItem key={itemTahun} value={String(itemTahun)}>{itemTahun}</MenuItem>
-              ))}
-            </TextField>
-            <Typography sx={{ fontSize: 13, color: "#777" }}>
-              Total: {filteredProgressList.length} tim
+          <Box sx={{ mb: 4 }}>
+            <Typography sx={{ fontSize: { xs: 26, sm: 32, md: 36 }, fontWeight: 800, color: "#1F2937", mb: 0.5 }}>
+              Progress Luaran Tim
+            </Typography>
+            <Typography sx={{ fontSize: { xs: 14, sm: 16 }, color: "#6B7280" }}>
+              Monitor dan review pengumpulan luaran per tim
             </Typography>
           </Box>
 
           <Paper
             sx={{
-              borderRadius: "16px",
-              border: "1px solid #f0f0f0",
+              borderRadius: "20px",
+              border: "1.5px solid #E5E7EB",
               overflow: "hidden",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
             }}
           >
+            <Box sx={{ height: 4, background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
+            <Box sx={{ p: { xs: 2.5, sm: 3.5 }, borderBottom: `1.5px solid ${COLORS.slateLight}`, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+              <TextField
+                select
+                size="small"
+                value={tahun}
+                onChange={(e) => setTahun(e.target.value)}
+                SelectProps={{
+                  displayEmpty: true,
+                  renderValue: (v) => (
+                    <span style={{ fontSize: 14, color: !v ? "#9CA3AF" : "inherit" }}>
+                      {!v ? "Semua Tahun" : v}
+                    </span>
+                  ),
+                }}
+                sx={{ ...roundedField, width: { xs: "100%", sm: "auto" }, minWidth: { sm: 160 } }}
+              >
+                <MenuItem value="" sx={{ fontSize: 13 }}>Semua Tahun</MenuItem>
+                {tahunOptions.map((itemTahun) => (
+                  <MenuItem key={itemTahun} value={String(itemTahun)} sx={{ fontSize: 13 }}>{itemTahun}</MenuItem>
+                ))}
+              </TextField>
+              <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 500 }}>
+                Total <b>{filteredProgressList.length} tim</b>
+              </Typography>
+            </Box>
             {loading ? (
               <Box sx={{ position: "relative", minHeight: 320 }}>
                 <LoadingScreen message="Memuat progress tim..." overlay minHeight="320px" />
@@ -532,28 +575,24 @@ setTimeout(() => setOpenDetail(true), 200);
           onClose={() => setOpenDetail(false)}
           maxWidth="md"
           fullWidth
-          PaperProps={{ sx: { borderRadius: "16px" } }}
+          PaperProps={{ sx: { borderRadius: { xs: "16px", sm: "24px" }, overflow: "hidden" } }}
         >
-          <DialogTitle sx={{ pb: 1 }}>
-            <Box sx={{ pr: 4 }}>
-              <Typography sx={{ fontWeight: 700, fontSize: 16 }}>
-                Detail Luaran Tim
-              </Typography>
+          <Box sx={{ p: { xs: 1.5, sm: 2 }, display: "flex", alignItems: "center", justifyContent: "space-between", background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`, color: "#fff" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, px: 1 }}>
+              <Typography sx={{ fontWeight: 700, fontSize: 16 }}>Detail Luaran Tim</Typography>
               {selectedTim && (
-                <Typography sx={{ fontSize: 13, color: "#777", mt: 0.5 }}>
-                  {selectedTim.nama_tim}
-                </Typography>
+                <Typography sx={{ fontSize: 13, opacity: 0.9, mt: 0.5, fontWeight: 500 }}>{selectedTim.nama_tim}</Typography>
               )}
             </Box>
             <IconButton
               onClick={() => setOpenDetail(false)}
-              sx={{ position: "absolute", right: 12, top: 8, color: "#888" }}
+              sx={{ color: "#fff", "&:hover": { backgroundColor: "rgba(255,255,255,0.2)" } }}
             >
               <Close />
             </IconButton>
-          </DialogTitle>
+          </Box>
 
-          <DialogContent dividers sx={{ px: 3, py: 3 }}>
+          <DialogContent sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 3, sm: 4 } }}>
             {loadingDetail ? (
               <Box sx={{ position: "relative", minHeight: 220 }}>
                 <LoadingScreen message="Memuat detail luaran..." overlay minHeight="220px" />
@@ -802,7 +841,7 @@ setTimeout(() => setOpenDetail(true), 200);
             )}
           </DialogContent>
 
-          <DialogActions sx={{ px: 3, py: 2 }}>
+          <DialogActions sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 2, sm: 3 }, backgroundColor: "#F8FAFC", borderTop: "1.5px solid #E2E8F0", gap: 1.5, justifyContent: "flex-end", "& > button": { width: { xs: "100%", sm: "auto" } } }}>
             <Button
               onClick={() => setOpenDetail(false)}
               sx={{
@@ -825,21 +864,19 @@ setTimeout(() => setOpenDetail(true), 200);
           onClose={handleCloseReview}
           maxWidth="sm"
           fullWidth
-          PaperProps={{ sx: { borderRadius: "16px" } }}
+          PaperProps={{ sx: { borderRadius: { xs: "16px", sm: "24px" }, overflow: "hidden" } }}
         >
-          <DialogTitle sx={{ pb: 1 }}>
-            <Typography sx={{ fontWeight: 700, fontSize: 16 }}>
-              Review Luaran
-            </Typography>
+          <Box sx={{ p: { xs: 1.5, sm: 2 }, display: "flex", alignItems: "center", justifyContent: "space-between", background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`, color: "#fff" }}>
+            <Typography sx={{ fontWeight: 700, fontSize: 16 }}>Review Luaran</Typography>
             <IconButton
               onClick={handleCloseReview}
-              sx={{ position: "absolute", right: 12, top: 8, color: "#888" }}
+              sx={{ color: "#fff", "&:hover": { backgroundColor: "rgba(255,255,255,0.2)" } }}
             >
               <Close />
             </IconButton>
-          </DialogTitle>
+          </Box>
 
-          <DialogContent dividers sx={{ px: 3, py: 3 }}>
+          <DialogContent sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 3, sm: 4 } }}>
             <Box
               sx={{
                 p: 2,

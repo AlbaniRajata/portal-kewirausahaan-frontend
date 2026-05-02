@@ -1,8 +1,19 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  Box, Typography, Button, CircularProgress, Collapse, Chip,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Card, CardContent, Paper,
+  Box,
+  Typography,
+  Button,
+  Collapse,
+  Chip,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Card,
+  CardContent,
+  Paper,
 } from "@mui/material";
 import Swal from "sweetalert2";
 import LoadingScreen from "../common/LoadingScreen";
@@ -16,91 +27,128 @@ import {
   getJuriList,
 } from "../../api/admin";
 
-const formatRupiah = (value) => {
-  if (!value) return "Rp 0";
-  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(value);
+const COLORS = {
+  primary: "#0D59F2",
+  primaryLight: "#E0F2FE",
+  primaryMuted: "#93C5FD",
+  slate: "#64748B",
+  slateLight: "#F1F5F9",
+  success: "#059669",
+  successLight: "#ECFDF5",
+  warning: "#D97706",
+  warningLight: "#FFFBEB",
+  error: "#DC2626",
+  errorLight: "#ff7070",
 };
 
-const StatCard = ({ label, value, color, bg }) => (
-  <Paper sx={{ p: 2.5, backgroundColor: bg, borderRadius: 2 }}>
-    <Typography sx={{ fontSize: 13, color: "#666", mb: 0.5 }}>{label}</Typography>
-    <Typography sx={{ fontSize: 30, fontWeight: 800, color }}>{value}</Typography>
-  </Paper>
-);
+const tableHeadCell = {
+  fontWeight: 700,
+  fontSize: 13,
+  color: "#374151",
+  backgroundColor: "#F8FAFC",
+  borderBottom: `2px solid ${COLORS.primaryMuted}`,
+  py: 2,
+};
+
+const tableBodyRow = {
+  "& td": { borderBottom: `1px solid ${COLORS.slateLight}`, py: 2 },
+  "&:hover": { backgroundColor: "#F8FAFC" },
+};
+
+const statCard = {
+  p: 2.5,
+  borderRadius: "16px",
+  border: "1px solid #e5e7eb",
+  background: "#fff",
+  boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
+};
+
+const formatRupiah = (value) => {
+  if (!value) return "Rp 0";
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+  }).format(value);
+};
 
 const normalizeId = (value) => {
   if (value === null || value === undefined || value === "") return null;
   return String(value);
 };
 
-const getReviewerIdFromItem = (item) => normalizeId(
-  item?.reviewer?.id_user
-  ?? item?.reviewer?.id_reviewer
-  ?? item?.id_reviewer
-  ?? item?.id_user_reviewer
-);
+const getReviewerIdFromItem = (item) =>
+  normalizeId(
+    item?.reviewer?.id_user ??
+      item?.reviewer?.id_reviewer ??
+      item?.id_reviewer ??
+      item?.id_user_reviewer
+  );
 
-const getJuriIdFromItem = (item) => normalizeId(
-  item?.juri?.id_user
-  ?? item?.juri?.id_juri
-  ?? item?.id_juri
-  ?? item?.id_user_juri
-);
+const getJuriIdFromItem = (item) =>
+  normalizeId(
+    item?.juri?.id_user ??
+      item?.juri?.id_juri ??
+      item?.id_juri ??
+      item?.id_user_juri
+  );
 
 const toNumberId = (value) => {
   const parsed = Number(value);
   return Number.isNaN(parsed) ? null : parsed;
 };
 
-const sortByIdAsc = (list = []) => {
-  return [...list].sort((a, b) => {
+const sortByIdAsc = (list = []) =>
+  [...list].sort((a, b) => {
     const aNum = Number(a?.id_user);
     const bNum = Number(b?.id_user);
-
     const aValid = !Number.isNaN(aNum);
     const bValid = !Number.isNaN(bNum);
-
     if (aValid && bValid) return aNum - bNum;
     if (aValid) return -1;
     if (bValid) return 1;
-
     return String(a?.nama_lengkap || "").localeCompare(String(b?.nama_lengkap || ""));
   });
-};
 
 const applyRoundRobinRencana = (previewData, reviewers, juries) => {
   if (!previewData?.rencana_distribusi?.length) return previewData;
   if (!reviewers?.length || !juries?.length) return previewData;
 
-  const usedReviewer = new Set((previewData.detail_sudah || []).map(getReviewerIdFromItem).filter(Boolean));
-  const usedJuri = new Set((previewData.detail_sudah || []).map(getJuriIdFromItem).filter(Boolean));
+  const usedReviewer = new Set(
+    (previewData.detail_sudah || []).map(getReviewerIdFromItem).filter(Boolean)
+  );
+  const usedJuri = new Set(
+    (previewData.detail_sudah || []).map(getJuriIdFromItem).filter(Boolean)
+  );
 
-  const availableReviewer = sortByIdAsc(reviewers.filter((r) => !usedReviewer.has(normalizeId(r.id_user))));
-  const availableJuri = sortByIdAsc(juries.filter((j) => !usedJuri.has(normalizeId(j.id_user))));
+  const availableReviewer = sortByIdAsc(
+    reviewers.filter((r) => !usedReviewer.has(normalizeId(r.id_user)))
+  );
+  const availableJuri = sortByIdAsc(
+    juries.filter((j) => !usedJuri.has(normalizeId(j.id_user)))
+  );
 
   if (!availableReviewer.length || !availableJuri.length) return previewData;
 
   const rencanaBaru = previewData.rencana_distribusi.map((item, index) => {
     const reviewer = availableReviewer[index % availableReviewer.length];
     const juri = availableJuri[index % availableJuri.length];
-
     return {
       ...item,
-      reviewer: {
-        ...(item.reviewer || {}),
-        id_user: reviewer.id_user,
-        nama_lengkap: reviewer.nama_lengkap,
-      },
-      juri: {
-        ...(item.juri || {}),
-        id_user: juri.id_user,
-        nama_lengkap: juri.nama_lengkap,
-      },
+      reviewer: { ...(item.reviewer || {}), id_user: reviewer.id_user, nama_lengkap: reviewer.nama_lengkap },
+      juri: { ...(item.juri || {}), id_user: juri.id_user, nama_lengkap: juri.nama_lengkap },
     };
   });
 
   return { ...previewData, rencana_distribusi: rencanaBaru };
 };
+
+const StatCard = ({ label, value, color, bg, borderColor }) => (
+  <Box sx={{ ...statCard, backgroundColor: bg, borderColor: borderColor || "#e5e7eb" }}>
+    <Typography sx={{ fontSize: 12, color: COLORS.slate, mb: 0.5 }}>{label}</Typography>
+    <Typography sx={{ fontSize: 28, fontWeight: 800, color }}>{value}</Typography>
+  </Box>
+);
 
 export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, onError }) {
   const [preview, setPreview] = useState(null);
@@ -123,12 +171,9 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
           getReviewerList(),
           getJuriList(),
         ]);
-
-        const previewData = previewRes.data || null;
-        const reviewerData = reviewerRes.data || [];
-        const juriData = juriRes.data || [];
-
-        setPreview(applyRoundRobinRencana(previewData, reviewerData, juriData));
+        setPreview(
+          applyRoundRobinRencana(previewRes.data || null, reviewerRes.data || [], juriRes.data || [])
+        );
       }
     } catch (err) {
       setErrorMsg(err.response?.data?.message || "Gagal memuat preview distribusi");
@@ -138,21 +183,34 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
     }
   }, [id_program, tahap]);
 
-  useEffect(() => { fetchPreview(); }, [fetchPreview]);
+  useEffect(() => {
+    fetchPreview();
+  }, [fetchPreview]);
 
-  const toggleExpand = (id) => setExpandedReviewer((prev) => ({ ...prev, [id]: !prev[id] }));
+  const toggleExpand = (id) =>
+    setExpandedReviewer((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const handleExecute = async () => {
-    const reviewerText = preview.total_proposal === 1 ? "1 reviewer" : `${preview.total_reviewer} reviewer`;
-    const confirmText = tahap === 1
-      ? `Anda akan mendistribusikan <b>${preview.total_proposal}</b> proposal ke <b>${reviewerText}</b> secara otomatis.<br/><br/>Lanjutkan?`
-      : `Anda akan mendistribusikan <b>${preview.belum_terdistribusi}</b> proposal yang belum memiliki pasangan panel.<br/><br/>
-         Sistem akan mendistribusikan berurutan berdasarkan ID reviewer dan ID juri (round-robin) sesuai preview.<br/><br/>Lanjutkan?`;
+    const reviewerText =
+      preview.total_proposal === 1
+        ? "1 reviewer"
+        : `${preview.total_reviewer} reviewer`;
+
+    const confirmText =
+      tahap === 1
+        ? `Anda akan mendistribusikan <b>${preview.total_proposal}</b> proposal ke <b>${reviewerText}</b> secara otomatis.<br/><br/>Lanjutkan?`
+        : `Anda akan mendistribusikan <b>${preview.belum_terdistribusi}</b> proposal yang belum memiliki pasangan panel.<br/><br/>
+           Sistem akan mendistribusikan berurutan berdasarkan ID reviewer dan ID juri (round-robin) sesuai preview.<br/><br/>Lanjutkan?`;
 
     const result = await Swal.fire({
-      title: "Konfirmasi Distribusi", html: confirmText, icon: "question",
-      showCancelButton: true, confirmButtonColor: "#0D59F2", cancelButtonColor: "#d33",
-      confirmButtonText: "Ya, Distribusikan", cancelButtonText: "Batal",
+      title: "Konfirmasi Distribusi",
+      html: confirmText,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: COLORS.primary,
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Ya, Distribusikan",
+      cancelButtonText: "Batal",
     });
 
     if (!result.isConfirmed) return;
@@ -164,46 +222,51 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
         await executeAutoDistribusi(id_program, tahap);
       } else {
         const rencana = preview?.rencana_distribusi || [];
-
         if (rencana.length === 0) {
           await executeAutoDistribusiTahap2(id_program);
         } else {
           for (const item of rencana) {
             const id_proposal = toNumberId(item?.id_proposal);
             const id_reviewer = toNumberId(
-              item?.reviewer?.id_user
-              ?? item?.reviewer?.id_reviewer
-              ?? item?.id_reviewer
-              ?? item?.id_user_reviewer
+              item?.reviewer?.id_user ??
+                item?.reviewer?.id_reviewer ??
+                item?.id_reviewer ??
+                item?.id_user_reviewer
             );
             const id_juri = toNumberId(
-              item?.juri?.id_user
-              ?? item?.juri?.id_juri
-              ?? item?.id_juri
-              ?? item?.id_user_juri
+              item?.juri?.id_user ??
+                item?.juri?.id_juri ??
+                item?.id_juri ??
+                item?.id_user_juri
             );
 
             if (!id_proposal || !id_reviewer || !id_juri) {
               throw new Error("Rencana distribusi tidak valid");
             }
 
-            await executeManualDistribusiTahap2(id_program, {
-              id_proposal,
-              id_reviewer,
-              id_juri,
-            });
+            await executeManualDistribusiTahap2(id_program, { id_proposal, id_reviewer, id_juri });
           }
         }
       }
 
       await Swal.fire({
-        icon: "success", title: "Berhasil", text: "Distribusi berhasil dieksekusi",
-        timer: 2000, timerProgressBar: true, showConfirmButton: false,
+        icon: "success",
+        title: "Berhasil",
+        text: "Distribusi berhasil dieksekusi",
+        timer: 2000,
+        timerProgressBar: true,
+        showConfirmButton: false,
       });
+
       if (onSuccess) onSuccess("Distribusi berhasil dieksekusi");
       fetchPreview();
     } catch (err) {
-      Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Terjadi kesalahan saat distribusi", confirmButtonColor: "#0D59F2" });
+      Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: err.response?.data?.message || "Terjadi kesalahan saat distribusi",
+        confirmButtonColor: COLORS.primary,
+      });
       if (onError) onError(err.response?.data?.message || "Terjadi kesalahan");
     } finally {
       setExecuting(false);
@@ -221,9 +284,17 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
   if (errorMsg) {
     return (
       <Box sx={{ textAlign: "center", py: 6 }}>
-        <Typography sx={{ fontSize: 15, fontWeight: 600, color: "#666", mb: 1 }}>Tidak ada proposal siap distribusi</Typography>
-        <Typography sx={{ fontSize: 13, color: "#999", mb: 3 }}>{errorMsg}</Typography>
-        <Button variant="outlined" onClick={fetchPreview} sx={{ textTransform: "none", borderRadius: "50px" }}>Refresh Preview</Button>
+        <Typography sx={{ fontSize: 15, fontWeight: 600, color: "#374151", mb: 1 }}>
+          Tidak ada proposal siap distribusi
+        </Typography>
+        <Typography sx={{ fontSize: 13, color: COLORS.slate, mb: 3 }}>{errorMsg}</Typography>
+        <Button
+          variant="outlined"
+          onClick={fetchPreview}
+          sx={{ textTransform: "none", borderRadius: "50px", borderColor: COLORS.primary, color: COLORS.primary }}
+        >
+          Refresh Preview
+        </Button>
       </Box>
     );
   }
@@ -231,8 +302,16 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
   if (!preview) {
     return (
       <Box sx={{ textAlign: "center", py: 6 }}>
-        <Typography sx={{ fontSize: 14, color: "#999", mb: 3 }}>Tidak ada data preview</Typography>
-        <Button variant="outlined" onClick={fetchPreview} sx={{ textTransform: "none", borderRadius: "50px" }}>Refresh Preview</Button>
+        <Typography sx={{ fontSize: 14, color: COLORS.slate, mb: 3 }}>
+          Tidak ada data preview
+        </Typography>
+        <Button
+          variant="outlined"
+          onClick={fetchPreview}
+          sx={{ textTransform: "none", borderRadius: "50px", borderColor: COLORS.primary, color: COLORS.primary }}
+        >
+          Refresh Preview
+        </Button>
       </Box>
     );
   }
@@ -241,121 +320,267 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
 
   return (
     <Box>
-      <Box sx={{ display: "grid", gridTemplateColumns: tahap === 1 ? "repeat(3, 1fr)" : "repeat(4, 1fr)", gap: 2, mb: 3 }}>
+      <Box
+        sx={{
+          mb: 3,
+          display: "grid",
+          gridTemplateColumns: tahap === 1 ? "repeat(3, 1fr)" : "repeat(4, 1fr)",
+          gap: 2,
+        }}
+      >
         {tahap === 1 ? (
           <>
-            <StatCard label="Total Proposal" value={preview.total_proposal} color="#0D59F2" bg="#E3F2FD" />
-            <StatCard label="Total Reviewer" value={preview.total_reviewer} color="#9C27B0" bg="#F3E5F5" />
-            <StatCard label="Rata-rata per Reviewer" value={Math.ceil(preview.total_proposal / preview.total_reviewer)} color="#4CAF50" bg="#E8F5E9" />
+            <StatCard
+              label="Total Proposal"
+              value={preview.total_proposal}
+              color={COLORS.primary}
+              bg="#f3f7ff"
+              borderColor="#d7e5fb"
+            />
+            <StatCard
+              label="Total Reviewer"
+              value={preview.total_reviewer}
+              color="#7C3AED"
+              bg="#F5F3FF"
+              borderColor="#DDD6FE"
+            />
+            <StatCard
+              label="Rata-rata per Reviewer"
+              value={Math.ceil(preview.total_proposal / preview.total_reviewer)}
+              color={COLORS.success}
+              bg="#f2faf3"
+              borderColor="#d7e9d8"
+            />
           </>
         ) : (
           <>
-            <StatCard label="Total Proposal" value={preview.total_proposal} color="#0D59F2" bg="#E3F2FD" />
-            <StatCard label="Sudah Berpasangan" value={preview.sudah_terdistribusi} color="#4CAF50" bg="#E8F5E9" />
-            <StatCard label="Belum Berpasangan" value={preview.belum_terdistribusi} color="#F44336" bg="#FFEBEE" />
-            <StatCard label="Jumlah Pasang" value={preview.jumlah_pasang} color="#FF9800" bg="#FFF3E0" />
+            <StatCard
+              label="Total Proposal"
+              value={preview.total_proposal}
+              color={COLORS.primary}
+              bg="#f3f7ff"
+              borderColor="#d7e5fb"
+            />
+            <StatCard
+              label="Sudah Berpasangan"
+              value={preview.sudah_terdistribusi}
+              color={COLORS.success}
+              bg="#f2faf3"
+              borderColor="#d7e9d8"
+            />
+            <StatCard
+              label="Belum Berpasangan"
+              value={preview.belum_terdistribusi}
+              color={COLORS.error}
+              bg="#fff5f5"
+              borderColor="#fecaca"
+            />
+            <StatCard
+              label="Jumlah Pasang"
+              value={preview.jumlah_pasang}
+              color={COLORS.warning}
+              bg="#fff7ee"
+              borderColor="#fde3c7"
+            />
           </>
         )}
       </Box>
 
-      <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2 }}>
+      <Typography sx={{ fontSize: 15, fontWeight: 700, color: "#1a1a1a", mb: 2 }}>
         {tahap === 1 ? "Rekomendasi Distribusi" : "Preview Distribusi"}
       </Typography>
 
       {tahap === 1 ? (
         preview.rekomendasi && preview.rekomendasi.length > 0 ? (
           preview.rekomendasi.map((reviewer) => (
-            <Card key={reviewer.id_reviewer} sx={{ mb: 2, borderRadius: 2 }}>
-              <CardContent>
+            <Paper
+              key={reviewer.id_reviewer}
+              variant="outlined"
+              sx={{
+                mb: 2,
+                borderRadius: "16px",
+                border: `1.5px solid ${COLORS.slateLight}`,
+                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)",
+                overflow: "hidden",
+              }}
+            >
+              <Box sx={{ p: 2.5 }}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1 }}>
                   <Box>
-                    <Typography sx={{ fontSize: 16, fontWeight: 700, mb: 0.5 }}>{reviewer.nama_reviewer}</Typography>
-                    <Typography sx={{ fontSize: 13, color: "#666" }}>{reviewer.institusi || "-"}</Typography>
+                    <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 0.25, color: "#1a1a1a" }}>
+                      {reviewer.nama_reviewer}
+                    </Typography>
+                    <Typography sx={{ fontSize: 13, color: COLORS.slate }}>
+                      {reviewer.institusi || "-"}
+                    </Typography>
                     {reviewer.bidang_keahlian && (
-                      <Typography sx={{ fontSize: 12, color: "#999" }}>Bidang: {reviewer.bidang_keahlian}</Typography>
+                      <Typography sx={{ fontSize: 12, color: "#94a3b8" }}>
+                        Bidang: {reviewer.bidang_keahlian}
+                      </Typography>
                     )}
                   </Box>
-                  <Chip label={`${reviewer.proposals.length} Proposal`} color="primary" sx={{ fontWeight: 700 }} />
+                  <Chip
+                    label={`${reviewer.proposals.length} Proposal`}
+                    sx={{
+                      fontWeight: 700,
+                      fontSize: 12,
+                      borderRadius: "50px",
+                      backgroundColor: COLORS.primaryLight,
+                      color: COLORS.primary,
+                      border: `1px solid ${COLORS.primaryMuted}`,
+                    }}
+                  />
                 </Box>
 
-                <Button size="small" onClick={() => toggleExpand(reviewer.id_reviewer)}
-                  sx={{ textTransform: "none", borderRadius: "50px", mt: 1 }}>
+                <Button
+                  size="small"
+                  onClick={() => toggleExpand(reviewer.id_reviewer)}
+                  variant="outlined"
+                  sx={{
+                    textTransform: "none",
+                    borderRadius: "50px",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    mt: 1,
+                    px: 2,
+                    borderColor: COLORS.primary,
+                    color: COLORS.primary,
+                    "&:hover": { backgroundColor: "#f0f4ff" },
+                  }}
+                >
                   {expandedReviewer[reviewer.id_reviewer] ? "Sembunyikan Detail" : "Lihat Detail"}
                 </Button>
 
                 <Collapse in={expandedReviewer[reviewer.id_reviewer]}>
-                  <TableContainer sx={{ mt: 2 }}>
+                  <TableContainer
+                    sx={{
+                      mt: 2,
+                      borderRadius: "12px",
+                      border: `1px solid ${COLORS.slateLight}`,
+                      overflow: "auto",
+                    }}
+                  >
                     <Table size="small">
                       <TableHead>
-                        <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                          <TableCell sx={{ fontWeight: 700 }}>ID</TableCell>
-                          <TableCell sx={{ fontWeight: 700 }}>Judul Proposal</TableCell>
-                          <TableCell sx={{ fontWeight: 700 }}>Tim</TableCell>
-                          <TableCell sx={{ fontWeight: 700 }}>Modal</TableCell>
+                        <TableRow>
+                          <TableCell sx={{ ...tableHeadCell, fontSize: 12 }}>ID</TableCell>
+                          <TableCell sx={{ ...tableHeadCell, fontSize: 12 }}>JUDUL PROPOSAL</TableCell>
+                          <TableCell sx={{ ...tableHeadCell, fontSize: 12 }}>TIM</TableCell>
+                          <TableCell sx={{ ...tableHeadCell, fontSize: 12 }}>MODAL</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {reviewer.proposals.map((p) => (
-                          <TableRow key={p.id_proposal} hover>
-                            <TableCell>{p.id_proposal}</TableCell>
-                            <TableCell><Typography sx={{ fontSize: 13, maxWidth: 300 }}>{p.judul}</Typography></TableCell>
-                            <TableCell>{p.nama_tim}</TableCell>
-                            <TableCell>{formatRupiah(p.modal_diajukan)}</TableCell>
+                          <TableRow key={p.id_proposal} sx={tableBodyRow}>
+                            <TableCell sx={{ fontSize: 13 }}>{p.id_proposal}</TableCell>
+                            <TableCell>
+                              <Typography sx={{ fontSize: 13, maxWidth: 300 }}>{p.judul}</Typography>
+                            </TableCell>
+                            <TableCell sx={{ fontSize: 13 }}>{p.nama_tim}</TableCell>
+                            <TableCell sx={{ fontSize: 13 }}>{formatRupiah(p.modal_diajukan)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
                   </TableContainer>
                 </Collapse>
-              </CardContent>
-            </Card>
+              </Box>
+            </Paper>
           ))
         ) : (
-          <Box sx={{ textAlign: "center", py: 4 }}>
-            <Typography sx={{ fontSize: 14, color: "#999" }}>Tidak ada rekomendasi distribusi</Typography>
+          <Box sx={{ textAlign: "center", py: 5 }}>
+            <Typography sx={{ fontSize: 14, color: COLORS.slate }}>
+              Tidak ada rekomendasi distribusi
+            </Typography>
           </Box>
         )
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <Box sx={{ p: 3, borderRadius: 2, background: "#f0f4ff", border: "1px solid #c7d7fc" }}>
-            <Typography sx={{ fontWeight: 700, mb: 1, color: "#0D59F2" }}>Sistem Pasangan (Reviewer + Juri)</Typography>
-            <Typography sx={{ fontSize: 14, color: "#444", mb: 0.5 }}>
-              Tersedia <b>{preview.total_reviewer}</b> reviewer dan <b>{preview.total_juri}</b> juri →{" "}
-              <b>{preview.jumlah_pasang}</b> pasang unik siap dipakai terlebih dahulu.
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 3,
+              borderRadius: "16px",
+              border: `1.5px solid ${COLORS.primaryMuted}`,
+              backgroundColor: "#f3f7ff",
+            }}
+          >
+            <Typography sx={{ fontWeight: 700, mb: 1.5, color: COLORS.primary, fontSize: 14 }}>
+              Sistem Pasangan (Reviewer + Juri)
             </Typography>
-            <Typography sx={{ fontSize: 14, color: "#444", mb: 0.5 }}>
-              Proposal yang sudah berpasangan: <b style={{ color: "#2e7d32" }}>{preview.sudah_terdistribusi}</b>
-            </Typography>
-            <Typography sx={{ fontSize: 14, color: "#444" }}>
-              Proposal sisa untuk didistribusikan: <b style={{ color: preview.belum_terdistribusi > 0 ? "#c62828" : "#2e7d32" }}>{preview.belum_terdistribusi}</b>
-            </Typography>
-          </Box>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+              <Typography sx={{ fontSize: 13, color: "#374151" }}>
+                Tersedia{" "}
+                <Box component="span" sx={{ fontWeight: 700 }}>
+                  {preview.total_reviewer}
+                </Box>{" "}
+                reviewer dan{" "}
+                <Box component="span" sx={{ fontWeight: 700 }}>
+                  {preview.total_juri}
+                </Box>{" "}
+                juri →{" "}
+                <Box component="span" sx={{ fontWeight: 700 }}>
+                  {preview.jumlah_pasang}
+                </Box>{" "}
+                pasang unik siap dipakai terlebih dahulu.
+              </Typography>
+              <Typography sx={{ fontSize: 13, color: "#374151" }}>
+                Proposal sudah berpasangan:{" "}
+                <Box component="span" sx={{ fontWeight: 700, color: COLORS.success }}>
+                  {preview.sudah_terdistribusi}
+                </Box>
+              </Typography>
+              <Typography sx={{ fontSize: 13, color: "#374151" }}>
+                Proposal sisa untuk didistribusikan:{" "}
+                <Box
+                  component="span"
+                  sx={{
+                    fontWeight: 700,
+                    color: preview.belum_terdistribusi > 0 ? COLORS.error : COLORS.success,
+                  }}
+                >
+                  {preview.belum_terdistribusi}
+                </Box>
+              </Typography>
+            </Box>
+          </Paper>
 
           {preview.detail_sudah && preview.detail_sudah.length > 0 && (
             <Box>
-              <Typography sx={{ fontSize: 14, fontWeight: 700, color: "#2e7d32", mb: 1 }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: COLORS.success, mb: 1.5 }}>
                 Sudah Berpasangan ({preview.detail_sudah.length})
               </Typography>
-              <TableContainer sx={{ borderRadius: "12px", border: "1px solid #f0f0f0" }}>
+              <TableContainer
+                sx={{
+                  borderRadius: "16px",
+                  border: `1.5px solid ${COLORS.slateLight}`,
+                  boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)",
+                  overflow: "auto",
+                }}
+              >
                 <Table size="small">
                   <TableHead>
-                    <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                      <TableCell sx={{ fontWeight: 700, fontSize: 12 }}>Proposal</TableCell>
-                      <TableCell sx={{ fontWeight: 700, fontSize: 12 }}>Reviewer</TableCell>
-                      <TableCell sx={{ fontWeight: 700, fontSize: 12 }}>Juri</TableCell>
+                    <TableRow>
+                      <TableCell sx={{ ...tableHeadCell, fontSize: 12 }}>PROPOSAL</TableCell>
+                      <TableCell sx={{ ...tableHeadCell, fontSize: 12 }}>REVIEWER</TableCell>
+                      <TableCell sx={{ ...tableHeadCell, fontSize: 12 }}>JURI</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {preview.detail_sudah.map((item) => (
-                      <TableRow key={item.id_proposal} hover>
+                      <TableRow key={item.id_proposal} sx={tableBodyRow}>
                         <TableCell>
                           <Typography sx={{ fontSize: 12, maxWidth: 250 }}>{item.judul}</Typography>
                         </TableCell>
                         <TableCell>
-                          <Typography sx={{ fontSize: 12 }}>{item.reviewer?.nama_lengkap || "-"}</Typography>
+                          <Typography sx={{ fontSize: 12, fontWeight: 500 }}>
+                            {item.reviewer?.nama_lengkap || "-"}
+                          </Typography>
                         </TableCell>
                         <TableCell>
-                          <Typography sx={{ fontSize: 12 }}>{item.juri?.nama_lengkap || "-"}</Typography>
+                          <Typography sx={{ fontSize: 12, fontWeight: 500 }}>
+                            {item.juri?.nama_lengkap || "-"}
+                          </Typography>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -367,29 +592,47 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
 
           {preview.rencana_distribusi && preview.rencana_distribusi.length > 0 && (
             <Box>
-              <Typography sx={{ fontSize: 14, fontWeight: 700, color: "#e65100", mb: 1 }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: COLORS.warning, mb: 1.5 }}>
                 Akan Didistribusikan ({preview.rencana_distribusi.length})
               </Typography>
-              <TableContainer sx={{ borderRadius: "12px", border: "1px solid #ffe0cc" }}>
+              <TableContainer
+                sx={{
+                  borderRadius: "16px",
+                  border: `1.5px solid #fde3c7`,
+                  backgroundColor: "#fff",
+                  boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)",
+                  overflow: "auto",
+                }}
+              >
                 <Table size="small">
                   <TableHead>
-                    <TableRow sx={{ backgroundColor: "#fff3e0" }}>
-                      <TableCell sx={{ fontWeight: 700, fontSize: 12 }}>Proposal</TableCell>
-                      <TableCell sx={{ fontWeight: 700, fontSize: 12 }}>Reviewer</TableCell>
-                      <TableCell sx={{ fontWeight: 700, fontSize: 12 }}>Juri</TableCell>
+                    <TableRow sx={{ backgroundColor: "#fff7ee" }}>
+                      <TableCell sx={{ ...tableHeadCell, fontSize: 12, backgroundColor: "#fff7ee", borderBottom: `2px solid #fde3c7` }}>
+                        PROPOSAL
+                      </TableCell>
+                      <TableCell sx={{ ...tableHeadCell, fontSize: 12, backgroundColor: "#fff7ee", borderBottom: `2px solid #fde3c7` }}>
+                        REVIEWER
+                      </TableCell>
+                      <TableCell sx={{ ...tableHeadCell, fontSize: 12, backgroundColor: "#fff7ee", borderBottom: `2px solid #fde3c7` }}>
+                        JURI
+                      </TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {preview.rencana_distribusi.map((item) => (
-                      <TableRow key={item.id_proposal} hover>
+                      <TableRow key={item.id_proposal} sx={tableBodyRow}>
                         <TableCell>
                           <Typography sx={{ fontSize: 12, maxWidth: 250 }}>{item.judul}</Typography>
                         </TableCell>
                         <TableCell>
-                          <Typography sx={{ fontSize: 12 }}>{item.reviewer?.nama_lengkap || "-"}</Typography>
+                          <Typography sx={{ fontSize: 12, fontWeight: 500 }}>
+                            {item.reviewer?.nama_lengkap || "-"}
+                          </Typography>
                         </TableCell>
                         <TableCell>
-                          <Typography sx={{ fontSize: 12 }}>{item.juri?.nama_lengkap || "-"}</Typography>
+                          <Typography sx={{ fontSize: 12, fontWeight: 500 }}>
+                            {item.juri?.nama_lengkap || "-"}
+                          </Typography>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -400,31 +643,60 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
           )}
 
           {semuaSudahTerdistribusi && (
-            <Box sx={{ p: 2.5, borderRadius: 2, background: "#e8f5e9", border: "1px solid #a5d6a7", textAlign: "center" }}>
-              <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#2e7d32" }}>
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 2.5,
+                borderRadius: "16px",
+                backgroundColor: COLORS.successLight,
+                border: `1.5px solid #6EE7B7`,
+                textAlign: "center",
+              }}
+            >
+              <Typography sx={{ fontSize: 14, fontWeight: 600, color: COLORS.success }}>
                 ✓ Semua proposal sudah memiliki pasangan reviewer dan juri
               </Typography>
-            </Box>
+            </Paper>
           )}
         </Box>
       )}
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end", mt: 3 }}>
-        <Button variant="outlined" onClick={fetchPreview} disabled={executing}
-          sx={{ textTransform: "none", borderRadius: "50px" }}>
+        <Button
+          variant="outlined"
+          onClick={fetchPreview}
+          disabled={executing}
+          sx={{
+            textTransform: "none",
+            borderRadius: "50px",
+            fontWeight: 600,
+            px: 3,
+            borderColor: COLORS.primary,
+            color: COLORS.primary,
+            "&:hover": { backgroundColor: "#f0f4ff" },
+          }}
+        >
           Refresh Preview
         </Button>
         <Button
           variant="contained"
           onClick={handleExecute}
           disabled={executing || semuaSudahTerdistribusi}
-          sx={{ textTransform: "none", borderRadius: "50px", backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" } }}
+          sx={{
+            textTransform: "none",
+            borderRadius: "50px",
+            fontWeight: 700,
+            px: 3,
+            backgroundColor: COLORS.primary,
+            "&:hover": { backgroundColor: "#0a47c4" },
+            "&:disabled": { backgroundColor: "#ccc" },
+          }}
         >
           {executing
             ? "Memproses..."
             : semuaSudahTerdistribusi
-              ? "Semua Sudah Berpasangan"
-              : "Eksekusi Distribusi Otomatis"}
+            ? "Semua Sudah Berpasangan"
+            : "Eksekusi Distribusi Otomatis"}
         </Button>
       </Box>
     </Box>

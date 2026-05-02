@@ -13,16 +13,48 @@ import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import { getBeritaListAdmin, deleteBerita } from "../../api/admin";
 
-const BASE_URL = import.meta.env.VITE_API_URL.replace("/api", "");
-
-const roundedField = { "& .MuiOutlinedInput-root": { borderRadius: "15px" } };
-
-const tableHeadCell = {
-  fontWeight: 700, fontSize: 13, color: "#000",
-  backgroundColor: "#fafafa", borderBottom: "2px solid #f0f0f0", py: 2,
+const COLORS = {
+  primary:      "#0D59F2",
+  primaryLight: "#E0F2FE",
+  primaryDark:  "#0369A1",
+  primaryMuted: "#93C5FD",
+  secondary:    "#2563EB",
+  accent:       "#3B82F6",
+  slate:        "#64748B",
+  slateLight:   "#F1F5F9",
+  warning:      "#D97706",
+  warningLight: "#FFFBEB",
+  error:        "#DC2626",
+  success:      "#059669",
+  successLight: "#ECFDF5",
 };
 
-const tableBodyRow = { "& td": { borderBottom: "1px solid #f5f5f5", py: 2 } };
+const roundedField = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "12px",
+    backgroundColor: "#fff",
+    transition: "box-shadow 0.2s",
+    "&:hover fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused": { boxShadow: `0 0 0 3px ${COLORS.primaryLight}` },
+  },
+};
+
+const tableHeadCell = {
+  fontWeight: 700,
+  fontSize: { xs: 11, sm: 12 },
+  color: "#374151",
+  backgroundColor: "#F8FAFC",
+  borderBottom: `2px solid ${COLORS.primaryMuted}`,
+  py: 2,
+  textTransform: "uppercase",
+  letterSpacing: "0.04em",
+};
+
+const tableBodyRow = {
+  "& td": { borderBottom: `1px solid ${COLORS.slateLight}`, py: 2 },
+  "&:hover": { backgroundColor: "#F8FAFC" },
+};
 
 const StatusPill = ({ label, backgroundColor }) => (
   <Box sx={{
@@ -100,68 +132,97 @@ export default function BeritaPage() {
   return (
     <BodyLayout Sidebar={AdminSidebar}>
       <PageTransition>
-        <Box>
-          <Typography sx={{ fontSize: 28, fontWeight: 700, mb: 1 }}>Berita</Typography>
-          <Typography sx={{ fontSize: 14, color: "#777", mb: 4 }}>Kelola berita dan pengumuman yang tampil di halaman publik</Typography>
+        <Box sx={{ px: 1, py: 1 }}>
+          <Box sx={{ mb: 4 }}>
+            <Typography sx={{ fontSize: { xs: 26, sm: 32, md: 36 }, fontWeight: 800, color: "#1F2937", mb: 0.5 }}>Berita</Typography>
+            <Typography sx={{ fontSize: { xs: 14, sm: 16 }, color: "#6B7280" }}>Kelola berita dan pengumuman yang tampil di halaman publik</Typography>
+          </Box>
 
-          <Paper sx={{ borderRadius: "16px", border: "1px solid #f0f0f0", overflow: "hidden" }}>
-            <Box sx={{ p: 3, borderBottom: "1px solid #f0f0f0", display: "flex", gap: 2, flexWrap: "wrap", alignItems: "center" }}>
+          <Paper sx={{
+            borderRadius: "20px",
+            border: "1.5px solid #E5E7EB",
+            overflow: "hidden",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+          }}>
+            <Box sx={{ height: 4, background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
+            <Box sx={{ p: { xs: 2.5, sm: 3.5 }, borderBottom: `1.5px solid ${COLORS.slateLight}`, display: "flex", gap: 2, flexWrap: "wrap", alignItems: "center" }}>
               <TextField
                 size="small" placeholder="Cari judul berita..."
                 value={filters.search}
                 onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                InputProps={{ startAdornment: <InputAdornment position="start"><Search sx={{ fontSize: 18, color: "#aaa" }} /></InputAdornment> }}
+                InputProps={{ startAdornment: <InputAdornment position="start"><Search sx={{ fontSize: 18, color: "#9CA3AF" }} /></InputAdornment> }}
                 sx={{ ...roundedField, minWidth: 240, flex: "1 1 240px" }}
               />
               <TextField
-                select size="small" label="Status"
+                select size="small"
                 value={filters.status}
                 onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                InputLabelProps={{ shrink: true }}
-                sx={{ ...roundedField, minWidth: 160 }}
+                SelectProps={{
+                  displayEmpty: true,
+                  renderValue: (v) => (
+                    <span style={{ fontSize: 14, color: !v ? "#9CA3AF" : "inherit" }}>
+                      {!v ? "Semua Status" : (v === "1" ? "Published" : "Draft")}
+                    </span>
+                  ),
+                }}
+                sx={{ ...roundedField, width: { xs: "100%", sm: "auto" }, minWidth: { sm: 160 } }}
               >
-                <MenuItem value="">Semua Status</MenuItem>
-                <MenuItem value="0">Draft</MenuItem>
-                <MenuItem value="1">Published</MenuItem>
+                <MenuItem value="" sx={{ fontSize: 13 }}>Semua Status</MenuItem>
+                <MenuItem value="0" sx={{ fontSize: 13 }}>Draft</MenuItem>
+                <MenuItem value="1" sx={{ fontSize: 13 }}>Published</MenuItem>
               </TextField>
               <TextField
-                select size="small" label="Tahun"
+                select size="small"
                 value={filters.tahun}
                 onChange={(e) => setFilters({ ...filters, tahun: e.target.value })}
-                InputLabelProps={{ shrink: true }}
-                sx={{ ...roundedField, minWidth: 150 }}
+                SelectProps={{
+                  displayEmpty: true,
+                  renderValue: (v) => (
+                    <span style={{ fontSize: 14, color: !v ? "#9CA3AF" : "inherit" }}>
+                      {!v ? "Semua Tahun" : v}
+                    </span>
+                  ),
+                }}
+                sx={{ ...roundedField, width: { xs: "100%", sm: "auto" }, minWidth: { sm: 150 } }}
               >
-                <MenuItem value="">Semua Tahun</MenuItem>
+                <MenuItem value="" sx={{ fontSize: 13 }}>Semua Tahun</MenuItem>
                 {tahunOptions.map((tahun) => (
-                  <MenuItem key={tahun} value={String(tahun)}>{tahun}</MenuItem>
+                  <MenuItem key={tahun} value={String(tahun)} sx={{ fontSize: 13 }}>{tahun}</MenuItem>
                 ))}
               </TextField>
               <Box sx={{ flex: 1 }} />
               <Button
                 variant="contained"
                 onClick={() => navigate("/admin/berita/tambah")}
-                sx={{ textTransform: "none", borderRadius: "50px", px: 3, py: 1.2, fontWeight: 600, backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0a47c4" }, whiteSpace: "nowrap" }}
+                sx={{
+                  textTransform: "none", borderRadius: "12px", px: 3, py: 1.2, fontWeight: 700,
+                  backgroundColor: COLORS.primary,
+                  boxShadow: "0 4px 12px rgba(13,89,242,0.2)",
+                  width: { xs: "100%", sm: "auto" },
+                  whiteSpace: "nowrap",
+                  "&:hover": { backgroundColor: COLORS.primaryDark, boxShadow: "0 6px 16px rgba(13,89,242,0.3)" },
+                }}
               >
                 Tambah Berita
               </Button>
             </Box>
 
-            <Box sx={{ p: 3 }}>
+            <Box sx={{ p: { xs: 2.5, sm: 3.5 } }}>
               {loading ? (
                 <Box sx={{ position: "relative", minHeight: 320 }}>
                   <LoadingScreen message="Memuat berita..." overlay minHeight="320px" />
                 </Box>
               ) : paginatedList.length === 0 ? (
                 <Box sx={{ textAlign: "center", py: 10 }}>
-                  <Box sx={{ width: 100, height: 100, borderRadius: "50%", backgroundColor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 3 }}>
-                    <Newspaper sx={{ fontSize: 48, color: "#ccc" }} />
+                  <Box sx={{ width: 100, height: 100, borderRadius: "50%", backgroundColor: COLORS.slateLight, display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 3 }}>
+                    <Newspaper sx={{ fontSize: 48, color: COLORS.primaryMuted }} />
                   </Box>
-                  <Typography sx={{ fontSize: 20, fontWeight: 700, color: "#444", mb: 1 }}>Belum Ada Berita</Typography>
-                  <Typography sx={{ fontSize: 14, color: "#999" }}>Klik Tambah Berita untuk membuat berita pertama</Typography>
+                  <Typography sx={{ fontSize: 20, fontWeight: 700, color: "#1F2937", mb: 1 }}>Belum Ada Berita</Typography>
+                  <Typography sx={{ fontSize: 14, color: COLORS.slate }}>Klik Tambah Berita untuk membuat berita pertama</Typography>
                 </Box>
               ) : (
                 <>
-                  <TableContainer sx={{ borderRadius: "12px", border: "1px solid #f0f0f0", overflow: "auto", mb: 3 }}>
+                  <TableContainer sx={{ borderRadius: "12px", border: `1.5px solid ${COLORS.slateLight}`, overflow: "auto", mb: 3 }}>
                     <Table>
                       <TableHead>
                         <TableRow>
@@ -197,23 +258,23 @@ export default function BeritaPage() {
                             <TableCell>
                               <StatusPill
                                 label={item.status === 1 ? "Published" : "Draft"}
-                                backgroundColor={item.status === 1 ? "#2e7d32" : "#757575"}
+                                backgroundColor={item.status === 1 ? COLORS.success : COLORS.slate}
                               />
                             </TableCell>
                             <TableCell>
-                              <Typography sx={{ fontSize: 13, color: "#555" }}>{formatDate(item.created_at)}</Typography>
+                              <Typography sx={{ fontSize: 13, color: "#6B7280" }}>{formatDate(item.created_at)}</Typography>
                             </TableCell>
                             <TableCell align="center">
                               <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
                                 <Button size="small" variant="outlined"
                                   onClick={() => navigate(`/admin/berita/${item.id_berita}`)}
-                                  sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12, fontWeight: 600, color: "#0D59F2", borderColor: "#e3f2fd", "&:hover": { backgroundColor: "#f0f4ff", borderColor: "#0D59F2" } }}
+                                  sx={{ textTransform: "none", borderRadius: "12px", fontSize: 12, fontWeight: 600, color: COLORS.primary, borderColor: COLORS.primary, "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primaryDark } }}
                                 >
                                   Edit
                                 </Button>
                                 <Button size="small" variant="outlined"
                                   onClick={() => handleDelete(item)}
-                                  sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12, fontWeight: 600, color: "#c62828", borderColor: "#fce4ec", "&:hover": { backgroundColor: "rgba(198,40,40,0.05)" } }}
+                                  sx={{ textTransform: "none", borderRadius: "12px", fontSize: 12, fontWeight: 600, color: COLORS.error, borderColor: COLORS.error, "&:hover": { backgroundColor: "rgba(220,38,38,0.05)" } }}
                                 >
                                   Hapus
                                 </Button>
@@ -225,11 +286,20 @@ export default function BeritaPage() {
                     </Table>
                   </TableContainer>
 
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Typography sx={{ fontSize: 13, color: "#777" }}>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexDirection: { xs: "column", sm: "row" }, gap: 2 }}>
+                    <Typography sx={{ fontSize: 13, color: COLORS.slate, textAlign: { xs: "center", sm: "left" } }}>
                       Menampilkan {((page - 1) * rowsPerPage) + 1}–{Math.min(page * rowsPerPage, filteredList.length)} dari {filteredList.length} berita
                     </Typography>
-                    <Pagination count={totalPages} page={page} onChange={(e, v) => setPage(v)} color="primary" shape="rounded" showFirstButton showLastButton />
+                    <Pagination
+                      count={totalPages}
+                      page={page}
+                      onChange={(e, v) => setPage(v)}
+                      color="primary"
+                      shape="rounded"
+                      showFirstButton
+                      showLastButton
+                      size="small"
+                    />
                   </Box>
                 </>
               )}

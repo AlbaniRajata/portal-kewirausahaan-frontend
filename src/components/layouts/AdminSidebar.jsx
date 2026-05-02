@@ -205,7 +205,6 @@ function SidebarContent({ collapsed, onMenuClick, onClose }) {
                       justifyContent: collapsed ? "center" : "flex-start",
                       px: collapsed ? 1 : 2,
                       backgroundColor: (isActive(item.path) || isInSubmenu(item)) ? "rgba(255,255,255,0.18)" : "transparent",
-                      "&:hover": { backgroundColor: (isActive(item.path) || isInSubmenu(item)) ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.12)" },
                       "&.Mui-selected": { backgroundColor: "rgba(255,255,255,0.18)" },
                     }}
                   >
@@ -294,13 +293,15 @@ export default function AdminSidebar({ collapsed, mobileOpen, onMobileClose, isM
         sx={{
           display: { xs: "block", md: "none" },
           "& .MuiDrawer-paper": {
-            width: SIDEBAR_WIDTH,
+            width: { xs: "88vw", sm: SIDEBAR_WIDTH },
+            maxWidth: SIDEBAR_WIDTH,
             boxSizing: "border-box",
             border: "none",
             boxShadow: "0 10px 30px rgba(13,89,242,0.22)",
             borderTopRightRadius: 24,
             borderBottomRightRadius: 24,
             overflow: "hidden",
+            height: "100vh",
           },
         }}
       >

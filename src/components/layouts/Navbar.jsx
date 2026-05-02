@@ -9,6 +9,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { getProfile } from "../../api/public";
 import { logoutUser } from "../../api/auth";
 import { setAccessToken } from "../../api/axios";
+import { getMyProgram } from "../../api/admin";
 
 export default function Navbar({ onToggleSidebar, sidebarCollapsed, hasSidebar = true, isMobile = false }) {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed, hasSidebar =
   const { user, logout, refreshToken } = useAuthStore();
   const [anchorEl, setAnchorEl] = useState(false);
   const [profile, setProfile] = useState(null);
+  const [adminProgram, setAdminProgram] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -26,6 +28,15 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed, hasSidebar =
       } catch {
         // profil gagal dimuat, tampilkan data dari store saja
       }
+
+      try {
+        const resProgram = await getMyProgram();
+        if (!active) return;
+        const programData = Array.isArray(resProgram?.data) ? resProgram.data[0] : resProgram?.data;
+        setAdminProgram(programData || null);
+      } catch {
+        if (active) setAdminProgram(null);
+      }
     })();
     return () => {
       active = false;
@@ -34,10 +45,21 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed, hasSidebar =
 
   const displayName = user?.nama_lengkap || profile?.nama_lengkap || "User";
   const photoUrl = user?.foto ? `/uploads/profil/${user.foto}` : (profile?.foto ? `/uploads/profil/${profile.foto}` : null);
-  const currentProgram = profile?.current_program?.trim() || "";
-  const roleName = profile?.nama_role?.trim() || "";
-  const navbarTitle = currentProgram || "Program Kewirausahaan";
-  const displaySubtitle = profile?.keterangan?.trim() || roleName || "";
+  const roleName = profile?.nama_role?.trim() || user?.nama_role?.trim() || "";
+  const profileProgram = (
+    adminProgram?.keterangan?.trim()
+    || adminProgram?.nama_program?.trim()
+    || profile?.current_program?.trim()
+    || profile?.keterangan?.trim()
+    || profile?.nama_program?.trim()
+    || user?.current_program?.trim()
+    || user?.keterangan?.trim()
+    || user?.nama_program?.trim()
+    || ""
+  );
+  const navbarTitle = profileProgram || "Program Admin";
+  const displaySubtitle = [profile?.nama_role?.trim(), user?.nama_role?.trim(), roleName]
+    .find(Boolean) || "";
 
   const handleLogout = async () => {
     try {
@@ -68,7 +90,8 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed, hasSidebar =
         boxShadow: "0px 4px 20px rgba(0,0,0,0.08)",
         borderRadius: "50px",
         transition: "left 0.3s ease",
-        width: isMobile ? "auto" : undefined,
+        width: isMobile ? "calc(100vw - 16px)" : undefined,
+        maxWidth: isMobile ? "calc(100vw - 16px)" : "none",
       }}
     >
       <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 1.5 }, minWidth: 0, flex: 1, pr: 1.5, overflow: "hidden" }}>
@@ -99,15 +122,15 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed, hasSidebar =
             display: "flex",
             alignItems: "center",
             minHeight: { xs: 36, sm: 40 },
-            px: { xs: 1, sm: 2 },
+            px: { xs: 0.5, sm: 2 },
             minWidth: 0,
-            maxWidth: { xs: 140, sm: 300, md: 460 },
+            maxWidth: { xs: 110, sm: 300, md: 460 },
             overflow: "hidden",
           }}
         >
           <Typography
             sx={{
-              fontSize: { xs: 13, sm: 15 },
+              fontSize: { xs: 12, sm: 15 },
               fontWeight: 700,
               color: "#1a1a2e",
               whiteSpace: "nowrap",
@@ -129,9 +152,9 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed, hasSidebar =
             alignItems: "center",
             gap: { xs: 0.5, sm: 1.5 },
             minWidth: 0,
-            maxWidth: { xs: 80, sm: 280, md: 360 },
+            maxWidth: { xs: 72, sm: 280, md: 360 },
             cursor: "pointer",
-            px: { xs: 0.5, sm: 1.5 },
+            px: { xs: 0.25, sm: 1.5 },
             py: 0.5,
             borderRadius: "50px",
             transition: "all 0.2s ease",
@@ -195,7 +218,7 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed, hasSidebar =
             position: "absolute",
             top: "calc(100% + 8px)",
             right: 0,
-            minWidth: 160,
+            minWidth: { xs: 140, sm: 160 },
             borderRadius: "12px",
             backgroundColor: "#ffffff",
             boxShadow: "0px 4px 20px rgba(0,0,0,0.12)",
