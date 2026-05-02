@@ -10,6 +10,7 @@ import ReviewerNavbar from "../../components/layouts/ReviewerNavbar";
 import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import { getProfile, updateProfile, updatePassword } from "../../api/reviewer";
+import { validateFormSecurity, hasSuspiciousInput, hasSqlInjection } from "../../utils/inputSecurity";
 
 const COLORS = {
   primary:      "#0D59F2",
@@ -133,6 +134,10 @@ export default function BiodataReviewerPage() {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    if (hasSuspiciousInput(file.name) || hasSqlInjection(file.name)) {
+      setErrors((prev) => ({ ...prev, foto: "Nama file mengandung karakter terlarang" }));
+      return;
+    }
     const allowedFormats = ["image/jpeg", "image/jpg", "image/png"];
     if (!allowedFormats.includes(file.type)) {
       setErrors((prev) => ({ ...prev, foto: "Format file harus JPG, JPEG, atau PNG" }));
@@ -170,6 +175,19 @@ export default function BiodataReviewerPage() {
 
   const handleSubmitBiodata = async () => {
     if (!validateBiodata()) return;
+
+    const securityCheck = validateFormSecurity({
+      nama_lengkap: formBiodata.nama_lengkap,
+      no_hp: formBiodata.no_hp,
+      alamat: formBiodata.alamat,
+      institusi: formBiodata.institusi,
+      bidang_keahlian: formBiodata.bidang_keahlian,
+    });
+    if (!securityCheck.isValid) {
+      setErrors((prev) => ({ ...prev, [securityCheck.field]: securityCheck.message }));
+      return;
+    }
+
     setSubmitting(true);
     try {
       const formData = new FormData();
@@ -191,6 +209,17 @@ export default function BiodataReviewerPage() {
 
   const handleSubmitPassword = async () => {
     if (!validatePassword()) return;
+
+    const securityCheck = validateFormSecurity({
+      current_password: formPassword.current_password,
+      new_password: formPassword.new_password,
+      confirm_password: formPassword.confirm_password,
+    });
+    if (!securityCheck.isValid) {
+      setErrors((prev) => ({ ...prev, [securityCheck.field]: securityCheck.message }));
+      return;
+    }
+
     setSubmittingPassword(true);
     try {
       const response = await updatePassword({

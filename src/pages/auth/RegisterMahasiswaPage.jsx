@@ -12,6 +12,7 @@ import regisBg from "../../assets/images/regis.jpg";
 import { registerMahasiswa, verifyEmailKode, resendVerificationKode, cancelRegistrasi } from "../../api/auth";
 import api from "../../api/axios";
 import { getErrorMessage } from "../../utils/getErrorMessage";
+import { validateFormSecurity, hasSuspiciousInput, hasSqlInjection } from "../../utils/inputSecurity";
 
 const poppins = "'Poppins', sans-serif";
 
@@ -92,6 +93,10 @@ export default function RegisterMahasiswaPage() {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    if (hasSuspiciousInput(file.name) || hasSqlInjection(file.name)) {
+      setErrors((prev) => ({ ...prev, foto_ktm: "Nama file mengandung karakter terlarang" }));
+      return;
+    }
     const allowedFormats = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
     if (!allowedFormats.includes(file.type)) {
       setErrors((prev) => ({ ...prev, foto_ktm: "Format file harus JPG, JPEG, PNG, atau PDF" }));
@@ -129,6 +134,19 @@ export default function RegisterMahasiswaPage() {
 
   const handleSubmit = async () => {
     if (!validate()) return;
+
+    const securityCheck = validateFormSecurity({
+      username: form.username,
+      nim: form.nim,
+      email: form.email,
+      tahun_masuk: form.tahun_masuk,
+      password: form.password,
+    });
+    if (!securityCheck.isValid) {
+      setErrors((prev) => ({ ...prev, [securityCheck.field]: securityCheck.message }));
+      return;
+    }
+
     setLoading(true);
     try {
       const formData = new FormData();

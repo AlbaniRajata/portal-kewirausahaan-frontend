@@ -16,6 +16,7 @@ import {
 } from "../../api/mahasiswa";
 import { getAllKategori } from "../../api/public";
 import { downloadFile } from "../../utils/download";
+import { validateFormSecurity, hasSuspiciousInput, hasSqlInjection } from "../../utils/inputSecurity";
 
 
 const COLORS = {
@@ -298,6 +299,11 @@ export default function ProposalFormPage() {
 
   const processFile = (selectedFile) => {
     const el = document.getElementById("file-upload");
+    if (hasSuspiciousInput(selectedFile.name) || hasSqlInjection(selectedFile.name)) {
+      Swal.fire({ icon: "warning", title: "Nama File Tidak Valid", text: "Nama file mengandung karakter terlarang", confirmButtonText: "OK" });
+      if (el) el.value = "";
+      return;
+    }
     if (selectedFile.type !== "application/pdf") {
       Swal.fire({ icon: "warning", title: "Format Salah", text: "File harus berformat PDF", confirmButtonText: "OK" });
       if (el) el.value = "";
@@ -346,6 +352,17 @@ export default function ProposalFormPage() {
 
   const handleSave = async () => {
     if (!validate()) return;
+
+    const securityCheck = validateFormSecurity({
+      judul: form.judul,
+      id_kategori: form.id_kategori,
+      modal_diajukan: form.modal_diajukan,
+    });
+    if (!securityCheck.isValid) {
+      setErrors((prev) => ({ ...prev, [securityCheck.field]: securityCheck.message }));
+      return;
+    }
+
     setSubmitting(true);
     try {
       const formData = new FormData();

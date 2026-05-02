@@ -12,6 +12,7 @@ import regisBg from "../../assets/images/regis.jpg";
 import { registerDosen, verifyEmailKode, resendVerificationKode, cancelRegistrasi } from "../../api/auth";
 import api from "../../api/axios";
 import { getErrorMessage } from "../../utils/getErrorMessage";
+import { validateFormSecurity } from "../../utils/inputSecurity";
 
 const poppins = "'Poppins', sans-serif";
 
@@ -102,6 +103,18 @@ export default function RegisterDosenPage() {
 
   const handleSubmit = async () => {
     if (!validate()) return;
+
+    const securityCheck = validateFormSecurity({
+      username: form.username,
+      nip: form.nip,
+      email: form.email,
+      password: form.password,
+    });
+    if (!securityCheck.isValid) {
+      setErrors((prev) => ({ ...prev, [securityCheck.field]: securityCheck.message }));
+      return;
+    }
+
     setLoading(true);
     try {
       const payload = {

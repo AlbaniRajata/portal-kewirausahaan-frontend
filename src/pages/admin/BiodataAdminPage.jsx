@@ -11,6 +11,7 @@ import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import { getProfile, updateProfile, updatePassword } from "../../api/admin";
 import { useAuthStore } from "../../store/authStore";
+import { validateFormSecurity, hasSuspiciousInput, hasSqlInjection } from "../../utils/inputSecurity";
 
 const COLORS = {
   primary:      "#0D59F2",
@@ -132,6 +133,10 @@ export default function BiodataAdminPage() {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    if (hasSuspiciousInput(file.name) || hasSqlInjection(file.name)) {
+      setErrors((prev) => ({ ...prev, foto: "Nama file mengandung karakter terlarang" }));
+      return;
+    }
     if (!["image/jpeg","image/jpg","image/png"].includes(file.type)) {
       setErrors((prev) => ({ ...prev, foto: "Format file harus JPG, JPEG, atau PNG" }));
       return;
@@ -172,6 +177,18 @@ export default function BiodataAdminPage() {
 
   const handleSubmitBiodata = async () => {
     if (!validateBiodata()) return;
+
+    const securityCheck = validateFormSecurity({
+      nama_lengkap: formBiodata.nama_lengkap,
+      username: formBiodata.username,
+      no_hp: formBiodata.no_hp,
+      alamat: formBiodata.alamat,
+    });
+    if (!securityCheck.isValid) {
+      setErrors((prev) => ({ ...prev, [securityCheck.field]: securityCheck.message }));
+      return;
+    }
+
     setSubmitting(true);
     try {
       const formData = new FormData();
@@ -193,6 +210,17 @@ export default function BiodataAdminPage() {
 
   const handleSubmitPassword = async () => {
     if (!validatePassword()) return;
+
+    const securityCheck = validateFormSecurity({
+      current_password: formPassword.current_password,
+      new_password: formPassword.new_password,
+      confirm_password: formPassword.confirm_password,
+    });
+    if (!securityCheck.isValid) {
+      setErrors((prev) => ({ ...prev, [securityCheck.field]: securityCheck.message }));
+      return;
+    }
+
     setSubmittingPassword(true);
     try {
       const response = await updatePassword({

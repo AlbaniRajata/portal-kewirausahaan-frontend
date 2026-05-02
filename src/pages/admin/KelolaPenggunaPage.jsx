@@ -20,6 +20,7 @@ import {
   getJuriListKelola, createJuri, updateJuri,
   toggleUserActive, resetPassword, getProdi,
 } from "../../api/admin";
+import { validateFormSecurity } from "../../utils/inputSecurity";
 
 const COLORS = {
   primary:      "#0D59F2",
@@ -274,6 +275,13 @@ export default function KelolaPenggunaPage() {
     const curTabKey = cur.role;
 
     if (!validate(cur, curForm, curTabKey)) return;
+
+    const securityCheck = validateFormSecurity(curForm);
+    if (!securityCheck.isValid) {
+      setErrors((prev) => ({ ...prev, [securityCheck.field]: securityCheck.message }));
+      return;
+    }
+
     setDialog({ ...cur, open: false });
 
     const result = await Swal.fire({

@@ -16,6 +16,7 @@ import {
   addAnggotaTim, resetTim, cekEligibilitasInbis,
 } from "../../api/mahasiswa";
 import { getAllProgram } from "../../api/public";
+import { validateFormSecurity } from "../../utils/inputSecurity";
 
 const COLORS = {
   primary:      "#0D59F2",
@@ -293,6 +294,14 @@ export default function AnggotaTimPage() {
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
+    const securityCheck = validateFormSecurity({
+      nama_tim: formTim.nama_tim,
+    });
+    if (!securityCheck.isValid) {
+      setErrors((prev) => ({ ...prev, [securityCheck.field]: securityCheck.message }));
+      return;
+    }
+
     const result = await Swal.fire({
       title: "Konfirmasi Pengajuan",
       text: "Pastikan data anggota tim sudah benar. Ajukan sekarang?",
@@ -365,6 +374,16 @@ export default function AnggotaTimPage() {
       setAddAnggotaError("Pilih mahasiswa dari hasil pencarian");
       return;
     }
+
+    const securityCheck = validateFormSecurity({
+      nim: newAnggota.nim,
+      nama_lengkap: newAnggota.nama_lengkap,
+    });
+    if (!securityCheck.isValid) {
+      setAddAnggotaError(securityCheck.message);
+      return;
+    }
+
     const result = await Swal.fire({
       title: "Konfirmasi",
       text: `Kirim undangan ke "${newAnggota.nama_lengkap}"?`,

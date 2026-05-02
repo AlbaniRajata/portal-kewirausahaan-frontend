@@ -13,6 +13,7 @@ import { getProfile, updateProfile, updatePassword } from "../../api/mahasiswa";
 import { getAllJurusan } from "../../api/jurusan";
 import { getAllProdi } from "../../api/public";
 import { useAuthStore } from "../../store/authStore";
+import { validateFormSecurity, hasSuspiciousInput, hasSqlInjection } from "../../utils/inputSecurity";
 
 const COLORS = {
   primary:      "#0D59F2",
@@ -148,6 +149,9 @@ export default function BiodataMahasiswaPage() {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    if (hasSuspiciousInput(file.name) || hasSqlInjection(file.name)) {
+      setErrors((p) => ({ ...p, foto: "Nama file mengandung karakter terlarang" })); return;
+    }
     if (!["image/jpeg","image/jpg","image/png"].includes(file.type)) { setErrors((p) => ({ ...p, foto: "Format file harus JPG, JPEG, atau PNG" })); return; }
     if (file.size > 5 * 1024 * 1024) { setErrors((p) => ({ ...p, foto: "Ukuran file maksimal 5MB" })); return; }
     handleChangeBiodata("foto", file);
@@ -180,6 +184,17 @@ export default function BiodataMahasiswaPage() {
 
   const handleSubmitBiodata = async () => {
     if (!validateBiodata()) return;
+
+    const securityCheck = validateFormSecurity({
+      nama_lengkap: formBiodata.nama_lengkap,
+      no_hp: formBiodata.no_hp,
+      alamat: formBiodata.alamat,
+    });
+    if (!securityCheck.isValid) {
+      setErrors((prev) => ({ ...prev, [securityCheck.field]: securityCheck.message }));
+      return;
+    }
+
     setSubmitting(true);
     try {
       const formData = new FormData();
@@ -199,6 +214,17 @@ export default function BiodataMahasiswaPage() {
 
   const handleSubmitPassword = async () => {
     if (!validatePassword()) return;
+
+    const securityCheck = validateFormSecurity({
+      current_password: formPassword.current_password,
+      new_password: formPassword.new_password,
+      confirm_password: formPassword.confirm_password,
+    });
+    if (!securityCheck.isValid) {
+      setErrors((prev) => ({ ...prev, [securityCheck.field]: securityCheck.message }));
+      return;
+    }
+
     setSubmittingPassword(true);
     try {
       const response = await updatePassword({ current_password: formPassword.current_password, new_password: formPassword.new_password, confirm_password: formPassword.confirm_password });

@@ -12,6 +12,7 @@ import { forgotPasswordRequest, loginUser } from "../../api/auth";
 import { useAuthStore } from "../../store/authStore";
 import { setAccessToken } from "../../api/axios";
 import { getErrorMessage } from "../../utils/getErrorMessage";
+import { validateFormSecurity } from "../../utils/inputSecurity";
 
 const roundedField = {
   mb: 2,
@@ -69,6 +70,13 @@ export default function LoginPage() {
 
   const handleLogin = async () => {
     if (!validate()) return;
+
+    const securityCheck = validateFormSecurity(form);
+    if (!securityCheck.isValid) {
+      setErrors((prev) => ({ ...prev, [securityCheck.field]: securityCheck.message }));
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await loginUser({ email: form.email, password: form.password });
@@ -127,6 +135,12 @@ export default function LoginPage() {
 
     if (!email.includes("@")) {
       setForgotError("Format email tidak valid");
+      return;
+    }
+
+    const securityCheck = validateFormSecurity({ email });
+    if (!securityCheck.isValid) {
+      setForgotError(securityCheck.message);
       return;
     }
 

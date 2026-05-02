@@ -13,6 +13,7 @@ import LoadingScreen from "../../components/common/LoadingScreen";
 import {
   getBeritaDetailAdmin, createBerita, updateBerita,
 } from "../../api/admin";
+import { validateFormSecurity, hasSuspiciousInput, hasSqlInjection } from "../../utils/inputSecurity";
 
 const COLORS = {
   primary:      "#0D59F2",
@@ -89,6 +90,10 @@ export default function FormBeritaPage() {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    if (hasSuspiciousInput(file.name) || hasSqlInjection(file.name)) {
+      setErrors((prev) => ({ ...prev, gambar: "Nama file mengandung karakter terlarang" }));
+      return;
+    }
     const allowedFormats = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
     if (!allowedFormats.includes(file.type)) {
       setErrors((prev) => ({ ...prev, gambar: "Format harus JPG, PNG, atau WebP" }));
@@ -117,6 +122,15 @@ export default function FormBeritaPage() {
 
   const handleSave = async () => {
     if (!validate()) return;
+
+    const securityCheck = validateFormSecurity({
+      judul: form.judul,
+      isi: form.isi,
+    });
+    if (!securityCheck.isValid) {
+      setErrors((prev) => ({ ...prev, [securityCheck.field]: securityCheck.message }));
+      return;
+    }
 
     const result = await Swal.fire({
       title: "Konfirmasi",

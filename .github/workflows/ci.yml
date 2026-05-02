@@ -36,7 +36,7 @@ jobs:
       - name: Build project
         run: npm run build
         env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL || 'http://localhost:3000/api/' }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL || 'http://localhost:3000/api/v1' }}
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL || 'http://localhost:3000' }}
           VITE_ENCRYPTION_KEY: ${{ secrets.VITE_ENCRYPTION_KEY || 'test-encryption-key' }}
           VITE_APP_ENV: production
