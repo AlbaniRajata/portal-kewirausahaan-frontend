@@ -1,5 +1,5 @@
 import { Box, useMediaQuery, useTheme } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Navbar from "./Navbar";
 
 export default function BodyLayout({ children, Sidebar, hideSidebar = false }) {
@@ -17,23 +17,18 @@ export default function BodyLayout({ children, Sidebar, hideSidebar = false }) {
     setSidebarCollapsed((prev) => !prev);
   };
 
-  useEffect(() => {
-    if (!isMobile) {
-      setMobileOpen(false);
-    }
-  }, [isMobile]);
-
   const isNavbarOnlyLayout = Boolean(Sidebar?.hideInBodyLayout);
   const hasCustomTopNavbar = Boolean(Sidebar?.renderAsNavbar);
   const shouldHideSidebar = hideSidebar || !Sidebar || isNavbarOnlyLayout;
   const sidebarWidth = sidebarCollapsed ? 70 : 250;
+  const effectiveMobileOpen = isMobile ? mobileOpen : false;
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh", backgroundColor: "#f5f5f5", position: "relative" }}>
       {!shouldHideSidebar && Sidebar && (
         <Sidebar
           collapsed={sidebarCollapsed}
-          mobileOpen={mobileOpen}
+          mobileOpen={effectiveMobileOpen}
           onMobileClose={() => setMobileOpen(false)}
           isMobile={isMobile}
         />
