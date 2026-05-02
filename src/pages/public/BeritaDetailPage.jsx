@@ -2,20 +2,23 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getBeritaBySlug } from "../../api/public";
 
-const BASE_URL = import.meta.env.VITE_API_URL?.replace("/api", "");
-const poppins = "'Poppins', sans-serif";
+const P = "'Poppins', sans-serif";
 
 const formatDate = (d) => {
   if (!d) return "";
-  return new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+  return new Date(d).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 };
 
 const getGambarUrl = (b) => {
-    const filename = b?.file_gambar || b?.foto_berita || null;
-    if (!filename) return null;
-    if (filename.startsWith("http")) return filename;
-    return `/uploads/berita/${filename}`;
-  };
+  const filename = b?.file_gambar || b?.foto_berita || null;
+  if (!filename) return null;
+  if (filename.startsWith("http")) return filename;
+  return `/uploads/berita/${filename}`;
+};
 
 export default function BeritaDetailPage() {
   const navigate = useNavigate();
@@ -27,6 +30,7 @@ export default function BeritaDetailPage() {
   const fetchDetail = useCallback(async () => {
     try {
       setLoading(true);
+      setNotFound(false);
       const res = await getBeritaBySlug(slug);
       setBerita(res.data);
     } catch {
@@ -36,14 +40,29 @@ export default function BeritaDetailPage() {
     }
   }, [slug]);
 
-  useEffect(() => { fetchDetail(); }, [fetchDetail]);
+  useEffect(() => {
+    fetchDetail();
+  }, [fetchDetail]);
 
   const gambar = getGambarUrl(berita);
 
   if (loading) {
     return (
-      <div style={{ fontFamily: poppins, minHeight: "100vh", background: "#fafafa", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ width: 40, height: 40, border: "3px solid #e0e0e0", borderTopColor: "#0D59F2", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+      <div style={{
+        minHeight: "100vh",
+        background: "linear-gradient(160deg,#070b18 0%,#0c1530 40%,#0d1c48 70%,#070b18 100%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}>
+        <div style={{
+          width: 44,
+          height: 44,
+          border: "3px solid rgba(255,255,255,0.12)",
+          borderTopColor: "#C8FF00",
+          borderRadius: "50%",
+          animation: "spin 0.8s linear infinite",
+        }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
@@ -51,14 +70,38 @@ export default function BeritaDetailPage() {
 
   if (notFound || !berita) {
     return (
-      <div style={{ fontFamily: poppins, minHeight: "100vh", background: "#fafafa", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: "0 24px" }}>
-        <div style={{ fontSize: 64, fontWeight: 800, color: "#e0e0e0", fontFamily: poppins }}>404</div>
-        <p style={{ fontSize: 16, color: "#888", fontFamily: poppins, margin: 0 }}>Berita tidak ditemukan</p>
-        <button onClick={() => navigate("/")} style={{
-          padding: "10px 28px", borderRadius: 50, border: "none",
-          background: "#0D59F2", color: "#fff", fontSize: 14, fontWeight: 600,
-          fontFamily: poppins, cursor: "pointer",
-        }}>
+      <div style={{
+        minHeight: "100vh",
+        background: "linear-gradient(160deg,#070b18 0%,#0c1530 40%,#0d1c48 70%,#070b18 100%)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 16,
+        padding: "0 24px",
+        fontFamily: P,
+        textAlign: "center",
+      }}>
+        <div style={{ fontSize: 72, fontWeight: 900, color: "rgba(255,255,255,0.18)", letterSpacing: "-3px" }}>
+          404
+        </div>
+        <div style={{ fontSize: 18, color: "rgba(255,255,255,0.7)", fontWeight: 700 }}>
+          Berita tidak ditemukan
+        </div>
+        <button
+          onClick={() => navigate("/")}
+          style={{
+            marginTop: 8,
+            padding: "12px 28px",
+            borderRadius: 999,
+            border: "none",
+            background: "#C8FF00",
+            color: "#0a0a14",
+            fontSize: 14,
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
           Kembali ke Beranda
         </button>
       </div>
@@ -66,103 +109,230 @@ export default function BeritaDetailPage() {
   }
 
   return (
-    <div style={{ fontFamily: poppins, minHeight: "100vh", background: "#fafafa" }}>
-      <style>{`@keyframes fadeUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: none; } }`}</style>
+    <div style={{ fontFamily: P, minHeight: "100vh", background: "#0a0a14", overflowX: "hidden" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,600;1,800&display=swap');
+        *,*::before,*::after{box-sizing:border-box;}
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+        @keyframes shimmer { 0%{background-position:200% center} 100%{background-position:-200% center} }
+      `}</style>
+
+      <div style={{
+        position: "fixed",
+        inset: 0,
+        pointerEvents: "none",
+        background:
+          "radial-gradient(circle at 20% 20%, rgba(200,255,0,0.08) 0%, transparent 28%), radial-gradient(circle at 80% 10%, rgba(13,89,242,0.14) 0%, transparent 30%)",
+      }} />
 
       <nav style={{
-        position: "sticky", top: 0, zIndex: 100,
-        background: "rgba(255,255,255,0.95)", backdropFilter: "blur(12px)",
-        borderBottom: "1px solid rgba(0,0,0,0.08)",
-        padding: "14px 40px", display: "flex", alignItems: "center", gap: 16,
-        boxSizing: "border-box",
+        position: "sticky",
+        top: 0,
+        zIndex: 100,
+        background: "rgba(10,10,20,0.82)",
+        backdropFilter: "blur(14px)",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        padding: "14px clamp(20px,4vw,40px)",
       }}>
-        <button onClick={() => navigate("/")} style={{
-          display: "flex", alignItems: "center", gap: 6,
-          background: "transparent", border: "none", cursor: "pointer",
-          fontSize: 13, fontWeight: 600, color: "#888", fontFamily: poppins,
-          padding: 0, transition: "color 0.2s",
-        }}
-          onMouseEnter={e => { e.currentTarget.style.color = "#0D59F2"; }}
-          onMouseLeave={e => { e.currentTarget.style.color = "#888"; }}
-        >
-          ← Beranda
-        </button>
-        <span style={{ color: "#e0e0e0" }}>/</span>
-        <span style={{ fontSize: 13, color: "#aaa", fontFamily: poppins, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 300 }}>
-          {berita.judul}
-        </span>
+        <div style={{
+          maxWidth: 1200,
+          margin: "0 auto",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 16,
+          flexWrap: "wrap",
+        }}>
+          <button
+            onClick={() => navigate("/")}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              padding: 0,
+              color: "rgba(255,255,255,0.65)",
+              fontFamily: P,
+              fontSize: 13,
+              fontWeight: 600,
+            }}
+          >
+            <span style={{ color: "#C8FF00" }}>←</span> Beranda
+          </button>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+            <img
+              src="/logoupapkk.svg"
+              alt="Logo PKK"
+              style={{ width: 28, height: 28, borderRadius: 8 }}
+            />
+            <span style={{
+              fontSize: 13,
+              fontWeight: 700,
+              color: "rgba(255,255,255,0.55)",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}>
+              UPA PKK Polinema
+            </span>
+          </div>
+        </div>
       </nav>
 
-      <div style={{ maxWidth: 800, margin: "0 auto", padding: "60px 24px 100px", animation: "fadeUp 0.6s ease forwards" }}>
-        <div style={{ marginBottom: 32 }}>
-          <div style={{ fontFamily: poppins, fontSize: 12, color: "#bbb", fontWeight: 500, marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
+      <main style={{
+        maxWidth: 1100,
+        margin: "0 auto",
+        padding: "clamp(32px,5vw,56px) clamp(20px,4vw,40px) clamp(72px,8vw,120px)",
+        position: "relative",
+        zIndex: 1,
+        animation: "fadeUp .6s ease both",
+      }}>
+        <div style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 8,
+          marginBottom: 18,
+          padding: "6px 14px 6px 8px",
+          borderRadius: 999,
+          background: "rgba(200,255,0,0.08)",
+          border: "1px solid rgba(200,255,0,0.18)",
+        }}>
+          <span style={{
+            width: 6,
+            height: 6,
+            borderRadius: "50%",
+            background: "#C8FF00",
+            display: "inline-block",
+          }} />
+          <span style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: "#C8FF00",
+            letterSpacing: "2px",
+            textTransform: "uppercase",
+          }}>
+            Info & Berita
+          </span>
+        </div>
+
+        <div style={{ marginBottom: 28 }}>
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            flexWrap: "wrap",
+            marginBottom: 14,
+            color: "rgba(255,255,255,0.45)",
+            fontSize: 12,
+            fontWeight: 500,
+          }}>
             <span>{formatDate(berita.created_at)}</span>
             {berita.nama_author && (
               <>
-                <span style={{ width: 3, height: 3, borderRadius: "50%", background: "#ddd", display: "inline-block" }} />
+                <span style={{ width: 4, height: 4, borderRadius: "50%", background: "rgba(255,255,255,0.22)" }} />
                 <span>{berita.nama_author}</span>
               </>
             )}
           </div>
 
           <h1 style={{
-            fontFamily: poppins, fontSize: "clamp(24px, 4vw, 42px)",
-            fontWeight: 800, color: "#0a0a0a", margin: "0 0 0",
-            lineHeight: 1.25, letterSpacing: "-1px",
+            fontSize: "clamp(28px,5vw,56px)",
+            lineHeight: 1.05,
+            letterSpacing: "-2px",
+            margin: 0,
+            color: "#fff",
+            fontWeight: 900,
+            maxWidth: 920,
           }}>
             {berita.judul}
           </h1>
         </div>
 
         {gambar && (
-          <div style={{ borderRadius: 20, overflow: "hidden", marginBottom: 40, boxShadow: "0 8px 40px rgba(0,0,0,0.12)" }}>
+          <div style={{
+            borderRadius: 28,
+            overflow: "hidden",
+            marginBottom: 28,
+            border: "1px solid rgba(255,255,255,0.06)",
+            boxShadow: "0 24px 80px rgba(0,0,0,0.35)",
+            position: "relative",
+          }}>
             <img
               src={gambar}
               alt={berita.judul}
-              style={{ width: "100%", maxHeight: 440, objectFit: "cover", display: "block" }}
+              style={{
+                width: "100%",
+                maxHeight: 520,
+                objectFit: "cover",
+                display: "block",
+              }}
             />
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              background: "linear-gradient(180deg, rgba(10,10,20,0) 60%, rgba(10,10,20,0.35) 100%)",
+            }} />
           </div>
         )}
 
-        <div style={{
-          background: "#fff", borderRadius: 20, padding: "40px 44px",
-          border: "1px solid #f0f0f0", boxShadow: "0 2px 20px rgba(0,0,0,0.04)",
+        <article style={{
+          background: "#fff",
+          borderRadius: 28,
+          padding: "clamp(24px,4vw,52px)",
+          boxShadow: "0 18px 70px rgba(0,0,0,0.22)",
+          border: "1px solid rgba(255,255,255,0.08)",
         }}>
-          {berita.isi ? (
-            <div
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
+            flexWrap: "wrap",
+            marginBottom: 24,
+            paddingBottom: 18,
+            borderBottom: "1px solid #f0f0f4",
+          }}>
+            <div style={{ color: "#666", fontSize: 13, fontWeight: 600 }}>
+              Diperbarui: {formatDate(berita.updated_at || berita.created_at)}
+            </div>
+
+            <button
+              onClick={() => navigate("/")}
               style={{
-                fontFamily: poppins, fontSize: 15, color: "#333",
-                lineHeight: 1.9, whiteSpace: "pre-wrap",
-                wordBreak: "break-word",
+                padding: "10px 18px",
+                borderRadius: 999,
+                border: "1.5px solid #e5e7eb",
+                background: "transparent",
+                color: "#0a0a14",
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: "pointer",
               }}
             >
+              Kembali
+            </button>
+          </div>
+
+          {berita.isi ? (
+            <div style={{
+              fontSize: 15,
+              lineHeight: 2,
+              color: "#2b2b2b",
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-word",
+            }}>
               {berita.isi.replace(/<[^>]*>/g, "")}
             </div>
           ) : (
-            <p style={{ fontFamily: poppins, fontSize: 15, color: "#aaa", textAlign: "center", margin: 0 }}>
+            <p style={{ fontSize: 15, color: "#888", textAlign: "center", margin: 0 }}>
               Konten berita tidak tersedia
             </p>
           )}
-        </div>
-
-        <div style={{ marginTop: 48, paddingTop: 32, borderTop: "1px solid #f0f0f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <button onClick={() => navigate("/")} style={{
-            display: "flex", alignItems: "center", gap: 8,
-            padding: "10px 24px", borderRadius: 50,
-            border: "1.5px solid #e0e0e0", background: "transparent",
-            fontSize: 13, fontWeight: 600, color: "#666",
-            fontFamily: poppins, cursor: "pointer", transition: "all 0.2s",
-          }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "#0D59F2"; e.currentTarget.style.color = "#0D59F2"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "#e0e0e0"; e.currentTarget.style.color = "#666"; }}
-          >
-            ← Kembali ke Beranda
-          </button>
-          <div style={{ fontFamily: poppins, fontSize: 12, color: "#bbb" }}>
-            Diperbarui: {formatDate(berita.updated_at || berita.created_at)}
-          </div>
-        </div>
-      </div>
+        </article>
+      </main>
     </div>
   );
 }

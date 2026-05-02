@@ -3,7 +3,7 @@ import {
   Box, Divider, IconButton, InputAdornment,
   Paper, TextField, Typography, Modal,
 } from "@mui/material";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { Visibility, VisibilityOff, ArrowBack } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
@@ -168,12 +168,12 @@ export default function LoginPage() {
         <Box sx={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(2,13,36,0.85) 0%, rgba(13,89,242,0.7) 100%)" }} />
 
         <Box sx={{ position: "absolute", top: 32, left: 32, zIndex: 2, display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Box sx={{
-            width: 40, height: 40, borderRadius: "10px",
-            background: "linear-gradient(135deg, #0D59F2, #1e40af)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 20, fontWeight: 900, color: "#fff", fontFamily: poppins,
-          }}>P</Box>
+          <Box
+            component="img"
+            src="/logoupapkk.svg"
+            alt="UPA PKK POLINEMA"
+            sx={{ width: 40, height: 40, borderRadius: "10px", objectFit: "contain" }}
+          />
           <Typography sx={{ fontFamily: poppins, fontWeight: 700, fontSize: 16, color: "white", letterSpacing: "0.3px" }}>
             UPA PKK POLINEMA
           </Typography>
@@ -359,84 +359,190 @@ export default function LoginPage() {
                 cursor: loading ? "not-allowed" : "pointer",
                 transition: "all 0.25s ease",
                 "&:hover": !loading ? {
-                  borderColor: "#0D59F2",
-                  color: "#0D59F2",
+                  borderColor: "#0D59F2", color: "#0D59F2",
                   backgroundColor: "rgba(13,89,242,0.04)",
                 } : {},
               }}
             >
               Daftar
             </Box>
+
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", mt: 3, gap: 0.5 }}>
+              <Typography 
+                component="button" 
+                onClick={() => navigate("/")} 
+                sx={{ 
+                  fontFamily: poppins, 
+                  fontSize: 13, 
+                  fontWeight: 600, 
+                  color: "#666", 
+                  background: "transparent", 
+                  border: "none", 
+                  p: 0, 
+                  cursor: "pointer",
+                  "&:hover": { color: "#0D59F2" }
+                }}
+              >
+                Kembali ke Beranda
+              </Typography>
+            </Box>
           </Box>
         </Paper>
       </Box>
 
-      <Modal
-        open={openRegisterModal}
-        onClose={() => !loading && setOpenRegisterModal(false)}
-        sx={{ zIndex: 1700 }}
-      >
-        <Box sx={{
-          position: "absolute", top: "50%", left: "50%",
-          transform: "translate(-50%, -50%)",
-          width: "90%", maxWidth: 440,
-          bgcolor: "background.paper", borderRadius: "20px",
-          boxShadow: "0 24px 80px rgba(0,0,0,0.15)", p: 4,
-        }}>
-          <Typography align="center" sx={{ fontFamily: poppins, fontSize: 22, fontWeight: 800, mb: 1 }}>
-            Daftar Sebagai
-          </Typography>
-          <Typography align="center" sx={{ fontFamily: poppins, fontSize: 14, color: "#999", mb: 4 }}>
-            Pilih jenis akun yang akan didaftarkan
-          </Typography>
-
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {[
-              { label: "Mahasiswa", type: "mahasiswa", variant: "contained" },
-              { label: "Dosen", type: "dosen", variant: "outlined" },
-            ].map((opt) => (
-              <Box
-                key={opt.type}
-                component="button"
-                onClick={() => handleRegisterChoice(opt.type)}
-                sx={{
-                  py: 1.8, borderRadius: "14px",
-                  fontWeight: 700, fontSize: 15,
-                  fontFamily: poppins,
-                  border: opt.variant === "outlined" ? "1.5px solid #0D59F2" : "none",
-                  backgroundColor: opt.variant === "outlined" ? "transparent" : "#0D59F2",
-                  color: opt.variant === "outlined" ? "#0D59F2" : "#fff",
-                  cursor: "pointer",
-                  transition: "all 0.25s ease",
-                  "&:hover": {
-                    transform: "translateY(-2px)",
-                    boxShadow: "0 8px 24px rgba(13,89,242,0.25)",
-                    backgroundColor: opt.variant === "outlined" ? "rgba(13,89,242,0.05)" : "#0846c7",
-                  },
-                }}
-              >
-                {opt.label}
-              </Box>
-            ))}
-          </Box>
-
-          <Box
-            component="button"
-            onClick={() => setOpenRegisterModal(false)}
-            sx={{
-              mt: 3, width: "100%", py: 1.2,
-              background: "transparent", border: "none",
-              fontWeight: 600, fontSize: 14, color: "#aaa",
-              fontFamily: poppins,
-              cursor: "pointer",
-              transition: "color 0.2s",
-              "&:hover": { color: "#555" },
+      {openRegisterModal && (
+        <div
+          onClick={() => !loading && setOpenRegisterModal(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 2000,
+            background: "rgba(0,0,0,0.7)",
+            backdropFilter: "blur(8px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 20,
+            animation: "mfade .2s ease",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "100%",
+              maxWidth: 400,
+              background: "#fff",
+              borderRadius: 24,
+              padding: "clamp(24px,5vw,40px)",
+              animation: "mslide .3s cubic-bezier(.16,1,.3,1)",
             }}
           >
-            Batal
-          </Box>
-        </Box>
-      </Modal>
+            <style>{`
+              @keyframes mfade {
+                from { opacity: 0; }
+                to { opacity: 1; }
+              }
+              @keyframes mslide {
+                from { transform: translateY(18px) scale(0.98); opacity: 0; }
+                to { transform: translateY(0) scale(1); opacity: 1; }
+              }
+            `}</style>
+
+            <div style={{ marginBottom: 28, textAlign: "center" }}>
+              <div
+                style={{
+                  fontFamily: poppins,
+                  fontSize: 22,
+                  fontWeight: 800,
+                  color: "#0a0a14",
+                  letterSpacing: "-0.5px",
+                  marginBottom: 6,
+                }}
+              >
+                Daftar Sebagai
+              </div>
+              <div style={{ fontFamily: poppins, fontSize: 14, color: "#aaa" }}>
+                Pilih jenis akun yang akan didaftarkan
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                {
+                  key: "mahasiswa",
+                  label: "Mahasiswa",
+                  sub: "Ajukan proposal & ikuti program",
+                  solid: true,
+                },
+                {
+                  key: "dosen",
+                  label: "Dosen",
+                  sub: "Bimbing & evaluasi proposal",
+                  solid: false,
+                },
+              ].map((o) => (
+                <button
+                  key={o.key}
+                  onClick={() => handleRegisterChoice(o.key)}
+                  style={{
+                    padding: "16px 20px",
+                    borderRadius: 14,
+                    cursor: "pointer",
+                    background: o.solid ? "#0D59F2" : "transparent",
+                    border: o.solid ? "none" : "1.5px solid rgba(0,0,0,0.1)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    transition: "all .22s",
+                    textAlign: "left",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                    e.currentTarget.style.boxShadow =
+                      "0 8px 24px rgba(0,0,0,0.15)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "none";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                >
+                  <div>
+                    <div
+                      style={{
+                        fontFamily: poppins,
+                        fontSize: 15,
+                        fontWeight: 700,
+                        color: o.solid ? "#fff" : "#0a0a14",
+                        marginBottom: 2,
+                      }}
+                    >
+                      {o.label}
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: poppins,
+                        fontSize: 12,
+                        color: o.solid ? "rgba(255,255,255,0.6)" : "#aaa",
+                      }}
+                    >
+                      {o.sub}
+                    </div>
+                  </div>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path
+                      d="M3 8h10M9 4l4 4-4 4"
+                      stroke={o.solid ? "#fff" : "#0D59F2"}
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setOpenRegisterModal(false)}
+              style={{
+                marginTop: 16,
+                width: "100%",
+                padding: "10px",
+                border: "none",
+                background: "#DC2626",
+                fontFamily: poppins,
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#fff",
+                cursor: "pointer",
+                borderRadius: 10,
+                transition: "color .2s",
+              }}
+            >
+              Batal
+            </button>
+          </div>
+        </div>
+      )}
 
       <Modal
         open={openForgotModal}

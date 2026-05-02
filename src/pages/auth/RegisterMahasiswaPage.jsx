@@ -4,11 +4,11 @@ import {
   Autocomplete, CircularProgress, IconButton, InputAdornment,
   Dialog, DialogContent,
 } from "@mui/material";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { Visibility, VisibilityOff, ArrowBack } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
-import loginBg from "../../assets/images/login-bg.jpg";
+import regisBg from "../../assets/images/regis.jpg";
 import { registerMahasiswa, verifyEmailKode, resendVerificationKode, cancelRegistrasi } from "../../api/auth";
 import api from "../../api/axios";
 import { getErrorMessage } from "../../utils/getErrorMessage";
@@ -283,7 +283,7 @@ export default function RegisterMahasiswaPage() {
       <Box sx={{
         flex: 1, position: "sticky", top: 0, height: "100vh",
         display: { xs: "none", md: "flex" }, flexDirection: "column",
-        backgroundImage: `url(${loginBg})`,
+        backgroundImage: `url(${regisBg})`,
         backgroundSize: "cover", backgroundPosition: "center",
         transform: mounted ? "translateX(0)" : "translateX(-40px)",
         opacity: mounted ? 1 : 0,
@@ -292,13 +292,13 @@ export default function RegisterMahasiswaPage() {
         <Box sx={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(2,13,36,0.85) 0%, rgba(13,89,242,0.7) 100%)" }} />
 
         <Box sx={{ position: "absolute", top: 32, left: 32, zIndex: 2, display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Box sx={{
-            width: 40, height: 40, borderRadius: "10px",
-            background: "linear-gradient(135deg, #0D59F2, #1e40af)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 20, fontWeight: 900, color: "#fff", fontFamily: poppins,
-          }}>P</Box>
-          <Typography sx={{ fontFamily: poppins, fontWeight: 700, fontSize: 16, color: "white" }}>
+          <Box
+            component="img"
+            src="/logoupapkk.svg"
+            alt="UPA PKK POLINEMA"
+            sx={{ width: 40, height: 40, borderRadius: "10px", objectFit: "contain" }}
+          />
+          <Typography sx={{ fontFamily: poppins, fontWeight: 700, fontSize: 16, color: "white", letterSpacing: "0.3px" }}>
             UPA PKK POLINEMA
           </Typography>
         </Box>
@@ -359,18 +359,6 @@ export default function RegisterMahasiswaPage() {
         transition: "transform 0.7s cubic-bezier(0.22,1,0.36,1), opacity 0.7s ease",
       }}>
         <Paper elevation={0} sx={{ width: "100%", maxWidth: 540, p: { xs: 3, md: 4 } }}>
-          <Box sx={{
-            transform: mounted ? "translateY(0)" : "translateY(20px)",
-            opacity: mounted ? 1 : 0,
-            transition: "transform 0.6s ease 0.15s, opacity 0.6s ease 0.15s",
-          }}>
-            <Typography align="center" sx={{ fontFamily: poppins, fontSize: 26, fontWeight: 800, mb: 1, color: "#0a0a0a" }}>
-              Registrasi Mahasiswa
-            </Typography>
-            <Typography align="center" sx={{ fontFamily: poppins, fontSize: 14, color: "#999", mb: 4 }}>
-              Lengkapi data berikut untuk membuat akun baru
-            </Typography>
-          </Box>
 
           <Box sx={{
             transform: mounted ? "translateY(0)" : "translateY(20px)",
@@ -528,6 +516,26 @@ export default function RegisterMahasiswaPage() {
               }}
             >
               Sudah punya akun? Masuk
+            </Box>
+
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", mt: 3, gap: 0.5 }}>
+              <Typography 
+                component="button" 
+                onClick={() => navigate("/")} 
+                sx={{ 
+                  fontFamily: poppins, 
+                  fontSize: 13, 
+                  fontWeight: 600, 
+                  color: "#666", 
+                  background: "transparent", 
+                  border: "none", 
+                  p: 0, 
+                  cursor: "pointer",
+                  "&:hover": { color: "#0D59F2" }
+                }}
+              >
+                Kembali ke Beranda
+              </Typography>
             </Box>
           </Box>
         </Paper>
