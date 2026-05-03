@@ -7,7 +7,7 @@ import {
 import { Description, Download } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import * as XLSX from "xlsx-js-style";
+import { getXLSX } from "../../utils/xlsxLazy";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
 import PageTransition from "../../components/PageTransition";
@@ -196,13 +196,13 @@ const getAnggotaRowsForExport = (proposal, detail, pesertaDetailMap = new Map())
   }];
 };
 
-const centerWorksheetColumns = (worksheet, columns = [], startRow = 0, endRow = 0) => {
+const middleAlignWorksheetColumns = (XLSX, worksheet, columns = [], startRow = 0, endRow = 0) => {
   for (let row = startRow; row <= endRow; row += 1) {
     columns.forEach((col) => {
       const cellRef = XLSX.utils.encode_cell({ r: row, c: col });
       const cell = worksheet[cellRef];
       if (!cell) return;
-      cell.s = { ...(cell.s || {}), alignment: { ...(cell.s?.alignment || {}), horizontal: "center", vertical: "center" } };
+      cell.s = { ...(cell.s || {}), alignment: { ...(cell.s?.alignment || {}), vertical: "center" } };
     });
   }
 };
@@ -362,6 +362,7 @@ export default function ProposalListPage() {
     }
     setExporting(true);
     try {
+      const XLSX = await getXLSX();
       const groupedData = await buildDetailedExportGroups();
       const selectedProgram = programOptions.find((p) => String(p.id_program) === String(filters.id_program)) || programOptions[0];
       const aoa     = [[getExportTitle(selectedProgram, filters.tahun)], []];
@@ -410,7 +411,7 @@ export default function ProposalListPage() {
 
       const worksheet = XLSX.utils.aoa_to_sheet(aoa);
       dataRowRanges.forEach(({ startRow, endRow }) => {
-        centerWorksheetColumns(worksheet, [0, 1, 9], startRow, endRow);
+        middleAlignWorksheetColumns(XLSX, worksheet, [0, 1, 9], startRow, endRow);
       });
       worksheet["!merges"] = merges;
       worksheet["!cols"]   = [
@@ -419,7 +420,17 @@ export default function ProposalListPage() {
       ];
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Proposal");
-      XLSX.writeFile(workbook, `${buildExportFileName()}.xlsx`, { cellStyles: true });
+      // Browser-compatible export (no cellStyles for browser compatibility)
+      const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${buildExportFileName()}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     } catch {
       Swal.fire({ icon: "error", title: "Gagal", text: "Gagal mengekspor file XLSX", confirmButtonColor: COLORS.primary });
     } finally {

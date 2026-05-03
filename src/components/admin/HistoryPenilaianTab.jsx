@@ -6,7 +6,7 @@ import {
 } from "@mui/material";
 import { KeyboardArrowRight, KeyboardArrowDown, Download } from "@mui/icons-material";
 import Swal from "sweetalert2";
-import * as XLSX from "xlsx-js-style";
+import { getXLSX } from "../../utils/xlsxLazy";
 import LoadingScreen from "../common/LoadingScreen";
 import {
   getMyProgram,
@@ -196,7 +196,7 @@ const getAnggotaRowsForExport = (proposal, detail, pesertaDetailMap = new Map())
   }];
 };
 
-const centerWorksheetColumns = (worksheet, columns = [], startRow = 0, endRow = 0) => {
+const centerWorksheetColumns = (XLSX, worksheet, columns = [], startRow = 0, endRow = 0) => {
   for (let row = startRow; row <= endRow; row += 1) {
     columns.forEach((col) => {
       const cell = worksheet[XLSX.utils.encode_cell({ r: row, c: col })];
@@ -206,7 +206,7 @@ const centerWorksheetColumns = (worksheet, columns = [], startRow = 0, endRow = 
   }
 };
 
-const wrapWorksheetColumns = (worksheet, columns = [], startRow = 0, endRow = 0) => {
+const wrapWorksheetColumns = (XLSX, worksheet, columns = [], startRow = 0, endRow = 0) => {
   for (let row = startRow; row <= endRow; row += 1) {
     columns.forEach((col) => {
       const cell = worksheet[XLSX.utils.encode_cell({ r: row, c: col })];
@@ -675,6 +675,7 @@ export default function HistoryPenilaianTab({ id_program }) {
     const { titleText, exportFileBaseName } = getExportMeta(tahap);
     setExportingTahap(tahap);
     try {
+      const XLSX = await getXLSX();
       const groupedData = await buildDetailedExportGroups(tahap);
       const aoa     = [[titleText], []];
       const merges  = [{ s: { r: 0, c: 0 }, e: { r: 0, c: exportHeaders.length - 1 } }];
@@ -729,8 +730,8 @@ export default function HistoryPenilaianTab({ id_program }) {
 
       const worksheet = XLSX.utils.aoa_to_sheet(aoa);
       dataRowRanges.forEach(({ startRow, endRow }) => {
-        centerWorksheetColumns(worksheet, [0, 1, 9, 10, 11], startRow, endRow);
-        wrapWorksheetColumns(worksheet, [10], startRow, endRow);
+        centerWorksheetColumns(XLSX, worksheet, [0, 1, 9, 10, 11], startRow, endRow);
+        wrapWorksheetColumns(XLSX, worksheet, [10], startRow, endRow);
       });
       worksheet["!merges"] = merges;
       worksheet["!cols"]   = [
@@ -741,7 +742,17 @@ export default function HistoryPenilaianTab({ id_program }) {
       const workbook  = XLSX.utils.book_new();
       const sheetName = tahap === 1 ? "Lolos Desk Evaluasi" : "Lolos Wawancara";
       XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-      XLSX.writeFile(workbook, `${exportFileBaseName}.xlsx`, { cellStyles: true });
+      // Browser-compatible export (no cellStyles for browser compatibility)
+      const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${exportFileBaseName}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     } catch {
       Swal.fire({ icon: "error", title: "Gagal", text: "Gagal mengekspor file XLSX", confirmButtonColor: COLORS.primary });
     } finally {

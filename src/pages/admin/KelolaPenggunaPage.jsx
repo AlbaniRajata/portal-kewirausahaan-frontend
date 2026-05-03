@@ -142,7 +142,7 @@ export default function KelolaPenggunaPage() {
     setLoading(true);
     try {
       const f = currentFilters[role];
-      const params = {};
+      const params = { limit: 1000, page: 1 };
       if (f.search) params.search = f.search;
       if (f.is_active !== "") params.is_active = f.is_active;
       if (f.id_prodi) params.id_prodi = f.id_prodi;
@@ -154,7 +154,10 @@ export default function KelolaPenggunaPage() {
       else if (role === "reviewer") res = await getReviewerListKelola(params);
       else res = await getJuriListKelola(params);
 
-      setLists((prev) => ({ ...prev, [role]: res.data || [] }));
+      const rawData = res.data || [];
+      const dataArray = Array.isArray(rawData) ? rawData : (rawData.data || rawData.items || rawData.list || []);
+
+      setLists((prev) => ({ ...prev, [role]: dataArray }));
     } catch {
       Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat data pengguna", confirmButtonColor: "#0D59F2" });
     } finally {
@@ -978,8 +981,7 @@ export default function KelolaPenggunaPage() {
                       mx: "auto",
                       mb: 3,
                     }}
-                  >
-                  </Box>
+                  />
                   <Typography sx={{ fontSize: 22, fontWeight: 800, color: "#1F2937", mb: 1 }}>
                     Belum ada {TABS[activeTab].label}
                   </Typography>

@@ -36,8 +36,8 @@ jobs:
       - name: Build project
         run: npm run build
         env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL || 'http://localhost:3000/api/v1' }}
-          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL || 'http://localhost:3000' }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL || 'https://api.pmwcenter.tech/api/v1' }}
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL || 'https://api.pmwcenter.tech' }}
           VITE_ENCRYPTION_KEY: ${{ secrets.VITE_ENCRYPTION_KEY || 'test-encryption-key' }}
           VITE_APP_ENV: production
           VITE_API_TIMEOUT: 30000
@@ -50,3 +50,37 @@ jobs:
           name: frontend-build
           path: dist
           retention-days: 30
+
+  deploy:
+    name: Deploy Frontend (rsync)
+    needs: build-and-test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: ./artifact
+
+      - name: Setup SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add server to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "${{ secrets.SSH_PORT || 22 }}" -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy via rsync
+        run: |
+          SRC_DIR="./artifact/dist"
+          if [ ! -d "$SRC_DIR" ]; then
+            SRC_DIR="./artifact"
+          fi
+
+          rsync -avz --delete \
+            -e "ssh -p ${{ secrets.SSH_PORT || 22 }}" \
+            "$SRC_DIR/" "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/albi/frontend/"
