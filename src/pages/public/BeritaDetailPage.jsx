@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getBeritaBySlug } from "../../api/public";
+import { getUploadUrl } from "../../utils/fileUrl";
 
 const P = "'Poppins', sans-serif";
 
@@ -17,7 +18,7 @@ const getGambarUrl = (b) => {
   const filename = b?.file_gambar || b?.foto_berita || null;
   if (!filename) return null;
   if (filename.startsWith("http")) return filename;
-  return `/uploads/berita/${filename}`;
+  return getUploadUrl("berita", filename);
 };
 
 export default function BeritaDetailPage() {

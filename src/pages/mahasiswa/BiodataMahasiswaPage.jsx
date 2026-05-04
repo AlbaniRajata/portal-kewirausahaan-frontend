@@ -14,6 +14,7 @@ import { getAllJurusan } from "../../api/jurusan";
 import { getAllProdi } from "../../api/public";
 import { useAuthStore } from "../../store/authStore";
 import { validateFormSecurity, hasSuspiciousInput, hasSqlInjection } from "../../utils/inputSecurity";
+import { getUploadUrl } from "../../utils/fileUrl";
 
 const COLORS = {
   primary:      "#0D59F2",
@@ -119,7 +120,7 @@ export default function BiodataMahasiswaPage() {
         nim: response.data.nim || "", no_hp: response.data.no_hp || "",
         id_jurusan: jurusanData, id_prodi: prodiData, alamat: response.data.alamat || "", foto: null,
       });
-      if (response.data.foto) setImagePreview(`/uploads/profil/${response.data.foto}`);
+      if (response.data.foto) setImagePreview(getUploadUrl("profil", response.data.foto));
     } catch {
       await Swal.fire({ icon: "error", title: "Gagal Memuat", text: "Gagal memuat profil. Silahkan refresh halaman.", confirmButtonText: "OK" });
     } finally { setLoading(false); }

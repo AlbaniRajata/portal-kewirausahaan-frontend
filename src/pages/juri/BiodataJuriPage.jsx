@@ -11,6 +11,7 @@ import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import { getProfile, updateProfile, updatePassword } from "../../api/juri";
 import { validateFormSecurity, hasSuspiciousInput, hasSqlInjection } from "../../utils/inputSecurity";
+import { getUploadUrl } from "../../utils/fileUrl";
 
 const COLORS = {
   primary:      "#0D59F2",
@@ -112,7 +113,7 @@ export default function BiodataJuriPage() {
         foto: null,
       });
       if (response.data.foto) {
-        setImagePreview(`/uploads/profil/${response.data.foto}`);
+        setImagePreview(getUploadUrl("profil", response.data.foto));
       }
     } catch {
       await Swal.fire({ icon: "error", title: "Gagal Memuat", text: "Gagal memuat profil. Silahkan refresh halaman.", confirmButtonText: "OK" });

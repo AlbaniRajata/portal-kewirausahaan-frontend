@@ -611,13 +611,20 @@ export default function LoginPage() {
             component="button"
             onClick={() => setOpenForgotModal(false)}
             disabled={forgotLoading}
-            sx={{
-              mt: 2, width: "100%", py: 1.2,
-              background: "transparent", border: "none",
-              fontWeight: 600, fontSize: 14, color: "#aaa",
-              fontFamily: poppins,
-              cursor: forgotLoading ? "not-allowed" : "pointer",
-            }}
+            style={{
+                marginTop: 16,
+                width: "100%",
+                padding: "10px",
+                border: "none",
+                background: "#DC2626",
+                fontFamily: poppins,
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#fff",
+                cursor: "pointer",
+                borderRadius: 10,
+                transition: "color .2s",
+              }}
           >
             Batal
           </Box>

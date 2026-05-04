@@ -17,6 +17,7 @@ import { getStatusPembimbing } from "../../api/mahasiswa";
 import { getListBimbingan } from "../../api/mahasiswa";
 import { getLuaranMahasiswa } from "../../api/mahasiswa";
 import { useAuthStore } from "../../store/authStore";
+import { getUploadUrl } from "../../utils/fileUrl";
 
 const COLORS = {
   primary:      "#0D59F2",
@@ -63,6 +64,14 @@ const greet = () => {
   if (h < 18) return "Selamat sore";
   return "Selamat malam";
 };
+
+const isBiodataLengkap = (profile) => !!(
+  profile?.nama_lengkap &&
+  profile?.nim &&
+  profile?.no_hp &&
+  profile?.nama_prodi &&
+  profile?.foto
+);
 
 const SectionHeader = ({ icon: Icon, title, subtitle, gradient }) => (
   <Box sx={{
@@ -130,7 +139,7 @@ const TimelineStep = ({ icon, label, sublabel, status, isLast, onClick }) => {
   const c = colorMap[status];
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, minWidth: 0 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, minWidth: "120px" }}>
       <Box sx={{ display: "flex", alignItems: "center", width: "100%" }}>
         <Box sx={{ flex: 1, height: 2, backgroundColor: status === "done" ? COLORS.success : "#E5E7EB" }} />
         <Box
@@ -255,6 +264,7 @@ export default function DashboardMahasiswaPage() {
 
   const { profile, tim, proposal, pembimbing, bimbingan, monev, monevMessage } = data;
 
+  const biodataLengkap     = isBiodataLengkap(profile);
   const hasTim             = tim?.hasTim === true;
   const timLengkap         = hasTim && (proposal?.data?.anggota?.all_accepted === true);
   const hasProposal        = !!proposal?.data?.proposal;
@@ -278,8 +288,8 @@ export default function DashboardMahasiswaPage() {
     {
       icon: <PersonOutlined sx={{ fontSize: 20 }} />,
       label: "Biodata",
-      sublabel: profile ? "Lengkap" : "Belum diisi",
-      status: profile ? "done" : "active",
+      sublabel: biodataLengkap ? "Lengkap" : profile ? "Belum lengkap" : "Belum diisi",
+      status: biodataLengkap ? "done" : profile ? "active" : "active",
       path: "/mahasiswa/biodata",
     },
     {
@@ -391,7 +401,7 @@ export default function DashboardMahasiswaPage() {
             <Box sx={{ position: "absolute", bottom: -60, right: 80, width: 150, height: 150, borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.04)" }} />
             <Box sx={{ display: "flex", alignItems: "center", gap: 3, position: "relative", zIndex: 1, flexWrap: "wrap" }}>
               <Avatar
-                src={profile?.foto ? `/uploads/profil/${profile.foto}` : undefined}
+                src={profile?.foto ? getUploadUrl("profil", profile.foto) : undefined}
                 sx={{
                   width: { xs: 52, sm: 64 }, height: { xs: 52, sm: 64 },
                   border: "3px solid rgba(255,255,255,0.3)",
@@ -455,7 +465,15 @@ export default function DashboardMahasiswaPage() {
                 ))}
               </Box>
 
-              <Box sx={{ display: "flex", alignItems: "flex-start", overflowX: "auto", pb: 1 }}>
+              <Box sx={{
+                display: "flex",
+                alignItems: "flex-start",
+                overflowX: "auto",
+                pb: 1,
+                "&::-webkit-scrollbar": { display: "none" },
+                msOverflowStyle: "none",
+                scrollbarWidth: "none",
+              }}>
                 {steps.map((step, i) => (
                   <TimelineStep
                     key={step.label}

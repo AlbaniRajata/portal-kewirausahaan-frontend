@@ -10,6 +10,7 @@ import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
 import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
+import { getUploadUrl } from "../../utils/fileUrl";
 import {
   getBeritaDetailAdmin, createBerita, updateBerita,
 } from "../../api/admin";
@@ -73,7 +74,7 @@ export default function FormBeritaPage() {
       setExisting(d);
       setForm({ judul: d.judul || "", isi: d.isi || "", status: String(d.status) });
       if (d.file_gambar) {
-        setGambarPreview(`/uploads/berita/${d.file_gambar}`);
+        setGambarPreview(getUploadUrl("berita", d.file_gambar));
       }
     } catch {
       Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat data berita", confirmButtonColor: "#0D59F2" });

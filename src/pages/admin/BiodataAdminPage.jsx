@@ -12,6 +12,7 @@ import LoadingScreen from "../../components/common/LoadingScreen";
 import { getProfile, updateProfile, updatePassword } from "../../api/admin";
 import { useAuthStore } from "../../store/authStore";
 import { validateFormSecurity, hasSuspiciousInput, hasSqlInjection } from "../../utils/inputSecurity";
+import { getUploadUrl } from "../../utils/fileUrl";
 
 const COLORS = {
   primary:      "#0D59F2",
@@ -114,7 +115,7 @@ export default function BiodataAdminPage() {
         alamat: response.data.alamat || "",
         foto: null,
       });
-      if (response.data.foto) setImagePreview(`/uploads/profil/${response.data.foto}`);
+      if (response.data.foto) setImagePreview(getUploadUrl("profil", response.data.foto));
     } catch {
       await Swal.fire({ icon: "error", title: "Gagal Memuat", text: "Gagal memuat profil admin. Silakan refresh halaman.", confirmButtonText: "OK" });
     } finally { setLoading(false); }

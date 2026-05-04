@@ -12,6 +12,7 @@ import AdminSidebar from "../../components/layouts/AdminSidebar";
 import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import { getBeritaListAdmin, deleteBerita } from "../../api/admin";
+import { getUploadUrl } from "../../utils/fileUrl";
 
 const COLORS = {
   primary:      "#0D59F2",
@@ -238,7 +239,7 @@ export default function BeritaPage() {
                               {item.file_gambar ? (
                                 <Box
                                   component="img"
-                                  src={`/uploads/berita/${item.file_gambar}`}
+                                  src={getUploadUrl("berita", item.file_gambar)}
                                   alt={item.judul}
                                   sx={{ width: 56, height: 44, borderRadius: "8px", objectFit: "cover", display: "block" }}
                                 />

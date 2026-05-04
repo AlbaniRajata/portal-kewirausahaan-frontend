@@ -26,6 +26,7 @@ import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
 import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
+import { getUploadUrl } from "../../utils/fileUrl";
 import {
   getPendingMahasiswa,
   getDetailMahasiswa,
@@ -629,7 +630,7 @@ export default function VerifikasiPage() {
                         Foto KTM
                       </Typography>
                       <img
-                        src={`/uploads/ktm/${detailData.foto_ktm}`}
+                        src={getUploadUrl("ktm", detailData.foto_ktm)}
                         alt="KTM"
                         style={{ maxWidth: "100%", maxHeight: 400, objectFit: "contain", border: `1.5px solid ${COLORS.slateLight}`, borderRadius: 12 }}
                       />

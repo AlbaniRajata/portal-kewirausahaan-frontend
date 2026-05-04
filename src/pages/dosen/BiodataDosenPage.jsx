@@ -12,6 +12,7 @@ import LoadingScreen from "../../components/common/LoadingScreen";
 import { getProfile, updateProfile, updatePassword } from "../../api/dosen";
 import { useAuthStore } from "../../store/authStore";
 import { validateFormSecurity, hasSuspiciousInput, hasSqlInjection } from "../../utils/inputSecurity";
+import { getUploadUrl } from "../../utils/fileUrl";
 import { getAllJurusan } from "../../api/jurusan";
 import { getAllProdi } from "../../api/public";
 
@@ -126,7 +127,7 @@ export default function BiodataDosenPage() {
         alamat:          response.data.alamat          || "",
         foto:            null,
       });
-      if (response.data.foto) setImagePreview(`/uploads/profil/${response.data.foto}`);
+      if (response.data.foto) setImagePreview(getUploadUrl("profil", response.data.foto));
     } catch {
       Swal.fire({ icon: "error", title: "Gagal Memuat", text: "Gagal memuat profil. Silahkan refresh halaman.", confirmButtonText: "OK" });
     } finally { setLoading(false); }

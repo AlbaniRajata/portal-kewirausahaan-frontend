@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { getBeritaPublik } from "../../api/public";
+import { getUploadUrl } from "../../utils/fileUrl";
 
 const P = "'Poppins', sans-serif";
 
@@ -346,7 +347,7 @@ export default function LandingPage() {
   }, []);
 
   const fmtDate = d => d ? new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "";
-  const imgUrl  = b => { const f = b.file_gambar || b.foto_berita || null; if (!f) return null; return f.startsWith("http") ? f : `/uploads/berita/${f}`; };
+  const imgUrl  = b => { const f = b.file_gambar || b.foto_berita || null; if (!f) return null; return f.startsWith("http") ? f : getUploadUrl("berita", f); };
   const strip   = h => h ? h.replace(/<[^>]*>/g, "") : "";
 
   const handleChoice = type => {
@@ -478,6 +479,7 @@ export default function LandingPage() {
 
           <div style={{
             marginTop: "clamp(52px,8vh,100px)",
+            marginBottom: "clamp(60px,8vh,120px)",
             display: "flex", gap: "clamp(16px,4vw,56px)", flexWrap: "wrap",
             animation: "hup .9s cubic-bezier(.16,1,.3,1) .42s both",
           }}>

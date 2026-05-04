@@ -16,6 +16,7 @@ import {
   getMonevTimBimbingan,
 } from "../../api/dosen";
 import { useAuthStore } from "../../store/authStore";
+import { getUploadUrl } from "../../utils/fileUrl";
 
 const API_URL = import.meta.env.VITE_API_URL?.replace("/api", "");
 
@@ -277,7 +278,7 @@ const COLORS = {
 
             <Box sx={{ display: "flex", alignItems: "center", gap: 3, position: "relative", zIndex: 1, flexWrap: "wrap" }}>
               <Avatar
-                src={profile?.foto ? `/uploads/profil/${profile.foto}` : undefined}
+                src={profile?.foto ? getUploadUrl("profil", profile.foto) : undefined}
                 sx={{ width: 64, height: 64, border: "3px solid rgba(255,255,255,0.3)", fontSize: 24, backgroundColor: "rgba(255,255,255,0.2)" }}
               >
                 {user?.nama_lengkap?.[0] || "D"}
