@@ -244,6 +244,8 @@ function NewsCard({ b, navigate, fmtDate, imgUrl, strip }) {
   const [hov, setHov] = useState(false);
   const gambar  = imgUrl(b);
   const preview = strip(b.isi);
+  const fileName = b.file_gambar || b.foto_berita || b.file_pdf || "";
+  const isPdf = /\.pdf$/i.test(fileName);
   return (
     <article
       onClick={() => navigate(`/berita/${b.slug}`)}
@@ -259,12 +261,39 @@ function NewsCard({ b, navigate, fmtDate, imgUrl, strip }) {
       }}
     >
       <div style={{ height: 200, overflow: "hidden", position: "relative", flexShrink: 0 }}>
-        {gambar ? (
+        {gambar && !isPdf ? (
           <img src={gambar} alt={b.judul} style={{
             width: "100%", height: "100%", objectFit: "cover",
             transform: hov ? "scale(1.06)" : "scale(1)",
             transition: "transform .6s cubic-bezier(.16,1,.3,1)",
           }}/>
+        ) : isPdf ? (
+          <div style={{
+            width: "100%",
+            height: "100%",
+            background: "linear-gradient(180deg, #2b1320 0%, #191930 100%)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+          }}>
+            <svg width="52" height="52" viewBox="0 0 52 52" fill="none" aria-hidden="true">
+              <rect x="12" y="8" width="28" height="36" rx="5" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.15)"/>
+              <path d="M22 8v8a2 2 0 0 0 2 2h8" stroke="rgba(255,255,255,0.28)" strokeWidth="2"/>
+              <path d="M20 26h12M20 31h12" stroke="#C8FF00" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+            <div style={{
+              padding: "4px 10px",
+              borderRadius: 999,
+              background: "rgba(200,255,0,0.12)",
+              color: "#C8FF00",
+              fontFamily: P,
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "1px",
+            }}>PDF</div>
+          </div>
         ) : (
           <div style={{ height: "100%", background: "#0f0f24", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <svg width="32" height="32" viewBox="0 0 32 32" fill="none">

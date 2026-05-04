@@ -324,7 +324,10 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
         sx={{
           mb: 3,
           display: "grid",
-          gridTemplateColumns: tahap === 1 ? "repeat(3, 1fr)" : "repeat(4, 1fr)",
+          gridTemplateColumns:
+            tahap === 1
+              ? { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" }
+              : { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(4, 1fr)" },
           gap: 2,
         }}
       >
@@ -661,7 +664,15 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
         </Box>
       )}
 
-      <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end", mt: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          gap: 2,
+          justifyContent: { xs: "stretch", sm: "flex-end" },
+          flexDirection: { xs: "column", sm: "row" },
+          mt: 3,
+        }}
+      >
         <Button
           variant="outlined"
           onClick={fetchPreview}
@@ -671,6 +682,8 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
             borderRadius: "50px",
             fontWeight: 600,
             px: 3,
+            width: { xs: "100%", sm: "auto" },
+            whiteSpace: "nowrap",
             borderColor: COLORS.primary,
             color: COLORS.primary,
             "&:hover": { backgroundColor: "#f0f4ff" },
@@ -687,6 +700,8 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
             borderRadius: "50px",
             fontWeight: 700,
             px: 3,
+            width: { xs: "100%", sm: "auto" },
+            whiteSpace: "nowrap",
             backgroundColor: COLORS.primary,
             "&:hover": { backgroundColor: "#0a47c4" },
             "&:disabled": { backgroundColor: "#ccc" },

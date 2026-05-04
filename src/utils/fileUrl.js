@@ -18,3 +18,15 @@ export const getUploadUrl = (folder, filename) => {
     return `/uploads/${folder}/${path}`;
   }
 };
+
+export const getDownloadUrl = (folder, filename) => {
+  if (!filename) return null;
+  if (filename.startsWith("http://") || filename.startsWith("https://")) return filename;
+
+  const base = getApiBaseUrl();
+  if (folder === "berita") {
+    return `${base}/uploads/berita/download/${encodeURIComponent(filename)}`;
+  }
+
+  return `${base}/uploads/${folder}/${encodeURIComponent(filename)}`;
+};

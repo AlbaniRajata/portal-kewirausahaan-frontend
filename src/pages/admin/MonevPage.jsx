@@ -254,50 +254,8 @@ export default function MonevPage() {
             <Typography sx={{ fontSize: { xs: 14, sm: 16 }, color: "#6B7280" }}>Kelola jenis luaran kegiatan per program</Typography>
           </Box>
 
-          <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "flex-start", mb: 3 }}>
-            <Box sx={{
-              display: "flex",
-              gap: 2,
-              flexWrap: "wrap",
-              justifyContent: "flex-end",
-              flexDirection: { xs: "column", sm: "row" },
-              width: { xs: "100%", sm: "auto" },
-              alignItems: { xs: "stretch", sm: "center" },
-            }}>
-              {selectedProgram && (
-                <Button
-                  variant="contained"
-                  onClick={() => navigate(`/admin/monev/${selectedProgram.id_program}/progress`)}
-                  sx={{
-                    textTransform: "none", borderRadius: "50px",
-                    fontWeight: 600, px: 3, py: 1.2, fontSize: 14,
-                    backgroundColor: "#fff", color: "#0D59F2", border: "1px solid #0D59F2",
-                    width: { xs: "100%", sm: "auto" },
-                    "&:hover": { backgroundColor: "#f0f4ff" },
-                  }}
-                >
-                  Lihat Progress Tim
-                </Button>
-              )}
-
-              <Button
-                variant="contained"
-                onClick={handleOpenCreate}
-                disabled={!selectedProgram}
-                sx={{
-                  textTransform: "none", borderRadius: "50px",
-                  backgroundColor: "#0D59F2", "&:hover": { backgroundColor: "#0846c7" },
-                  px: 3, py: 1.2, fontSize: 14, fontWeight: 600,
-                  width: { xs: "100%", sm: "auto" },
-                }}
-              >
-                Tambah Luaran
-              </Button>
-            </Box>
-          </Box>
-
           {programs.length > 1 && (
-            <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
+            <Box sx={{ display: "flex", gap: 1.5, mb: 3, flexWrap: "wrap", flexDirection: { xs: "column", sm: "row" } }}>
               {programs.map((prog) => (
                 <Button
                   key={prog.id_program}
@@ -305,6 +263,8 @@ export default function MonevPage() {
                   variant={selectedProgram?.id_program === prog.id_program ? "contained" : "outlined"}
                   sx={{
                     textTransform: "none", borderRadius: "12px", fontWeight: 600, px: 3,
+                    width: { xs: "100%", sm: "auto" },
+                    whiteSpace: "nowrap",
                     ...(selectedProgram?.id_program === prog.id_program
                       ? { backgroundColor: COLORS.primary, boxShadow: "0 4px 12px rgba(13,89,242,0.2)", "&:hover": { backgroundColor: COLORS.primaryDark } }
                       : { borderColor: COLORS.primary, color: COLORS.primary, "&:hover": { backgroundColor: COLORS.primaryLight } }),
@@ -324,29 +284,86 @@ export default function MonevPage() {
           }}>
             <Box sx={{ height: 4, background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
             <Box sx={{ p: { xs: 2.5, sm: 3.5 }, borderBottom: `1.5px solid ${COLORS.slateLight}`, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-              <TextField
-                select
-                size="small"
-                value={tahun}
-                onChange={(e) => setTahun(e.target.value)}
-                SelectProps={{
-                  displayEmpty: true,
-                  renderValue: (v) => (
-                    <span style={{ fontSize: 14, color: !v ? "#9CA3AF" : "inherit" }}>
-                      {!v ? "Semua Tahun" : v}
-                    </span>
-                  ),
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap", width: { xs: "100%", lg: "auto" } }}>
+                <TextField
+                  select
+                  size="small"
+                  value={tahun}
+                  onChange={(e) => setTahun(e.target.value)}
+                  SelectProps={{
+                    displayEmpty: true,
+                    renderValue: (v) => (
+                      <span style={{ fontSize: 14, color: !v ? "#9CA3AF" : "inherit" }}>
+                        {!v ? "Semua Tahun" : v}
+                      </span>
+                    ),
+                  }}
+                  sx={{ ...roundedField, width: { xs: "100%", sm: "auto" }, minWidth: { sm: 160 } }}
+                >
+                  <MenuItem value="" sx={{ fontSize: 13 }}>Semua Tahun</MenuItem>
+                  {tahunOptions.map((itemTahun) => (
+                    <MenuItem key={itemTahun} value={String(itemTahun)} sx={{ fontSize: 13 }}>{itemTahun}</MenuItem>
+                  ))}
+                </TextField>
+                <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 500 }}>
+                  Total <b>{filteredLuaranList.length} luaran</b>
+                </Typography>
+              </Box>
+
+              <Box
+                sx={{
+                  display: "grid",
+                  gap: 1.5,
+                  gridTemplateColumns: { xs: "1fr", sm: "repeat(2, max-content)" },
+                  justifyContent: { xs: "stretch", sm: "end" },
+                  width: { xs: "100%", lg: "auto" },
                 }}
-                sx={{ ...roundedField, width: { xs: "100%", sm: "auto" }, minWidth: { sm: 160 } }}
               >
-                <MenuItem value="" sx={{ fontSize: 13 }}>Semua Tahun</MenuItem>
-                {tahunOptions.map((itemTahun) => (
-                  <MenuItem key={itemTahun} value={String(itemTahun)} sx={{ fontSize: 13 }}>{itemTahun}</MenuItem>
-                ))}
-              </TextField>
-              <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 500 }}>
-                Total <b>{filteredLuaranList.length} luaran</b>
-              </Typography>
+                {selectedProgram && (
+                  <Button
+                    variant="contained"
+                    onClick={() => navigate(`/admin/monev/${selectedProgram.id_program}/progress`)}
+                    sx={{
+                      textTransform: "none",
+                      borderRadius: "12px",
+                      fontWeight: 600,
+                      px: 3,
+                      py: 1.2,
+                      fontSize: 14,
+                      backgroundColor: "#fff",
+                      color: "#0D59F2",
+                      border: "1px solid #0D59F2",
+                      width: { xs: "100%", sm: "auto" },
+                      whiteSpace: "nowrap",
+                      boxShadow: "none",
+                      "&:hover": { backgroundColor: "#f0f4ff", boxShadow: "none" },
+                    }}
+                  >
+                    Lihat Progress Tim
+                  </Button>
+                )}
+
+                <Button
+                  variant="contained"
+                  onClick={handleOpenCreate}
+                  disabled={!selectedProgram}
+                  sx={{
+                    textTransform: "none",
+                    borderRadius: "12px",
+                    backgroundColor: "#0D59F2",
+                    "&:hover": { backgroundColor: "#0846c7" },
+                    px: 3,
+                    py: 1.2,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    width: { xs: "100%", sm: "auto" },
+                    whiteSpace: "nowrap",
+                    boxShadow: "0 4px 12px rgba(13,89,242,0.2)",
+                  }}
+                >
+                  Tambah Luaran
+                </Button>
+              </Box>
             </Box>
             <Box sx={{ p: { xs: 2.5, sm: 3.5 } }}>
               {loading ? (

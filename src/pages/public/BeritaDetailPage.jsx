@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { PictureAsPdf } from "@mui/icons-material";
 import { getBeritaBySlug } from "../../api/public";
-import { getUploadUrl } from "../../utils/fileUrl";
+import { getUploadUrl, getDownloadUrl } from "../../utils/fileUrl";
 
 const P = "'Poppins', sans-serif";
 
@@ -14,12 +15,49 @@ const formatDate = (d) => {
   });
 };
 
+const sanitizeBeritaTitle = (judul) => String(judul || "berita")
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, "_")
+  .replace(/_+/g, "_")
+  .replace(/^_+|_+$/g, "");
+
+const getBeritaTahun = (berita) => {
+  if (!berita?.created_at) return new Date().getFullYear();
+  const tahun = new Date(berita.created_at).getFullYear();
+  return Number.isNaN(tahun) ? new Date().getFullYear() : tahun;
+};
+
+const getLampiranNama = (berita, prefix, filename, fallbackExt = "") => {
+  if (!filename) return null;
+  const ext = filename.includes(".") ? filename.slice(filename.lastIndexOf(".")) : fallbackExt;
+  const safeTitle = sanitizeBeritaTitle(berita?.judul);
+  const safeYear = getBeritaTahun(berita);
+  return `${prefix}_${safeTitle}_${safeYear}${ext}`;
+};
+
 const getGambarUrl = (b) => {
   const filename = b?.file_gambar || b?.foto_berita || null;
   if (!filename) return null;
   if (filename.startsWith("http")) return filename;
   return getUploadUrl("berita", filename);
 };
+
+const getGambarNama = (b) => getLampiranNama(b, "gambar", b?.file_gambar || b?.foto_berita || null);
+
+const getPdfUrl = (b) => {
+  const filename = b?.file_pdf || null;
+  if (!filename) return null;
+  if (filename.startsWith("http")) return filename;
+  return getUploadUrl("berita", filename);
+};
+
+const getDownloadLink = (filename) => {
+  if (!filename) return null;
+  if (filename.startsWith("http")) return filename;
+  return getDownloadUrl("berita", filename);
+};
+
+const getPdfNama = (b) => getLampiranNama(b, "file", b?.file_pdf || null, ".pdf");
 
 export default function BeritaDetailPage() {
   const navigate = useNavigate();
@@ -46,6 +84,11 @@ export default function BeritaDetailPage() {
   }, [fetchDetail]);
 
   const gambar = getGambarUrl(berita);
+  const fileName = getGambarNama(berita) || "";
+  const pdfUrl = getPdfUrl(berita);
+  const pdfName = getPdfNama(berita) || "";
+  const gambarDownloadUrl = getDownloadLink(getGambarNama(berita));
+  const pdfDownloadUrl = getDownloadLink(getPdfNama(berita));
 
   if (loading) {
     return (
@@ -252,31 +295,76 @@ export default function BeritaDetailPage() {
           </h1>
         </div>
 
-        {gambar && (
-          <div style={{
-            borderRadius: 28,
-            overflow: "hidden",
-            marginBottom: 28,
-            border: "1px solid rgba(255,255,255,0.06)",
-            boxShadow: "0 24px 80px rgba(0,0,0,0.35)",
-            position: "relative",
-          }}>
-            <img
-              src={gambar}
-              alt={berita.judul}
-              style={{
-                width: "100%",
-                maxHeight: 520,
-                objectFit: "cover",
-                display: "block",
-              }}
-            />
+        {(gambar || pdfUrl) && (
+          gambar ? (
             <div style={{
-              position: "absolute",
-              inset: 0,
-              background: "linear-gradient(180deg, rgba(10,10,20,0) 60%, rgba(10,10,20,0.35) 100%)",
-            }} />
-          </div>
+              borderRadius: 28,
+              overflow: "hidden",
+              marginBottom: 28,
+              border: "1px solid rgba(255,255,255,0.06)",
+              boxShadow: "0 24px 80px rgba(0,0,0,0.35)",
+              position: "relative",
+            }}>
+              <img
+                src={gambar}
+                alt={berita.judul}
+                style={{
+                  width: "100%",
+                  maxHeight: 520,
+                  objectFit: "cover",
+                  display: "block",
+                }}
+              />
+              <div style={{
+                position: "absolute",
+                inset: 0,
+                background: "linear-gradient(180deg, rgba(10,10,20,0) 60%, rgba(10,10,20,0.35) 100%)",
+              }} />
+            </div>
+          ) : (
+            <div style={{
+              borderRadius: 28,
+              overflow: "hidden",
+              marginBottom: 28,
+              border: "1px solid rgba(255,255,255,0.06)",
+              boxShadow: "0 24px 80px rgba(0,0,0,0.35)",
+              background: "#fff",
+              padding: 24,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 16,
+              flexWrap: "wrap",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 16, minWidth: 0 }}>
+                <div style={{ width: 64, height: 64, borderRadius: 18, background: "#FEF2F2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <PictureAsPdf sx={{ fontSize: 36, color: "#DC2626" }} />
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "#111827", marginBottom: 4 }}>Lampiran PDF</div>
+                  <div style={{ fontSize: 13, color: "#6B7280", wordBreak: "break-word" }}>{pdfName}</div>
+                </div>
+              </div>
+              <a
+                href={pdfUrl}
+                target="_blank"
+                rel="noreferrer"
+                download
+                style={{
+                  padding: "10px 18px",
+                  borderRadius: 999,
+                  border: "1.5px solid #e5e7eb",
+                  background: "transparent",
+                  color: "#0a0a14",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  textDecoration: "none",
+                }}
+              >
+                Download PDF
+              </a>
+            </div>
+          )
         )}
 
         <article style={{
@@ -331,6 +419,43 @@ export default function BeritaDetailPage() {
             <p style={{ fontSize: 15, color: "#888", textAlign: "center", margin: 0 }}>
               Konten berita tidak tersedia
             </p>
+          )}
+
+          {(gambar || pdfUrl) && (
+            <div style={{ marginTop: 28, paddingTop: 24, borderTop: "1px solid #f0f0f4" }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: "#111827", marginBottom: 14 }}>Lampiran</div>
+              <div style={{ display: "grid", gap: 14 }}>
+                {gambar && (
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: 18, borderRadius: 20, border: "1px solid #e5e7eb", background: "#fafafa", flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
+                      <div style={{ width: 56, height: 56, borderRadius: 16, background: "#EEF2FF", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <span style={{ fontSize: 22 }}>🖼️</span>
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: "#111827", marginBottom: 4 }}>Gambar</div>
+                        <div style={{ fontSize: 12, color: "#6B7280", wordBreak: "break-word" }}>{fileName}</div>
+                      </div>
+                    </div>
+                    <a href={gambarDownloadUrl || gambar} target="_blank" rel="noreferrer" download style={{ padding: "10px 16px", borderRadius: 999, border: "1.5px solid #e5e7eb", color: "#0a0a14", textDecoration: "none", fontSize: 13, fontWeight: 700 }}>Download Gambar</a>
+                  </div>
+                )}
+
+                {pdfUrl && (
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: 18, borderRadius: 20, border: "1px solid #e5e7eb", background: "#fafafa", flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
+                      <div style={{ width: 56, height: 56, borderRadius: 16, background: "#FEF2F2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <PictureAsPdf sx={{ fontSize: 32, color: "#DC2626" }} />
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: "#111827", marginBottom: 4 }}>PDF</div>
+                        <div style={{ fontSize: 12, color: "#6B7280", wordBreak: "break-word" }}>{pdfName}</div>
+                      </div>
+                    </div>
+                    <a href={pdfDownloadUrl || pdfUrl} target="_blank" rel="noreferrer" download style={{ padding: "10px 16px", borderRadius: 999, border: "1.5px solid #e5e7eb", color: "#0a0a14", textDecoration: "none", fontSize: 13, fontWeight: 700 }}>Download PDF</a>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
         </article>
       </main>

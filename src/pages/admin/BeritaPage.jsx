@@ -4,7 +4,7 @@ import {
   TableContainer, TableHead, TableRow, Button,
   TextField, MenuItem, Pagination, InputAdornment, Avatar,
 } from "@mui/material";
-import { Search, Newspaper } from "@mui/icons-material";
+import { Search, Newspaper, PictureAsPdf } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
@@ -71,6 +71,10 @@ const formatDate = (d) => {
   if (!d) return "-";
   return new Date(d).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
 };
+
+const getPreviewFile = (item) => item.file_gambar || item.file_pdf || null;
+const isImageFile = (filename = "") => /\.(jpe?g|png|webp)$/i.test(filename);
+const isPdfFile = (filename = "") => /\.pdf$/i.test(filename);
 
 export default function BeritaPage() {
   const navigate = useNavigate();
@@ -236,13 +240,34 @@ export default function BeritaPage() {
                         {paginatedList.map((item) => (
                           <TableRow key={item.id_berita} sx={tableBodyRow}>
                             <TableCell sx={{ width: 72 }}>
-                              {item.file_gambar ? (
-                                <Box
-                                  component="img"
-                                  src={getUploadUrl("berita", item.file_gambar)}
-                                  alt={item.judul}
-                                  sx={{ width: 56, height: 44, borderRadius: "8px", objectFit: "cover", display: "block" }}
-                                />
+                              {getPreviewFile(item) ? (
+                                isImageFile(getPreviewFile(item)) ? (
+                                  <Box
+                                    component="img"
+                                    src={getUploadUrl("berita", getPreviewFile(item))}
+                                    alt={item.judul}
+                                    sx={{ width: 56, height: 44, borderRadius: "8px", objectFit: "cover", display: "block" }}
+                                  />
+                                ) : isPdfFile(getPreviewFile(item)) ? (
+                                  <Box
+                                    sx={{
+                                      width: 56,
+                                      height: 44,
+                                      borderRadius: "8px",
+                                      backgroundColor: "#FEF2F2",
+                                      border: "1px solid #FECACA",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                    }}
+                                  >
+                                    <PictureAsPdf sx={{ color: COLORS.error, fontSize: 24 }} />
+                                  </Box>
+                                ) : (
+                                  <Avatar variant="rounded" sx={{ width: 56, height: 44, borderRadius: "8px", backgroundColor: "#f0f0f0" }}>
+                                    <Newspaper sx={{ color: "#ccc", fontSize: 22 }} />
+                                  </Avatar>
+                                )
                               ) : (
                                 <Avatar variant="rounded" sx={{ width: 56, height: 44, borderRadius: "8px", backgroundColor: "#f0f0f0" }}>
                                   <Newspaper sx={{ color: "#ccc", fontSize: 22 }} />

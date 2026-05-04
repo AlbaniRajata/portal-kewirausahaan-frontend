@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Box, Paper, Typography, Button, TextField, MenuItem,
-  Divider, ToggleButtonGroup, ToggleButton,
+  Divider,
 } from "@mui/material";
-import { Upload, Link as LinkIcon, AttachFile, ArrowBack } from "@mui/icons-material";
+import { Upload, ArrowBack, PictureAsPdf } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
@@ -48,7 +48,8 @@ export default function FormBeritaPage() {
   const navigate = useNavigate();
   const { id_berita } = useParams();
   const isEdit = !!id_berita;
-  const fileInputRef = useRef(null);
+  const gambarInputRef = useRef(null);
+  const pdfInputRef = useRef(null);
 
   const [loading, setLoading] = useState(isEdit);
   const [submitting, setSubmitting] = useState(false);
@@ -61,10 +62,10 @@ export default function FormBeritaPage() {
   });
   const [errors, setErrors] = useState({});
 
-  const [gambarMode, setGambarMode] = useState("upload");
   const [gambarFile, setGambarFile] = useState(null);
-  const [gambarUrl, setGambarUrl] = useState("");
+  const [pdfFile, setPdfFile] = useState(null);
   const [gambarPreview, setGambarPreview] = useState("");
+  const [pdfPreview, setPdfPreview] = useState("");
 
   const fetchDetail = useCallback(async () => {
     try {
@@ -73,9 +74,12 @@ export default function FormBeritaPage() {
       const d = res.data;
       setExisting(d);
       setForm({ judul: d.judul || "", isi: d.isi || "", status: String(d.status) });
-      if (d.file_gambar) {
-        setGambarPreview(getUploadUrl("berita", d.file_gambar));
-      }
+      const existingImageUrl = d.file_gambar ? getUploadUrl("berita", d.file_gambar) : "";
+      const existingPdfUrl = d.file_pdf ? getUploadUrl("berita", d.file_pdf) : "";
+      setGambarPreview(existingImageUrl);
+      setPdfPreview(existingPdfUrl);
+      setGambarFile(null);
+      setPdfFile(null);
     } catch {
       Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat data berita", confirmButtonColor: "#0D59F2" });
       navigate("/admin/berita");
@@ -88,8 +92,19 @@ export default function FormBeritaPage() {
     if (isEdit) fetchDetail();
   }, [isEdit, fetchDetail]);
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
+  useEffect(() => {
+    return () => {
+      if (gambarPreview.startsWith("blob:")) URL.revokeObjectURL(gambarPreview);
+      if (pdfPreview.startsWith("blob:")) URL.revokeObjectURL(pdfPreview);
+    };
+  }, [gambarPreview, pdfPreview]);
+
+  const revokeBlobIfNeeded = (url) => {
+    if (url && url.startsWith("blob:")) URL.revokeObjectURL(url);
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
     if (!file) return;
     if (hasSuspiciousInput(file.name) || hasSqlInjection(file.name)) {
       setErrors((prev) => ({ ...prev, gambar: "Nama file mengandung karakter terlarang" }));
@@ -100,18 +115,53 @@ export default function FormBeritaPage() {
       setErrors((prev) => ({ ...prev, gambar: "Format harus JPG, PNG, atau WebP" }));
       return;
     }
-    if (file.size > 7 * 1024 * 1024) {
-      setErrors((prev) => ({ ...prev, gambar: "Ukuran file maksimal 7MB" }));
+    if (file.size > 10 * 1024 * 1024) {
+      setErrors((prev) => ({ ...prev, gambar: "Ukuran file maksimal 10MB" }));
       return;
     }
+    revokeBlobIfNeeded(gambarPreview);
     setGambarFile(file);
     setGambarPreview(URL.createObjectURL(file));
     setErrors((prev) => ({ ...prev, gambar: "" }));
+    e.target.value = "";
   };
 
-  const handleUrlChange = (val) => {
-    setGambarUrl(val);
-    setGambarPreview(val);
+  const handlePdfChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (hasSuspiciousInput(file.name) || hasSqlInjection(file.name)) {
+      setErrors((prev) => ({ ...prev, pdf: "Nama file mengandung karakter terlarang" }));
+      return;
+    }
+    if (file.type !== "application/pdf") {
+      setErrors((prev) => ({ ...prev, pdf: "Format harus PDF" }));
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setErrors((prev) => ({ ...prev, pdf: "Ukuran file maksimal 10MB" }));
+      return;
+    }
+    revokeBlobIfNeeded(pdfPreview);
+    setPdfFile(file);
+    setPdfPreview(URL.createObjectURL(file));
+    setErrors((prev) => ({ ...prev, pdf: "" }));
+    e.target.value = "";
+  };
+
+  const clearImage = () => {
+    revokeBlobIfNeeded(gambarPreview);
+    setGambarFile(null);
+    setGambarPreview("");
+    if (gambarInputRef.current) gambarInputRef.current.value = "";
+    setErrors((prev) => ({ ...prev, gambar: "" }));
+  };
+
+  const clearPdf = () => {
+    revokeBlobIfNeeded(pdfPreview);
+    setPdfFile(null);
+    setPdfPreview("");
+    if (pdfInputRef.current) pdfInputRef.current.value = "";
+    setErrors((prev) => ({ ...prev, pdf: "" }));
   };
 
   const validate = () => {
@@ -150,11 +200,8 @@ export default function FormBeritaPage() {
       formData.append("isi", form.isi || "");
       formData.append("status", form.status);
 
-      if (gambarMode === "upload" && gambarFile) {
-        formData.append("file_gambar", gambarFile);
-      } else if (gambarMode === "url" && gambarUrl.trim()) {
-        formData.append("gambar_url", gambarUrl.trim());
-      }
+      if (gambarFile) formData.append("file_gambar", gambarFile);
+      if (pdfFile) formData.append("file_pdf", pdfFile);
 
       if (isEdit) {
         await updateBerita(id_berita, formData);
@@ -235,68 +282,86 @@ export default function FormBeritaPage() {
               </Paper>
 
               <Paper sx={{ p: { xs: 2.5, sm: 3.5 }, borderRadius: "20px", border: "1.5px solid #E5E7EB", boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
-                <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 2.5 }}>Gambar Berita</Typography>
+                <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 2.5 }}>File Berita</Typography>
 
-                <Box sx={{ mb: 2 }}>
-                  <ToggleButtonGroup
-                    value={gambarMode}
-                    exclusive
-                    onChange={(e, val) => { if (val) setGambarMode(val); }}
-                    size="small"
-                    sx={{ mb: 2, "& .MuiToggleButton-root": { textTransform: "none", fontSize: 13, px: 2, borderRadius: "8px !important", "&.Mui-selected": { backgroundColor: COLORS.primaryLight, color: COLORS.primary, fontWeight: 700 } } }}
-                  >
-                    <ToggleButton value="upload"><Upload sx={{ fontSize: 16, mr: 0.5 }} />Upload File</ToggleButton>
-                    <ToggleButton value="url"><LinkIcon sx={{ fontSize: 16, mr: 0.5 }} />URL Gambar</ToggleButton>
-                  </ToggleButtonGroup>
+                <Box sx={{ display: "grid", gap: 2 }}>
+                  <Box>
+                    <input ref={gambarInputRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp" style={{ display: "none" }} onChange={handleImageChange} />
+                    <Box
+                      onClick={() => gambarInputRef.current?.click()}
+                      sx={{
+                        border: `2px dashed ${COLORS.slateLight}`,
+                        borderRadius: "12px",
+                        p: 3,
+                        textAlign: "center",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                        "&:hover": { borderColor: COLORS.primary, backgroundColor: "#f7faff" },
+                      }}
+                    >
+                      <Upload sx={{ fontSize: 32, color: "#9CA3AF", mb: 1 }} />
+                      <Typography sx={{ fontSize: 13, color: "#6B7280" }}>Klik untuk upload file gambar</Typography>
+                      <Typography sx={{ fontSize: 12, color: "#9CA3AF", mt: 0.5 }}>Format: JPG, PNG, WebP. Maks. 10MB</Typography>
+                    </Box>
+                    {errors.gambar && <Typography sx={{ fontSize: 12, color: COLORS.error, mt: 1 }}>{errors.gambar}</Typography>}
+                  </Box>
 
-                  {gambarMode === "upload" ? (
-                    <Box>
-                      <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleFileChange} />
+                  {gambarPreview && (
+                    <Box sx={{ p: 2.5, borderRadius: "12px", border: "1px solid #E5E7EB", backgroundColor: "#FAFAFA" }}>
+                      <Typography sx={{ fontSize: 12, color: "#888", mb: 1 }}>Preview Gambar</Typography>
                       <Box
-                        onClick={() => fileInputRef.current?.click()}
-                        sx={{
-                          border: `2px dashed ${COLORS.slateLight}`, borderRadius: "12px", p: 3,
-                          textAlign: "center", cursor: "pointer", transition: "all 0.2s",
-                          "&:hover": { borderColor: COLORS.primary, backgroundColor: "#f7faff" },
-                        }}
-                      >
-                        <AttachFile sx={{ fontSize: 32, color: "#9CA3AF", mb: 1 }} />
-                        <Typography sx={{ fontSize: 13, color: "#6B7280" }}>
-                          {gambarFile ? gambarFile.name : "Klik untuk pilih gambar (JPG, PNG, WEBP)"}
+                        component="img"
+                        src={gambarPreview}
+                        alt="Preview gambar berita"
+                        sx={{ width: "100%", maxHeight: 240, objectFit: "cover", borderRadius: "12px", border: "1px solid #f0f0f0" }}
+                      />
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1, mt: 1 }}>
+                        <Typography sx={{ fontSize: 12, color: "#6B7280", wordBreak: "break-all" }}>
+                          {gambarFile?.name || existing?.file_gambar || "Gambar tersimpan"}
                         </Typography>
-                        {!gambarFile && (
-                          <Typography sx={{ fontSize: 12, color: "#9CA3AF", mt: 0.5 }}>Maks. 5MB</Typography>
-                        )}
+                        <Button size="small" onClick={clearImage} sx={{ textTransform: "none", fontSize: 12, color: COLORS.error, p: 0, minWidth: 0 }}>
+                          Hapus gambar
+                        </Button>
                       </Box>
                     </Box>
-                  ) : (
-                    <TextField fullWidth size="small" placeholder="https://example.com/gambar.jpg"
-                      value={gambarUrl}
-                      onChange={(e) => handleUrlChange(e.target.value)}
-                      InputProps={{ startAdornment: <LinkIcon sx={{ mr: 1, fontSize: 18, color: "#9CA3AF" }} /> }}
-                      sx={roundedField}
-                    />
+                  )}
+
+                  <Box>
+                    <input ref={pdfInputRef} type="file" accept="application/pdf" style={{ display: "none" }} onChange={handlePdfChange} />
+                    <Box
+                      onClick={() => pdfInputRef.current?.click()}
+                      sx={{
+                        border: `2px dashed ${COLORS.slateLight}`,
+                        borderRadius: "12px",
+                        p: 3,
+                        textAlign: "center",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                        "&:hover": { borderColor: COLORS.primary, backgroundColor: "#f7faff" },
+                      }}
+                    >
+                      <PictureAsPdf sx={{ fontSize: 32, color: "#9CA3AF", mb: 1 }} />
+                      <Typography sx={{ fontSize: 13, color: "#6B7280" }}>Klik untuk upload file PDF</Typography>
+                      <Typography sx={{ fontSize: 12, color: "#9CA3AF", mt: 0.5 }}>Format: PDF. Maks. 10MB</Typography>
+                    </Box>
+                    {errors.pdf && <Typography sx={{ fontSize: 12, color: COLORS.error, mt: 1 }}>{errors.pdf}</Typography>}
+                  </Box>
+
+                  {pdfPreview && (
+                    <Box sx={{ p: 2.5, borderRadius: "12px", border: "1px solid #E5E7EB", backgroundColor: "#FAFAFA", display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+                      <PictureAsPdf sx={{ fontSize: 40, color: COLORS.error, flexShrink: 0 }} />
+                      <Box sx={{ minWidth: 0, flex: 1 }}>
+                        <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#1F2937", wordBreak: "break-word" }}>
+                          {pdfFile?.name || existing?.file_pdf || "PDF tersimpan"}
+                        </Typography>
+                        <Typography sx={{ fontSize: 12, color: "#6B7280" }}>File PDF siap diunggah</Typography>
+                      </Box>
+                      <Button size="small" onClick={clearPdf} sx={{ textTransform: "none", fontSize: 12, color: COLORS.error, p: 0, minWidth: 0 }}>
+                        Hapus PDF
+                      </Button>
+                    </Box>
                   )}
                 </Box>
-
-                {gambarPreview && (
-                  <Box sx={{ mt: 2 }}>
-                    <Typography sx={{ fontSize: 12, color: "#888", mb: 1 }}>Preview</Typography>
-                    <Box
-                      component="img"
-                      src={gambarPreview}
-                      alt="Preview"
-                      onError={() => setGambarPreview("")}
-                      sx={{ width: "100%", maxHeight: 240, objectFit: "cover", borderRadius: "12px", border: "1px solid #f0f0f0" }}
-                    />
-                    <Button size="small"
-                      onClick={() => { setGambarPreview(""); setGambarFile(null); setGambarUrl(""); }}
-                        sx={{ textTransform: "none", fontSize: 12, color: COLORS.error, mt: 1, p: 0 }}
-                    >
-                      Hapus gambar
-                    </Button>
-                  </Box>
-                )}
               </Paper>
             </Box>
 
