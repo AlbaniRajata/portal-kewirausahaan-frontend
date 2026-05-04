@@ -10,6 +10,7 @@ import { getProfile } from "../../api/public";
 import { logoutUser } from "../../api/auth";
 import { setAccessToken } from "../../api/axios";
 import { getMyProgram } from "../../api/admin";
+import { getUploadUrl } from "../../utils/fileUrl";
 
 export default function Navbar({ onToggleSidebar, sidebarCollapsed, hasSidebar = true, isMobile = false }) {
   const navigate = useNavigate();
@@ -44,7 +45,7 @@ export default function Navbar({ onToggleSidebar, sidebarCollapsed, hasSidebar =
   }, [location.key, user]);
 
   const displayName = user?.nama_lengkap || profile?.nama_lengkap || "User";
-  const photoUrl = user?.foto ? `/uploads/profil/${user.foto}` : (profile?.foto ? `/uploads/profil/${profile.foto}` : null);
+  const photoUrl = user?.foto ? getUploadUrl("profil", user.foto) : (profile?.foto ? getUploadUrl("profil", profile.foto) : null);
   const roleName = profile?.nama_role?.trim() || user?.nama_role?.trim() || "";
   const profileProgram = (
     adminProgram?.keterangan?.trim()

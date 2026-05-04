@@ -1,10 +1,8 @@
-import { Box, Avatar, Typography, useMediaQuery } from "@mui/material";
+import { Box, Avatar, Typography, useMediaQuery, Divider } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PersonIcon from "@mui/icons-material/Person";
-import AssignmentIcon from "@mui/icons-material/Assignment";
-import BookIcon from "@mui/icons-material/Book";
 import SchoolIcon from "@mui/icons-material/School";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import PersonSearchIcon from "@mui/icons-material/PersonSearch";
@@ -16,6 +14,7 @@ import { useAuthStore } from "../../store/authStore";
 import { getProfile } from "../../api/public";
 import { logoutUser } from "../../api/auth";
 import { setAccessToken } from "../../api/axios";
+import { getUploadUrl } from "../../utils/fileUrl";
 
 export default function DosenNavbar() {
   const navigate = useNavigate();
@@ -51,7 +50,7 @@ export default function DosenNavbar() {
   }, [location.pathname]);
 
   const displayName = user?.nama_lengkap || profile?.nama_lengkap || "User";
-  const photoUrl = user?.foto ? `/uploads/profil/${user.foto}` : (profile?.foto ? `/uploads/profil/${profile.foto}` : null);
+  const photoUrl = user?.foto ? getUploadUrl("profil", user.foto) : (profile?.foto ? getUploadUrl("profil", profile.foto) : null);
   const roleName = profile?.nama_role?.trim() || "";
   const displaySubtitle = profile?.keterangan?.trim() || roleName || "";
   const navbarTitle = profile?.current_program?.trim() || "Program Kewirausahaan";
@@ -283,6 +282,7 @@ export default function DosenNavbar() {
         <Box sx={{ position: "relative" }}>
           <Box
             onClick={(event) => {
+              if (isCompactMenu) return;
               event.stopPropagation();
               setOpenProfileMenu((prev) => !prev);
             }}
@@ -292,7 +292,7 @@ export default function DosenNavbar() {
               gap: { xs: 0.8, sm: 1.4 },
               minWidth: 0,
               maxWidth: { xs: 200, sm: 280, md: 340 },
-              cursor: "pointer",
+              cursor: isCompactMenu ? "default" : "pointer",
             }}
           >
             <Avatar
@@ -305,42 +305,28 @@ export default function DosenNavbar() {
                   || <AccountCircleIcon sx={{ fontSize: 36 }} />)}
             </Avatar>
 
-            <Box sx={{ minWidth: 0, maxWidth: { xs: 90, sm: 130, md: 180 } }}>
-              <Typography
-                sx={{
-                  fontSize: 15,
-                  fontWeight: 700,
-                  color: "#ffffff",
-                  lineHeight: 1.3,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  display: { xs: "none", sm: "block" },
-                }}
-              >
+            <Box sx={{ minWidth: 0, maxWidth: { xs: 90, sm: 130, md: 180 }, display: { xs: "none", sm: "block" } }}>
+              <Typography sx={{ fontSize: 15, fontWeight: 700, color: "#ffffff", lineHeight: 1.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {displayName}
               </Typography>
               {displaySubtitle && (
-                <Typography
-                  sx={{
-                    fontSize: 13,
-                    color: "rgba(255,255,255,0.85)",
-                    lineHeight: 1.2,
-                    display: { xs: "none", sm: "block" },
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
+                <Typography sx={{ fontSize: 13, color: "rgba(255,255,255,0.85)", lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {displaySubtitle}
                 </Typography>
               )}
             </Box>
 
-            <KeyboardArrowDownIcon sx={{ color: "#ffffff", fontSize: 21 }} />
+            <KeyboardArrowDownIcon
+              sx={{
+                color: "#ffffff",
+                fontSize: 21,
+                transform: isCompactMenu && openMobileMenu ? "rotate(180deg)" : "rotate(0deg)",
+                transition: "transform 0.2s ease",
+              }}
+            />
           </Box>
 
-          {openProfileMenu && (
+          {!isCompactMenu && openProfileMenu && (
             <Box
               sx={{
                 position: "absolute",
@@ -471,7 +457,6 @@ export default function DosenNavbar() {
                         px: 1,
                         borderRadius: "10px",
                         cursor: "pointer",
-                        fontSize: 15,
                         color: isSubmenuActive ? "#ffb74d" : "rgba(255,255,255,0.9)",
                         fontWeight: isSubmenuActive ? 700 : 500,
                         "&:hover": { backgroundColor: "rgba(255,255,255,0.08)" },
@@ -509,6 +494,27 @@ export default function DosenNavbar() {
             >
               <AssessmentIcon sx={{ fontSize: 20, color: "inherit" }} />
               <Typography sx={{ fontSize: 15, fontWeight: "inherit", color: "inherit" }}>Monitoring dan Evaluasi</Typography>
+            </Box>
+
+            <Divider sx={{ borderColor: "rgba(255,255,255,0.18)", mx: 0.6, my: 1 }} />
+
+            <Box
+              onClick={handleLogout}
+              sx={{
+                mx: 0.6,
+                mb: 1,
+                px: 1.6,
+                py: 1.2,
+                borderRadius: "14px",
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                cursor: "pointer",
+                "&:hover": { backgroundColor: "rgba(255,255,255,0.08)" },
+              }}
+            >
+              <LogoutIcon sx={{ fontSize: 20, color: "#fff" }} />
+              <Typography sx={{ fontSize: 15, fontWeight: 600, color: "#fff" }}>Logout</Typography>
             </Box>
           </Box>
         </Box>

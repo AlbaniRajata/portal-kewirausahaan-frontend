@@ -1,4 +1,4 @@
-import { Box, Avatar, Typography, useMediaQuery } from "@mui/material";
+import { Box, Avatar, Typography, useMediaQuery, Divider } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -12,11 +12,11 @@ import EventNoteIcon from "@mui/icons-material/EventNote";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import LogoutIcon from "@mui/icons-material/Logout";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import CloseIcon from "@mui/icons-material/Close";
 import { useAuthStore } from "../../store/authStore";
 import { getProfile } from "../../api/public";
 import { logoutUser } from "../../api/auth";
 import { setAccessToken } from "../../api/axios";
+import { getUploadUrl } from "../../utils/fileUrl";
 
 export default function MahasiswaNavbar() {
   const navigate = useNavigate();
@@ -38,7 +38,6 @@ export default function MahasiswaNavbar() {
         const res = await getProfile();
         if (active && res.success) setProfile(res.data);
       } catch {
-        // fallback ke data store
       }
     })();
     return () => {
@@ -58,7 +57,7 @@ export default function MahasiswaNavbar() {
   }, [location.pathname]);
 
   const displayName = user?.nama_lengkap || profile?.nama_lengkap || "User";
-  const photoUrl = user?.foto ? `/uploads/profil/${user.foto}` : (profile?.foto ? `/uploads/profil/${profile.foto}` : null);
+  const photoUrl = user?.foto ? getUploadUrl("profil", user.foto) : (profile?.foto ? getUploadUrl("profil", profile.foto) : null);
   const roleName = profile?.nama_role?.trim() || "";
   const displaySubtitle = profile?.keterangan?.trim() || roleName || "";
   const navbarTitle = profile?.current_program?.trim() || "Program Kewirausahaan";
@@ -79,7 +78,6 @@ export default function MahasiswaNavbar() {
     try {
       await logoutUser(refreshToken);
     } catch {
-      // tetap logout meski API gagal
     } finally {
       logout();
       setAccessToken(null);
@@ -136,257 +134,242 @@ export default function MahasiswaNavbar() {
             pl: { md: 1, lg: 2 },
           }}
         >
-        {menuItems.map((item) => (
-          <Box
-            key={item.text}
-            onClick={() => navigate(item.path)}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-              fontWeight: isActive(item.text) ? 700 : 500,
-              color: isActive(item.text) ? "#ffb74d" : "rgba(255,255,255,0.92)",
-              position: "relative",
-              "&::after": {
-                content: '""',
-                position: "absolute",
-                left: 0,
-                right: 0,
-                bottom: -15,
-                height: 2,
-                borderRadius: 999,
-                backgroundColor: "#ffb74d",
-                opacity: isActive(item.text) ? 1 : 0,
-                transform: isActive(item.text) ? "scaleX(1)" : "scaleX(0)",
-                transformOrigin: "left center",
-                transition: "transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease",
-              },
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", color: "inherit" }}>{item.icon}</Box>
-            <Typography sx={{ fontSize: 16, fontWeight: "inherit", color: "inherit" }}>
-              {item.text}
-            </Typography>
-          </Box>
-        ))}
-
-        <Box sx={{ display: "flex", position: "relative", alignItems: "center" }}>
-          <Box
-            onClick={() => setOpenBimbinganMenu((prev) => !prev)}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              cursor: "pointer",
-              fontWeight: isActive("Bimbingan") ? 700 : 500,
-              color: isActive("Bimbingan") ? "#ffb74d" : "rgba(255,255,255,0.92)",
-              whiteSpace: "nowrap",
-              position: "relative",
-              "&::after": {
-                content: '""',
-                position: "absolute",
-                left: 0,
-                right: 0,
-                bottom: -15,
-                height: 2,
-                borderRadius: 999,
-                backgroundColor: "#ffb74d",
-                opacity: isActive("Bimbingan") ? 1 : 0,
-                transform: isActive("Bimbingan") ? "scaleX(1)" : "scaleX(0)",
-                transformOrigin: "left center",
-                transition: "transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease",
-              },
-            }}
-          >
-            <SchoolIcon sx={{ fontSize: 22, color: "inherit" }} />
-            <Typography sx={{ fontSize: 16, fontWeight: "inherit", color: "inherit" }}>
-              Bimbingan
-            </Typography>
-            <KeyboardArrowDownIcon sx={{ fontSize: 20, color: "inherit" }} />
-          </Box>
-
-          {openBimbinganMenu && (
+          {menuItems.map((item) => (
             <Box
-              sx={{
-                position: "absolute",
-                top: "calc(100% + 20px)",
-                left: 0,
-                width: "max-content",
-                minWidth: 220,
-                borderRadius: "16px",
-                border: "1px solid rgba(255,255,255,0.22)",
-backgroundColor: "#0D59F2",
-              boxShadow: "0 8px 24px rgba(13,89,242,0.35)",
-                overflow: "hidden",
-                zIndex: 120,
-              }}
-            >
-              {bimbinganSubmenu.map((subItem) => {
-                const isSubmenuActive = location.pathname === subItem.path || location.pathname.startsWith(`${subItem.path}/`);
-                return (
-                  <Box
-                    key={subItem.text}
-                    onClick={() => {
-                      navigate(subItem.path);
-                      setOpenBimbinganMenu(false);
-                    }}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
-                      px: 2,
-                      py: 1.1,
-                      cursor: "pointer",
-                      fontSize: 15,
-                      fontWeight: isSubmenuActive ? 700 : 500,
-                      color: isSubmenuActive ? "#ffb74d" : "rgba(255,255,255,0.94)",
-                      "&:hover": { color: "#ffb74d" },
-                    }}
-                  >
-                    <Box sx={{ display: "flex", alignItems: "center", color: "inherit" }}>{subItem.icon}</Box>
-                    <Typography sx={{ fontSize: 15, fontWeight: "inherit", color: "inherit" }}>
-                      {subItem.text}
-                    </Typography>
-                  </Box>
-                );
-              })}
-            </Box>
-          )}
-        </Box>
-
-        <Box
-          onClick={() => navigate("/mahasiswa/monev")}
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1,
-            cursor: "pointer",
-            whiteSpace: "nowrap",
-            fontWeight: isActive("Monev") ? 700 : 500,
-            color: isActive("Monev") ? "#ffb74d" : "rgba(255,255,255,0.92)",
-            position: "relative",
-            "&::after": {
-              content: '""',
-              position: "absolute",
-              left: 0,
-              right: 0,
-              bottom: -15,
-              height: 2,
-              borderRadius: 999,
-              backgroundColor: "#ffb74d",
-              opacity: isActive("Monev") ? 1 : 0,
-              transform: isActive("Monev") ? "scaleX(1)" : "scaleX(0)",
-              transformOrigin: "left center",
-              transition: "transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease",
-            },
-          }}
-        >
-          <AssessmentIcon sx={{ fontSize: 22, color: "inherit" }} />
-          <Typography sx={{ fontSize: 16, fontWeight: "inherit", color: "inherit" }}>
-            Monev
-          </Typography>
-        </Box>
-      </Box>
-
-      <Box sx={{ position: "relative" }}>
-        <Box
-          onClick={(event) => {
-            event.stopPropagation();
-            setOpenProfileMenu((prev) => !prev);
-          }}
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: { xs: 0.8, sm: 1.4 },
-            minWidth: 0,
-            maxWidth: { xs: 200, sm: 280, md: 340 },
-            cursor: "pointer",
-          }}
-        >
-          <Avatar
-            src={photoUrl || undefined}
-            imgProps={{ crossOrigin: "anonymous" }}
-            sx={{ width: 42, height: 42, bgcolor: "#ffffff", color: "#0D59F2", fontSize: 15, fontWeight: 700 }}
-          >
-            {!photoUrl &&
-              (displayName.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase()
-                || <AccountCircleIcon sx={{ fontSize: 36 }} />)}
-          </Avatar>
-
-          <Box sx={{ minWidth: 0, maxWidth: { xs: 90, sm: 130, md: 180 } }}>
-            <Typography
-              sx={{
-                fontSize: 15,
-                fontWeight: 700,
-                color: "#ffffff",
-                lineHeight: 1.3,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                display: { xs: "none", sm: "block" },
-              }}
-            >
-              {displayName}
-            </Typography>
-            {displaySubtitle && (
-              <Typography
-                sx={{
-                  fontSize: 13,
-                  color: "rgba(255,255,255,0.85)",
-                  lineHeight: 1.2,
-                  display: { xs: "none", sm: "block" },
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
-                {displaySubtitle}
-              </Typography>
-            )}
-          </Box>
-
-          <KeyboardArrowDownIcon sx={{ color: "#ffffff", fontSize: 21 }} />
-        </Box>
-
-        {openProfileMenu && (
-          <Box
-            sx={{
-              position: "absolute",
-              top: "calc(100% + 10px)",
-              right: 0,
-              minWidth: "100%",
-              borderRadius: "16px",
-              border: "1px solid rgba(255,255,255,0.22)",
-              backgroundColor: "#0D59F2",
-              boxShadow: "0 8px 24px rgba(13,89,242,0.35)",
-              overflow: "hidden",
-            }}
-          >
-            <Box
-              onClick={handleLogout}
+              key={item.text}
+              onClick={() => navigate(item.path)}
               sx={{
                 display: "flex",
                 alignItems: "center",
-                gap: 1.5,
-                px: 1.5,
-                py: 1.2,
+                gap: 1,
                 cursor: "pointer",
-                "&:hover": { backgroundColor: "rgba(255,255,255,0.08)" },
+                whiteSpace: "nowrap",
+                fontWeight: isActive(item.text) ? 700 : 500,
+                color: isActive(item.text) ? "#ffb74d" : "rgba(255,255,255,0.92)",
+                position: "relative",
+                "&::after": {
+                  content: '""',
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  bottom: -15,
+                  height: 2,
+                  borderRadius: 999,
+                  backgroundColor: "#ffb74d",
+                  opacity: isActive(item.text) ? 1 : 0,
+                  transform: isActive(item.text) ? "scaleX(1)" : "scaleX(0)",
+                  transformOrigin: "left center",
+                  transition: "transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease",
+                },
               }}
             >
-              <LogoutIcon sx={{ fontSize: 18, color: "#ffffff" }} />
-              <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#ffffff" }}>
-                Logout
+              <Box sx={{ display: "flex", alignItems: "center", color: "inherit" }}>{item.icon}</Box>
+              <Typography sx={{ fontSize: 16, fontWeight: "inherit", color: "inherit" }}>
+                {item.text}
               </Typography>
             </Box>
+          ))}
+
+          <Box sx={{ display: "flex", position: "relative", alignItems: "center" }}>
+            <Box
+              onClick={() => setOpenBimbinganMenu((prev) => !prev)}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                cursor: "pointer",
+                fontWeight: isActive("Bimbingan") ? 700 : 500,
+                color: isActive("Bimbingan") ? "#ffb74d" : "rgba(255,255,255,0.92)",
+                whiteSpace: "nowrap",
+                position: "relative",
+                "&::after": {
+                  content: '""',
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  bottom: -15,
+                  height: 2,
+                  borderRadius: 999,
+                  backgroundColor: "#ffb74d",
+                  opacity: isActive("Bimbingan") ? 1 : 0,
+                  transform: isActive("Bimbingan") ? "scaleX(1)" : "scaleX(0)",
+                  transformOrigin: "left center",
+                  transition: "transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease",
+                },
+              }}
+            >
+              <SchoolIcon sx={{ fontSize: 22, color: "inherit" }} />
+              <Typography sx={{ fontSize: 16, fontWeight: "inherit", color: "inherit" }}>
+                Bimbingan
+              </Typography>
+              <KeyboardArrowDownIcon sx={{ fontSize: 20, color: "inherit" }} />
+            </Box>
+
+            {openBimbinganMenu && (
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: "calc(100% + 20px)",
+                  left: 0,
+                  width: "max-content",
+                  minWidth: 220,
+                  borderRadius: "16px",
+                  border: "1px solid rgba(255,255,255,0.22)",
+                  backgroundColor: "#0D59F2",
+                  boxShadow: "0 8px 24px rgba(13,89,242,0.35)",
+                  overflow: "hidden",
+                  zIndex: 120,
+                }}
+              >
+                {bimbinganSubmenu.map((subItem) => {
+                  const isSubmenuActive = location.pathname === subItem.path || location.pathname.startsWith(`${subItem.path}/`);
+                  return (
+                    <Box
+                      key={subItem.text}
+                      onClick={() => {
+                        navigate(subItem.path);
+                        setOpenBimbinganMenu(false);
+                      }}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        px: 2,
+                        py: 1.1,
+                        cursor: "pointer",
+                        fontSize: 15,
+                        fontWeight: isSubmenuActive ? 700 : 500,
+                        color: isSubmenuActive ? "#ffb74d" : "rgba(255,255,255,0.94)",
+                        "&:hover": { color: "#ffb74d" },
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", color: "inherit" }}>{subItem.icon}</Box>
+                      <Typography sx={{ fontSize: 15, fontWeight: "inherit", color: "inherit" }}>
+                        {subItem.text}
+                      </Typography>
+                    </Box>
+                  );
+                })}
+              </Box>
+            )}
           </Box>
-        )}
-      </Box>
 
-      </Box>
+          <Box
+            onClick={() => navigate("/mahasiswa/monev")}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              fontWeight: isActive("Monev") ? 700 : 500,
+              color: isActive("Monev") ? "#ffb74d" : "rgba(255,255,255,0.92)",
+              position: "relative",
+              "&::after": {
+                content: '""',
+                position: "absolute",
+                left: 0,
+                right: 0,
+                bottom: -15,
+                height: 2,
+                borderRadius: 999,
+                backgroundColor: "#ffb74d",
+                opacity: isActive("Monev") ? 1 : 0,
+                transform: isActive("Monev") ? "scaleX(1)" : "scaleX(0)",
+                transformOrigin: "left center",
+                transition: "transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease",
+              },
+            }}
+          >
+            <AssessmentIcon sx={{ fontSize: 22, color: "inherit" }} />
+            <Typography sx={{ fontSize: 16, fontWeight: "inherit", color: "inherit" }}>
+              Monev
+            </Typography>
+          </Box>
+        </Box>
 
+        <Box sx={{ position: "relative" }}>
+          <Box
+            onClick={(event) => {
+              if (isCompactMenu) return;
+              event.stopPropagation();
+              setOpenProfileMenu((prev) => !prev);
+            }}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: { xs: 0.8, sm: 1.4 },
+              minWidth: 0,
+              maxWidth: { xs: 200, sm: 280, md: 340 },
+              cursor: isCompactMenu ? "default" : "pointer",
+            }}
+          >
+            <Avatar
+              src={photoUrl || undefined}
+              imgProps={{ crossOrigin: "anonymous" }}
+              sx={{ width: 42, height: 42, bgcolor: "#ffffff", color: "#0D59F2", fontSize: 15, fontWeight: 700 }}
+            >
+              {!photoUrl &&
+                (displayName.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase()
+                  || <AccountCircleIcon sx={{ fontSize: 36 }} />)}
+            </Avatar>
+
+            <Box sx={{ minWidth: 0, maxWidth: { xs: 90, sm: 130, md: 180 }, display: { xs: "none", sm: "block" } }}>
+              <Typography sx={{ fontSize: 15, fontWeight: 700, color: "#ffffff", lineHeight: 1.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {displayName}
+              </Typography>
+              {displaySubtitle && (
+                <Typography sx={{ fontSize: 13, color: "rgba(255,255,255,0.85)", lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {displaySubtitle}
+                </Typography>
+              )}
+            </Box>
+
+            <KeyboardArrowDownIcon
+              sx={{
+                color: "#ffffff",
+                fontSize: 21,
+                transform: isCompactMenu && openMobileMenu ? "rotate(180deg)" : "rotate(0deg)",
+                transition: "transform 0.2s ease",
+              }}
+            />
+          </Box>
+
+          {!isCompactMenu && openProfileMenu && (
+            <Box
+              sx={{
+                position: "absolute",
+                top: "calc(100% + 10px)",
+                right: 0,
+                minWidth: "100%",
+                borderRadius: "16px",
+                border: "1px solid rgba(255,255,255,0.22)",
+                backgroundColor: "#0D59F2",
+                boxShadow: "0 8px 24px rgba(13,89,242,0.35)",
+                overflow: "hidden",
+              }}
+            >
+              <Box
+                onClick={handleLogout}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1.5,
+                  px: 1.5,
+                  py: 1.2,
+                  cursor: "pointer",
+                  "&:hover": { backgroundColor: "rgba(255,255,255,0.08)" },
+                }}
+              >
+                <LogoutIcon sx={{ fontSize: 18, color: "#ffffff" }} />
+                <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#ffffff" }}>
+                  Logout
+                </Typography>
+              </Box>
+            </Box>
+          )}
+        </Box>
+      </Box>
 
       {isCompactMenu && openMobileMenu && (
         <Box
@@ -403,8 +386,8 @@ backgroundColor: "#0D59F2",
             overflow: "hidden",
             maxHeight: "calc(100vh - 136px)",
             overflowY: "auto",
-}}
-          >
+          }}
+        >
           <Box sx={{ px: 1.5, py: 1 }}>
             {menuItems.map((item) => (
               <Box
@@ -522,10 +505,30 @@ backgroundColor: "#0D59F2",
               <AssessmentIcon sx={{ fontSize: 20, color: "inherit" }} />
               <Typography sx={{ fontSize: 15, fontWeight: "inherit", color: "inherit" }}>Monev</Typography>
             </Box>
+
+            <Divider sx={{ borderColor: "rgba(255,255,255,0.18)", mx: 0.6, my: 1 }} />
+
+            <Box
+              onClick={handleLogout}
+              sx={{
+                mx: 0.6,
+                mb: 1,
+                px: 1.6,
+                py: 1.2,
+                borderRadius: "14px",
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                cursor: "pointer",
+                "&:hover": { backgroundColor: "rgba(255,255,255,0.08)" },
+              }}
+            >
+              <LogoutIcon sx={{ fontSize: 20, color: "#fff" }} />
+              <Typography sx={{ fontSize: 15, fontWeight: 600, color: "#fff" }}>Logout</Typography>
+            </Box>
           </Box>
         </Box>
       )}
-
     </>
   );
 }
