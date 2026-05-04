@@ -48,8 +48,7 @@ export default function FormBeritaPage() {
   const navigate = useNavigate();
   const { id_berita } = useParams();
   const isEdit = !!id_berita;
-  const gambarInputRef = useRef(null);
-  const pdfInputRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const [loading, setLoading] = useState(isEdit);
   const [submitting, setSubmitting] = useState(false);
@@ -103,48 +102,45 @@ export default function FormBeritaPage() {
     if (url && url.startsWith("blob:")) URL.revokeObjectURL(url);
   };
 
-  const handleImageChange = (e) => {
+  const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (hasSuspiciousInput(file.name) || hasSqlInjection(file.name)) {
-      setErrors((prev) => ({ ...prev, gambar: "Nama file mengandung karakter terlarang" }));
-      return;
-    }
-    const allowedFormats = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-    if (!allowedFormats.includes(file.type)) {
-      setErrors((prev) => ({ ...prev, gambar: "Format harus JPG, PNG, atau WebP" }));
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      setErrors((prev) => ({ ...prev, gambar: "Ukuran file maksimal 10MB" }));
-      return;
-    }
-    revokeBlobIfNeeded(gambarPreview);
-    setGambarFile(file);
-    setGambarPreview(URL.createObjectURL(file));
-    setErrors((prev) => ({ ...prev, gambar: "" }));
-    e.target.value = "";
-  };
 
-  const handlePdfChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
     if (hasSuspiciousInput(file.name) || hasSqlInjection(file.name)) {
-      setErrors((prev) => ({ ...prev, pdf: "Nama file mengandung karakter terlarang" }));
+      setErrors((prev) => ({ ...prev, file: "Nama file mengandung karakter terlarang" }));
       return;
     }
-    if (file.type !== "application/pdf") {
-      setErrors((prev) => ({ ...prev, pdf: "Format harus PDF" }));
+
+    const allowedImageFormats = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    const isImage = allowedImageFormats.includes(file.type);
+    const isPdf = file.type === "application/pdf";
+
+    if (!isImage && !isPdf) {
+      setErrors((prev) => ({ ...prev, file: "Format harus JPG, PNG, WebP, atau PDF" }));
       return;
     }
+
     if (file.size > 10 * 1024 * 1024) {
-      setErrors((prev) => ({ ...prev, pdf: "Ukuran file maksimal 10MB" }));
+      setErrors((prev) => ({ ...prev, file: "Ukuran file maksimal 10MB" }));
       return;
     }
+
+    revokeBlobIfNeeded(gambarPreview);
     revokeBlobIfNeeded(pdfPreview);
-    setPdfFile(file);
-    setPdfPreview(URL.createObjectURL(file));
-    setErrors((prev) => ({ ...prev, pdf: "" }));
+
+    if (isImage) {
+      setGambarFile(file);
+      setGambarPreview(URL.createObjectURL(file));
+      setPdfFile(null);
+      setPdfPreview("");
+    } else {
+      setPdfFile(file);
+      setPdfPreview(URL.createObjectURL(file));
+      setGambarFile(null);
+      setGambarPreview("");
+    }
+
+    setErrors((prev) => ({ ...prev, file: "", gambar: "", pdf: "" }));
     e.target.value = "";
   };
 
@@ -152,7 +148,7 @@ export default function FormBeritaPage() {
     revokeBlobIfNeeded(gambarPreview);
     setGambarFile(null);
     setGambarPreview("");
-    if (gambarInputRef.current) gambarInputRef.current.value = "";
+    if (fileInputRef.current) fileInputRef.current.value = "";
     setErrors((prev) => ({ ...prev, gambar: "" }));
   };
 
@@ -160,7 +156,7 @@ export default function FormBeritaPage() {
     revokeBlobIfNeeded(pdfPreview);
     setPdfFile(null);
     setPdfPreview("");
-    if (pdfInputRef.current) pdfInputRef.current.value = "";
+    if (fileInputRef.current) fileInputRef.current.value = "";
     setErrors((prev) => ({ ...prev, pdf: "" }));
   };
 
@@ -173,6 +169,16 @@ export default function FormBeritaPage() {
 
   const handleSave = async () => {
     if (!validate()) return;
+
+    if (gambarFile && pdfFile) {
+      Swal.fire({
+        icon: "warning",
+        title: "Pilih satu file",
+        text: "Sementara hanya bisa upload 1 file: gambar atau PDF.",
+        confirmButtonColor: "#0D59F2",
+      });
+      return;
+    }
 
     const securityCheck = validateFormSecurity({
       judul: form.judul,
@@ -264,8 +270,14 @@ export default function FormBeritaPage() {
                   <TextField fullWidth placeholder="Judul berita..."
                     value={form.judul}
                     onChange={(e) => { setForm({ ...form, judul: e.target.value }); setErrors({ ...errors, judul: "" }); }}
-                    error={!!errors.judul} helperText={errors.judul}
                     sx={roundedField}
+                  />
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/webp,application/pdf"
+                    style={{ display: "none" }}
+                    onChange={handleFileChange}
                   />
                 </Box>
 
@@ -286,9 +298,9 @@ export default function FormBeritaPage() {
 
                 <Box sx={{ display: "grid", gap: 2 }}>
                   <Box>
-                    <input ref={gambarInputRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp" style={{ display: "none" }} onChange={handleImageChange} />
+                    <input ref={fileInputRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp,application/pdf" style={{ display: "none" }} onChange={handleFileChange} />
                     <Box
-                      onClick={() => gambarInputRef.current?.click()}
+                      onClick={() => fileInputRef.current?.click()}
                       sx={{
                         border: `2px dashed ${COLORS.slateLight}`,
                         borderRadius: "12px",
@@ -300,10 +312,14 @@ export default function FormBeritaPage() {
                       }}
                     >
                       <Upload sx={{ fontSize: 32, color: "#9CA3AF", mb: 1 }} />
-                      <Typography sx={{ fontSize: 13, color: "#6B7280" }}>Klik untuk upload file gambar</Typography>
-                      <Typography sx={{ fontSize: 12, color: "#9CA3AF", mt: 0.5 }}>Format: JPG, PNG, WebP. Maks. 10MB</Typography>
+                      <Typography sx={{ fontSize: 13, color: "#6B7280" }}>Klik untuk upload file (gambar atau PDF)</Typography>
+                      <Typography sx={{ fontSize: 12, color: "#9CA3AF", mt: 0.5 }}>Format: JPG, PNG, WebP, PDF. Maks. 10MB</Typography>
                     </Box>
-                    {errors.gambar && <Typography sx={{ fontSize: 12, color: COLORS.error, mt: 1 }}>{errors.gambar}</Typography>}
+                    {(errors.file || errors.gambar || errors.pdf) && (
+                      <Typography sx={{ fontSize: 12, color: COLORS.error, mt: 1 }}>
+                        {errors.file || errors.gambar || errors.pdf}
+                      </Typography>
+                    )}
                   </Box>
 
                   {gambarPreview && (
@@ -325,27 +341,6 @@ export default function FormBeritaPage() {
                       </Box>
                     </Box>
                   )}
-
-                  <Box>
-                    <input ref={pdfInputRef} type="file" accept="application/pdf" style={{ display: "none" }} onChange={handlePdfChange} />
-                    <Box
-                      onClick={() => pdfInputRef.current?.click()}
-                      sx={{
-                        border: `2px dashed ${COLORS.slateLight}`,
-                        borderRadius: "12px",
-                        p: 3,
-                        textAlign: "center",
-                        cursor: "pointer",
-                        transition: "all 0.2s",
-                        "&:hover": { borderColor: COLORS.primary, backgroundColor: "#f7faff" },
-                      }}
-                    >
-                      <PictureAsPdf sx={{ fontSize: 32, color: "#9CA3AF", mb: 1 }} />
-                      <Typography sx={{ fontSize: 13, color: "#6B7280" }}>Klik untuk upload file PDF</Typography>
-                      <Typography sx={{ fontSize: 12, color: "#9CA3AF", mt: 0.5 }}>Format: PDF. Maks. 10MB</Typography>
-                    </Box>
-                    {errors.pdf && <Typography sx={{ fontSize: 12, color: COLORS.error, mt: 1 }}>{errors.pdf}</Typography>}
-                  </Box>
 
                   {pdfPreview && (
                     <Box sx={{ p: 2.5, borderRadius: "12px", border: "1px solid #E5E7EB", backgroundColor: "#FAFAFA", display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>

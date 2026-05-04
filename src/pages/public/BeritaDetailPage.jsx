@@ -295,76 +295,31 @@ export default function BeritaDetailPage() {
           </h1>
         </div>
 
-        {(gambar || pdfUrl) && (
-          gambar ? (
+        {(gambar || pdfUrl) && gambar && (
+          <div style={{
+            borderRadius: 28,
+            overflow: "hidden",
+            marginBottom: 28,
+            border: "1px solid rgba(255,255,255,0.06)",
+            boxShadow: "0 24px 80px rgba(0,0,0,0.35)",
+            position: "relative",
+          }}>
+            <img
+              src={gambar}
+              alt={berita.judul}
+              style={{
+                width: "100%",
+                maxHeight: 520,
+                objectFit: "cover",
+                display: "block",
+              }}
+            />
             <div style={{
-              borderRadius: 28,
-              overflow: "hidden",
-              marginBottom: 28,
-              border: "1px solid rgba(255,255,255,0.06)",
-              boxShadow: "0 24px 80px rgba(0,0,0,0.35)",
-              position: "relative",
-            }}>
-              <img
-                src={gambar}
-                alt={berita.judul}
-                style={{
-                  width: "100%",
-                  maxHeight: 520,
-                  objectFit: "cover",
-                  display: "block",
-                }}
-              />
-              <div style={{
-                position: "absolute",
-                inset: 0,
-                background: "linear-gradient(180deg, rgba(10,10,20,0) 60%, rgba(10,10,20,0.35) 100%)",
-              }} />
-            </div>
-          ) : (
-            <div style={{
-              borderRadius: 28,
-              overflow: "hidden",
-              marginBottom: 28,
-              border: "1px solid rgba(255,255,255,0.06)",
-              boxShadow: "0 24px 80px rgba(0,0,0,0.35)",
-              background: "#fff",
-              padding: 24,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 16,
-              flexWrap: "wrap",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 16, minWidth: 0 }}>
-                <div style={{ width: 64, height: 64, borderRadius: 18, background: "#FEF2F2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <PictureAsPdf sx={{ fontSize: 36, color: "#DC2626" }} />
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: "#111827", marginBottom: 4 }}>Lampiran PDF</div>
-                  <div style={{ fontSize: 13, color: "#6B7280", wordBreak: "break-word" }}>{pdfName}</div>
-                </div>
-              </div>
-              <a
-                href={pdfUrl}
-                target="_blank"
-                rel="noreferrer"
-                download
-                style={{
-                  padding: "10px 18px",
-                  borderRadius: 999,
-                  border: "1.5px solid #e5e7eb",
-                  background: "transparent",
-                  color: "#0a0a14",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  textDecoration: "none",
-                }}
-              >
-                Download PDF
-              </a>
-            </div>
-          )
+              position: "absolute",
+              inset: 0,
+              background: "linear-gradient(180deg, rgba(10,10,20,0) 60%, rgba(10,10,20,0.35) 100%)",
+            }} />
+          </div>
         )}
 
         <article style={{
