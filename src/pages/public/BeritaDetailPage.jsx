@@ -27,6 +27,42 @@ const getBeritaTahun = (berita) => {
   return Number.isNaN(tahun) ? new Date().getFullYear() : tahun;
 };
 
+const sanitizeTitleForDownload = (judul) => String(judul || "berita")
+  .toLowerCase()
+  .replace(/[<>:"/\\|?*\x00-\x1F]/g, "")
+  .replace(/\s+/g, " ")
+  .trim();
+
+const getFileExt = (filename, fallbackExt = "") => {
+  if (!filename || !filename.includes(".")) return fallbackExt;
+  return filename.slice(filename.lastIndexOf("."));
+};
+
+const getBeritaDownloadName = (berita, sourceFilename, fallbackExt = "") => {
+  const ext = getFileExt(sourceFilename, fallbackExt);
+  const title = sanitizeTitleForDownload(berita?.judul);
+  const year = getBeritaTahun(berita);
+  return `berita_${title}_${year}${ext}`;
+};
+
+const triggerDownload = async (url, filename) => {
+  if (!url) return;
+  const response = await fetch(url, { credentials: "include" });
+  if (!response.ok) throw new Error("Gagal mengunduh file");
+
+  const blob = await response.blob();
+  const blobUrl = window.URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = blobUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  window.URL.revokeObjectURL(blobUrl);
+};
+
 const getLampiranNama = (berita, prefix, filename, fallbackExt = "") => {
   if (!filename) return null;
   const ext = filename.includes(".") ? filename.slice(filename.lastIndexOf(".")) : fallbackExt;
@@ -89,6 +125,8 @@ export default function BeritaDetailPage() {
   const pdfName = getPdfNama(berita) || "";
   const gambarDownloadUrl = getDownloadLink(berita?.file_gambar);
   const pdfDownloadUrl = getDownloadLink(berita?.file_pdf);
+  const gambarDownloadName = getBeritaDownloadName(berita, berita?.file_gambar || berita?.foto_berita || "", ".png");
+  const pdfDownloadName = getBeritaDownloadName(berita, berita?.file_pdf || "", ".pdf");
 
   if (loading) {
     return (
@@ -391,7 +429,18 @@ export default function BeritaDetailPage() {
                         <div style={{ fontSize: 12, color: "#6B7280", wordBreak: "break-word" }}>{fileName}</div>
                       </div>
                     </div>
-                    <a href={gambarDownloadUrl || gambar} target="_blank" rel="noreferrer" download style={{ padding: "10px 16px", borderRadius: 999, border: "1.5px solid #e5e7eb", color: "#0a0a14", textDecoration: "none", fontSize: 13, fontWeight: 700 }}>Download Gambar</a>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await triggerDownload(gambarDownloadUrl || gambar, gambarDownloadName);
+                        } catch {
+                          window.open(gambarDownloadUrl || gambar, "_blank", "noopener,noreferrer");
+                        }
+                      }}
+                      style={{ padding: "10px 16px", borderRadius: 999, border: "1.5px solid #e5e7eb", color: "#0a0a14", textDecoration: "none", fontSize: 13, fontWeight: 700, background: "#fff", cursor: "pointer" }}
+                    >
+                      Download Gambar
+                    </button>
                   </div>
                 )}
 
@@ -406,7 +455,18 @@ export default function BeritaDetailPage() {
                         <div style={{ fontSize: 12, color: "#6B7280", wordBreak: "break-word" }}>{pdfName}</div>
                       </div>
                     </div>
-                    <a href={pdfDownloadUrl || pdfUrl} target="_blank" rel="noreferrer" download style={{ padding: "10px 16px", borderRadius: 999, border: "1.5px solid #e5e7eb", color: "#0a0a14", textDecoration: "none", fontSize: 13, fontWeight: 700 }}>Download PDF</a>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await triggerDownload(pdfDownloadUrl || pdfUrl, pdfDownloadName);
+                        } catch {
+                          window.open(pdfDownloadUrl || pdfUrl, "_blank", "noopener,noreferrer");
+                        }
+                      }}
+                      style={{ padding: "10px 16px", borderRadius: 999, border: "1.5px solid #e5e7eb", color: "#0a0a14", textDecoration: "none", fontSize: 13, fontWeight: 700, background: "#fff", cursor: "pointer" }}
+                    >
+                      Download PDF
+                    </button>
                   </div>
                 )}
               </div>
