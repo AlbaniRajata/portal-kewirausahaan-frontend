@@ -29,7 +29,10 @@ const getBeritaTahun = (berita) => {
 
 const sanitizeTitleForDownload = (judul) => String(judul || "berita")
   .toLowerCase()
-  .replace(/[<>:"/\\|?*\x00-\x1F]/g, "")
+  .replace(/[<>:"/\\|?*]/g, "")
+  .split("")
+  .filter((char) => char.charCodeAt(0) >= 32)
+  .join("")
   .replace(/\s+/g, " ")
   .trim();
 
