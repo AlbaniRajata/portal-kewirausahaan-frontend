@@ -87,8 +87,8 @@ export default function BeritaDetailPage() {
   const fileName = getGambarNama(berita) || "";
   const pdfUrl = getPdfUrl(berita);
   const pdfName = getPdfNama(berita) || "";
-  const gambarDownloadUrl = getDownloadLink(getGambarNama(berita));
-  const pdfDownloadUrl = getDownloadLink(getPdfNama(berita));
+  const gambarDownloadUrl = getDownloadLink(berita?.file_gambar);
+  const pdfDownloadUrl = getDownloadLink(berita?.file_pdf);
 
   if (loading) {
     return (
