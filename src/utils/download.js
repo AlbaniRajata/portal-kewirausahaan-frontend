@@ -6,7 +6,8 @@ const getApiBaseUrl = () => {
 
 const getCleanName = (value = "") => {
   const withoutQuery = String(value).split("?")[0].split("#")[0];
-  return withoutQuery.split("/").filter(Boolean).pop() || "downloaded-file";
+  const rawName = withoutQuery.split("/").filter(Boolean).pop() || "downloaded-file";
+  return rawName.replace(/^_uploads_\w+_/, "");
 };
 
 const buildDownloadUrl = (filename, folder) => {
