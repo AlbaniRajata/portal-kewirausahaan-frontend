@@ -36,7 +36,7 @@ export const downloadFile = async (filename, folder = "proposal") => {
   if (!url) return;
 
   try {
-    const response = await fetch(url, { credentials: "include" });
+    const response = await fetch(url);
     if (!response.ok) throw new Error("File tidak ditemukan");
 
     const blob = await response.blob();
@@ -52,5 +52,6 @@ export const downloadFile = async (filename, folder = "proposal") => {
     window.URL.revokeObjectURL(blobUrl);
   } catch (error) {
     console.error("Download gagal:", error);
+    window.open(url, "_blank", "noopener,noreferrer");
   }
 };

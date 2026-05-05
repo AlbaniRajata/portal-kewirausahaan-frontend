@@ -268,8 +268,8 @@ export default function UndanganAnggotaPage() {
                   }}
                   sx={{
                     borderRadius: "10px", px: 3, py: 1.2, fontWeight: 700, textTransform: "none",
-                    backgroundColor: COLORS.warning, color: "#fff",
-                    "&:hover": { backgroundColor: "#B45309" },
+                    backgroundColor: "#DC2626", color: "#fff",
+                    "&:hover": { backgroundColor: "#DC2626" },
                   }}
                 >
                   Tolak
@@ -321,8 +321,8 @@ export default function UndanganAnggotaPage() {
               </Button>
               <Button onClick={handleReject} variant="contained" sx={{
                 borderRadius: "10px", px: 3, py: 1.2, fontWeight: 700, textTransform: "none",
-                backgroundColor: COLORS.primary,
-                "&:hover": { backgroundColor: COLORS.primaryDark },
+                backgroundColor: COLORS.error,
+                "&:hover": { backgroundColor: "#DC2626" },
               }}>
                 Tolak
               </Button>
