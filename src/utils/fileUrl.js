@@ -23,10 +23,12 @@ export const getDownloadUrl = (folder, filename) => {
   if (!filename) return null;
   if (filename.startsWith("http://") || filename.startsWith("https://")) return filename;
 
-  const base = getApiBaseUrl();
-  if (folder === "berita") {
-    return `${base}/uploads/berita/download/${encodeURIComponent(filename)}`;
+  if (filename.startsWith("/uploads/")) {
+    return filename;
+  } else if (filename.startsWith(`/${folder}/`) || filename.startsWith(folder + "/")) {
+    const path = filename.startsWith("/") ? filename : `/${filename}`;
+    return `/uploads${path}`;
+  } else {
+    return `/uploads/${folder}/${filename}`;
   }
-
-  return `${base}/uploads/${folder}/${encodeURIComponent(filename)}`;
 };
