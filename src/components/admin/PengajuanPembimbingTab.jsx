@@ -3,7 +3,7 @@ import {
   Box, Typography, TextField, MenuItem, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, CircularProgress,
   Dialog, DialogTitle, DialogContent, DialogActions,
-  Button, IconButton, Divider, Paper,
+  Button, IconButton, Divider, Paper, Pagination,
 } from "@mui/material";
 import { Close } from "@mui/icons-material";
 import Swal from "sweetalert2";
@@ -87,6 +87,8 @@ export default function PengajuanPembimbingTab() {
   const [list, setList] = useState([]);
   const [statusFilter, setStatusFilter] = useState("");
   const [tahunFilter, setTahunFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const rowsPerPage = 10;
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
 
@@ -118,6 +120,17 @@ export default function PengajuanPembimbingTab() {
     ? list
     : list.filter((item) => item.created_at && new Date(item.created_at).getFullYear() === Number(tahunFilter));
 
+  const totalPages = Math.max(1, Math.ceil(filteredList.length / rowsPerPage));
+  const paginatedList = filteredList.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, tahunFilter]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
   if (loading) {
     return (
       <Box sx={{ position: "relative", minHeight: 260 }}>
@@ -143,7 +156,10 @@ export default function PengajuanPembimbingTab() {
           <TextField
             select size="small"
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setPage(1);
+            }}
             SelectProps={{
               displayEmpty: true,
               renderValue: (v) => (
@@ -162,7 +178,10 @@ export default function PengajuanPembimbingTab() {
           <TextField
             select size="small"
             value={tahunFilter}
-            onChange={(e) => setTahunFilter(e.target.value)}
+            onChange={(e) => {
+              setTahunFilter(e.target.value);
+              setPage(1);
+            }}
             SelectProps={{
               displayEmpty: true,
               renderValue: (v) => (
@@ -190,47 +209,82 @@ export default function PengajuanPembimbingTab() {
           <Typography sx={{ color: COLORS.slate, fontSize: 16, fontWeight: 500 }}>Belum ada pengajuan pembimbing</Typography>
         </Box>
       ) : (
-        <TableContainer sx={{ borderRadius: "12px", border: `1.5px solid ${COLORS.slateLight}`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                {["Tim", "Mahasiswa Pengaju", "Dosen Pembimbing", "Tanggal Diajukan", "Status", "Aksi"].map((h, i) => (
-                  <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 5 && { textAlign: "center" }) }}>{h}</TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredList.map((item) => {
-                const sp = STATUS_PILL[item.status] || { label: "Unknown", backgroundColor: "#757575" };
-                return (
-                  <TableRow key={item.id_pengajuan} sx={tableBodyRow}>
-                    <TableCell><Typography sx={{ fontWeight: 500, fontSize: 14, color: "#1E293B" }}>{item.nama_tim}</Typography></TableCell>
-                    <TableCell><Typography sx={{ fontSize: 14, color: "#374151" }}>{item.nama_pengaju}</Typography></TableCell>
-                    <TableCell>
-                      <Typography sx={{ fontSize: 14, fontWeight: 500, color: "#1E293B" }}>{item.nama_dosen}</Typography>
-                      <Typography sx={{ fontSize: 12, color: "#6B7280" }}>{item.nip_dosen}</Typography>
-                    </TableCell>
-                    <TableCell><Typography sx={{ fontSize: 13, color: "#374151" }}>{formatDate(item.created_at)}</Typography></TableCell>
-                    <TableCell><StatusPill label={sp.label} backgroundColor={sp.backgroundColor} /></TableCell>
-                    <TableCell align="center">
-                      <Button size="small" variant="outlined"
-                        onClick={() => { setSelectedItem(item); setDialogOpen(true); }}
-                        sx={{
-                          textTransform: "none", borderRadius: "12px", fontSize: 12, fontWeight: 600, px: 2.5,
-                          borderColor: COLORS.primary, color: COLORS.primary,
-                          transition: "all 0.2s",
-                          "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primaryDark }
-                        }}
-                      >
-                        Detail
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <>
+          <TableContainer sx={{ borderRadius: "12px", border: `1.5px solid ${COLORS.slateLight}`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  {["Judul Proposal", "Mahasiswa Pengaju", "Dosen Pembimbing", "Tanggal Diajukan", "Status", "Aksi"].map((h, i) => (
+                    <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 5 && { textAlign: "center" }) }}>{h}</TableCell>
+                  ))}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {paginatedList.map((item) => {
+                  const sp = STATUS_PILL[item.status] || { label: "Unknown", backgroundColor: "#757575" };
+                  return (
+                    <TableRow key={item.id_pengajuan} sx={tableBodyRow}>
+                      <TableCell><Typography sx={{ fontWeight: 500, fontSize: 14, color: "#1E293B" }}>{item.judul_proposal || "-"}</Typography></TableCell>
+                      <TableCell><Typography sx={{ fontSize: 14, color: "#374151" }}>{item.nama_pengaju}</Typography></TableCell>
+                      <TableCell>
+                        <Typography sx={{ fontSize: 14, fontWeight: 500, color: "#1E293B" }}>{item.nama_dosen}</Typography>
+                        <Typography sx={{ fontSize: 12, color: "#6B7280" }}>{item.nip_dosen}</Typography>
+                      </TableCell>
+                      <TableCell><Typography sx={{ fontSize: 13, color: "#374151" }}>{formatDate(item.created_at)}</Typography></TableCell>
+                      <TableCell><StatusPill label={sp.label} backgroundColor={sp.backgroundColor} /></TableCell>
+                      <TableCell align="center">
+                        <Button size="small" variant="outlined"
+                          onClick={() => { setSelectedItem(item); setDialogOpen(true); }}
+                          sx={{
+                            textTransform: "none", borderRadius: "12px", fontSize: 12, fontWeight: 600, px: 2.5,
+                            borderColor: COLORS.primary, color: COLORS.primary,
+                            transition: "all 0.2s",
+                            "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primaryDark }
+                          }}
+                        >
+                          Detail
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+
+          <Box sx={{
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 2,
+            mt: 3,
+          }}>
+            <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 500 }}>
+              Menampilkan <b>{filteredList.length > 0 ? (page - 1) * rowsPerPage + 1 : 0}–{Math.min(page * rowsPerPage, filteredList.length)}</b> dari <b>{filteredList.length}</b> data
+            </Typography>
+            <Pagination
+              count={totalPages}
+              page={page}
+              onChange={(e, v) => setPage(v)}
+              color="primary"
+              shape="rounded"
+              showFirstButton
+              showLastButton
+              sx={{
+                "& .MuiPaginationItem-root": {
+                  fontWeight: 600,
+                  borderRadius: "8px",
+                  "&.Mui-selected": {
+                    background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.secondary})`,
+                    color: "#fff",
+                    "&:hover": { background: `linear-gradient(135deg, ${COLORS.primaryDark}, ${COLORS.secondary})` },
+                  },
+                },
+              }}
+            />
+          </Box>
+        </>
       )}
 
       <Dialog

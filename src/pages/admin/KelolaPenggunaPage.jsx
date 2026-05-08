@@ -142,22 +142,39 @@ export default function KelolaPenggunaPage() {
     setLoading(true);
     try {
       const f = currentFilters[role];
-      const params = { limit: 1000, page: 1 };
+      const params = { limit: 100, page: 1 };
       if (f.search) params.search = f.search;
       if (f.is_active !== "") params.is_active = f.is_active;
       if (f.id_prodi) params.id_prodi = f.id_prodi;
       if (role === "mahasiswa" && f.id_jurusan) params.id_jurusan = f.id_jurusan;
 
       let res;
-      if (role === "mahasiswa") res = await getMahasiswaList(params);
-      else if (role === "dosen") res = await getDosenList(params);
-      else if (role === "reviewer") res = await getReviewerListKelola(params);
-      else res = await getJuriListKelola(params);
+      if (role === "mahasiswa" || role === "dosen") {
+        const fetcher = role === "mahasiswa" ? getMahasiswaList : getDosenList;
+        let currentPage = 1;
+        let totalPages = 1;
+        const mergedData = [];
 
-      const rawData = res.data || [];
-      const dataArray = Array.isArray(rawData) ? rawData : (rawData.data || rawData.items || rawData.list || []);
+        do {
+          res = await fetcher({ ...params, page: currentPage });
+          const rawData = res.data || [];
+          const dataArray = Array.isArray(rawData) ? rawData : (rawData.data || rawData.items || rawData.list || []);
+          mergedData.push(...dataArray);
 
-      setLists((prev) => ({ ...prev, [role]: dataArray }));
+          const apiTotalPages = Number(res?.pagination?.total_pages || 1);
+          totalPages = Number.isNaN(apiTotalPages) || apiTotalPages < 1 ? 1 : apiTotalPages;
+          currentPage += 1;
+        } while (currentPage <= totalPages);
+
+        setLists((prev) => ({ ...prev, [role]: mergedData }));
+      } else {
+        if (role === "reviewer") res = await getReviewerListKelola(params);
+        else res = await getJuriListKelola(params);
+
+        const rawData = res.data || [];
+        const dataArray = Array.isArray(rawData) ? rawData : (rawData.data || rawData.items || rawData.list || []);
+        setLists((prev) => ({ ...prev, [role]: dataArray }));
+      }
     } catch {
       Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat data pengguna", confirmButtonColor: "#0D59F2" });
     } finally {

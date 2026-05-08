@@ -232,23 +232,7 @@ export default function PenugasanDetailJuriPage() {
                 >
                   {formActions.saving ? "Menyimpan..." : "Simpan"}
                 </Button>
-                {formActions.canSubmit && (
-                  <Button
-                    onClick={formActions.handleSubmit}
-                    disabled={formActions.saving || formActions.submitting}
-                    sx={{
-                      textTransform: "none", borderRadius: "12px",
-                      px: 3, py: 1.3, fontWeight: 700, fontSize: 14,
-                      background: `linear-gradient(135deg, ${COLORS.success} 0%, #34D399 100%)`,
-                      color: "#fff",
-                      boxShadow: "0 4px 15px rgba(5,150,105,0.3)",
-                      "&:hover": { boxShadow: "0 6px 20px rgba(5,150,105,0.4)" },
-                      "&:disabled": { opacity: 0.7, color: "#fff" },
-                    }}
-                  >
-                    {formActions.submitting ? "Memproses..." : "Simpan dan Ajukan"}
-                  </Button>
-                )}
+
               </>
             )}
             {!(activeTab === 1 && formActions && !formActions.isSubmitted) && (

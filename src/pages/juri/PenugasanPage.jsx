@@ -3,16 +3,16 @@ import {
   Box, Paper, Typography, TextField, MenuItem,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Button, Dialog, DialogTitle, DialogContent,
-  DialogActions, IconButton, InputAdornment,
+  DialogActions, IconButton, InputAdornment, Tabs, Tab, Collapse,
 } from "@mui/material";
-import { Close, Assignment, FilterList, Search } from "@mui/icons-material";
+import { Close, Assignment, FilterList, Search, KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import JuriNavbar from "../../components/layouts/JuriNavbar";
 import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
-import { getListPenugasan, acceptPenugasan, rejectPenugasan } from "../../api/juri";
+import { getListPenugasan, acceptPenugasan, rejectPenugasan, getPeringkat, bulkSubmitPenilaian } from "../../api/juri";
 
 const COLORS = {
   primary:      "#0D59F2",
@@ -43,13 +43,14 @@ const roundedField = {
 };
 
 const tableHeadCell = {
-  fontWeight: 700, fontSize: 13, color: "#000",
-  backgroundColor: "#fafafa", borderBottom: "2px solid #f0f0f0", py: 2,
+  fontWeight: 700, fontSize: 13, color: "#374151",
+  backgroundColor: "#f9fafb", borderBottom: "2px solid #e5e7eb", py: 2.5,
+  textTransform: "uppercase", letterSpacing: "0.025em"
 };
 
 const tableBodyRow = {
-  "&:hover": { backgroundColor: "#f8f9ff" },
-  "& td": { borderBottom: "1px solid #f5f5f5", py: 2 },
+  "&:hover": { backgroundColor: "#f3f4f6" },
+  "& td": { borderBottom: "1px solid #f1f5f9", py: 2.2 },
 };
 
 const SectionHeader = ({ icon: Icon, title, subtitle, gradient }) => (
@@ -121,6 +122,151 @@ const toNumberOrNull = (value) => {
 
 const isAcceptedStatus = (status) => [1, 3, 4].includes(Number(status));
 
+const RowPeringkat = ({ item, index, selected, onSelect, onEdit, onSubmit }) => {
+  const [open, setOpen] = useState(false);
+  const canSubmit = Number(item.status_distribusi) === 3;
+  const statusInfo = getStatusInfo(item.status_distribusi);
+
+  return (
+    <>
+      <TableRow 
+        sx={{ 
+          ...tableBodyRow, 
+          backgroundColor: selected ? COLORS.primaryLight : "inherit",
+          "& td": { borderBottom: open ? "none" : "1px solid #f5f5f5", py: 2 } 
+        }}
+      >
+        <TableCell align="center">
+          {canSubmit && (
+            <input 
+              type="checkbox" 
+              checked={selected} 
+              onChange={(e) => { e.stopPropagation(); onSelect(item.id_distribusi); }}
+              style={{ width: 18, height: 18, cursor: "pointer" }}
+            />
+          )}
+        </TableCell>
+        <TableCell align="center" onClick={() => setOpen(!open)} sx={{ cursor: "pointer" }}>
+          <Box sx={{
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            width: 32, height: 32, borderRadius: "50%",
+            backgroundColor: index < 3 ? COLORS.primaryLight : COLORS.slateLight,
+            color: index < 3 ? COLORS.primary : COLORS.slate,
+            fontWeight: 700, fontSize: 14
+          }}>
+            {item.peringkat}
+          </Box>
+        </TableCell>
+        <TableCell onClick={() => setOpen(!open)} sx={{ cursor: "pointer" }}>
+          <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{item.judul}</Typography>
+        </TableCell>
+        <TableCell onClick={() => setOpen(!open)} sx={{ cursor: "pointer" }}>
+          <Typography sx={{ fontSize: 13 }}>{item.nama_tim}</Typography>
+        </TableCell>
+        <TableCell onClick={() => setOpen(!open)} sx={{ cursor: "pointer" }}>
+          <Typography sx={{ fontSize: 13 }}>{item.nama_kategori}</Typography>
+        </TableCell>
+        <TableCell align="center" onClick={() => setOpen(!open)} sx={{ cursor: "pointer" }}>
+          <Typography sx={{ fontWeight: 700, fontSize: 16, color: COLORS.primary }}>
+            {item.total_nilai}
+          </Typography>
+        </TableCell>
+        <TableCell align="center">
+          <StatusPill label={statusInfo.label} backgroundColor={statusInfo.backgroundColor} />
+        </TableCell>
+        <TableCell align="center">
+          <Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
+            {item.status_distribusi === 3 && (
+              <>
+                <Button 
+                  size="small" 
+                  onClick={() => onEdit(item.id_distribusi)}
+                  variant="contained"
+                  sx={{
+                    textTransform: "none", borderRadius: "10px",
+                    fontSize: 12, fontWeight: 600, px: 2,
+                    background: `linear-gradient(135deg, ${COLORS.warning}, #F59E0B)`,
+                    boxShadow: "none",
+                    "&:hover": { background: `linear-gradient(135deg, #D97706, ${COLORS.warning})`, boxShadow: "none" },
+                    "&:disabled": { background: "#E5E7EB", color: "#9CA3AF", boxShadow: "none" },
+                  }}
+                >
+                  Edit
+                </Button>
+                <Button 
+                  size="small" 
+                  onClick={() => onSubmit(item)}
+                  variant="contained"
+                  sx={{
+                    textTransform: "none", borderRadius: "10px",
+                    fontSize: 12, fontWeight: 600, px: 2,
+                    background: `linear-gradient(135deg, ${COLORS.success}, #10B981)`,
+                    boxShadow: "none",
+                    "&:hover": { background: `linear-gradient(135deg, #059669, ${COLORS.success})`, boxShadow: "none" },
+                  }}
+                >
+                  Ajukan
+                </Button>
+              </>
+            )}
+          </Box>
+        </TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
+          <Collapse in={open} timeout="auto" unmountOnExit>
+            <Box sx={{ px: 4, py: 3, backgroundColor: "#fcfdff" }}>
+              <Box sx={{ 
+                p: 3, borderRadius: "16px", backgroundColor: "#fff", 
+                border: "1px solid #eef2ff", boxShadow: "0 4px 20px rgba(0,0,0,0.03)" 
+              }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2.5 }}>
+                  <Box sx={{ width: 4, height: 20, borderRadius: 2, backgroundColor: COLORS.primary }} />
+                  <Typography variant="h6" sx={{ fontSize: 15, fontWeight: 700, color: COLORS.primaryDark }}>
+                    Rincian Penilaian Kriteria
+                  </Typography>
+                </Box>
+                
+                <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid #f0f3ff", borderRadius: "12px", overflow: "hidden" }}>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow sx={{ backgroundColor: "#f8faff" }}>
+                        <TableCell sx={{ fontWeight: 700, fontSize: 12, color: COLORS.slate, py: 1.5 }}>KRITERIA</TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 700, fontSize: 12, color: COLORS.slate, py: 1.5 }}>BOBOT</TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 700, fontSize: 12, color: COLORS.slate, py: 1.5 }}>SKOR (1-5)</TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 700, fontSize: 12, color: COLORS.slate, py: 1.5 }}>NILAI AKHIR</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {(item.detail_nilai || []).map((dn) => (
+                        <TableRow key={dn.id_kriteria} sx={{ "&:last-child td": { border: 0 }, "&:hover": { backgroundColor: "#fcfdff" } }}>
+                          <TableCell sx={{ fontSize: 13, fontWeight: 500, color: "#334155", py: 1.8 }}>{dn.nama_kriteria}</TableCell>
+                          <TableCell align="center" sx={{ fontSize: 13, color: COLORS.slate }}>{dn.bobot}%</TableCell>
+                          <TableCell align="center">
+                            <Box sx={{ 
+                              display: "inline-flex", px: 1.2, py: 0.3, borderRadius: "6px", 
+                              backgroundColor: "#f1f5f9", fontWeight: 700, fontSize: 12, color: "#475569" 
+                            }}>
+                              {dn.skor}
+                            </Box>
+                          </TableCell>
+                          <TableCell align="center" sx={{ fontSize: 14, fontWeight: 700, color: COLORS.primary }}>
+                            {dn.nilai}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Box>
+            </Box>
+          </Collapse>
+        </TableCell>
+      </TableRow>
+    </>
+  );
+};
+
 export default function PenugasanJuriPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -132,6 +278,11 @@ export default function PenugasanJuriPage() {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [pairApprovalMap, setPairApprovalMap] = useState({});
+  const [activeTab, setActiveTab] = useState(0);
+  const [peringkatList, setPeringkatList] = useState([]);
+  const [loadingPeringkat, setLoadingPeringkat] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
 
   const fetchPenugasan = useCallback(async () => {
     try {
@@ -162,6 +313,86 @@ export default function PenugasanJuriPage() {
   }, [statusFilter]);
 
   useEffect(() => { fetchPenugasan(); }, [fetchPenugasan]);
+
+  const fetchPeringkatData = useCallback(async () => {
+    try {
+      setLoadingPeringkat(true);
+      const response = await getPeringkat(2);
+      if (response.success) {
+        setPeringkatList(response.data || []);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoadingPeringkat(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 1) {
+      fetchPeringkatData();
+      setSelectedIds([]);
+    }
+  }, [activeTab, fetchPeringkatData]);
+
+  const handleSelect = (id) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    const submittable = peringkatList.filter(item => Number(item.status_distribusi) === 3).map(item => item.id_distribusi);
+    if (selectedIds.length === submittable.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(submittable);
+    }
+  };
+
+  const handleBulkSubmit = async () => {
+    if (selectedIds.length === 0) return;
+
+    const result = await Swal.fire({
+      title: "Konfirmasi Submit Bulk",
+      html: `Anda akan mengajukan <b>${selectedIds.length} penilaian</b> sekaligus.<br/><br/>Tindakan ini tidak dapat dibatalkan. Yakin?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: COLORS.success,
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Ya, Ajukan Semua",
+      cancelButtonText: "Batal",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      setBulkSubmitting(true);
+      const response = await bulkSubmitPenilaian(selectedIds);
+      if (response.success) {
+        Swal.fire({
+          icon: "success",
+          title: "Berhasil",
+          text: response.message,
+          timer: 3000,
+          timerProgressBar: true,
+        });
+        fetchPeringkatData();
+        fetchPenugasan();
+        setSelectedIds([]);
+      } else {
+        Swal.fire({ icon: "error", title: "Gagal", text: response.message });
+      }
+    } catch (err) {
+      Swal.fire({ 
+        icon: "error", 
+        title: "Terjadi Kesalahan", 
+        text: err.response?.data?.message || "Gagal melakukan bulk submit" 
+      });
+    } finally {
+      setBulkSubmitting(false);
+    }
+  };
 
   const handleAccept = async (item) => {
     const result = await Swal.fire({
@@ -313,17 +544,50 @@ export default function PenugasanJuriPage() {
             </Box>
           )}
 
-          <Paper elevation={0} sx={{ borderRadius: "20px", border: "1.5px solid #E5E7EB", overflow: "hidden" }}>
+          <Paper elevation={0} sx={{ mb: 3, borderRadius: "20px", border: "1.5px solid #E5E7EB", overflow: "hidden" }}>
             <Box sx={{ height: 5, background: `linear-gradient(90deg, ${COLORS.secondary}, ${COLORS.success})` }} />
-            <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
-              <SectionHeader
-                icon={Assignment}
-                title="Daftar Penugasan"
-                subtitle={`${filtered.length} penugasan ditemukan`}
-                gradient={`linear-gradient(135deg, ${COLORS.secondary} 0%, ${COLORS.success} 100%)`}
-              />
+            
+            <Box sx={{ borderBottom: 1, borderColor: "divider", px: 2, mt: 1.5 }}>
+              <Tabs
+                value={activeTab}
+                onChange={(e, val) => setActiveTab(val)}
+                sx={{
+                  "& .MuiTab-root": {
+                    textTransform: "none", fontSize: 15, fontWeight: 600,
+                    color: "#9CA3AF", minHeight: 48,
+                    "&.Mui-selected": { color: COLORS.primary },
+                  },
+                  "& .MuiTabs-indicator": {
+                    backgroundColor: COLORS.primary, height: 3,
+                    borderRadius: "3px 3px 0 0",
+                  },
+                }}
+              >
+                <Tab label="Daftar Penugasan" />
+                <Tab label="Hasil Peringkat" />
+              </Tabs>
+            </Box>
 
-              {loading ? (
+            <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
+              {activeTab === 0 ? (
+                <SectionHeader
+                  icon={Assignment}
+                  title="Daftar Penugasan"
+                  subtitle={`${filtered.length} penugasan ditemukan`}
+                  gradient={`linear-gradient(135deg, ${COLORS.secondary} 0%, ${COLORS.success} 100%)`}
+                />
+              ) : (
+                <SectionHeader
+                  icon={Assignment}
+                  title="Hasil Peringkat Penilaian"
+                  subtitle={`${peringkatList.length} proposal dinilai`}
+                  gradient={`linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)`}
+                />
+              )}
+
+              {activeTab === 0 && (
+                <>
+                  {loading ? (
                 <Box sx={{ position: "relative", minHeight: 320 }}>
                   <LoadingScreen message="Memuat penugasan juri..." overlay minHeight="320px" />
                 </Box>
@@ -438,21 +702,55 @@ export default function PenugasanJuriPage() {
                                     >
                                       Detail
                                     </Button>
-                                    <Button
-                                      size="small" variant="contained"
-                                      onClick={() => navigate(`/juri/penugasan/${item.id_distribusi}?tab=1`)}
-                                      disabled={![1, 3].includes(item.status) || !!pairApprovalMap[item.id_distribusi]?.blocked}
-                                      sx={{
-                                        textTransform: "none", borderRadius: "10px",
-                                        fontSize: 12, fontWeight: 600, px: 2,
-                                        background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
-                                        boxShadow: "none",
-                                        "&:hover": { background: `linear-gradient(135deg, ${COLORS.primaryDark}, ${COLORS.primary})`, boxShadow: "none" },
-                                        "&:disabled": { background: "#E5E7EB", color: "#9CA3AF", boxShadow: "none" },
-                                      }}
-                                    >
-                                      Nilai
-                                    </Button>
+                                    {item.status === 1 && (
+                                      <Button
+                                        size="small" variant="contained"
+                                        onClick={() => navigate(`/juri/penugasan/${item.id_distribusi}?tab=1`)}
+                                        disabled={!!pairApprovalMap[item.id_distribusi]?.blocked}
+                                        sx={{
+                                          textTransform: "none", borderRadius: "10px",
+                                          fontSize: 12, fontWeight: 600, px: 2,
+                                          background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
+                                          boxShadow: "none",
+                                          "&:hover": { background: `linear-gradient(135deg, ${COLORS.primaryDark}, ${COLORS.primary})`, boxShadow: "none" },
+                                          "&:disabled": { background: "#E5E7EB", color: "#9CA3AF", boxShadow: "none" },
+                                        }}
+                                      >
+                                        Nilai
+                                      </Button>
+                                    )}
+                                    {item.status === 3 && (
+                                      <Button
+                                        size="small" variant="contained"
+                                        onClick={() => navigate(`/juri/penugasan/${item.id_distribusi}?tab=1`)}
+                                        disabled={!!pairApprovalMap[item.id_distribusi]?.blocked}
+                                        sx={{
+                                          textTransform: "none", borderRadius: "10px",
+                                          fontSize: 12, fontWeight: 600, px: 2,
+                                          background: `linear-gradient(135deg, ${COLORS.warning}, #F59E0B)`,
+                                          boxShadow: "none",
+                                          "&:hover": { background: `linear-gradient(135deg, #D97706, ${COLORS.warning})`, boxShadow: "none" },
+                                          "&:disabled": { background: "#E5E7EB", color: "#9CA3AF", boxShadow: "none" },
+                                        }}
+                                      >
+                                        Edit
+                                      </Button>
+                                    )}
+                                    {item.status === 4 && (
+                                      <Button
+                                        size="small" variant="contained"
+                                        onClick={() => navigate(`/juri/penugasan/${item.id_distribusi}?tab=1`)}
+                                        disabled={true}
+                                        sx={{
+                                          textTransform: "none", borderRadius: "10px",
+                                          fontSize: 12, fontWeight: 600, px: 2,
+                                          background: "#E5E7EB", color: "#9CA3AF",
+                                          boxShadow: "none",
+                                        }}
+                                      >
+                                        Selesai
+                                      </Button>
+                                    )}
                                   </>
                                 )}
                               </Box>
@@ -464,12 +762,129 @@ export default function PenugasanJuriPage() {
                   </Table>
                 </TableContainer>
               )}
+              
+              {activeTab === 0 && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography sx={{ fontSize: 13, color: COLORS.slate }}>Total: {penugasan.length} penugasan</Typography>
+                </Box>
+              )}
+            </>
+          )}
+
+          {activeTab === 1 && (
+            <>
+              {loadingPeringkat ? (
+                <Box sx={{ position: "relative", minHeight: 320 }}>
+                  <LoadingScreen message="Memuat peringkat..." overlay minHeight="320px" />
+                </Box>
+              ) : peringkatList.length === 0 ? (
+                <Box sx={{ textAlign: "center", py: 8 }}>
+                  <Typography sx={{ fontSize: 16, color: COLORS.slate }}>Belum ada hasil peringkat</Typography>
+                </Box>
+              ) : (
+                <>
+                  <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 500 }}>
+                      Pilih draf penilaian yang ingin diajukan (Status: Draft)
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      size="large"
+                      disabled={selectedIds.length === 0 || bulkSubmitting}
+                      onClick={handleBulkSubmit}
+                      sx={{
+                        textTransform: "none", borderRadius: "10px", fontWeight: 700,
+                        backgroundColor: COLORS.success,
+                        px: 4, py: 1.5,
+                        boxShadow: "0 4px 12px rgba(16, 185, 129, 0.2)",
+                        "&:hover": { backgroundColor: "#059669", boxShadow: "0 6px 16px rgba(16, 185, 129, 0.3)" },
+                        "&:disabled": { background: "#E5E7EB", color: "#9CA3AF" },
+                      }}
+                    >
+                      {bulkSubmitting ? "Memproses..." : `Simpan & Ajukan (${selectedIds.length} Terpilih)`}
+                    </Button>
+                  </Box>
+                  <TableContainer sx={{ borderRadius: "12px", border: "1px solid #f0f0f0", overflow: "hidden", overflowX: "auto" }}>
+                    <Table sx={{ minWidth: 980 }}>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell align="center" sx={tableHeadCell}>
+                            <input 
+                              type="checkbox" 
+                              onChange={handleSelectAll}
+                              checked={peringkatList.length > 0 && selectedIds.length === peringkatList.filter(item => Number(item.status_distribusi) === 3).length && selectedIds.length > 0}
+                              style={{ width: 18, height: 18, cursor: "pointer" }}
+                            />
+                          </TableCell>
+                          {[
+                            "Peringkat",
+                            "Judul Proposal",
+                            "Nama Tim",
+                            "Kategori",
+                            "Total Nilai",
+                            "Status",
+                            "Aksi",
+                          ].map((h, i) => (
+                            <TableCell
+                              key={i}
+                              sx={{
+                                ...tableHeadCell,
+                                ...(i === 0 || i === 4 || i === 5 || i === 6 ? { textAlign: "center" } : {}),
+                              }}
+                            >
+                              {h}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {peringkatList.map((item, i) => (
+                          <RowPeringkat 
+                            key={item.id_proposal} 
+                            item={item} 
+                            index={i} 
+                            selected={selectedIds.includes(item.id_distribusi)}
+                            onSelect={handleSelect}
+                            onEdit={(id) => navigate(`/juri/penugasan/${id}?tab=1`)}
+                            onSubmit={async (item) => {
+                              const result = await Swal.fire({
+                                title: "Konfirmasi Ajukan Nilai",
+                                html: `Anda akan mengajukan penilaian untuk proposal:<br/><br/><b>${item.judul}</b>.<br/><br/>Tindakan ini tidak dapat dibatalkan.`,
+                                icon: "warning",
+                                showCancelButton: true,
+                                confirmButtonColor: COLORS.success,
+                                cancelButtonColor: "#d33",
+                                confirmButtonText: "Ya, Ajukan",
+                                cancelButtonText: "Batal",
+                              });
+
+                              if (result.isConfirmed) {
+                                try {
+                                  const { submitPenilaian } = await import("../../api/juri");
+                                  const response = await submitPenilaian(item.id_distribusi);
+                                  if (response.success) {
+                                    Swal.fire({ icon: "success", title: "Berhasil", text: response.message, timer: 2000, showConfirmButton: false });
+                                    fetchPeringkatData();
+                                    fetchPenugasan();
+                                  } else {
+                                    Swal.fire({ icon: "error", title: "Gagal", text: response.message });
+                                  }
+                                } catch (err) {
+                                  Swal.fire({ icon: "error", title: "Terjadi Kesalahan", text: err.response?.data?.message || "Gagal mengajukan penilaian" });
+                                }
+                              }
+                            }}
+                          />
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </>
+              )}
+            </>
+          )}
             </Box>
           </Paper>
-
-          <Box sx={{ mt: 2 }}>
-            <Typography sx={{ fontSize: 13, color: COLORS.slate }}>Total: {penugasan.length} penugasan</Typography>
-          </Box>
 
         </Box>
       </PageTransition>

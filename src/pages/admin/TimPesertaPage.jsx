@@ -145,6 +145,12 @@ export default function TimPesertaPage() {
   const [page, setPage]                 = useState(1);
   const rowsPerPage = 10;
 
+  const normalizeDataArray = (res) => {
+    const rawData = res?.data || [];
+    if (Array.isArray(rawData)) return rawData;
+    return rawData.data || rawData.items || rawData.list || [];
+  };
+
   const [filters, setFilters] = useState({ search: "", id_program: "", tahun: "" });
 
   const [openDetail, setOpenDetail]       = useState(false);
@@ -170,11 +176,29 @@ export default function TimPesertaPage() {
     setLoading(true);
     try {
       if (!filters.id_program) { setTimList([]); return; }
-      const params = {};
+      const params = { limit: 100 };
       if (filters.id_program) params.id_program = filters.id_program;
       if (filters.search) params.search = filters.search;
-      const res = await getTimList(params);
-      setTimList(res.data || []);
+
+      let currentPage = 1;
+      let totalPages = 1;
+      const mergedData = [];
+
+      do {
+        const res = await getTimList({ ...params, page: currentPage });
+        const dataArray = normalizeDataArray(res);
+        mergedData.push(...dataArray);
+
+        const apiTotalPages = Number(res?.pagination?.total_pages || 1);
+        if (!Number.isNaN(apiTotalPages) && apiTotalPages >= 1) {
+          totalPages = apiTotalPages;
+        }
+
+        if (dataArray.length === 0 || currentPage >= totalPages) break;
+        currentPage += 1;
+      } while (currentPage <= 100);
+
+      setTimList(mergedData);
     } catch {
       Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat data tim", confirmButtonColor: COLORS.primary });
     } finally {
@@ -186,11 +210,32 @@ export default function TimPesertaPage() {
     setLoading(true);
     try {
       if (!filters.id_program) { setPesertaList([]); return; }
-      const params = {};
+      const params = { limit: 100 };
       if (filters.id_program) params.id_program = filters.id_program;
       if (filters.search) params.search = filters.search;
-      const res = await getPesertaList(params);
-      setPesertaList(res.data || []);
+
+      let currentPage = 1;
+      let totalPages = null;
+      const mergedData = [];
+
+      do {
+        const res = await getPesertaList({ ...params, page: currentPage });
+        const dataArray = normalizeDataArray(res);
+        mergedData.push(...dataArray);
+
+        const apiTotalPages = Number(res?.pagination?.total_pages || 0);
+        if (!Number.isNaN(apiTotalPages) && apiTotalPages > 0) {
+          totalPages = apiTotalPages;
+        }
+
+        if (dataArray.length === 0) break;
+        if (totalPages && currentPage >= totalPages) break;
+        if (!totalPages && dataArray.length < params.limit) break;
+
+        currentPage += 1;
+      } while (currentPage <= 100);
+
+      setPesertaList(mergedData);
     } catch {
       Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat data peserta", confirmButtonColor: COLORS.primary });
     } finally {
@@ -469,7 +514,7 @@ export default function TimPesertaPage() {
               }}>
                 <TextField
                   size="small"
-                  placeholder={activeTab === 0 ? "Cari nama tim, ketua..." : "Cari nama, email, NIM..."}
+                  placeholder={activeTab === 0 ? "Cari judul proposal, nama tim, ketua..." : "Cari nama, email, NIM..."}
                   value={filters.search}
                   onChange={(e) => setFilters({ ...filters, search: e.target.value })}
                   InputProps={{
@@ -565,7 +610,7 @@ export default function TimPesertaPage() {
                       <TableHead>
                         <TableRow>
                           {activeTab === 0
-                            ? ["NAMA TIM", "KETUA", "DOSEN PEMBIMBING", "ANGGOTA", "PROPOSAL", "AKSI"].map((h, i) => (
+                            ? ["JUDUL PROPOSAL", "KETUA", "DOSEN PEMBIMBING", "ANGGOTA", "PROPOSAL", "AKSI"].map((h, i) => (
                                 <TableCell key={i} sx={tableHeadCell}>{h}</TableCell>
                               ))
                             : ["NAMA PESERTA", "NIM", "TIM", "DOSEN PEMBIMBING", "PERAN", "STATUS LOLOS", "AKSI"].map((h, i) => (
@@ -581,7 +626,7 @@ export default function TimPesertaPage() {
                               return (
                                 <TableRow key={item.id_tim} sx={tableBodyRow}>
                                   <TableCell>
-                                    <Typography sx={{ fontWeight: 700, fontSize: 14, color: "#1E293B" }}>{item.nama_tim}</Typography>
+                                    <Typography sx={{ fontWeight: 700, fontSize: 14, color: "#1E293B" }}>{item.judul_proposal || "-"}</Typography>
                                   </TableCell>
                                   <TableCell>
                                     <Typography sx={{ fontSize: 13, fontWeight: 600, color: "#1E293B" }}>{item.nama_ketua || "-"}</Typography>

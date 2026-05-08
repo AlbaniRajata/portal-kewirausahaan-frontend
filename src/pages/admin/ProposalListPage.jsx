@@ -240,16 +240,37 @@ export default function ProposalListPage() {
     try {
       if (!filters.id_program) { setProposalList([]); return; }
       setLoading(true);
+
+      const fetchAllPages = async (baseFilters) => {
+        const limit = 100;
+        let currentPage = 1;
+        let totalPages = 1;
+        const merged = [];
+
+        do {
+          const res = await getProposalList({ ...baseFilters, page: currentPage, limit });
+          const data = res?.data || [];
+          merged.push(...data);
+
+          const apiTotalPages = Number(res?.pagination?.total_pages || 1);
+          totalPages = Number.isNaN(apiTotalPages) || apiTotalPages < 1 ? 1 : apiTotalPages;
+
+          if (data.length === 0 || currentPage >= totalPages) break;
+          currentPage += 1;
+        } while (currentPage <= 100);
+
+        return merged;
+      };
+
       let allProposals = [];
       if (filters.status.length === 0) {
-        const res = await getProposalList({ id_program: filters.id_program });
-        allProposals = res.data || [];
+        allProposals = await fetchAllPages({ id_program: filters.id_program });
       } else {
         const promises = filters.status.map((statusValue) =>
-          getProposalList({ id_program: filters.id_program, status: statusValue })
+          fetchAllPages({ id_program: filters.id_program, status: statusValue })
         );
         const results = await Promise.all(promises);
-        allProposals = results.flatMap((res) => res.data || []);
+        allProposals = results.flatMap((list) => list || []);
         allProposals = Array.from(new Map(allProposals.map((p) => [p.id_proposal, p])).values());
       }
       setProposalList(allProposals);

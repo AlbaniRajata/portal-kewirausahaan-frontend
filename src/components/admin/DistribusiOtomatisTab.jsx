@@ -5,6 +5,7 @@ import {
   Button,
   Collapse,
   Chip,
+  Pagination,
   Table,
   TableBody,
   TableCell,
@@ -156,6 +157,11 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
   const [executing, setExecuting] = useState(false);
   const [expandedReviewer, setExpandedReviewer] = useState({});
   const [errorMsg, setErrorMsg] = useState("");
+  // Pagination states
+  const [pageRekom, setPageRekom] = useState(1);
+  const [pageDetail, setPageDetail] = useState(1);
+  const [pageRencana, setPageRencana] = useState(1);
+  const rowsPerPage = 6;
 
   const fetchPreview = useCallback(async () => {
     if (!id_program) return;
@@ -186,6 +192,13 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
   useEffect(() => {
     fetchPreview();
   }, [fetchPreview]);
+
+  useEffect(() => {
+    // reset pagination when preview or tahap changes
+    setPageRekom(1);
+    setPageDetail(1);
+    setPageRencana(1);
+  }, [preview, tahap]);
 
   const toggleExpand = (id) =>
     setExpandedReviewer((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -395,7 +408,14 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
 
       {tahap === 1 ? (
         preview.rekomendasi && preview.rekomendasi.length > 0 ? (
-          preview.rekomendasi.map((reviewer) => (
+          (() => {
+            const total = preview.rekomendasi.length;
+            const totalPages = Math.max(1, Math.ceil(total / rowsPerPage));
+            const start = (pageRekom - 1) * rowsPerPage;
+            const paginated = preview.rekomendasi.slice(start, start + rowsPerPage);
+            return (
+              <>
+                {paginated.map((reviewer) => (
             <Paper
               key={reviewer.id_reviewer}
               variant="outlined"
@@ -489,7 +509,22 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
                 </Collapse>
               </Box>
             </Paper>
-          ))
+                ))}
+
+                <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+                  <Pagination
+                    count={Math.max(1, Math.ceil(preview.rekomendasi.length / rowsPerPage))}
+                    page={pageRekom}
+                    onChange={(e, v) => setPageRekom(v)}
+                    color="primary"
+                    shape="rounded"
+                    showFirstButton
+                    showLastButton
+                  />
+                </Box>
+              </>
+            );
+          })()
         ) : (
           <Box sx={{ textAlign: "center", py: 5 }}>
             <Typography sx={{ fontSize: 14, color: COLORS.slate }}>
@@ -570,26 +605,42 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {preview.detail_sudah.map((item) => (
-                      <TableRow key={item.id_proposal} sx={tableBodyRow}>
-                        <TableCell>
-                          <Typography sx={{ fontSize: 12, maxWidth: 250 }}>{item.judul}</Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography sx={{ fontSize: 12, fontWeight: 500 }}>
-                            {item.reviewer?.nama_lengkap || "-"}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography sx={{ fontSize: 12, fontWeight: 500 }}>
-                            {item.juri?.nama_lengkap || "-"}
-                          </Typography>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {(() => {
+                      const list = preview.detail_sudah || [];
+                      const total = list.length;
+                      const totalPages = Math.max(1, Math.ceil(total / rowsPerPage));
+                      const start = (pageDetail - 1) * rowsPerPage;
+                      const paginated = list.slice(start, start + rowsPerPage);
+                      return paginated.map((item) => (
+                        <TableRow key={item.id_proposal} sx={tableBodyRow}>
+                          <TableCell>
+                            <Typography sx={{ fontSize: 12, maxWidth: 250 }}>{item.judul}</Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography sx={{ fontSize: 12, fontWeight: 500 }}>
+                              {item.reviewer?.nama_lengkap || "-"}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography sx={{ fontSize: 12, fontWeight: 500 }}>
+                              {item.juri?.nama_lengkap || "-"}
+                            </Typography>
+                          </TableCell>
+                        </TableRow>
+                      ));
+                    })()}
                   </TableBody>
                 </Table>
               </TableContainer>
+              <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+                <Pagination
+                  count={Math.max(1, Math.ceil((preview.detail_sudah || []).length / rowsPerPage))}
+                  page={pageDetail}
+                  onChange={(e, v) => setPageDetail(v)}
+                  color="primary"
+                  shape="rounded"
+                />
+              </Box>
             </Box>
           )}
 
@@ -622,26 +673,41 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {preview.rencana_distribusi.map((item) => (
-                      <TableRow key={item.id_proposal} sx={tableBodyRow}>
-                        <TableCell>
-                          <Typography sx={{ fontSize: 12, maxWidth: 250 }}>{item.judul}</Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography sx={{ fontSize: 12, fontWeight: 500 }}>
-                            {item.reviewer?.nama_lengkap || "-"}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography sx={{ fontSize: 12, fontWeight: 500 }}>
-                            {item.juri?.nama_lengkap || "-"}
-                          </Typography>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {(() => {
+                      const list = preview.rencana_distribusi || [];
+                      const total = list.length;
+                      const start = (pageRencana - 1) * rowsPerPage;
+                      const paginated = list.slice(start, start + rowsPerPage);
+                      return paginated.map((item) => (
+                        <TableRow key={item.id_proposal} sx={tableBodyRow}>
+                          <TableCell>
+                            <Typography sx={{ fontSize: 12, maxWidth: 250 }}>{item.judul}</Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography sx={{ fontSize: 12, fontWeight: 500 }}>
+                              {item.reviewer?.nama_lengkap || "-"}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography sx={{ fontSize: 12, fontWeight: 500 }}>
+                              {item.juri?.nama_lengkap || "-"}
+                            </Typography>
+                          </TableCell>
+                        </TableRow>
+                      ));
+                    })()}
                   </TableBody>
                 </Table>
               </TableContainer>
+              <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+                <Pagination
+                  count={Math.max(1, Math.ceil((preview.rencana_distribusi || []).length / rowsPerPage))}
+                  page={pageRencana}
+                  onChange={(e, v) => setPageRencana(v)}
+                  color="primary"
+                  shape="rounded"
+                />
+              </Box>
             </Box>
           )}
 

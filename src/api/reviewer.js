@@ -56,3 +56,13 @@ export const submitPenilaian = async (id_distribusi) => {
   const res = await api.post(`/reviewer/penilaian/${id_distribusi}/submit`);
   return res.data;
 };
+
+export const getPeringkat = async (tahap) => {
+  const res = await api.get(`/reviewer/peringkat?tahap=${tahap}`);
+  return res.data;
+};
+
+export const bulkSubmitPenilaian = async (id_distribusi_list) => {
+  const res = await api.post(`/reviewer/penilaian/bulk-submit`, { id_distribusi_list });
+  return res.data;
+};

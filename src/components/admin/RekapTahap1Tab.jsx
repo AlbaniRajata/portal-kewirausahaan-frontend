@@ -38,14 +38,14 @@ const roundedField = {
 };
 
 const tableHeadCell = {
-  fontWeight: 700,
-  fontSize: { xs: 11, sm: 12 },
-  color: "#374151",
+  fontWeight: 800,
+  fontSize: 11,
+  color: "#475569",
   backgroundColor: "#F8FAFC",
-  borderBottom: `2px solid ${COLORS.primaryMuted}`,
   py: 2,
   textTransform: "uppercase",
-  letterSpacing: "0.04em",
+  letterSpacing: "0.05em",
+  borderBottom: `2px solid ${COLORS.primaryMuted}`,
 };
 
 const tableBodyRow = {
@@ -55,13 +55,42 @@ const tableBodyRow = {
 
 const ROWS_PER_PAGE = 10;
 
-const getStatusInfo = (status, totalReviewer, totalSubmit) => {
-  if (status === 3) return { text: "Tidak Lolos Desk",     color: "error"   };
-  if (status === 4) return { text: "Lolos Desk",           color: "success" };
-  if (status === 2) return totalSubmit === totalReviewer && totalReviewer > 0
-    ? { text: "Menunggu Finalisasi", color: "warning" }
-    : { text: "Sedang Dinilai",      color: "info"    };
-  return { text: "Unknown", color: "default" };
+const STATUS_MAP = {
+  2: { label: "Sedang Dinilai",      colorType: "info"    },
+  3: { label: "Tidak Lolos Desk",      colorType: "error"   },
+  4: { label: "Lolos Desk",            colorType: "success" },
+};
+
+const COLOR_TYPE_MAP = {
+  warning: { bg: COLORS.warningLight,  text: COLORS.warning  },
+  success: { bg: COLORS.successLight,  text: COLORS.success  },
+  error:   { bg: COLORS.errorLight,    text: COLORS.error    },
+  primary: { bg: COLORS.primaryLight,  text: COLORS.primary  },
+  info:    { bg: "#E0F2FE",            text: "#0284C7"       },
+  slate:   { bg: COLORS.slateLight,    text: COLORS.slate    },
+};
+
+const StatusPill = ({ status, totalReviewer, totalSubmit }) => {
+  let label = STATUS_MAP[status]?.label || "Unknown";
+  let colorType = STATUS_MAP[status]?.colorType || "slate";
+
+  if (status === 2 && totalSubmit === totalReviewer && totalReviewer > 0) {
+    label = "Menunggu Finalisasi";
+    colorType = "warning";
+  }
+
+  const colors = COLOR_TYPE_MAP[colorType] || COLOR_TYPE_MAP.slate;
+  return (
+    <Box sx={{
+      display: "inline-flex", alignItems: "center",
+      px: 1.2, py: 0.4, borderRadius: "6px",
+      backgroundColor: colors.bg, color: colors.text,
+      fontSize: 10, fontWeight: 800,
+      whiteSpace: "nowrap", textTransform: "uppercase", letterSpacing: "0.02em",
+    }}>
+      {label}
+    </Box>
+  );
 };
 
 const formatDate = (d) => (!d ? "-" : new Date(d).toLocaleDateString("id-ID", {
@@ -70,70 +99,87 @@ const formatDate = (d) => (!d ? "-" : new Date(d).toLocaleDateString("id-ID", {
 
 const getKey = (id) => `1-${id}`;
 
-function ReviewerCard({ data }) {
+function AssessmentDetailTable({ title, evaluators }) {
+  if (!evaluators || evaluators.length === 0) return <EmptyInfo text={`Belum ada penilaian ${title.toLowerCase()} yang disubmit`} />;
+
   return (
-    <Paper elevation={0} sx={{
-      p: 2.5, mb: 2, borderRadius: "12px",
-      border: `1.5px solid ${COLORS.slateLight}`,
-      backgroundColor: "#FAFBFF",
-    }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, mb: 2, flexWrap: "wrap" }}>
-        <Typography sx={{ fontWeight: 700, fontSize: 14, color: "#1E293B" }}>
-          {data.reviewer?.nama || data.user?.nama || "Reviewer"}
-        </Typography>
-        <Typography sx={{ fontSize: 12, color: COLORS.slate }}>
-          Submit: {formatDate(data.submitted_at)}
-        </Typography>
+    <Box sx={{ mb: 4 }}>
+      <Typography sx={{ fontSize: 14, fontWeight: 800, mb: 2, color: COLORS.primaryDark, display: "flex", alignItems: "center", gap: 1.5 }}>
+        <Box sx={{ width: 4, height: 18, backgroundColor: COLORS.primary, borderRadius: 1 }} />
+        {title.toUpperCase()}
+      </Typography>
+      
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        {evaluators.map((e) => (
+          <Box key={e.reviewer?.id_user || e.user?.id_user}>
+            <Box sx={{ 
+              display: "flex", justifyContent: "space-between", alignItems: "flex-end", 
+              mb: 1.5, px: 1, borderLeft: `3px solid ${COLORS.slateLight}` 
+            }}>
+              <Box>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#1E293B" }}>
+                  {e.reviewer?.nama || e.user?.nama || "Evaluator"}
+                </Typography>
+                <Typography sx={{ fontSize: 11, color: COLORS.slate }}>
+                  Diserahkan pada {formatDate(e.submitted_at)}
+                </Typography>
+              </Box>
+              <Box sx={{ textAlign: "right" }}>
+                <Typography sx={{ fontSize: 10, color: COLORS.slate, fontWeight: 700, textTransform: "uppercase" }}>Total Nilai</Typography>
+                <Typography sx={{ fontSize: 18, fontWeight: 900, color: COLORS.primary, lineHeight: 1 }}>{e.total_nilai}</Typography>
+              </Box>
+            </Box>
+
+            <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid #E2E8F0", borderRadius: "12px", overflow: "hidden" }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: "#F8FAFC" }}>
+                    <TableCell sx={{ fontWeight: 700, fontSize: 11, color: COLORS.slate, py: 1.5 }}>KRITERIA PENILAIAN</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 700, fontSize: 11, color: COLORS.slate, width: 80 }}>BOBOT</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 700, fontSize: 11, color: COLORS.slate, width: 80 }}>SKOR</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700, fontSize: 11, color: COLORS.slate, width: 100 }}>NILAI</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {(e.detail || []).map((d) => (
+                    <TableRow key={d.id_kriteria} hover sx={{ "&:last-child td": { border: 0 } }}>
+                      <TableCell sx={{ py: 1.5 }}>
+                        <Typography sx={{ fontSize: 12, fontWeight: 600, color: "#334155", lineHeight: 1.4 }}>
+                          {d.nama_kriteria}
+                        </Typography>
+                        {d.catatan && (
+                          <Typography sx={{ fontSize: 11, color: COLORS.slate, fontStyle: "italic", mt: 0.5, backgroundColor: "#F1F5F9", p: 1, borderRadius: "6px" }}>
+                            " {d.catatan} "
+                          </Typography>
+                        )}
+                      </TableCell>
+                      <TableCell align="center">
+                        <Typography sx={{ fontSize: 12, color: "#64748B" }}>{d.bobot}%</Typography>
+                      </TableCell>
+                      <TableCell align="center">
+                        <Box sx={{ display: "inline-flex", px: 1, py: 0.25, borderRadius: "4px", backgroundColor: "#F1F5F9", fontSize: 12, fontWeight: 700, color: "#475569" }}>
+                          {d.skor}
+                        </Box>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Typography sx={{ fontSize: 13, fontWeight: 800, color: "#1E293B" }}>{d.nilai}</Typography>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Box>
+        ))}
       </Box>
-      <TableContainer sx={{ borderRadius: "10px", border: `1.5px solid ${COLORS.slateLight}` }}>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell sx={tableHeadCell}>Kriteria</TableCell>
-              <TableCell sx={{ ...tableHeadCell, textAlign: "center", width: 80 }}>Bobot</TableCell>
-              <TableCell sx={{ ...tableHeadCell, textAlign: "center", width: 80 }}>Skor</TableCell>
-              <TableCell sx={{ ...tableHeadCell, textAlign: "right", width: 120 }}>Nilai</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {(data.detail || []).map((d) => (
-              <TableRow key={d.id_kriteria} sx={tableBodyRow} hover>
-                <TableCell>
-                  <Typography sx={{ fontSize: 13, color: "#1E293B" }}>{d.nama_kriteria}</Typography>
-                  {d.catatan && (
-                    <Typography sx={{ fontSize: 11, color: COLORS.slate, fontStyle: "italic", mt: 0.25 }}>
-                      Catatan: {d.catatan}
-                    </Typography>
-                  )}
-                </TableCell>
-                <TableCell sx={{ textAlign: "center" }}><Typography sx={{ fontSize: 13 }}>{d.bobot}</Typography></TableCell>
-                <TableCell sx={{ textAlign: "center" }}><Typography sx={{ fontSize: 13 }}>{d.skor}</Typography></TableCell>
-                <TableCell sx={{ textAlign: "right" }}><Typography sx={{ fontSize: 13, fontWeight: 700 }}>{d.nilai}</Typography></TableCell>
-              </TableRow>
-            ))}
-            <TableRow sx={{ backgroundColor: COLORS.primaryLight }}>
-              <TableCell colSpan={3} sx={{ fontWeight: 700, textAlign: "right", fontSize: 13, color: COLORS.primaryDark }}>TOTAL</TableCell>
-              <TableCell sx={{ fontWeight: 800, textAlign: "right", color: COLORS.primary, fontSize: 15 }}>{data.total_nilai}</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Paper>
+    </Box>
   );
 }
 
 function EmptyInfo({ text }) {
   return (
-    <Box sx={{
-      px: 2.5, py: 2, mb: 2, minHeight: 56,
-      display: "flex", alignItems: "center",
-      backgroundColor: COLORS.primaryLight,
-      borderRadius: "12px",
-      border: `1.5px solid ${COLORS.primaryMuted}`,
-    }}>
-      <Typography sx={{ fontSize: 13, color: COLORS.primaryDark, fontWeight: 600, lineHeight: 1.5 }}>
-        {text}
-      </Typography>
+    <Box sx={{ px: 2, py: 1.5, mb: 2, display: "flex", alignItems: "center", backgroundColor: "#F8FAFC", borderRadius: "10px", border: "1px solid #E2E8F0" }}>
+      <Typography sx={{ fontSize: 12, color: COLORS.slate, fontWeight: 500 }}>{text}</Typography>
     </Box>
   );
 }
@@ -143,7 +189,6 @@ export default function RekapTahap1Tab({ id_program }) {
   const [proposalList, setProposalList] = useState([]);
   const [selected, setSelected]         = useState([]);
   const [submitting, setSubmitting]     = useState(false);
-  const [page, setPage]                 = useState(1);
   const [kategoriFilter, setKategoriFilter] = useState("");
   const [expandedKeys, setExpandedKeys] = useState([]);
   const [detailMap, setDetailMap]       = useState({});
@@ -163,17 +208,26 @@ export default function RekapTahap1Tab({ id_program }) {
 
   useEffect(() => { fetchProposals(); }, [fetchProposals]);
 
-  const kategoriOptions = Array.from(new Set(proposalList.map((p) => p.nama_kategori || "").filter(Boolean))).sort((a, b) => a.localeCompare(b));
-  const filteredList    = kategoriFilter === "" ? proposalList : proposalList.filter((p) => (p.nama_kategori || "") === kategoriFilter);
-  const finalisableProposals = filteredList.filter((p) => p.status === 2 && p.total_submit === p.total_reviewer && p.total_reviewer > 0);
-  const isAllSelected   = finalisableProposals.length > 0 && finalisableProposals.every((p) => selected.includes(p.id_proposal));
-  const isIndeterminate = selected.length > 0 && !isAllSelected;
-  const totalPages      = Math.ceil(filteredList.length / ROWS_PER_PAGE);
-  const paginated       = filteredList.slice((page - 1) * ROWS_PER_PAGE, page * ROWS_PER_PAGE);
+  const uniqueKategori = Array.from(new Set(proposalList.map((p) => p.nama_kategori).filter(Boolean))).sort();
+  const filteredList = proposalList.filter((p) => {
+    if (p.status !== 2) return false;
+    if (kategoriFilter && p.nama_kategori !== kategoriFilter) return false;
+    return true;
+  });
 
-  useEffect(() => { setPage(1); setSelected([]); }, [kategoriFilter]);
+  const proposalsByCategory = filteredList.reduce((acc, p) => {
+    const cat = p.nama_kategori || "Tanpa Kategori";
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(p);
+    return acc;
+  }, {});
 
-  const handleSelectAll = (e) => setSelected(e.target.checked ? finalisableProposals.map((p) => p.id_proposal) : []);
+  Object.keys(proposalsByCategory).forEach(cat => {
+    proposalsByCategory[cat].sort((a, b) => (b.nilai_rata_rata || 0) - (a.nilai_rata_rata || 0));
+  });
+
+  useEffect(() => { setSelected([]); }, [kategoriFilter]);
+
   const handleSelectOne = (id) => setSelected((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
 
   const handleFinalisasi = async (isLolos) => {
@@ -208,7 +262,7 @@ export default function RekapTahap1Tab({ id_program }) {
     setExpandedKeys((prev) => prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key]);
     if (detailMap[key]) return;
     try {
-      setLoadingKeys((prev) => (prev.includes(key) ? prev : [...prev, key]));
+      setLoadingKeys((prev) => [...prev, key]);
       const res = await getRekapDesk(id_program, proposal.id_proposal);
       setDetailMap((prev) => ({ ...prev, [key]: res.data || null }));
     } catch {
@@ -228,12 +282,8 @@ export default function RekapTahap1Tab({ id_program }) {
     );
     if (!detail) return <EmptyInfo text="Belum ada detail rekap untuk proposal ini" />;
     return (
-      <Box sx={{ mt: 2 }}>
-        <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 2, color: "#1E293B" }}>Penilaian Reviewer</Typography>
-        {detail.reviewer?.length > 0
-          ? detail.reviewer.map((r) => <ReviewerCard key={r.reviewer?.id_user || r.user?.id_user} data={r} />)
-          : <EmptyInfo text="Belum ada penilaian reviewer yang disubmit" />
-        }
+      <Box sx={{ mt: 1, p: 2, border: "1px solid #E2E8F0", borderRadius: "16px", backgroundColor: "#fff" }}>
+        <AssessmentDetailTable title="Penilaian Reviewer" evaluators={detail.reviewer} />
       </Box>
     );
   };
@@ -241,214 +291,219 @@ export default function RekapTahap1Tab({ id_program }) {
   return (
     <Box>
       <Box sx={{
-        display: "flex",
-        flexDirection: { xs: "column", sm: "row" },
-        justifyContent: "space-between",
-        alignItems: { xs: "stretch", sm: "center" },
-        mb: 3, gap: 2, flexWrap: "wrap",
+        display: "flex", flexDirection: { xs: "column", sm: "row" },
+        justifyContent: "space-between", alignItems: { xs: "stretch", sm: "center" },
+        mb: 4, gap: 2, flexWrap: "wrap",
       }}>
-        <TextField
-          select size="small"
-          value={kategoriFilter}
-          onChange={(e) => setKategoriFilter(e.target.value)}
-          SelectProps={{
-            displayEmpty: true,
-            renderValue: (v) => (
-              <span style={{ fontSize: 14, color: !v ? "#9CA3AF" : "inherit" }}>
-                {!v ? "Semua Kategori" : v}
-              </span>
-            ),
-          }}
-          sx={{ ...roundedField, width: { xs: "100%", sm: "auto" }, minWidth: { sm: 220 } }}
-        >
-          <MenuItem value="" sx={{ fontSize: 13 }}>Semua Kategori</MenuItem>
-          {kategoriOptions.map((k) => <MenuItem key={k} value={k} sx={{ fontSize: 13 }}>{k}</MenuItem>)}
-        </TextField>
-
-        <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 500, textAlign: { xs: "left", sm: "center" } }}>
-          {selected.length > 0 ? <b>{selected.length} proposal terpilih</b> : `Total ${filteredList.length} proposal`}
-        </Typography>
-
-        <Box sx={{
-          display: "flex", gap: 1.5,
-          width: { xs: "100%", sm: "auto" },
-          flexDirection: { xs: "column", sm: "row" },
-        }}>
+        <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", alignItems: "center" }}>
+          <TextField
+            select size="small"
+            value={kategoriFilter}
+            onChange={(e) => setKategoriFilter(e.target.value)}
+            SelectProps={{
+              displayEmpty: true,
+              renderValue: (v) => <span style={{ fontSize: 14, color: !v ? "#9CA3AF" : "inherit" }}>{!v ? "Semua Kategori" : v}</span>,
+            }}
+            sx={{ ...roundedField, minWidth: 200 }}
+          >
+            <MenuItem value=""><em>Semua Kategori</em></MenuItem>
+            {uniqueKategori.map((k) => <MenuItem key={k} value={k}>{k}</MenuItem>)}
+          </TextField>
           <Button
             variant="contained"
-            onClick={() => handleFinalisasi(false)}
             disabled={selected.length === 0 || submitting}
+            onClick={() => handleFinalisasi(true)}
             sx={{
-              textTransform: "none", borderRadius: "12px", px: 3, fontWeight: 700,
-              backgroundColor: COLORS.error,
-              boxShadow: "0 4px 12px rgba(220,38,38,0.2)",
-              width: { xs: "100%", sm: "auto" },
-              "&:hover": { backgroundColor: "#B91C1C", boxShadow: "0 6px 16px rgba(220,38,38,0.3)" },
+              textTransform: "none", borderRadius: "10px", fontWeight: 700,
+              backgroundColor: COLORS.primary, px: 3,
+              "&:hover": { backgroundColor: COLORS.primaryDark }
             }}
           >
-            Finalisasi Tidak Lolos
+            Loloskan ({selected.length})
           </Button>
           <Button
             variant="contained"
-            onClick={() => handleFinalisasi(true)}
             disabled={selected.length === 0 || submitting}
+            onClick={() => handleFinalisasi(false)}
             sx={{
-              textTransform: "none", borderRadius: "12px", px: 3, fontWeight: 700,
-              backgroundColor: COLORS.primary,
-              boxShadow: "0 4px 12px rgba(13,89,242,0.2)",
-              width: { xs: "100%", sm: "auto" },
-              "&:hover": { backgroundColor: COLORS.primaryDark, boxShadow: "0 6px 16px rgba(13,89,242,0.3)" },
+              textTransform: "none", borderRadius: "10px", fontWeight: 700,
+              backgroundColor: COLORS.error, px: 3,
+              "&:hover": { backgroundColor: "#B91C1C" }
             }}
           >
-            Finalisasi Lolos
+            Tidak Lolos ({selected.length})
           </Button>
         </Box>
+        <Typography sx={{ fontSize: 13, color: COLORS.slate, fontWeight: 600 }}>
+          Total: {filteredList.length} proposal
+        </Typography>
       </Box>
 
       {loading ? (
-        <Box sx={{ position: "relative", minHeight: 320 }}>
-          <LoadingScreen message="Memuat rekap tahap 1..." overlay minHeight="320px" />
-        </Box>
+        <LoadingScreen message="Memuat rekap penilaian..." overlay minHeight="320px" />
       ) : filteredList.length === 0 ? (
-        <Box sx={{ textAlign: "center", py: 10 }}>
+        <Box sx={{ textAlign: "center", py: 10, backgroundColor: "#F8FAFC", borderRadius: "20px", border: "1px dashed #E2E8F0" }}>
           <Typography sx={{ fontSize: 15, color: COLORS.slate, fontWeight: 500 }}>
             Belum ada proposal untuk tahap desk evaluasi
           </Typography>
         </Box>
       ) : (
-        <>
-          <TableContainer sx={{
-            borderRadius: "16px",
-            border: `1.5px solid ${COLORS.slateLight}`,
-            overflowX: "auto",
-            boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)",
-          }}>
-            <Table sx={{ minWidth: 800 }}>
-              <TableHead>
-                <TableRow>
-                  <TableCell padding="checkbox" sx={tableHeadCell}>
-                    <Checkbox
-                      checked={isAllSelected}
-                      indeterminate={isIndeterminate}
-                      onChange={handleSelectAll}
-                      sx={{ color: COLORS.primaryMuted, "&.Mui-checked": { color: COLORS.primary } }}
-                    />
-                  </TableCell>
-                  {["Judul Proposal", "Tim", "Kategori", "Penilaian Submit", "Status", ""].map((h, i) => (
-                    <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 5 && { textAlign: "right", width: 110 }) }}>{h}</TableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {paginated.map((p) => {
-                  const statusInfo    = getStatusInfo(p.status, p.total_reviewer, p.total_submit);
-                  const isFinalisable = p.status === 2 && p.total_submit === p.total_reviewer && p.total_reviewer > 0;
-                  const isSelected    = selected.includes(p.id_proposal);
-                  const key           = getKey(p.id_proposal);
-                  const isExpanded    = expandedKeys.includes(key);
-                  return (
-                    <Fragment key={key}>
-                      <TableRow
-                        sx={{ ...tableBodyRow, cursor: "pointer" }}
-                        hover
-                        selected={isSelected}
-                        onClick={() => toggleExpand(p)}
-                      >
-                        <TableCell padding="checkbox">
-                          <Checkbox
-                            checked={isSelected}
-                            disabled={!isFinalisable}
-                            onChange={(e) => { e.stopPropagation(); handleSelectOne(p.id_proposal); }}
-                            sx={{ color: COLORS.primaryMuted, "&.Mui-checked": { color: COLORS.primary } }}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Typography sx={{ fontWeight: 600, fontSize: 13, color: "#1E293B", maxWidth: 280, wordBreak: "break-word", whiteSpace: "normal" }}>
-                            {p.judul}
-                          </Typography>
-                        </TableCell>
-                        <TableCell><Typography sx={{ fontSize: 13, color: "#475569" }}>{p.nama_tim}</Typography></TableCell>
-                        <TableCell><Typography sx={{ fontSize: 13, color: "#475569" }}>{p.nama_kategori || "-"}</Typography></TableCell>
-                        <TableCell>
-                          <Chip
-                            label={`${p.total_submit} / ${p.total_reviewer}`}
-                            size="small"
-                            color={p.total_submit === p.total_reviewer ? "success" : "default"}
-                            sx={{ borderRadius: "8px", fontWeight: 700, px: 1 }}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={statusInfo.text}
-                            color={statusInfo.color}
-                            size="small"
-                            sx={{ borderRadius: "8px", fontWeight: 700 }}
-                          />
-                        </TableCell>
-                        <TableCell sx={{ textAlign: "right" }}>
-                          <Button
-                            size="small"
-                            variant="text"
-                            endIcon={isExpanded ? <KeyboardArrowDown /> : <KeyboardArrowRight />}
-                            onClick={(e) => { e.stopPropagation(); toggleExpand(p); }}
-                            sx={{ textTransform: "none", fontWeight: 700, color: COLORS.primary, fontSize: 12 }}
-                          >
-                            Detail
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell
-                          sx={{ py: 0, borderBottom: isExpanded ? `1px solid ${COLORS.slateLight}` : 0 }}
-                          colSpan={7}
-                        >
-                          <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-                            <Box sx={{ px: { xs: 1.5, sm: 3 }, pt: 2, pb: 2 }}>
-                              {renderExpanded(p)}
-                            </Box>
-                          </Collapse>
-                        </TableCell>
-                      </TableRow>
-                    </Fragment>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 5 }}>
+          {Object.entries(proposalsByCategory).map(([category, items]) => (
+            <Box key={category}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2, px: 1 }}>
+                <Typography sx={{ fontSize: 16, fontWeight: 800, color: "#1E293B", letterSpacing: "-0.01em" }}>
+                  {category}
+                </Typography>
+                <Chip 
+                  label={`${items.length} Proposal`} 
+                  size="small" 
+                  sx={{ fontWeight: 700, fontSize: 11, backgroundColor: "#E2E8F0", color: "#475569", borderRadius: "6px" }} 
+                />
+              </Box>
 
-          <Box sx={{
-            display: "flex",
-            flexDirection: { xs: "column", sm: "row" },
-            justifyContent: "space-between",
-            alignItems: "center",
-            mt: 3, gap: 2,
-          }}>
-            <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 500 }}>
-              Menampilkan{" "}
-              <b>{Math.min((page - 1) * ROWS_PER_PAGE + 1, filteredList.length)}–{Math.min(page * ROWS_PER_PAGE, filteredList.length)}</b>
-              {" "}dari <b>{filteredList.length}</b> data
-            </Typography>
-            <Pagination
-              count={totalPages}
-              page={page}
-              onChange={(_, v) => setPage(v)}
-              color="primary"
-              shape="rounded"
-              showFirstButton
-              showLastButton
-              sx={{
-                "& .MuiPaginationItem-root": {
-                  fontWeight: 600, borderRadius: "8px",
-                  "&.Mui-selected": {
-                    background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.secondary})`,
-                    color: "#fff",
-                    "&:hover": { background: `linear-gradient(135deg, ${COLORS.primaryDark}, ${COLORS.secondary})` },
-                  },
-                },
-              }}
-            />
-          </Box>
-        </>
+              <TableContainer sx={{
+                borderRadius: "16px", border: `1px solid #E2E8F0`,
+                overflowX: "auto", backgroundColor: "#fff",
+                boxShadow: "0 2px 10px rgba(0,0,0,0.02)"
+              }}>
+                <Table sx={{ minWidth: 1000 }}>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell padding="checkbox" sx={{ ...tableHeadCell, pl: 2 }}>
+                        <Checkbox
+                          size="small"
+                          checked={items.length > 0 && items.filter(p => {
+                            const totalRev  = p.total_reviewer || 0;
+                            const totalSub  = p.total_submit || 0;
+                            return p.status === 2 && totalSub === totalRev && totalRev > 0;
+                          }).every(p => selected.includes(p.id_proposal))}
+                          indeterminate={items.some(p => selected.includes(p.id_proposal)) && !items.every(p => selected.includes(p.id_proposal))}
+                          onChange={(e) => {
+                            const ids = items.filter(p => {
+                              const totalRev  = p.total_reviewer || 0;
+                              const totalSub  = p.total_submit || 0;
+                              return p.status === 2 && totalSub === totalRev && totalRev > 0;
+                            }).map(p => p.id_proposal);
+                            if (e.target.checked) {
+                              setSelected(prev => Array.from(new Set([...prev, ...ids])));
+                            } else {
+                              setSelected(prev => prev.filter(id => !ids.includes(id)));
+                            }
+                          }}
+                          sx={{ color: COLORS.primaryMuted, "&.Mui-checked": { color: COLORS.primary } }}
+                        />
+                      </TableCell>
+                      {["Rank", "Judul Proposal", "Tim", "Reviewer", "Rata-rata", "Status", ""].map((h, i) => (
+                        <TableCell 
+                          key={i} 
+                          sx={{ 
+                            ...tableHeadCell, 
+                            ...(i === 0 ? { textAlign: "center", width: 60 } : {}),
+                            ...(i >= 3 && i <= 5 ? { textAlign: "center" } : {}),
+                            ...(i === 6 && { textAlign: "right", width: 100 }) 
+                          }}
+                        >
+                          {h}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {items.map((p, idx) => {
+                      const isFinalisable = p.status === 2 && (p.total_submit || 0) === (p.total_reviewer || 0) && (p.total_reviewer || 0) > 0;
+                      const isSelected    = selected.includes(p.id_proposal);
+                      const key           = getKey(p.id_proposal);
+                      const isExpanded    = expandedKeys.includes(key);
+
+                      return (
+                        <Fragment key={key}>
+                          <TableRow
+                            sx={{ 
+                              ...tableBodyRow, 
+                              cursor: "pointer", 
+                              backgroundColor: isSelected ? "#F0F7FF" : (idx % 2 === 1 ? "#FAFCFF" : "inherit"),
+                              transition: "background-color 0.2s"
+                            }}
+                            hover
+                            onClick={() => toggleExpand(p)}
+                          >
+                            <TableCell padding="checkbox" sx={{ pl: 2 }}>
+                              <Checkbox
+                                size="small"
+                                checked={isSelected}
+                                disabled={!isFinalisable}
+                                onChange={(e) => { e.stopPropagation(); handleSelectOne(p.id_proposal); }}
+                                sx={{ color: COLORS.primaryMuted, "&.Mui-checked": { color: COLORS.primary } }}
+                              />
+                            </TableCell>
+                            <TableCell align="center">
+                              <Box sx={{ 
+                                width: 24, height: 24, borderRadius: "50%", 
+                                backgroundColor: idx < 3 ? COLORS.primaryLight : "#F1F5F9",
+                                color: idx < 3 ? COLORS.primary : COLORS.slate,
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                fontWeight: 800, fontSize: 10, mx: "auto"
+                              }}>
+                                {idx + 1}
+                              </Box>
+                            </TableCell>
+                            <TableCell>
+                              <Typography sx={{ fontWeight: 700, fontSize: 13, color: "#1E293B", maxWidth: 350, lineHeight: 1.4 }}>
+                                {p.judul}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography sx={{ fontSize: 12, color: COLORS.slate }}>{p.nama_tim}</Typography>
+                            </TableCell>
+                            <TableCell align="center">
+                              <Chip
+                                label={`${p.total_submit} / ${p.total_reviewer}`}
+                                size="small"
+                                color={p.total_submit === p.total_reviewer ? "success" : "default"}
+                                sx={{ borderRadius: "6px", fontWeight: 800, fontSize: 11 }}
+                              />
+                            </TableCell>
+                            <TableCell align="center">
+                              <Box sx={{ 
+                                display: "inline-flex", px: 1.5, py: 0.5, borderRadius: "8px", 
+                                backgroundColor: COLORS.primaryLight, fontWeight: 800, fontSize: 14, color: COLORS.primaryDark
+                              }}>
+                                {p.nilai_rata_rata ? p.nilai_rata_rata.toFixed(1) : "-"}
+                              </Box>
+                            </TableCell>
+                            <TableCell align="center">
+                              <StatusPill status={p.status} totalReviewer={p.total_reviewer} totalSubmit={p.total_submit} />
+                            </TableCell>
+                            <TableCell sx={{ textAlign: "right", pr: 2 }}>
+                              <Button
+                                size="small" variant="text"
+                                endIcon={isExpanded ? <KeyboardArrowDown /> : <KeyboardArrowRight />}
+                                onClick={(e) => { e.stopPropagation(); toggleExpand(p); }}
+                                sx={{ textTransform: "none", fontWeight: 700, color: COLORS.primary, fontSize: 12 }}
+                              >
+                                Detail
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell sx={{ p: 0, borderBottom: isExpanded ? `1px solid #E2E8F0` : 0 }} colSpan={8}>
+                              <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                                <Box sx={{ px: 3, py: 2, backgroundColor: "#F8FAFC" }}>
+                                  {renderExpanded(p)}
+                                </Box>
+                              </Collapse>
+                            </TableCell>
+                          </TableRow>
+                        </Fragment>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          ))}
+        </Box>
       )}
     </Box>
   );

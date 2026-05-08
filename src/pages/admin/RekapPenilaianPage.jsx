@@ -139,35 +139,25 @@ export default function RekapPenilaianPage() {
               {activeTab === 0 && (
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   {tahap1 && (
-                    <Paper elevation={0} sx={{
-                      p: { xs: 2.5, sm: 3.5 },
-                      borderRadius: "16px",
-                      border: `1.5px solid #E2E8F0`,
-                      backgroundColor: "#FAFBFF",
-                    }}>
+                    <Box sx={{ mb: 6 }}>
                       <Box sx={{ mb: 3, pb: 2, borderBottom: `1.5px solid ${COLORS.slateLight}` }}>
                         <Typography sx={{ fontSize: { xs: 16, sm: 18 }, fontWeight: 800, color: "#1E293B" }}>
                           Rekap {tahap1.nama_tahap || "Desk Evaluasi"}
                         </Typography>
                       </Box>
                       <RekapTahap1Tab id_program={program.id_program} />
-                    </Paper>
+                    </Box>
                   )}
 
                   {tahap2 && (
-                    <Paper elevation={0} sx={{
-                      p: { xs: 2.5, sm: 3.5 },
-                      borderRadius: "16px",
-                      border: `1.5px solid #E2E8F0`,
-                      backgroundColor: "#FAFBFF",
-                    }}>
+                    <Box sx={{ mb: 6 }}>
                       <Box sx={{ mb: 3, pb: 2, borderBottom: `1.5px solid ${COLORS.slateLight}` }}>
                         <Typography sx={{ fontSize: { xs: 16, sm: 18 }, fontWeight: 800, color: "#1E293B" }}>
                           Rekap {tahap2.nama_tahap || "Wawancara"}
                         </Typography>
                       </Box>
                       <RekapTahap2Tab id_program={program.id_program} />
-                    </Paper>
+                    </Box>
                   )}
 
                   {!tahap1 && !tahap2 && (
