@@ -54,6 +54,32 @@ export default function FormPenilaianTab({ id_distribusi, onActionsChange }) {
   const [formData, setFormData] = useState({});
   const [errors, setErrors] = useState({});
   const [fetchError, setFetchError] = useState("");
+  const [isOnline, setIsOnline] = useState(window.navigator.onLine);
+  const [lastAutoSave, setLastAutoSave] = useState(null);
+
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      Swal.fire({
+        toast: true, position: "top-end", icon: "success",
+        title: "Koneksi terhubung kembali", showConfirmButton: false, timer: 3000
+      });
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      Swal.fire({
+        toast: true, position: "top-end", icon: "error",
+        title: "Koneksi terputus! Data disimpan di draft lokal.",
+        showConfirmButton: false, timer: 5000
+      });
+    };
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
 
   const fetchFormPenilaian = useCallback(async () => {
     try {
@@ -69,7 +95,28 @@ export default function FormPenilaianTab({ id_distribusi, onActionsChange }) {
             catatan: item.catatan || "",
           };
         });
-        setFormData(initialForm);
+
+        const localDraft = localStorage.getItem(`penilaian_draft_juri_${id_distribusi}`);
+        if (localDraft) {
+          try {
+            const parsedDraft = JSON.parse(localDraft);
+            const mergedForm = { ...initialForm };
+            Object.keys(parsedDraft).forEach(key => {
+              if (parsedDraft[key].skor && !initialForm[key]?.skor) {
+                mergedForm[key].skor = parsedDraft[key].skor;
+              }
+              if (parsedDraft[key].catatan && !initialForm[key]?.catatan) {
+                mergedForm[key].catatan = parsedDraft[key].catatan;
+              }
+            });
+            setFormData(mergedForm);
+            setLastAutoSave(new Date());
+          } catch (e) {
+            setFormData(initialForm);
+          }
+        } else {
+          setFormData(initialForm);
+        }
       } else {
         setFetchError(response.message || "Gagal memuat form penilaian");
       }
@@ -81,6 +128,13 @@ export default function FormPenilaianTab({ id_distribusi, onActionsChange }) {
   }, [id_distribusi]);
 
   useEffect(() => { fetchFormPenilaian(); }, [fetchFormPenilaian]);
+
+  useEffect(() => {
+    if (Object.keys(formData).length > 0) {
+      localStorage.setItem(`penilaian_draft_juri_${id_distribusi}`, JSON.stringify(formData));
+      setLastAutoSave(new Date());
+    }
+  }, [formData, id_distribusi]);
 
   const simpanDraftRef = useRef(null);
   const submitRef = useRef(null);
@@ -144,6 +198,7 @@ export default function FormPenilaianTab({ id_distribusi, onActionsChange }) {
       setSaving(true);
       const response = await simpanNilai(id_distribusi, payload);
       if (response.success) {
+        localStorage.removeItem(`penilaian_draft_juri_${id_distribusi}`);
         Swal.fire({ icon: "success", title: "Berhasil", text: response.message, timer: 2000, timerProgressBar: true, showConfirmButton: false });
         fetchFormPenilaian();
       } else {
@@ -195,6 +250,7 @@ export default function FormPenilaianTab({ id_distribusi, onActionsChange }) {
       }
       const response = await submitPenilaian(id_distribusi);
       if (response.success) {
+        localStorage.removeItem(`penilaian_draft_juri_${id_distribusi}`);
         Swal.fire({ icon: "success", title: "Berhasil", text: response.message || "Penilaian berhasil disubmit", timer: 2000, timerProgressBar: true, showConfirmButton: false });
         setTimeout(() => navigate("/juri/penugasan"), 2000);
       } else {
@@ -254,6 +310,26 @@ export default function FormPenilaianTab({ id_distribusi, onActionsChange }) {
 
   return (
     <Box>
+      {!isOnline && (
+        <Box sx={{
+          p: 1.5, mb: 2, borderRadius: "12px",
+          backgroundColor: COLORS.error, color: "#fff",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 1,
+          animation: "pulse 2s infinite"
+        }}>
+          <Typography sx={{ fontSize: 13, fontWeight: 700 }}>
+            ⚠️ Koneksi Terputus! Data Anda saat ini disimpan di memori browser (Draft Lokal).
+          </Typography>
+        </Box>
+      )}
+
+      {lastAutoSave && (
+        <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1 }}>
+          <Typography sx={{ fontSize: 11, color: COLORS.slate, fontStyle: "italic" }}>
+            Draft tersimpan otomatis di browser: {lastAutoSave.toLocaleTimeString("id-ID")}
+          </Typography>
+        </Box>
+      )}
 
       <Box sx={{ mb: 3 }}>
         <Box sx={{
@@ -397,12 +473,33 @@ export default function FormPenilaianTab({ id_distribusi, onActionsChange }) {
 
       <Typography sx={{ fontSize: 16, fontWeight: 700, color: "#1F2937", mb: 2 }}>Ringkasan Nilai</Typography>
 
-      <TableContainer sx={{ borderRadius: "16px", border: "1.5px solid #E5E7EB", overflow: "hidden", mb: 3 }}>
-        <Table size="small">
+      <TableContainer sx={{ borderRadius: "16px", border: "1.5px solid #E5E7EB", overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", maxWidth: "100%", mb: 3 }}>
+        <Table
+          size="small"
+          sx={{
+            minWidth: 760,
+            "& .summary-col-kriteria": { minWidth: 200, whiteSpace: "normal" },
+            "& .summary-col-bobot": { minWidth: 90, whiteSpace: "nowrap" },
+            "& .summary-col-skor": { minWidth: 90, whiteSpace: "nowrap" },
+            "& .summary-col-terbobot": { minWidth: 150, whiteSpace: "nowrap" },
+          }}
+        >
           <TableHead>
             <TableRow>
               {["Kriteria", "Bobot", "Skor", "Nilai Terbobot"].map((h, i) => (
-                <TableCell key={i} sx={{ ...tableHeadCell, ...(i > 0 && { textAlign: "center" }), ...(i === 3 && { textAlign: "right" }) }}>
+                <TableCell
+                  key={i}
+                  className={
+                    i === 0
+                      ? "summary-col-kriteria"
+                      : i === 1
+                        ? "summary-col-bobot"
+                        : i === 2
+                          ? "summary-col-skor"
+                          : "summary-col-terbobot"
+                  }
+                  sx={{ ...tableHeadCell, ...(i > 0 && { textAlign: "center" }), ...(i === 3 && { textAlign: "right" }) }}
+                >
                   {h}
                 </TableCell>
               ))}
@@ -414,10 +511,10 @@ export default function FormPenilaianTab({ id_distribusi, onActionsChange }) {
               const nt = getNilaiTerbobot(k.id_kriteria);
               return (
                 <TableRow key={k.id_kriteria} sx={tableBodyRow}>
-                  <TableCell><Typography sx={{ fontWeight: 600, fontSize: 13 }}>{k.nama_kriteria}</Typography></TableCell>
-                  <TableCell sx={{ textAlign: "center" }}><Typography sx={{ fontSize: 13 }}>{k.bobot}</Typography></TableCell>
-                  <TableCell sx={{ textAlign: "center" }}><Typography sx={{ fontSize: 13, fontWeight: 600 }}>{current.skor || "-"}</Typography></TableCell>
-                  <TableCell sx={{ textAlign: "right" }}>
+                  <TableCell className="summary-col-kriteria"><Typography sx={{ fontWeight: 600, fontSize: 13 }}>{k.nama_kriteria}</Typography></TableCell>
+                  <TableCell className="summary-col-bobot" sx={{ textAlign: "center" }}><Typography sx={{ fontSize: 13 }}>{k.bobot}</Typography></TableCell>
+                  <TableCell className="summary-col-skor" sx={{ textAlign: "center" }}><Typography sx={{ fontSize: 13, fontWeight: 600 }}>{current.skor || "-"}</Typography></TableCell>
+                  <TableCell className="summary-col-terbobot" sx={{ textAlign: "right" }}>
                     <Typography sx={{ fontSize: 13, fontWeight: 600, color: nt > 0 ? COLORS.primary : "#CBD5E1" }}>
                       {nt || "-"}
                     </Typography>
@@ -426,10 +523,10 @@ export default function FormPenilaianTab({ id_distribusi, onActionsChange }) {
               );
             })}
             <TableRow sx={{ backgroundColor: COLORS.primaryLight, "& td": { borderTop: `2px solid ${COLORS.primaryMuted}` } }}>
-              <TableCell colSpan={3} sx={{ fontWeight: 700, fontSize: 14, textAlign: "right", color: COLORS.primaryDark, py: 2 }}>
+              <TableCell colSpan={3} className="summary-col-kriteria" sx={{ fontWeight: 700, fontSize: 14, textAlign: "right", color: COLORS.primaryDark, py: 2 }}>
                 TOTAL NILAI
               </TableCell>
-              <TableCell sx={{ textAlign: "right", py: 2 }}>
+              <TableCell className="summary-col-terbobot" sx={{ textAlign: "right", py: 2 }}>
                 <Typography sx={{ fontSize: 24, fontWeight: 800, color: COLORS.primary }}>{getTotalNilai()}</Typography>
               </TableCell>
             </TableRow>
