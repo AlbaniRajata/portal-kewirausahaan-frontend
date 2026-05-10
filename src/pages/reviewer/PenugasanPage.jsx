@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Box, Paper, Typography, TextField, MenuItem,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
@@ -6,7 +6,7 @@ import {
   DialogActions, IconButton, InputAdornment, Tabs, Tab, Collapse,
 } from "@mui/material";
 import { Close, Assignment, FilterList, Search, KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import ReviewerNavbar from "../../components/layouts/ReviewerNavbar";
@@ -264,9 +264,13 @@ const RowPeringkat = ({ item, index, selected, onSelect, onEdit, onSubmit }) => 
 
 export default function PenugasanPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [penugasan, setPenugasan] = useState([]);
-  const [tahapFilter, setTahapFilter] = useState("1");
+  const [tahapFilter, setTahapFilter] = useState(() => {
+    const param = searchParams.get("tahap");
+    return param || localStorage.getItem("reviewer_penugasan_tahap") || "1";
+  });
   const [statusFilter, setStatusFilter] = useState("");
   const [search, setSearch] = useState("");
   const [rejectDialog, setRejectDialog] = useState({ open: false, penugasan: null });
@@ -274,11 +278,51 @@ export default function PenugasanPage() {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [pairApprovalMap, setPairApprovalMap] = useState({});
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState(() => {
+    const param = searchParams.get("tab");
+    return Number(param) || Number(localStorage.getItem("reviewer_penugasan_tab")) || 0;
+  });
   const [peringkatList, setPeringkatList] = useState([]);
   const [loadingPeringkat, setLoadingPeringkat] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
+  const isFirstRender = useRef(true);
+
+  // Sync state to URL and LocalStorage
+  useEffect(() => {
+    localStorage.setItem("reviewer_penugasan_tahap", tahapFilter);
+    localStorage.setItem("reviewer_penugasan_tab", activeTab);
+    
+    setSearchParams(prev => {
+      prev.set("tahap", tahapFilter);
+      prev.set("tab", activeTab);
+      return prev;
+    }, { replace: true });
+  }, [tahapFilter, activeTab, setSearchParams]);
+
+  // Smart Initial Default (If no saved preference and Stage 1 is empty, try Stage 2)
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      const saved = localStorage.getItem("reviewer_penugasan_tahap");
+      const param = searchParams.get("tahap");
+      
+      if (!saved && !param) {
+        const checkSmartDefault = async () => {
+          try {
+            const res1 = await getListPenugasan("1");
+            if (res1.success && res1.data.penugasan?.length === 0) {
+              const res2 = await getListPenugasan("2");
+              if (res2.success && res2.data.penugasan?.length > 0) {
+                setTahapFilter("2");
+              }
+            }
+          } catch (e) { /* ignore */ }
+        };
+        checkSmartDefault();
+      }
+    }
+  }, []);
 
   const fetchPenugasan = useCallback(async () => {
     try {

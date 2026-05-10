@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Box, Typography, TextField,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Divider,
+  Divider, Button
 } from "@mui/material";
-import { Info, CheckCircle } from "@mui/icons-material";
+import { Info, CheckCircle, Refresh } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { getFormPenilaian, simpanNilai, submitPenilaian } from "../../api/juri";
@@ -22,6 +22,7 @@ const COLORS = {
   successLight: "#ECFDF5",
   error:        "#DC2626",
   errorLight:   "#FEF2F2",
+  warning:      "#F59E0B",
 };
 
 const roundedField = {
@@ -264,6 +265,42 @@ export default function FormPenilaianTab({ id_distribusi, onActionsChange }) {
   };
   submitRef.current = handleSubmit;
 
+  const handleReset = async () => {
+    if (isSubmitted) return;
+    
+    const result = await Swal.fire({
+      title: "Konfirmasi Reset",
+      text: "Seluruh nilai yang Anda masukkan di form ini akan dikosongkan. Lanjutkan?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: COLORS.error,
+      cancelButtonColor: COLORS.slate,
+      confirmButtonText: "Ya, Reset Semua",
+      cancelButtonText: "Batal"
+    });
+
+    if (result.isConfirmed) {
+      const initialForm = {};
+      data.nilai.forEach((item) => {
+        initialForm[item.id_kriteria] = {
+          skor: "",
+          catatan: "",
+        };
+      });
+      setFormData(initialForm);
+      setErrors({});
+      localStorage.removeItem(`penilaian_draft_juri_${id_distribusi}`);
+      
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil Reset",
+        text: "Form penilaian telah dikosongkan",
+        timer: 1500,
+        showConfirmButton: false
+      });
+    }
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return "-";
     return new Date(dateString).toLocaleDateString("id-ID", {
@@ -345,7 +382,7 @@ export default function FormPenilaianTab({ id_distribusi, onActionsChange }) {
           }}>
             <CheckCircle sx={{ color: "#fff", fontSize: 22 }} />
           </Box>
-          <Box>
+          <Box sx={{ flex: 1 }}>
             <Typography sx={{ fontSize: 17, fontWeight: 700, color: "#fff", lineHeight: 1.2 }}>
               Form Penilaian {getTahapLabel()}
             </Typography>
@@ -353,6 +390,27 @@ export default function FormPenilaianTab({ id_distribusi, onActionsChange }) {
               {data.proposal.judul}
             </Typography>
           </Box>
+          {!isSubmitted && (
+            <Button
+              variant="contained"
+              size="small"
+              onClick={handleReset}
+              startIcon={<Refresh />}
+              sx={{
+                backgroundColor: "#FBBF24",
+                color: "#fff",
+                borderRadius: "10px",
+                textTransform: "none",
+                fontWeight: 700,
+                px: 2,
+                "&:hover": {
+                  backgroundColor: "#F59E0B",
+                }
+              }}
+            >
+              Reset
+            </Button>
+          )}
         </Box>
       </Box>
 
