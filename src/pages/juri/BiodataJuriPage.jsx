@@ -67,6 +67,15 @@ const FieldLabel = ({ children }) => (
   </Typography>
 );
 
+const ReadonlyField = ({ value }) => (
+  <TextField
+    fullWidth
+    value={value || ""}
+    disabled
+    sx={roundedField}
+  />
+);
+
 export default function BiodataJuriPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -324,16 +333,16 @@ export default function BiodataJuriPage() {
                   />
                 </Box>
                 <Box>
-                  <FieldLabel>Email</FieldLabel>
-                  <TextField fullWidth value={formBiodata.email} disabled sx={roundedField} />
-                  <Box sx={{ mt: 2 }}>
-                    <FieldLabel>Username</FieldLabel>
-                    <TextField fullWidth value={formBiodata.username} disabled sx={roundedField} />
-                  </Box>
+                  <FieldLabel>Username</FieldLabel>
+                  <ReadonlyField value={formBiodata.username} />
                 </Box>
               </Box>
 
               <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3, mb: 3 }}>
+                <Box>
+                  <FieldLabel>Email</FieldLabel>
+                  <ReadonlyField value={formBiodata.email} />
+                </Box>
                 <Box>
                   <FieldLabel>Nomor WhatsApp</FieldLabel>
                   <TextField
@@ -344,6 +353,9 @@ export default function BiodataJuriPage() {
                     disabled={submitting} sx={roundedField}
                   />
                 </Box>
+              </Box>
+
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3, mb: 3 }}>
                 <Box>
                   <FieldLabel>Institusi</FieldLabel>
                   <TextField
@@ -353,17 +365,16 @@ export default function BiodataJuriPage() {
                     disabled={submitting} sx={roundedField}
                   />
                 </Box>
-              </Box>
-
-              <Box sx={{ mb: 3 }}>
-                <FieldLabel>Bidang Keahlian</FieldLabel>
-                <TextField
-                  fullWidth multiline rows={2}
-                  placeholder="Masukkan bidang keahlian Anda..."
-                  value={formBiodata.bidang_keahlian}
-                  onChange={(e) => handleChangeBiodata("bidang_keahlian", e.target.value)}
-                  disabled={submitting} sx={roundedField}
-                />
+                <Box>
+                  <FieldLabel>Bidang Keahlian</FieldLabel>
+                  <TextField
+                    fullWidth multiline rows={2}
+                    placeholder="Masukkan bidang keahlian Anda..."
+                    value={formBiodata.bidang_keahlian}
+                    onChange={(e) => handleChangeBiodata("bidang_keahlian", e.target.value)}
+                    disabled={submitting} sx={roundedField}
+                  />
+                </Box>
               </Box>
 
               <Box sx={{ mb: 4 }}>

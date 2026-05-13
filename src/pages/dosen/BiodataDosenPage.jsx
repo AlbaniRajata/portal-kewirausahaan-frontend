@@ -73,15 +73,12 @@ const FieldLabel = ({ children, required }) => (
 );
 
 const ReadonlyField = ({ value }) => (
-  <Box sx={{
-    px: 2, py: 1.5, borderRadius: "12px",
-    background: COLORS.slateLight,
-    border: "1.5px dashed #CBD5E1",
-    fontSize: 14, color: COLORS.slate, fontWeight: 500,
-    minHeight: "44px", display: "flex", alignItems: "center",
-  }}>
-    {value || "—"}
-  </Box>
+  <TextField
+    fullWidth
+    value={value || ""}
+    disabled
+    sx={roundedField}
+  />
 );
 
 export default function BiodataDosenPage() {
@@ -336,20 +333,23 @@ export default function BiodataDosenPage() {
                   />
                 </Box>
                 <Box>
-                  <FieldLabel>Email</FieldLabel>
-                  <ReadonlyField value={formBiodata.email} />
-                  <Box sx={{ mt: 2 }}>
-                    <FieldLabel>Username</FieldLabel>
-                    <ReadonlyField value={formBiodata.username} />
-                  </Box>
+                  <FieldLabel>Username</FieldLabel>
+                  <ReadonlyField value={formBiodata.username} />
                 </Box>
               </Box>
 
               <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3, mb: 3 }}>
                 <Box>
+                  <FieldLabel>Email</FieldLabel>
+                  <ReadonlyField value={formBiodata.email} />
+                </Box>
+                <Box>
                   <FieldLabel>NIP</FieldLabel>
                   <ReadonlyField value={formBiodata.nip} />
                 </Box>
+              </Box>
+
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3, mb: 3 }}>
                 <Box>
                   <FieldLabel required>Nomor WhatsApp</FieldLabel>
                   <TextField
@@ -360,9 +360,6 @@ export default function BiodataDosenPage() {
                     disabled={submitting} sx={roundedField}
                   />
                 </Box>
-              </Box>
-
-              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3, mb: 3 }}>
                 <Box>
                   <FieldLabel>Jurusan</FieldLabel>
                   {loadingJurusan
@@ -379,6 +376,9 @@ export default function BiodataDosenPage() {
                       />
                   }
                 </Box>
+              </Box>
+
+              <Box sx={{ display: "grid", gridTemplateColumns: "1fr", gap: 3, mb: 3 }}>
                 <Box>
                   <FieldLabel>Program Studi</FieldLabel>
                   {loadingProdi

@@ -60,15 +60,12 @@ const FieldLabel = ({ children, required }) => (
 );
 
 const ReadonlyField = ({ value }) => (
-  <Box sx={{
-    px: 2, py: 1.5, borderRadius: "12px",
-    background: COLORS.slateLight,
-    border: "1.5px dashed #CBD5E1",
-    fontSize: 14, color: COLORS.slate, fontWeight: 500,
-    minHeight: "44px", display: "flex", alignItems: "center",
-  }}>
-    {value || "—"}
-  </Box>
+  <TextField
+    fullWidth
+    value={value || ""}
+    disabled
+    sx={roundedField}
+  />
 );
 
 const roundedField = {
@@ -318,13 +315,6 @@ export default function BiodataAdminPage() {
                   />
                 </Box>
                 <Box>
-                  <FieldLabel>Email</FieldLabel>
-                  <ReadonlyField value={formBiodata.email} />
-                </Box>
-              </Box>
-
-              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3, mb: 3 }}>
-                <Box>
                   <FieldLabel required>Username</FieldLabel>
                   <TextField
                     fullWidth placeholder="Masukkan username Anda"
@@ -333,6 +323,13 @@ export default function BiodataAdminPage() {
                     error={!!errors.username} helperText={errors.username}
                     disabled={submitting} sx={roundedField}
                   />
+                </Box>
+              </Box>
+
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3, mb: 3 }}>
+                <Box>
+                  <FieldLabel>Email</FieldLabel>
+                  <ReadonlyField value={formBiodata.email} />
                 </Box>
                 <Box>
                   <FieldLabel required>Nomor WhatsApp</FieldLabel>
