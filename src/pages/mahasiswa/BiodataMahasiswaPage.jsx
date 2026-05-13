@@ -95,7 +95,7 @@ export default function BiodataMahasiswaPage() {
   const [prodiOptions, setProdiOptions]         = useState([]);
 
   const [formBiodata, setFormBiodata] = useState({
-    nama_lengkap: "", email: "", nim: "", no_hp: "",
+    nama_lengkap: "", email: "", username: "", nim: "", no_hp: "",
     id_jurusan: null, id_prodi: null, alamat: "", foto: null,
   });
 
@@ -116,8 +116,11 @@ export default function BiodataMahasiswaPage() {
       const jurusanData = { label: response.data.nama_jurusan, id: response.data.id_jurusan };
       const prodiData   = { label: `${response.data.jenjang} ${response.data.nama_prodi}`, id: response.data.id_prodi };
       setFormBiodata({
-        nama_lengkap: response.data.nama_lengkap || "", email: response.data.email || "",
-        nim: response.data.nim || "", no_hp: response.data.no_hp || "",
+        nama_lengkap: response.data.nama_lengkap || "",
+        email: response.data.email || "",
+        username: response.data.username || "",
+        nim: response.data.nim || "",
+        no_hp: response.data.no_hp || "",
         id_jurusan: jurusanData, id_prodi: prodiData, alamat: response.data.alamat || "", foto: null,
       });
       if (response.data.foto) setImagePreview(getUploadUrl("profil", response.data.foto));
@@ -326,6 +329,10 @@ export default function BiodataMahasiswaPage() {
                 <Box>
                   <FieldLabel>Email</FieldLabel>
                   <ReadonlyField value={formBiodata.email} />
+                  <Box sx={{ mt: 2 }}>
+                    <FieldLabel>Username</FieldLabel>
+                    <ReadonlyField value={formBiodata.username} />
+                  </Box>
                 </Box>
               </Box>
 

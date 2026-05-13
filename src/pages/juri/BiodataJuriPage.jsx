@@ -75,6 +75,7 @@ export default function BiodataJuriPage() {
   const [formBiodata, setFormBiodata] = useState({
     nama_lengkap: "",
     email: "",
+    username: "",
     no_hp: "",
     institusi: "",
     bidang_keahlian: "",
@@ -106,6 +107,7 @@ export default function BiodataJuriPage() {
       setFormBiodata({
         nama_lengkap: response.data.nama_lengkap || "",
         email: response.data.email || "",
+        username: response.data.username || "",
         no_hp: response.data.no_hp || "",
         institusi: response.data.institusi || "",
         bidang_keahlian: response.data.bidang_keahlian || "",
@@ -324,6 +326,10 @@ export default function BiodataJuriPage() {
                 <Box>
                   <FieldLabel>Email</FieldLabel>
                   <TextField fullWidth value={formBiodata.email} disabled sx={roundedField} />
+                  <Box sx={{ mt: 2 }}>
+                    <FieldLabel>Username</FieldLabel>
+                    <TextField fullWidth value={formBiodata.username} disabled sx={roundedField} />
+                  </Box>
                 </Box>
               </Box>
 

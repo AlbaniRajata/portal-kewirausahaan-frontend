@@ -95,7 +95,7 @@ export default function BiodataDosenPage() {
   const [prodiOptions, setProdiOptions]             = useState([]);
 
   const [formBiodata, setFormBiodata] = useState({
-    nama_lengkap: "", email: "", nip: "", no_hp: "",
+    nama_lengkap: "", email: "", username: "", nip: "", no_hp: "",
     id_jurusan: null, id_prodi: null,
     bidang_keahlian: "", alamat: "", foto: null,
   });
@@ -119,6 +119,7 @@ export default function BiodataDosenPage() {
       setFormBiodata({
         nama_lengkap:    response.data.nama_lengkap    || "",
         email:           response.data.email           || "",
+        username:        response.data.username        || "",
         nip:             response.data.nip             || "",
         no_hp:           response.data.no_hp           || "",
         id_jurusan:      jurusanData,
@@ -337,6 +338,10 @@ export default function BiodataDosenPage() {
                 <Box>
                   <FieldLabel>Email</FieldLabel>
                   <ReadonlyField value={formBiodata.email} />
+                  <Box sx={{ mt: 2 }}>
+                    <FieldLabel>Username</FieldLabel>
+                    <ReadonlyField value={formBiodata.username} />
+                  </Box>
                 </Box>
               </Box>
 
