@@ -15,6 +15,7 @@ import {
   reassignReviewerTahap2,
   reassignJuriTahap2,
 } from "../../api/admin";
+import Swal from "sweetalert2";
 import LoadingScreen from "../common/LoadingScreen";
 const COLORS = {
   primary: "#0D59F2",

@@ -322,7 +322,7 @@ export default function PenugasanPage() {
         checkSmartDefault();
       }
     }
-  }, []);
+  }, [searchParams]);
 
   const fetchPenugasan = useCallback(async () => {
     try {

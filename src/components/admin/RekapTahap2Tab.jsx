@@ -195,6 +195,7 @@ export default function RekapTahap2Tab({ id_program }) {
   const [expandedKeys, setExpandedKeys] = useState([]);
   const [detailMap, setDetailMap]       = useState({});
   const [loadingKeys, setLoadingKeys]   = useState([]);
+  const [, setProgramInfo] = useState(null);
 
   const fetchProposals = useCallback(async () => {
     try {
