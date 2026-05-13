@@ -10,6 +10,7 @@ import {
   TableHead,
   TableRow,
   Button,
+  Checkbox,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -31,6 +32,7 @@ import {
   getPendingMahasiswa,
   getDetailMahasiswa,
   approveMahasiswa,
+  bulkApproveMahasiswa,
   rejectMahasiswa,
 } from "../../api/admin";
 import { getAllProdi } from "../../api/public";
@@ -56,25 +58,45 @@ const roundedField = {
   "& .MuiOutlinedInput-root": {
     borderRadius: "12px",
     backgroundColor: "#fff",
-    transition: "box-shadow 0.2s",
+    transition: "all 0.2s ease-in-out",
     "&:hover fieldset": { borderColor: COLORS.primary },
-    "&.Mui-focused fieldset": { borderColor: COLORS.primary },
-    "&.Mui-focused": { boxShadow: `0 0 0 3px ${COLORS.primaryLight}` },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary, borderWidth: "2px" },
+    "&.Mui-focused": { boxShadow: `0 0 0 4px ${COLORS.primaryLight}` },
   },
+  "& .MuiInputLabel-root.Mui-focused": { color: COLORS.primary, fontWeight: 700 },
 };
 
 const tableHeadCell = {
-  fontWeight: 700,
-  fontSize: 13,
-  color: "#374151",
+  fontWeight: 800,
+  fontSize: 12,
+  color: "#475569",
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
   backgroundColor: "#F8FAFC",
   borderBottom: `2px solid ${COLORS.primaryMuted}`,
-  py: 2,
+  py: 2.5,
 };
 
 const tableBodyRow = {
-  "& td": { borderBottom: `1px solid ${COLORS.slateLight}`, py: 2 },
-  "&:hover": { backgroundColor: "#F8FAFC" },
+  "&:hover": { backgroundColor: "#F1F5F9/50" },
+  "& td": { borderBottom: "1.5px solid #E2E8F0", py: 2 },
+};
+
+const pageCard = {
+  borderRadius: "20px",
+  border: "1.5px solid #E2E8F0",
+  overflow: "hidden",
+  boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+  position: "relative",
+};
+
+const actionButtonSx = {
+  textTransform: "none",
+  borderRadius: "10px",
+  fontWeight: 700,
+  fontSize: { xs: 11, sm: 12 },
+  px: { xs: 1, sm: 2 },
+  minWidth: 0,
 };
 
 const StatusPill = ({ label, type }) => {
@@ -138,6 +160,8 @@ export default function VerifikasiPage() {
   const rowsPerPage = 10;
   const [tahunFilter, setTahunFilter]     = useState("");
   const [totalItems, setTotalItems]       = useState(0);
+  const [selectedIds, setSelectedIds]     = useState([]);
+  const [bulkLoading, setBulkLoading]     = useState(false);
   const [totalPages, setTotalPages]       = useState(1);
 
   const [filters, setFilters] = useState({
@@ -169,8 +193,8 @@ export default function VerifikasiPage() {
       setLoading(true);
       const res = await getPendingMahasiswa({
         status_verifikasi: filters.status_verifikasi !== "" ? parseInt(filters.status_verifikasi) : undefined,
-        email_verified:    filters.email_verified    !== "" ? filters.email_verified               : undefined,
-        id_prodi:          filters.id_prodi          || undefined,
+        email_verified: filters.email_verified !== "" ? filters.email_verified : undefined,
+        id_prodi: filters.id_prodi || undefined,
         ...getDateRangeFilters(),
         page,
         limit: rowsPerPage,
@@ -188,6 +212,9 @@ export default function VerifikasiPage() {
   }, [getDateRangeFilters, filters.status_verifikasi, filters.email_verified, filters.id_prodi, page]);
 
   useEffect(() => { setPage(1); }, [tahunFilter, filters.status_verifikasi, filters.email_verified, filters.id_prodi]);
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [tahunFilter, filters.status_verifikasi, filters.email_verified, filters.id_prodi, filters.tanggal_dari, filters.tanggal_sampai]);
   useEffect(() => { fetchMahasiswa(); }, [fetchMahasiswa]);
 
   const handleViewDetail = async (user) => {
@@ -203,6 +230,75 @@ export default function VerifikasiPage() {
       setOpenDetail(false);
     } finally {
       setLoadingDetail(false);
+    }
+  };
+
+  const handleToggleSelect = (id_user) => {
+    setSelectedIds((prev) =>
+      prev.includes(id_user) ? prev.filter((id) => id !== id_user) : [...prev, id_user]
+    );
+  };
+
+  const handleToggleSelectAll = (checked) => {
+    const selectableIds = mahasiswaList
+      .filter((user) => user.status_verifikasi === 0)
+      .map((user) => user.id_user);
+
+    setSelectedIds((prev) => {
+      if (!checked) {
+        return prev.filter((id) => !selectableIds.includes(id));
+      }
+      return [...new Set([...prev, ...selectableIds])];
+    });
+  };
+
+  const currentPageSelectableIds = mahasiswaList
+    .filter((user) => user.status_verifikasi === 0)
+    .map((user) => user.id_user);
+  const allCurrentPageSelected = currentPageSelectableIds.length > 0 && currentPageSelectableIds.every((id) => selectedIds.includes(id));
+  const indeterminateCurrentPage = currentPageSelectableIds.some((id) => selectedIds.includes(id)) && !allCurrentPageSelected;
+
+  const handleBulkApprove = async () => {
+    if (selectedIds.length === 0) return;
+
+    const confirm = await Swal.fire({
+      title: "Konfirmasi Verifikasi",
+      text: `Verifikasi ${selectedIds.length} mahasiswa yang dipilih?`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: COLORS.success,
+      cancelButtonColor: COLORS.slate,
+      confirmButtonText: "Ya, Verifikasi",
+      cancelButtonText: "Batal",
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      setBulkLoading(true);
+      const res = await bulkApproveMahasiswa(selectedIds);
+      setSelectedIds([]);
+      await Swal.fire({
+        icon: res.failed_count ? "warning" : "success",
+        title: res.failed_count ? "Selesai dengan catatan" : "Berhasil",
+        html: `
+          <div style="text-align:left">
+            <div>Berhasil diverifikasi: <b>${res.success_count ?? 0}</b></div>
+            <div>Gagal diverifikasi: <b>${res.failed_count ?? 0}</b></div>
+          </div>
+        `,
+        confirmButtonColor: COLORS.primary,
+      });
+      await fetchMahasiswa();
+    } catch (err) {
+      await Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: err.response?.data?.message || "Gagal melakukan verifikasi",
+        confirmButtonColor: COLORS.primary,
+      });
+    } finally {
+      setBulkLoading(false);
     }
   };
 
@@ -286,29 +382,14 @@ export default function VerifikasiPage() {
             </Typography>
           </Box>
 
-          <Paper sx={{
-            borderRadius: "20px",
-            border: "1.5px solid #E5E7EB",
-            overflow: "hidden",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-          }}>
-            <Box sx={{ height: 4, background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
+          <Paper elevation={0} sx={pageCard}>
+            <Box sx={{ height: "6px", background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
 
             <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
-              <Box sx={{
-                display: "grid",
-                gridTemplateColumns: {
-                  xs: "1fr",
-                  sm: "1fr 1fr",
-                  lg: "repeat(3, minmax(0, 1fr))",
-                  xl: "repeat(6, minmax(0, 1fr))",
-                },
-                gap: { xs: 1.25, sm: 1.5, lg: 2 },
-                mb: 4,
-                alignItems: "stretch",
-              }}>
+              <Box sx={{ display: "flex", gap: { xs: 1, sm: 2 }, mb: 4, alignItems: "center", flexWrap: "wrap" }}>
                 <TextField
-                  select size="small"
+                  select
+                  size="small"
                   value={filters.status_verifikasi}
                   onChange={(e) => setFilters({ ...filters, status_verifikasi: e.target.value })}
                   SelectProps={{
@@ -319,7 +400,7 @@ export default function VerifikasiPage() {
                       </span>
                     ),
                   }}
-                  sx={{ ...roundedField, width: "100%" }}
+                  sx={{ ...roundedField, flex: { xs: "1 1 100%", sm: 1 }, maxWidth: { sm: 220 } }}
                 >
                   <MenuItem value="" sx={{ fontSize: 13 }}>Semua Status</MenuItem>
                   <MenuItem value={0} sx={{ fontSize: 13 }}>Menunggu</MenuItem>
@@ -328,7 +409,8 @@ export default function VerifikasiPage() {
                 </TextField>
 
                 <TextField
-                  select size="small"
+                  select
+                  size="small"
                   value={filters.email_verified}
                   onChange={(e) => setFilters({ ...filters, email_verified: e.target.value })}
                   SelectProps={{
@@ -339,7 +421,7 @@ export default function VerifikasiPage() {
                       </span>
                     ),
                   }}
-                  sx={{ ...roundedField, width: "100%" }}
+                  sx={{ ...roundedField, flex: { xs: "1 1 100%", sm: 1 }, maxWidth: { sm: 220 } }}
                 >
                   <MenuItem value="" sx={{ fontSize: 13 }}>Semua Email</MenuItem>
                   <MenuItem value="true" sx={{ fontSize: 13 }}>Sudah Verified</MenuItem>
@@ -347,47 +429,51 @@ export default function VerifikasiPage() {
                 </TextField>
 
                 <TextField
-                  select size="small"
+                  select
+                  size="small"
                   value={filters.id_prodi}
                   onChange={(e) => setFilters({ ...filters, id_prodi: e.target.value })}
                   SelectProps={{
                     displayEmpty: true,
                     renderValue: (v) => (
                       <span style={{ fontSize: 14, color: !v ? "#9CA3AF" : "inherit" }}>
-                        {!v ? "Semua Prodi" : prodiOptions.find(p => p.id_prodi === v)?.nama_prodi || v}
+                        {!v ? "Semua Prodi" : prodiOptions.find((p) => String(p.id_prodi) === String(v))?.nama_prodi || v}
                       </span>
                     ),
                   }}
-                  sx={{ ...roundedField, width: "100%" }}
+                  sx={{ ...roundedField, flex: { xs: "1 1 100%", sm: 1 }, maxWidth: { sm: 260 } }}
                 >
                   <MenuItem value="" sx={{ fontSize: 13 }}>Semua Prodi</MenuItem>
                   {prodiOptions.map((p) => (
-                    <MenuItem key={p.id_prodi} value={p.id_prodi} sx={{ fontSize: 13 }}>
+                    <MenuItem key={p.id_prodi} value={String(p.id_prodi)} sx={{ fontSize: 13 }}>
                       {p.jenjang} {p.nama_prodi}
                     </MenuItem>
                   ))}
                 </TextField>
 
                 <TextField
-                  type="date" size="small"
+                  type="date"
+                  size="small"
                   label="Tanggal Dari"
                   value={filters.tanggal_dari}
                   onChange={(e) => setFilters({ ...filters, tanggal_dari: e.target.value })}
                   InputLabelProps={{ shrink: true }}
-                  sx={{ ...roundedField, width: "100%" }}
+                  sx={{ ...roundedField, flex: { xs: "1 1 100%", sm: 1 }, maxWidth: { sm: 200 } }}
                 />
 
                 <TextField
-                  type="date" size="small"
+                  type="date"
+                  size="small"
                   label="Tanggal Sampai"
                   value={filters.tanggal_sampai}
                   onChange={(e) => setFilters({ ...filters, tanggal_sampai: e.target.value })}
                   InputLabelProps={{ shrink: true }}
-                  sx={{ ...roundedField, width: "100%" }}
+                  sx={{ ...roundedField, flex: { xs: "1 1 100%", sm: 1 }, maxWidth: { sm: 200 } }}
                 />
 
                 <TextField
-                  select size="small"
+                  select
+                  size="small"
                   value={tahunFilter}
                   onChange={(e) => setTahunFilter(e.target.value)}
                   SelectProps={{
@@ -398,7 +484,7 @@ export default function VerifikasiPage() {
                       </span>
                     ),
                   }}
-                  sx={{ ...roundedField, width: "100%" }}
+                  sx={{ ...roundedField, flex: { xs: "1 1 100%", sm: 1 }, maxWidth: { sm: 200 } }}
                 >
                   <MenuItem value="" sx={{ fontSize: 13 }}>Semua Tahun</MenuItem>
                   {tahunOptions.map((tahun) => (
@@ -412,7 +498,7 @@ export default function VerifikasiPage() {
                   <LoadingScreen message="Memuat data verifikasi..." overlay minHeight="400px" />
                 </Box>
               ) : mahasiswaList.length === 0 ? (
-                <Box sx={{ textAlign: "center", py: 12 }}>
+                <Paper elevation={0} sx={{ p: { xs: 5, sm: 8 }, textAlign: "center", borderRadius: "20px", border: "1.5px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
                   <Box sx={{
                     width: 120, height: 120, borderRadius: "50%",
                     backgroundColor: COLORS.slateLight,
@@ -427,19 +513,64 @@ export default function VerifikasiPage() {
                   <Typography sx={{ fontSize: 16, color: COLORS.slate }}>
                     Data verifikasi akan muncul di sini
                   </Typography>
-                </Box>
+                </Paper>
               ) : (
                 <>
+                  <Box sx={{
+                    display: "flex",
+                    flexDirection: { xs: "column", sm: "row" },
+                    alignItems: { xs: "stretch", sm: "center" },
+                    justifyContent: "space-between",
+                    gap: 2,
+                    mb: 2,
+                    p: 2,
+                    borderRadius: "12px",
+                    backgroundColor: "#F8FAFC",
+                    border: `1.5px solid ${COLORS.primaryMuted}`,
+                  }}>
+                    <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 600 }}>
+                      {selectedIds.length > 0 ? `${selectedIds.length} mahasiswa dipilih` : "Pilih mahasiswa yang belum diverifikasi untuk verifikasi"}
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      onClick={handleBulkApprove}
+                      disabled={selectedIds.length === 0 || bulkLoading}
+                      sx={{
+                        textTransform: "none",
+                        borderRadius: "12px",
+                        px: { xs: 2, sm: 3 },
+                        py: 1.2,
+                        fontWeight: 700,
+                        backgroundColor: COLORS.success,
+                        boxShadow: "0 4px 12px rgba(5,150,105,0.2)",
+                        "&:hover": { backgroundColor: "#047857", boxShadow: "0 6px 16px rgba(5,150,105,0.3)" },
+                        "&.Mui-disabled": { backgroundColor: "#9CA3AF", color: "#fff" },
+                        width: { xs: "100%", sm: "auto" },
+                      }}
+                    >
+                      {bulkLoading ? "Memproses..." : "Verifikasi"}
+                    </Button>
+                  </Box>
+
                   <TableContainer sx={{
                     borderRadius: "16px",
-                    border: `1.5px solid ${COLORS.slateLight}`,
+                    border: "1.5px solid #E2E8F0",
                     overflow: "auto",
                     mb: 4,
-                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)",
                   }}>
-                    <Table>
+                    <Table sx={{ minWidth: 1100 }}>
                       <TableHead>
                         <TableRow>
+                          <TableCell sx={tableHeadCell}>
+                            <Checkbox
+                              size="small"
+                              checked={allCurrentPageSelected}
+                              indeterminate={indeterminateCurrentPage}
+                              onChange={(e) => handleToggleSelectAll(e.target.checked)}
+                              disabled={currentPageSelectableIds.length === 0}
+                              inputProps={{ "aria-label": "Pilih semua mahasiswa pada halaman ini" }}
+                            />
+                          </TableCell>
                           {["NAMA LENGKAP", "NIM", "EMAIL", "PRODI", "TANGGAL DAFTAR", "STATUS", "AKSI"].map((h, i) => (
                             <TableCell key={i} sx={tableHeadCell}>{h}</TableCell>
                           ))}
@@ -448,8 +579,18 @@ export default function VerifikasiPage() {
                       <TableBody>
                         {mahasiswaList.map((user) => {
                           const si = getStatusInfo(user.status_verifikasi);
+                          const isSelectable = user.status_verifikasi === 0;
                           return (
                             <TableRow key={user.id_user} sx={tableBodyRow}>
+                              <TableCell>
+                                <Checkbox
+                                  size="small"
+                                  checked={selectedIds.includes(user.id_user)}
+                                  disabled={!isSelectable}
+                                  onChange={() => handleToggleSelect(user.id_user)}
+                                  inputProps={{ "aria-label": `Pilih ${user.nama_lengkap || user.username}` }}
+                                />
+                              </TableCell>
                               <TableCell>
                                 <Typography sx={{ fontWeight: 600, fontSize: 14 }}>
                                   {user.nama_lengkap || user.username}
@@ -485,13 +626,9 @@ export default function VerifikasiPage() {
                                     variant="outlined"
                                     onClick={() => handleViewDetail(user)}
                                     sx={{
-                                      textTransform: "none",
+                                      ...actionButtonSx,
                                       color: COLORS.primary,
                                       borderColor: COLORS.primaryMuted,
-                                      borderRadius: "10px",
-                                      fontWeight: 700,
-                                      fontSize: 12,
-                                      px: 2,
                                       "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
                                     }}
                                   >
@@ -522,16 +659,15 @@ export default function VerifikasiPage() {
                       onChange={(e, v) => setPage(v)}
                       color="primary"
                       shape="rounded"
-                      showFirstButton
-                      showLastButton
+                      size="small"
                       sx={{
                         "& .MuiPaginationItem-root": {
-                          fontWeight: 600,
-                          borderRadius: "8px",
+                          fontWeight: 700,
+                          borderRadius: "10px",
                           "&.Mui-selected": {
-                            background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.secondary})`,
+                            backgroundColor: COLORS.primary,
                             color: "#fff",
-                            "&:hover": { background: `linear-gradient(135deg, ${COLORS.primaryDark}, ${COLORS.secondary})` },
+                            "&:hover": { backgroundColor: COLORS.primaryDark },
                           },
                         },
                       }}
@@ -547,7 +683,7 @@ export default function VerifikasiPage() {
             onClose={() => setOpenDetail(false)}
             maxWidth="md"
             fullWidth
-            PaperProps={{ sx: { borderRadius: { xs: "16px", sm: "24px" }, overflow: "hidden", boxShadow: "0 20px 40px rgba(0,0,0,0.1)" } }}
+            PaperProps={{ sx: { borderRadius: { xs: "16px", sm: "24px" }, overflow: "hidden" } }}
           >
             <DialogTitle sx={{ p: 0 }}>
               <Box sx={{
@@ -624,18 +760,20 @@ export default function VerifikasiPage() {
                     <Typography sx={{ fontWeight: 600, fontSize: 14, color: "#1E293B" }}>{detailData.alamat || "-"}</Typography>
                   </Box>
 
-                  {detailData.foto_ktm && (
-                    <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                      <Typography sx={{ fontSize: 11, fontWeight: 700, color: COLORS.slate, textTransform: "uppercase", letterSpacing: "0.05em", mb: 1 }}>
-                        Foto KTM
-                      </Typography>
+                  <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                    <Typography sx={{ fontSize: 11, fontWeight: 700, color: COLORS.slate, textTransform: "uppercase", letterSpacing: "0.05em", mb: 1 }}>
+                      Foto KTM
+                    </Typography>
+                    {detailData.foto_ktm ? (
                       <img
                         src={getUploadUrl("ktm", detailData.foto_ktm)}
                         alt="KTM"
                         style={{ maxWidth: "100%", maxHeight: 400, objectFit: "contain", border: `1.5px solid ${COLORS.slateLight}`, borderRadius: 12 }}
                       />
-                    </Box>
-                  )}
+                    ) : (
+                      <Typography sx={{ fontWeight: 600, fontSize: 14, color: "#1E293B" }}>-</Typography>
+                    )}
+                  </Box>
 
                   {detailData.catatan && (
                     <Box sx={{
@@ -664,11 +802,12 @@ export default function VerifikasiPage() {
               "& > button": { width: { xs: "100%", sm: "auto" } },
             }}>
               <Button
+                variant="contained"
                 onClick={() => setOpenDetail(false)}
                 sx={{
-                  textTransform: "none", borderRadius: "12px", px: 4, py: 1, fontWeight: 700,
-                  color: COLORS.slate, border: `1.5px solid ${COLORS.slateLight}`,
-                  "&:hover": { backgroundColor: COLORS.slateLight },
+                  textTransform: "none", borderRadius: "12px", px: 4, fontWeight: 700,
+                  backgroundColor: "#9CA3AF",
+                  "&:hover": { backgroundColor: "#78716C" },
                 }}
               >
                 Tutup
@@ -709,7 +848,7 @@ export default function VerifikasiPage() {
             onClose={handleCloseReject}
             maxWidth="sm"
             fullWidth
-            PaperProps={{ sx: { borderRadius: { xs: "16px", sm: "24px" }, overflow: "hidden", boxShadow: "0 20px 40px rgba(0,0,0,0.1)" } }}
+            PaperProps={{ sx: { borderRadius: { xs: "16px", sm: "24px" }, overflow: "hidden" } }}
           >
             <DialogTitle sx={{ p: 0 }}>
               <Box sx={{
@@ -772,11 +911,12 @@ export default function VerifikasiPage() {
               "& > button": { width: { xs: "100%", sm: "auto" } },
             }}>
               <Button
+                variant="contained"
                 onClick={handleCloseReject}
                 sx={{
                   textTransform: "none", borderRadius: "12px", px: 4, py: 1, fontWeight: 700,
-                  color: COLORS.slate, border: `1.5px solid ${COLORS.slateLight}`,
-                  "&:hover": { backgroundColor: COLORS.slateLight },
+                  backgroundColor: "#9CA3AF",
+                  "&:hover": { backgroundColor: "#78716C" },
                 }}
               >
                 Batal

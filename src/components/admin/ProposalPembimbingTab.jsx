@@ -17,7 +17,9 @@ import {
   Typography,
   Paper,
   Pagination,
+  IconButton,
 } from "@mui/material";
+import { Close } from "@mui/icons-material";
 import LoadingScreen from "../common/LoadingScreen";
 import Swal from "sweetalert2";
 import {
@@ -30,27 +32,33 @@ import {
 const COLORS = {
   primary: "#0D59F2",
   primaryLight: "#E0F2FE",
+  primaryDark: "#0369A1",
   primaryMuted: "#93C5FD",
+  secondary: "#2563EB",
+  accent: "#3B82F6",
   slate: "#64748B",
   slateLight: "#F1F5F9",
   success: "#059669",
   successLight: "#ECFDF5",
   warning: "#D97706",
+  error: "#DC2626",
   warningLight: "#ff7070",
 };
 
 const tableHeadCell = {
-  fontWeight: 700,
-  fontSize: 13,
-  color: "#374151",
+  fontWeight: 800,
+  fontSize: 12,
+  color: "#475569",
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
   backgroundColor: "#F8FAFC",
   borderBottom: `2px solid ${COLORS.primaryMuted}`,
-  py: 2,
+  py: 2.5,
 };
 
 const tableBodyRow = {
-  "& td": { borderBottom: `1px solid ${COLORS.slateLight}`, py: 2 },
-  "&:hover": { backgroundColor: "#F8FAFC" },
+  "&:hover": { backgroundColor: "#F1F5F9/50" },
+  "& td": { borderBottom: "1.5px solid #E2E8F0", py: 2 },
 };
 
 const roundedField = {
@@ -209,22 +217,27 @@ export default function ProposalPembimbingTab({ id_program }) {
         </Box>
       </Box>
 
-      <TableContainer sx={{ borderRadius: "16px", border: `1.5px solid ${COLORS.slateLight}`, overflow: "auto", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)" }}>
-        <Table>
+      <TableContainer sx={{ borderRadius: "16px", border: "1.5px solid #E2E8F0", overflow: "auto", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)" }}>
+        <Table sx={{ minWidth: 600 }}>
           <TableHead>
             <TableRow sx={{ backgroundColor: "#fafafa" }}>
               <TableCell sx={tableHeadCell}>JUDUL PROPOSAL</TableCell>
               <TableCell sx={tableHeadCell}>NAMA TIM</TableCell>
               <TableCell sx={tableHeadCell}>KATEGORI</TableCell>
               <TableCell sx={tableHeadCell}>DOSEN PEMBIMBING</TableCell>
-              <TableCell sx={{ ...tableHeadCell, textAlign: "center", width: "90px" }}>AKSI</TableCell>
+              <TableCell sx={{ ...tableHeadCell, textAlign: "center" }}>AKSI</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {proposals.length === 0 ? (
-              <TableRow sx={tableBodyRow}>
-                <TableCell colSpan={5} sx={{ textAlign: "center", py: 4, color: "#999" }}>
-                  Tidak ada proposal
+              <TableRow>
+                <TableCell colSpan={5} sx={{ textAlign: "center", py: 6 }}>
+                  <Typography sx={{ fontSize: { xs: 16, sm: 18 }, fontWeight: 800, color: "#1E293B", mb: 0.5 }}>
+                    Belum ada proposal
+                  </Typography>
+                  <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 500 }}>
+                    Belum ada data proposal yang tersedia
+                  </Typography>
                 </TableCell>
               </TableRow>
             ) : (
@@ -264,16 +277,16 @@ export default function ProposalPembimbingTab({ id_program }) {
                       variant="outlined"
                       sx={{
                         textTransform: "none",
-                        borderRadius: "50px",
-                        fontSize: 12,
-                        fontWeight: 600,
-                        px: 2,
-                        borderColor: "#0D59F2",
-                        color: "#0D59F2",
-                        "&:hover": { backgroundColor: "#f0f4ff" },
+                        color: COLORS.primary,
+                        borderColor: COLORS.primaryMuted,
+                        borderRadius: "10px",
+                        fontWeight: 700,
+                        fontSize: { xs: 11, sm: 12 },
+                        px: { xs: 1, sm: 2 },
+                        "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
                       }}
                     >
-                      Edit
+                      Detail
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -283,25 +296,25 @@ export default function ProposalPembimbingTab({ id_program }) {
         </Table>
       </TableContainer>
 
-      <Box sx={{ mt: 3, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexDirection: { xs: "column", sm: "row" } }}>
-        <Typography sx={{ fontSize: 13, color: COLORS.slate, fontWeight: 500 }}>
-          Menampilkan {startDisplay}–{endDisplay} dari {proposals.length} proposal
+      <Box sx={{ mt: 3, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexDirection: { xs: "column", sm: "row" }, px: 1 }}>
+        <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 600 }}>
+          Menampilkan <span style={{ color: "#1E293B" }}>{startDisplay}–{endDisplay}</span> dari <span style={{ color: "#1E293B" }}>{proposals.length}</span> proposal
         </Typography>
         <Pagination
           count={totalPages}
           page={page}
-          onChange={(_, v) => setPage(v)}
+          onChange={(e, v) => setPage(v)}
           color="primary"
           shape="rounded"
-          showFirstButton
-          showLastButton
+          size="small"
           sx={{
             "& .MuiPaginationItem-root": {
-              fontWeight: 600,
-              borderRadius: "8px",
+              fontWeight: 700,
+              borderRadius: "10px",
               "&.Mui-selected": {
-                background: `linear-gradient(135deg, ${COLORS.primary}, #2563EB)`,
+                backgroundColor: COLORS.primary,
                 color: "#fff",
+                "&:hover": { backgroundColor: COLORS.primaryDark },
               },
             },
           }}
@@ -313,12 +326,22 @@ export default function ProposalPembimbingTab({ id_program }) {
         onClose={handleCloseDialog}
         maxWidth="sm"
         fullWidth
-        PaperProps={{ sx: { borderRadius: "16px" } }}
+        PaperProps={{ sx: { borderRadius: { xs: "16px", sm: "24px" }, overflow: "hidden" } }}
       >
-        <DialogTitle sx={{ fontWeight: 800, fontSize: 16, pb: 1 }}>Edit Dosen Pembimbing</DialogTitle>
+        <Box sx={{ p: { xs: 1.5, sm: 2 }, display: "flex", alignItems: "center", justifyContent: "space-between", background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`, color: "#fff" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, px: 1 }}>
+            <Typography sx={{ fontWeight: 800, fontSize: { xs: 16, sm: 18 } }}>
+              Edit Dosen Pembimbing
+            </Typography>
+          </Box>
+          <IconButton onClick={handleCloseDialog} sx={{ color: "#fff", "&:hover": { backgroundColor: "rgba(255,255,255,0.2)" } }}>
+            <Close />
+          </IconButton>
+        </Box>
         <DialogContent
           sx={{
-            pt: 2,
+            px: { xs: 2.5, sm: 4 },
+            py: { xs: 3, sm: 4 },
             maxHeight: "70vh",
             overflowY: "auto",
             scrollbarWidth: "none",
@@ -394,11 +417,20 @@ export default function ProposalPembimbingTab({ id_program }) {
             </Box>
           )}
         </DialogContent>
-        <DialogActions sx={{ p: 2, borderTop: "1px solid #f0f0f0" }}>
+        <DialogActions sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 2, sm: 3 }, backgroundColor: "#F8FAFC", borderTop: "1.5px solid #E2E8F0", gap: 1.5, flexDirection: { xs: "column", sm: "row" }, "& > button": { width: { xs: "100%", sm: "auto" } } }}>
           <Button
             onClick={handleCloseDialog}
-            variant="outlined"
-            sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 700, color: COLORS.slate, border: "1.5px solid #e0e0e0", "&:hover": { backgroundColor: "#f5f5f5" } }}
+            variant="contained"
+            disabled={submitting}
+            sx={{
+              textTransform: "none", borderRadius: "12px", px: 3, fontWeight: 700,
+              backgroundColor: COLORS.error,
+              boxShadow: "0 4px 12px rgba(220,38,38,0.2)",
+              "&:hover": {
+                backgroundColor: "#B91C1C",
+                boxShadow: "0 6px 16px rgba(220,38,38,0.3)",
+              },
+            }}
           >
             Batal
           </Button>
@@ -406,7 +438,15 @@ export default function ProposalPembimbingTab({ id_program }) {
             onClick={handleSaveChanges}
             variant="contained"
             disabled={submitting}
-            sx={{ textTransform: "none", borderRadius: "50px", px: 3, fontWeight: 700, backgroundColor: COLORS.primary, "&:hover": { backgroundColor: "#0a47c4" }, "&:disabled": { backgroundColor: "#ccc" } }}
+            sx={{
+              textTransform: "none", borderRadius: "12px", px: 4, fontWeight: 700,
+              backgroundColor: COLORS.primary,
+              boxShadow: "0 4px 12px rgba(13, 89, 242, 0.2)",
+              "&:hover": {
+                backgroundColor: COLORS.primaryDark,
+                boxShadow: "0 6px 16px rgba(13, 89, 242, 0.3)",
+              },
+            }}
           >
             {submitting ? "Menyimpan..." : "Simpan"}
           </Button>

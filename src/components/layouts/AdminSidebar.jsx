@@ -249,7 +249,6 @@ function SidebarContent({ collapsed, onMenuClick, onClose }) {
                             mx: 0.5,
                             minHeight: { xs: 36, sm: 40 },
                             backgroundColor: isActive(subItem.path) ? "rgba(255,255,255,0.18)" : "transparent",
-                            "&:hover": { backgroundColor: isActive(subItem.path) ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.12)" },
                             "&.Mui-selected": { backgroundColor: "rgba(255,255,255,0.18)" },
                           }}
                         >

@@ -159,6 +159,7 @@ function ProposalTable({ proposals, loading, renderSelector, navigate }) {
           <TableRow>
             <TableCell padding="checkbox" sx={{ ...tableHeadCell, width: 48 }} />
             <TableCell sx={tableHeadCell}>JUDUL PROPOSAL</TableCell>
+            <TableCell sx={tableHeadCell}>KATEGORI</TableCell>
             <TableCell sx={tableHeadCell}>TIM</TableCell>
             <TableCell sx={tableHeadCell}>DOSEN PEMBIMBING</TableCell>
             <TableCell sx={tableHeadCell}>MODAL</TableCell>
@@ -169,25 +170,28 @@ function ProposalTable({ proposals, loading, renderSelector, navigate }) {
           {proposals.map((p) => (
             <TableRow key={p.id_proposal} sx={tableBodyRow}>
               <TableCell padding="checkbox">{renderSelector(p)}</TableCell>
-              <TableCell>
-                <Typography
-                  sx={{
-                    fontSize: 13,
-                    fontWeight: 500,
-                    maxWidth: 300,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                  }}
-                >
-                  {p.judul}
-                </Typography>
-              </TableCell>
-              <TableCell>
-                <Typography sx={{ fontSize: 13 }}>{p.nama_tim}</Typography>
-              </TableCell>
+                <TableCell>
+                  <Typography
+                    sx={{
+                      fontSize: 13,
+                      fontWeight: 500,
+                      maxWidth: 300,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                    }}
+                  >
+                    {p.judul}
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography sx={{ fontSize: 13 }}>{p.nama_kategori || p.kategori || "-"}</Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography sx={{ fontSize: 13 }}>{p.nama_tim}</Typography>
+                </TableCell>
               <TableCell>
                 <Typography sx={{ fontSize: 13 }}>{getDosenPembimbingName(p)}</Typography>
               </TableCell>
@@ -229,6 +233,7 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
   const [panelHistory, setPanelHistory] = useState([]);
 
   const [selectedReviewer, setSelectedReviewer] = useState(null);
+  const [selectedReviewers, setSelectedReviewers] = useState([]);
   const [selectedProposals, setSelectedProposals] = useState([]);
 
   const [selectedReviewerTahap2, setSelectedReviewerTahap2] = useState(null);
@@ -316,6 +321,7 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
       fetchProposals();
       setSelectedProposals([]);
       setSelectedReviewer(null);
+      setSelectedReviewers([]);
       setSelectedReviewerTahap2(null);
       setSelectedJuri(null);
       setSelectedProposal(null);
@@ -350,7 +356,8 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
     juriTersedia.length > 0 || slotKosong === 0 ? juriTersedia : juries;
 
   const handleAssignTahap1 = async () => {
-    if (!selectedReviewer) {
+    const reviewersToUse = (selectedReviewers && selectedReviewers.length > 0) ? selectedReviewers : (selectedReviewer ? [selectedReviewer] : []);
+    if (!reviewersToUse || reviewersToUse.length === 0) {
       Swal.fire({
         icon: "warning",
         title: "Perhatian",
@@ -369,11 +376,12 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
       return;
     }
 
+    const reviewerNames = reviewersToUse.map((r) => r.nama_lengkap).join(" , ");
+
     const result = await Swal.fire({
       title: "Konfirmasi Distribusi",
       html: `Assign <b>${selectedProposals.length}</b> proposal ke:<br/><br/>
-             <b>${selectedReviewer.nama_lengkap}</b><br/>
-             ${selectedReviewer.institusi || ""}<br/><br/>Lanjutkan?`,
+             <b>${reviewerNames}</b><br/><br/>Lanjutkan?`,
       icon: "question",
       showCancelButton: true,
       confirmButtonColor: COLORS.primary,
@@ -386,21 +394,43 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
 
     try {
       setAssigning(true);
-      const res = await executeBulkDistribusi(id_program, tahap, {
-        id_reviewer: selectedReviewer.id_user,
-        id_proposal_list: selectedProposals,
-      });
-      const { total_assigned, total_failed } = res.data;
+
+      // Round-robin distribute selected proposals among chosen reviewers
+      const groups = {};
+      reviewersToUse.forEach((r) => { groups[r.id_user] = []; });
+      for (let i = 0; i < selectedProposals.length; i++) {
+        const reviewer = reviewersToUse[i % reviewersToUse.length];
+        groups[reviewer.id_user].push(selectedProposals[i]);
+      }
+
+      let totalAssigned = 0;
+      let totalFailed = 0;
+
+      for (const reviewerId of Object.keys(groups)) {
+        const list = groups[reviewerId];
+        if (list.length === 0) continue;
+        const res = await executeBulkDistribusi(id_program, tahap, {
+          id_reviewer: reviewerId,
+          id_proposal_list: list,
+        });
+        const body = res.data || res;
+        const ta = body?.total_assigned ?? 0;
+        const tf = body?.total_failed ?? 0;
+        totalAssigned += ta;
+        totalFailed += tf;
+      }
+
       await Swal.fire({
-        icon: total_failed > 0 ? "warning" : "success",
+        icon: totalFailed > 0 ? "warning" : "success",
         title: "Distribusi Selesai",
-        html: `<b>Berhasil:</b> ${total_assigned} proposal${
-          total_failed > 0 ? `<br/><b>Gagal:</b> ${total_failed} proposal` : ""
+        html: `<b>Berhasil:</b> ${totalAssigned} proposal${
+          totalFailed > 0 ? `<br/><b>Gagal:</b> ${totalFailed} proposal` : ""
         }`,
         confirmButtonColor: COLORS.primary,
       });
-      onSuccess(res.message);
+      onSuccess("Distribusi selesai");
       setSelectedProposals([]);
+      setSelectedReviewers([]);
       fetchProposals();
     } catch (err) {
       Swal.fire({
@@ -446,7 +476,7 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
     const proposal = proposals.find((p) => p.id_proposal === selectedProposal);
     const result = await Swal.fire({
       title: "Konfirmasi Distribusi Panel",
-      html: `Assign panel wawancara ke:<br/><br/>
+      html: `Assign wawancara ke:<br/><br/>
              <b>${proposal?.judul}</b><br/><br/>
              Reviewer: <b>${selectedReviewerTahap2.nama_lengkap}</b><br/>
              Juri: <b>${selectedJuri.nama_lengkap}</b><br/><br/>Lanjutkan?`,
@@ -499,6 +529,8 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
         proposals={proposals}
         selectedReviewer={selectedReviewer}
         setSelectedReviewer={setSelectedReviewer}
+        selectedReviewers={selectedReviewers}
+        setSelectedReviewers={setSelectedReviewers}
         selectedProposals={selectedProposals}
         setSelectedProposals={setSelectedProposals}
         handleAssign={handleAssignTahap1}
@@ -536,6 +568,8 @@ function DistribusiManualTahap1({
   proposals,
   selectedReviewer,
   setSelectedReviewer,
+  selectedReviewers,
+  setSelectedReviewers,
   selectedProposals,
   setSelectedProposals,
   handleAssign,
@@ -559,9 +593,10 @@ function DistribusiManualTahap1({
       <SectionLabel>1. Pilih Reviewer</SectionLabel>
 
       <Autocomplete
+        multiple
         options={reviewers}
-        value={selectedReviewer}
-        onChange={(_, v) => setSelectedReviewer(v)}
+        value={selectedReviewers}
+        onChange={(_, v) => setSelectedReviewers(v)}
         getOptionLabel={(o) => o.nama_lengkap || ""}
         isOptionEqualToValue={(o, v) => o.id_user === v.id_user}
         disabled={loadingReviewers}
@@ -632,7 +667,7 @@ function DistribusiManualTahap1({
         <Button
           variant="contained"
           onClick={handleAssign}
-          disabled={assigning || selectedProposals.length === 0 || !selectedReviewer}
+          disabled={assigning || selectedProposals.length === 0 || selectedReviewers.length === 0}
           sx={{
             textTransform: "none",
             borderRadius: "50px",

@@ -64,7 +64,7 @@ const STATUS_MAP = {
   2: { label: "Review Tahap 1",        colorType: "info"    },
   3: { label: "Tidak Lolos Desk",      colorType: "error"   },
   4: { label: "Lolos Desk",            colorType: "success" },
-  5: { label: "Panel Wawancara",       colorType: "warning" },
+  5: { label: "Wawancara",       colorType: "warning" },
   6: { label: "Tidak Lolos Wawancara", colorType: "error"   },
   7: { label: "Lolos Wawancara",       colorType: "success" },
   8: { label: "Lolos (Selesai)",       colorType: "success" },

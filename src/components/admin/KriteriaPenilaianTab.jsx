@@ -34,19 +34,29 @@ const roundedField = {
   "& .MuiOutlinedInput-root": {
     borderRadius: "12px",
     backgroundColor: "#fff",
-    transition: "box-shadow 0.2s",
+    transition: "all 0.2s ease-in-out",
     "&:hover fieldset": { borderColor: COLORS.primary },
-    "&.Mui-focused fieldset": { borderColor: COLORS.primary },
-    "&.Mui-focused": { boxShadow: `0 0 0 3px ${COLORS.primaryLight}` },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary, borderWidth: "2px" },
+    "&.Mui-focused": { boxShadow: `0 0 0 4px ${COLORS.primaryLight}` },
   },
+  "& .MuiInputLabel-root.Mui-focused": { color: COLORS.primary, fontWeight: 700 },
 };
 
 const tableHeadCell = {
-  fontWeight: 700, fontSize: 13, color: "#374151",
-  backgroundColor: "#F8FAFC", borderBottom: `2px solid ${COLORS.primaryMuted}`, py: 2,
+  fontWeight: 800,
+  fontSize: 12,
+  color: "#475569",
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+  backgroundColor: "#F8FAFC",
+  borderBottom: `2px solid ${COLORS.primaryMuted}`,
+  py: 2.5,
 };
 
-const tableBodyRow = { "& td": { borderBottom: `1px solid ${COLORS.slateLight}`, py: 2 } };
+const tableBodyRow = {
+  "&:hover": { backgroundColor: "#F1F5F9/50" },
+  "& td": { borderBottom: "1.5px solid #E2E8F0", py: 2 },
+};
 
 const StatusPill = ({ label, type = "primary" }) => {
   const colorMap = {
@@ -353,12 +363,12 @@ export default function KriteriaPenilaianTab({ id_program }) {
           <LoadingScreen message="Memuat kriteria penilaian..." overlay minHeight="320px" />
         </Box>
       ) : kriteriaList.length === 0 ? (
-        <Paper elevation={0} sx={{ p: 8, textAlign: "center", borderRadius: "20px", border: "1.5px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
+        <Paper elevation={0} sx={{ p: { xs: 5, sm: 8 }, textAlign: "center", borderRadius: "20px", border: "1.5px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
           <Typography sx={{ fontSize: 20, fontWeight: 800, color: "#1E293B", mb: 1 }}>Belum ada kriteria penilaian</Typography>
           <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 500 }}>Klik Tambah Kriteria untuk menentukan aspek penilaian di tahap ini</Typography>
         </Paper>
       ) : (
-        <TableContainer sx={{ borderRadius: "16px", border: "1.5px solid #E2E8F0", overflow: "hidden", overflowX: "auto", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}>
+        <TableContainer sx={{ borderRadius: "16px", border: "1.5px solid #E2E8F0", overflow: "hidden", overflowX: "auto", mb: 4 }}>
           <Table sx={{ minWidth: 800 }}>
             <TableHead>
               <TableRow>
@@ -402,6 +412,7 @@ export default function KriteriaPenilaianTab({ id_program }) {
                             fontWeight: 700,
                             fontSize: { xs: 11, sm: 12 },
                             px: { xs: 1, sm: 2 },
+                            minWidth: 0,
                             "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary }
                           }}
                         >
@@ -419,6 +430,7 @@ export default function KriteriaPenilaianTab({ id_program }) {
                             fontWeight: 700,
                             fontSize: { xs: 11, sm: 12 },
                             px: { xs: 1, sm: 2 },
+                            minWidth: 0,
                             "&:hover": { backgroundColor: COLORS.errorLight, borderColor: COLORS.error }
                           }}
                         >

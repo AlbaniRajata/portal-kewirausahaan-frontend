@@ -30,6 +30,24 @@ const COLORS = {
   errorLight:    "#ff7070",
 };
 
+const pageCard = {
+  borderRadius: "20px",
+  border: "1.5px solid #E2E8F0",
+  overflow: "hidden",
+  boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+  position: "relative",
+};
+
+const tabStyle = {
+  textTransform: "none",
+  fontSize: { xs: 13, sm: 14 },
+  fontWeight: 700,
+  color: COLORS.slate,
+  minHeight: 52,
+  px: { xs: 2, sm: 3 },
+  "&.Mui-selected": { color: COLORS.primary },
+};
+
 export default function ProgramPage() {
   const [loading, setLoading] = useState(true);
   const [program, setProgram] = useState(null);
@@ -82,13 +100,9 @@ export default function ProgramPage() {
             </Typography>
           </Box>
 
-          <Paper elevation={0} sx={{
-            mb: 3, borderRadius: "20px",
-            border: "1.5px solid #E5E7EB",
-            overflow: "hidden",
-          }}>
+          <Paper elevation={0} sx={{ mb: 3, ...pageCard }}>
             <Box sx={{ height: 5, background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
-            <Box sx={{ borderBottom: `1px solid ${COLORS.slateLight}`, overflowX: "auto" }}>
+            <Box sx={{ borderBottom: `1px solid ${COLORS.slateLight}`, overflowX: "auto", backgroundColor: "#fff" }}>
               <Tabs
                 value={activeTab}
                 onChange={(e, v) => setActiveTab(v)}
@@ -97,13 +111,14 @@ export default function ProgramPage() {
                 allowScrollButtonsMobile
                 sx={{
                   minHeight: 52,
+                  px: { xs: 1, sm: 2 },
                   "& .MuiTab-root": {
-                    textTransform: "none", fontSize: { xs: 13, sm: 14 }, fontWeight: 500,
-                    color: COLORS.slate, minHeight: 52,
-                    "&.Mui-selected": { fontWeight: 700, color: COLORS.primary },
+                    ...tabStyle,
                   },
                   "& .MuiTabs-indicator": {
-                    backgroundColor: COLORS.primary, height: 3, borderRadius: "3px 3px 0 0",
+                    backgroundColor: COLORS.primary,
+                    height: 3,
+                    borderRadius: "3px 3px 0 0",
                   },
                 }}
               >

@@ -87,7 +87,7 @@ const getStatusInfo = (statusCode) => {
     3:  { label: "Tidak Lolos Desk",        backgroundColor: "#c62828" },
     4:  { label: "Lolos Desk",              backgroundColor: "#2e7d32" },
     5:  { label: "Wawancara Dijadwalkan",   backgroundColor: "#f57f17" },
-    6:  { label: "Panel Wawancara",         backgroundColor: "#3949ab" },
+    6:  { label: "Wawancara",         backgroundColor: "#3949ab" },
     7:  { label: "Tidak Lolos Wawancara",   backgroundColor: "#c62828" },
     8:  { label: "Lolos Wawancara",         backgroundColor: "#2e7d32" },
     9:  { label: "Pembimbing Diajukan",     backgroundColor: "#1565c0" },

@@ -3,7 +3,7 @@ import {
   Box, Typography, Button, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow,
   Dialog, DialogContent, DialogActions,
-  TextField, IconButton,
+  TextField, IconButton, Paper,
 } from "@mui/material";
 import { Close } from "@mui/icons-material";
 import Swal from "sweetalert2";
@@ -24,7 +24,7 @@ const COLORS = {
   warning: "#D97706",
   warningLight: "#FFFBEB",
   error: "#DC2626",
-  errorLight: "#FEF2F2",
+  errorLight: "#ff7070",
 };
 
 const roundedField = {
@@ -173,6 +173,7 @@ export default function KategoriTab() {
             backgroundColor: COLORS.primary,
             boxShadow: "0 4px 12px rgba(13, 89, 242, 0.2)",
             width: { xs: "100%", sm: "auto" },
+            minWidth: 0,
             "&:hover": { 
               backgroundColor: COLORS.primaryDark,
               boxShadow: "0 6px 16px rgba(13, 89, 242, 0.3)",
@@ -188,12 +189,12 @@ export default function KategoriTab() {
           <LoadingScreen message="Memuat kategori..." overlay minHeight="320px" />
         </Box>
       ) : list.length === 0 ? (
-        <Paper elevation={0} sx={{ p: 8, textAlign: "center", borderRadius: "20px", border: "1.5px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
+        <Paper elevation={0} sx={{ p: { xs: 5, sm: 8 }, textAlign: "center", borderRadius: "20px", border: "1.5px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
           <Typography sx={{ fontSize: 20, fontWeight: 800, color: "#1E293B", mb: 1 }}>Belum ada kategori</Typography>
           <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 500 }}>Klik Tambah Kategori untuk menambahkan kategori baru</Typography>
         </Paper>
       ) : (
-        <TableContainer sx={{ borderRadius: "16px", border: "1.5px solid #E2E8F0", overflow: "hidden", overflowX: "auto", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}>
+        <TableContainer sx={{ borderRadius: "16px", border: "1.5px solid #E2E8F0", overflow: "hidden", overflowX: "auto", mb: 4 }}>
           <Table sx={{ minWidth: 600 }}>
             <TableHead>
               <TableRow>
@@ -225,6 +226,7 @@ export default function KategoriTab() {
                             fontWeight: 700,
                             fontSize: { xs: 11, sm: 12 },
                             px: { xs: 1, sm: 2 },
+                            minWidth: 0,
                             "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary }
                           }}
                         >
@@ -242,6 +244,7 @@ export default function KategoriTab() {
                             fontWeight: 700,
                             fontSize: { xs: 11, sm: 12 },
                             px: { xs: 1, sm: 2 },
+                            minWidth: 0,
                             "&:hover": { backgroundColor: COLORS.errorLight, borderColor: COLORS.error }
                           }}
                         >

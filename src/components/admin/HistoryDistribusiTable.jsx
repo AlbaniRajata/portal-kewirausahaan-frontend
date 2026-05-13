@@ -5,10 +5,7 @@ import {
   TableHead, TableRow, Dialog, DialogTitle, DialogContent,
   DialogActions, Pagination, Autocomplete,
 } from "@mui/material";
-
 import { useNavigate } from "react-router-dom";
-import Swal from "sweetalert2";
-import LoadingScreen from "../common/LoadingScreen";
 import {
   getDistribusiHistory,
   getReviewerList,
@@ -18,7 +15,7 @@ import {
   reassignReviewerTahap2,
   reassignJuriTahap2,
 } from "../../api/admin";
-
+import LoadingScreen from "../common/LoadingScreen";
 const COLORS = {
   primary: "#0D59F2",
   primaryLight: "#E0F2FE",
@@ -42,16 +39,16 @@ const tableHeadCell = {
 const tableBodyRow = { "& td": { borderBottom: `1px solid ${COLORS.slateLight}`, py: 2 } };
 
 const STATUS_CONFIG = {
-  0: { label: "Menunggu Response", backgroundColor: "#f57f17" },
+  0: { label: "Menunggu", backgroundColor: "#f57f17" },
   1: { label: "Disetujui", backgroundColor: "#2e7d32" },
   2: { label: "Ditolak", backgroundColor: "#c62828" },
-  3: { label: "Draft Penilaian", backgroundColor: "#1565c0" },
-  4: { label: "Selesai Dinilai", backgroundColor: "#6a1b9a" },
+  3: { label: "Draft", backgroundColor: "#1565c0" },
+  4: { label: "Selesai", backgroundColor: "#6a1b9a" },
   5: { label: "Diganti", backgroundColor: "#757575" },
 };
 
 const STATUS_PROPOSAL_CONFIG = {
-  4: { label: "Lolos Desk", backgroundColor: "#1565c0" },
+  4: { label: "Desk", backgroundColor: "#1565c0" },
   5: { label: "Panel", backgroundColor: "#6a1b9a" },
 };
 
@@ -59,9 +56,22 @@ const StatusPill = ({ status, configMap = STATUS_CONFIG }) => {
   const cfg = configMap[status] || { label: `Status ${status}`, backgroundColor: "#666" };
   return (
     <Box sx={{
-      display: "inline-flex", px: 1.5, py: 0.35,
-      borderRadius: "50px", backgroundColor: cfg.backgroundColor,
-      color: "#fff", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap",
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      px: 1,
+      py: 0.25,
+      borderRadius: "999px",
+      backgroundColor: cfg.backgroundColor,
+      color: "#fff",
+      fontSize: 10.5,
+      fontWeight: 700,
+      whiteSpace: "nowrap",
+      lineHeight: 1.2,
+      minWidth: 72,
+      maxWidth: 110,
+      overflow: "hidden",
+      textOverflow: "ellipsis",
     }}>
       {cfg.label}
     </Box>
@@ -117,6 +127,7 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
   const [juries, setJuries] = useState([]);
   const [selectedNewReviewer, setSelectedNewReviewer] = useState(null);
   const [selectedNewJuri, setSelectedNewJuri] = useState(null);
+  const [selectedReassignReviewerId, setSelectedReassignReviewerId] = useState("");
   const [reassignMode, setReassignMode] = useState("reviewer");
   const [reassigning, setReassigning] = useState(false);
   const [reassignDialog, setReassignDialog] = useState({ open: false, item: null });
@@ -144,7 +155,39 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
     return dateValue && new Date(dateValue).getFullYear() === Number(tahunFilter);
   });
 
-  const paginasi = usePagination(filteredHistoryByYear, pageMain, setPageMain);
+  // When tahap 1, group distribusi rows by proposal so we can show two reviewers per proposal
+  let historyForPagination = filteredHistoryByYear;
+  if (tahap === 1) {
+    const map = new Map();
+    for (const item of filteredHistoryByYear) {
+      const key = item.id_proposal || item.id_proposal;
+      if (!map.has(key)) {
+        map.set(key, {
+          id_proposal: item.id_proposal,
+          judul: item.judul,
+          nama_tim: item.nama_tim,
+          reviewers: [],
+        });
+      }
+      const entry = map.get(key);
+      entry.reviewers.push({
+        id_distribusi: item.id_distribusi,
+        id_reviewer: item.id_reviewer,
+        nama_reviewer: item.nama_reviewer,
+        institusi: item.institusi,
+        status: item.status,
+        assigned_at: item.assigned_at,
+        admin_name: item.admin_name,
+      });
+    }
+    historyForPagination = Array.from(map.values()).map((g) => ({
+      ...g,
+      reviewer1: g.reviewers[0] || null,
+      reviewer2: g.reviewers[1] || null,
+    }));
+  }
+
+  const paginasi = usePagination(historyForPagination, pageMain, setPageMain);
   const paginasiPanel = usePagination(filteredHistoryPanel, pagePanel, setPagePanel);
 
   const fetchHistory = useCallback(async () => {
@@ -199,18 +242,23 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
     setReassignDialog({ open: true, item });
     setSelectedNewReviewer(null);
     setSelectedNewJuri(null);
+    setSelectedReassignReviewerId("");
   };
 
   const handleCloseReassign = () => {
     setReassignDialog({ open: false, item: null });
     setSelectedNewReviewer(null);
     setSelectedNewJuri(null);
+    setSelectedReassignReviewerId("");
   };
 
   const handleReassignSubmit = async () => {
     const { item } = reassignDialog;
     const isReviewer = reassignMode === "reviewer";
     const selected = isReviewer ? selectedNewReviewer : selectedNewJuri;
+    const selectedReviewerSlot = tahap === 1
+      ? item?.reviewers?.find((r) => String(r.id_reviewer) === String(selectedReassignReviewerId))
+      : null;
 
     if (!selected) {
       Swal.fire({
@@ -222,12 +270,22 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
       return;
     }
 
+    if (tahap === 1 && !selectedReviewerSlot) {
+      Swal.fire({
+        icon: "warning", title: "Perhatian",
+        text: "Silahkan pilih reviewer yang akan diganti",
+        confirmButtonColor: "#0D59F2",
+        didOpen: () => { const el = document.querySelector(".swal2-container"); if (el) el.style.zIndex = "9999"; },
+      });
+      return;
+    }
+
     const namaLama = tahap === 1
-      ? item.nama_reviewer
+      ? selectedReviewerSlot?.nama_reviewer
       : isReviewer ? item.nama_reviewer : item.nama_juri;
 
     const idDistribusi = tahap === 1
-      ? item.id_distribusi
+      ? selectedReviewerSlot?.id_distribusi
       : isReviewer ? item.id_distribusi_reviewer : item.id_distribusi_juri;
 
     const result = await Swal.fire({
@@ -290,18 +348,31 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
         render: (item) => <Typography sx={{ fontSize: 13, maxWidth: 250 }}>{item.judul}</Typography>,
       },
       {
-        key: "tim",
-        label: "TIM",
-        render: (item) => <Typography sx={{ fontSize: 13 }}>{item.nama_tim}</Typography>,
+        key: "reviewer1",
+        label: "REVIEWER 1",
+        render: (item) => (
+          item.reviewer1 ? (
+            <>
+              <Typography sx={{ fontSize: 13, fontWeight: 600 }}>{item.reviewer1.nama_reviewer}</Typography>
+              <Typography sx={{ fontSize: 12, color: "#888" }}>{item.reviewer1.institusi || "-"}</Typography>
+            </>
+          ) : (
+            <Typography sx={{ fontSize: 12, color: "#bbb" }}>Belum ditentukan</Typography>
+          )
+        ),
       },
       {
-        key: "reviewer",
-        label: "REVIEWER",
+        key: "reviewer2",
+        label: "REVIEWER 2",
         render: (item) => (
-          <>
-            <Typography sx={{ fontSize: 13, fontWeight: 600 }}>{item.nama_reviewer}</Typography>
-            <Typography sx={{ fontSize: 12, color: "#888" }}>{item.institusi || "-"}</Typography>
-          </>
+          item.reviewer2 ? (
+            <>
+              <Typography sx={{ fontSize: 13, fontWeight: 600 }}>{item.reviewer2.nama_reviewer}</Typography>
+              <Typography sx={{ fontSize: 12, color: "#888" }}>{item.reviewer2.institusi || "-"}</Typography>
+            </>
+          ) : (
+            <Typography sx={{ fontSize: 12, color: "#bbb" }}>Belum ditentukan</Typography>
+          )
         ),
       },
       {
@@ -309,15 +380,20 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
         label: "ASSIGNED AT",
         render: (item) => (
           <>
-            <Typography sx={{ fontSize: 13 }}>{formatDate(item.assigned_at)}</Typography>
-            <Typography sx={{ fontSize: 11, color: "#aaa" }}>oleh {item.admin_name}</Typography>
+            <Typography sx={{ fontSize: 13 }}>{formatDate(item.reviewer1?.assigned_at)}</Typography>
+            <Typography sx={{ fontSize: 11, color: "#aaa" }}>oleh {item.reviewer1?.admin_name || "-"}</Typography>
           </>
         ),
       },
       {
         key: "status",
         label: "STATUS",
-        render: (item) => <StatusPill status={item.status} />,
+        render: (item) => (
+          <Box sx={{ display: "flex", gap: 0.75, flexDirection: "column", alignItems: "flex-start" }}>
+            {item.reviewer1 ? <StatusPill status={item.reviewer1.status} /> : null}
+            {item.reviewer2 ? <StatusPill status={item.reviewer2.status} /> : null}
+          </Box>
+        ),
       },
       {
         key: "aksi",
@@ -325,16 +401,23 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
         headerSx: { textAlign: "center" },
         cellSx: { textAlign: "center" },
         render: (item) => (
-          <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
-            <Button size="small" variant="outlined"
-              onClick={() => navigate(`/admin/program/${id_program}/distribusi/reviewer/tahap/${tahap}/${item.id_distribusi}`)}
-              sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12 }}>
+          <Box sx={{ display: "flex", gap: 1, justifyContent: "center", alignItems: "center" }}>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => navigate(`/admin/program/${id_program}/distribusi/reviewer/tahap/${tahap}/${item.reviewer1?.id_distribusi || item.reviewer2?.id_distribusi}`)}
+              sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12 }}
+            >
               Detail
             </Button>
-            {item.status === 2 && (
-              <Button size="small" variant="outlined" color="warning"
+            {(item.reviewer1 || item.reviewer2) && (
+              <Button
+                size="small"
+                variant="outlined"
+                color="warning"
                 onClick={() => handleOpenReassign(item, "reviewer")}
-                sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12 }}>
+                sx={{ textTransform: "none", borderRadius: "50px", fontSize: 12 }}
+              >
                 Reassign
               </Button>
             )}
@@ -398,7 +481,7 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
           flexDirection: { xs: "column", sm: "row" },
         }}>
           <Typography sx={{ fontSize: 13, color: "#777", alignSelf: { xs: "flex-start", sm: "auto" } }}>
-            Total: {filteredHistoryByYear.length} distribusi
+            Total: {historyForPagination.length} proposal
           </Typography>
         </Box>
 
@@ -511,7 +594,7 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
             {paginasiPanel.paginated.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} sx={{ textAlign: "center", py: 6 }}>
-                  <Typography sx={{ fontSize: 14, color: "#999" }}>Belum ada history panel wawancara</Typography>
+                  <Typography sx={{ fontSize: 14, color: "#999" }}>Belum ada history wawancara</Typography>
                 </TableCell>
               </TableRow>
             ) : (
@@ -559,22 +642,42 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
                   </TableCell>
 
                   <TableCell sx={{ textAlign: "center" }}>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1, alignItems: "center" }}>
-                      {item.status_reviewer === 2 && item.id_distribusi_reviewer && (
-                        <Button size="small" variant="outlined" color="warning"
-                          onClick={() => handleOpenReassign(item, "reviewer")}
-                          sx={{ textTransform: "none", borderRadius: "50px", fontSize: 11, whiteSpace: "nowrap" }}>
-                          Ganti Reviewer
-                        </Button>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, alignItems: "center" }}>
+                      {item.id_distribusi_reviewer && (
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, color: COLORS.slate, minWidth: 25 }}>REV</Typography>
+                          <Button size="small" variant="text"
+                            onClick={() => navigate(`/admin/program/${id_program}/distribusi/reviewer/tahap/${tahap}/${item.id_distribusi_reviewer}`)}
+                            sx={{ textTransform: "none", py: 0, minWidth: 0, fontWeight: 700, fontSize: 11 }}>
+                            Detail
+                          </Button>
+                          {item.status_reviewer < 4 && (
+                            <Button size="small" variant="text" color="warning"
+                              onClick={() => handleOpenReassign(item, "reviewer")}
+                              sx={{ textTransform: "none", py: 0, minWidth: 0, fontWeight: 700, fontSize: 11 }}>
+                              Ganti
+                            </Button>
+                          )}
+                        </Box>
                       )}
-                      {item.status_juri === 2 && item.id_distribusi_juri && (
-                        <Button size="small" variant="outlined" color="warning"
-                          onClick={() => handleOpenReassign(item, "juri")}
-                          sx={{ textTransform: "none", borderRadius: "50px", fontSize: 11, whiteSpace: "nowrap" }}>
-                          Ganti Juri
-                        </Button>
+                      {item.id_distribusi_juri && (
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, color: COLORS.slate, minWidth: 25 }}>JURI</Typography>
+                          <Button size="small" variant="text"
+                            onClick={() => navigate(`/admin/program/${id_program}/distribusi/reviewer/tahap/${tahap}/${item.id_distribusi_juri}`)}
+                            sx={{ textTransform: "none", py: 0, minWidth: 0, fontWeight: 700, fontSize: 11 }}>
+                            Detail
+                          </Button>
+                          {item.status_juri < 4 && (
+                            <Button size="small" variant="text" color="warning"
+                              onClick={() => handleOpenReassign(item, "juri")}
+                              sx={{ textTransform: "none", py: 0, minWidth: 0, fontWeight: 700, fontSize: 11 }}>
+                              Ganti
+                            </Button>
+                          )}
+                        </Box>
                       )}
-                      {item.status_reviewer !== 2 && item.status_juri !== 2 && (
+                      {!item.id_distribusi_reviewer && !item.id_distribusi_juri && (
                         <Typography sx={{ fontSize: 12, color: "#ccc" }}>—</Typography>
                       )}
                     </Box>
@@ -597,6 +700,8 @@ export default function HistoryDistribusiTable({ id_program, tahap, refresh, onE
         setSelectedNewReviewer={setSelectedNewReviewer}
         selectedNewJuri={selectedNewJuri}
         setSelectedNewJuri={setSelectedNewJuri}
+        selectedReassignReviewerId={selectedReassignReviewerId}
+        setSelectedReassignReviewerId={setSelectedReassignReviewerId}
         reassigning={reassigning}
         onClose={handleCloseReassign}
         onSubmit={handleReassignSubmit}
@@ -610,7 +715,8 @@ function ReassignDialog({
   open, item, mode, reviewers, juries,
   selectedNewReviewer, setSelectedNewReviewer,
   selectedNewJuri, setSelectedNewJuri,
-  reassigning, onClose, onSubmit,
+  selectedReassignReviewerId, setSelectedReassignReviewerId,
+  reassigning, onClose, onSubmit, tahap,
 }) {
   const isReviewer = mode === "reviewer";
 
@@ -618,6 +724,8 @@ function ReassignDialog({
   const currentJuriId = item?.id_juri;
 
   const namaLama = isReviewer ? item?.nama_reviewer : item?.nama_juri;
+  const currentTahap1Reviewer = item?.reviewers?.find((r) => String(r.id_reviewer) === String(selectedReassignReviewerId));
+  const currentReviewerTahap1Id = currentTahap1Reviewer?.id_reviewer;
 
   return (
     <Dialog
@@ -634,14 +742,39 @@ function ReassignDialog({
             <Typography sx={{ fontSize: 13, color: "#666" }}>
               Proposal: <b>{item.judul}</b>
             </Typography>
-            <Typography sx={{ fontSize: 13, color: "#666" }}>
-              {isReviewer ? "Reviewer" : "Juri"} Lama: <b>{namaLama}</b>
-            </Typography>
+            {tahap === 1 ? (
+              <TextField
+                select
+                size="small"
+                label="Reviewer yang diganti"
+                value={selectedReassignReviewerId}
+                onChange={(e) => {
+                  setSelectedReassignReviewerId(e.target.value);
+                  setSelectedNewReviewer(null);
+                }}
+                sx={roundedField}
+              >
+                <MenuItem value="">Pilih reviewer</MenuItem>
+                {(item.reviewers || []).map((rev) => (
+                  <MenuItem key={rev.id_distribusi} value={String(rev.id_reviewer)}>
+                    {rev.nama_reviewer}
+                  </MenuItem>
+                ))}
+              </TextField>
+            ) : (
+              <Typography sx={{ fontSize: 13, color: "#666" }}>
+                {isReviewer ? "Reviewer" : "Juri"} Lama: <b>{namaLama}</b>
+              </Typography>
+            )}
 
             {isReviewer ? (
               <Autocomplete
                 sx={roundedField}
-                options={reviewers.filter((r) => r.id_user !== currentReviewerId)}
+                options={reviewers.filter((r) =>
+                  tahap === 1
+                    ? String(r.id_user) !== String(currentReviewerTahap1Id)
+                    : r.id_user !== currentReviewerId
+                )}
                 value={selectedNewReviewer}
                 onChange={(_, v) => setSelectedNewReviewer(v)}
                 getOptionLabel={(o) => o.nama_lengkap || ""}

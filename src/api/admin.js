@@ -72,6 +72,11 @@ export const approveMahasiswa = async (id) => {
   return res.data;
 };
 
+export const bulkApproveMahasiswa = async (id_user_list = []) => {
+  const res = await api.post("/admin/verifikasi/mahasiswa/bulk-approve", { id_user_list });
+  return res.data;
+};
+
 export const rejectMahasiswa = async (id, catatan) => {
   const res = await api.post(`/admin/verifikasi/mahasiswa/${id}/reject`, { catatan });
   return res.data;
@@ -410,6 +415,7 @@ export const getTimPesertaProgram = async () => {
 export const getTimList = async (filters = {}) => {
   const params = new URLSearchParams();
   if (filters.id_program) params.append("id_program", filters.id_program);
+  if (filters.id_kategori) params.append("id_kategori", filters.id_kategori);
   if (filters.status !== undefined && filters.status !== "") params.append("status", filters.status);
   if (filters.search) params.append("search", filters.search);
   if (filters.page) params.append("page", filters.page);
@@ -420,6 +426,16 @@ export const getTimList = async (filters = {}) => {
 
 export const getTimDetail = async (id_tim) => {
   const res = await api.get(`/admin/tim-peserta/tim/${id_tim}`);
+  return res.data;
+};
+
+export const withdrawTim = async (id_tim) => {
+  const res = await api.put(`/admin/tim-peserta/tim/${id_tim}/withdraw`);
+  return res.data;
+};
+
+export const deleteTim = async (id_tim) => {
+  const res = await api.delete(`/admin/tim-peserta/tim/${id_tim}`);
   return res.data;
 };
 

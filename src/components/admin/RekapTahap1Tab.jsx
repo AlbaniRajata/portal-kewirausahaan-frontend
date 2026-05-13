@@ -6,8 +6,9 @@ import {
 } from "@mui/material";
 import { KeyboardArrowDown, KeyboardArrowRight } from "@mui/icons-material";
 import Swal from "sweetalert2";
-import { getListProposalRekapTahap1, finalisasiDeskBatch, getRekapDesk } from "../../api/admin";
+import { getListProposalRekapTahap1, finalisasiDeskBatch, getRekapDesk, getMyProgram } from "../../api/admin";
 import LoadingScreen from "../common/LoadingScreen";
+import { getXLSX } from "../../utils/xlsxLazy";
 
 const COLORS = {
   primary:      "#0D59F2",
@@ -54,6 +55,7 @@ const tableBodyRow = {
 };
 
 const ROWS_PER_PAGE = 10;
+const MIN_SUBMIT_TAHAP1 = 2;
 
 const STATUS_MAP = {
   2: { label: "Sedang Dinilai",      colorType: "info"    },
@@ -74,7 +76,7 @@ const StatusPill = ({ status, totalReviewer, totalSubmit }) => {
   let label = STATUS_MAP[status]?.label || "Unknown";
   let colorType = STATUS_MAP[status]?.colorType || "slate";
 
-  if (status === 2 && totalSubmit === totalReviewer && totalReviewer > 0) {
+  if (status === 2 && totalSubmit >= MIN_SUBMIT_TAHAP1) {
     label = "Menunggu Finalisasi";
     colorType = "warning";
   }
@@ -186,6 +188,7 @@ function EmptyInfo({ text }) {
 
 export default function RekapTahap1Tab({ id_program }) {
   const [loading, setLoading]           = useState(true);
+  const [programInfo, setProgramInfo]     = useState(null);
   const [proposalList, setProposalList] = useState([]);
   const [selected, setSelected]         = useState([]);
   const [submitting, setSubmitting]     = useState(false);
@@ -206,7 +209,123 @@ export default function RekapTahap1Tab({ id_program }) {
     }
   }, [id_program]);
 
-  useEffect(() => { fetchProposals(); }, [fetchProposals]);
+  useEffect(() => { 
+    fetchProposals(); 
+    getMyProgram().then(res => setProgramInfo(res.data));
+  }, [fetchProposals]);
+
+  const handleExportAllExcel = async () => {
+    try {
+      Swal.fire({
+        title: "Menyiapkan Data",
+        text: "Sedang mengumpulkan semua hasil penilaian...",
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+      });
+
+      // 1. Get all details for all proposals
+      const allResults = await Promise.allSettled(
+        proposalList.map(p => getRekapDesk(id_program, p.id_proposal))
+      );
+
+      // 2. Group by Reviewer
+      const reviewerMap = {};
+      allResults.forEach((res) => {
+        if (res.status !== "fulfilled" || !res.value?.success || !res.value?.data) return;
+        const d = res.value.data;
+        d.reviewer.forEach(evalData => {
+          const rId = evalData.reviewer?.id_user || evalData.user?.id_user;
+          const rName = evalData.reviewer?.nama || evalData.user?.nama;
+          if (!reviewerMap[rId]) {
+            reviewerMap[rId] = { name: rName, evaluations: [] };
+          }
+          reviewerMap[rId].evaluations.push({
+            judul: d.proposal.judul,
+            details: evalData.detail,
+            total: evalData.total_nilai,
+            catatan: evalData.catatan || "",
+          });
+        });
+      });
+
+      const reviewerIds = Object.keys(reviewerMap);
+      if (reviewerIds.length === 0) {
+        Swal.fire({ icon: "info", title: "Info", text: "Belum ada data penilaian yang bisa diekspor. Pastikan minimal 2 reviewer sudah submit." });
+        return;
+      }
+
+      const XLSX = await getXLSX();
+      const wb = XLSX.utils.book_new();
+
+      reviewerIds.forEach(rId => {
+        const reviewer = reviewerMap[rId];
+        const rows = [];
+        const criteria = reviewer.evaluations[0].details;
+
+        // Title & Reviewer Name
+        rows.push(["NILAI EVALUASI"]);
+        rows.push(["PRESENTASI PROPOSAL USAHA MAHASISWA"]);
+        rows.push([]);
+        rows.push([reviewer.name]);
+
+        // Headers
+        const headers = ["NO", "JUDUL"];
+        criteria.forEach(c => headers.push(`${c.nama_kriteria} (${c.bobot}%)`));
+        headers.push("NILAI (BOBOT X SKOR)");
+        rows.push(headers);
+
+        // Data Rows
+        reviewer.evaluations.forEach((ev, idx) => {
+          const row = [idx + 1, ev.judul];
+          criteria.forEach(c => {
+            const score = ev.details.find(d => d.id_kriteria === c.id_kriteria)?.skor || 0;
+            row.push(score);
+          });
+          row.push(ev.total);
+          rows.push(row);
+        });
+
+        rows.push([]);
+        rows.push(["Catatan Reviewer:"]);
+        const catatans = reviewer.evaluations.filter(e => e.catatan).map(e => `[${e.judul}]\n${e.catatan}`).join("\n\n");
+        rows.push([catatans]);
+
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+
+        // Styling
+        const headerStyle = { font: { bold: true }, fill: { fgColor: { rgb: "F1F5F9" } }, border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } } };
+        const cellStyle = { border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } } };
+
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        for (let R = 4; R <= range.e.r; ++R) {
+          for (let C = 0; C <= range.e.c; ++C) {
+            const cell_ref = XLSX.utils.encode_cell({ c: C, r: R });
+            if (!ws[cell_ref]) continue;
+            if (R === 4) ws[cell_ref].s = headerStyle;
+            else if (R <= 4 + reviewer.evaluations.length) ws[cell_ref].s = cellStyle;
+          }
+        }
+
+        ws['!cols'] = [{ wch: 5 }, { wch: 60 }];
+        criteria.forEach(() => ws['!cols'].push({ wch: 15 }));
+        ws['!cols'].push({ wch: 20 });
+
+        // Sheet name max 31 chars
+        const sheetName = reviewer.name.substring(0, 31).replace(/[\\/*?[\]]/g, "_");
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      });
+
+      XLSX.writeFile(wb, `Rekap_Nilai_Desk_Evaluasi.xlsx`);
+      Swal.close();
+    } catch (err) {
+      console.error(err);
+      Swal.fire({ icon: "error", title: "Gagal", text: err?.message || "Gagal mengekspor excel" });
+    }
+  };
+
+  const handleExportReviewerExcel = (reviewerData) => {
+    // Legacy support for detail table call if needed, but we use handleExportAllExcel now
+  };
 
   const uniqueKategori = Array.from(new Set(proposalList.map((p) => p.nama_kategori).filter(Boolean))).sort();
   const filteredList = proposalList.filter((p) => {
@@ -283,7 +402,10 @@ export default function RekapTahap1Tab({ id_program }) {
     if (!detail) return <EmptyInfo text="Belum ada detail rekap untuk proposal ini" />;
     return (
       <Box sx={{ mt: 1, p: 2, border: "1px solid #E2E8F0", borderRadius: "16px", backgroundColor: "#fff" }}>
-        <AssessmentDetailTable title="Penilaian Reviewer" evaluators={detail.reviewer} />
+        <AssessmentDetailTable 
+          title="Penilaian Reviewer" 
+          evaluators={detail.reviewer} 
+        />
       </Box>
     );
   };
@@ -309,6 +431,17 @@ export default function RekapTahap1Tab({ id_program }) {
             <MenuItem value=""><em>Semua Kategori</em></MenuItem>
             {uniqueKategori.map((k) => <MenuItem key={k} value={k}>{k}</MenuItem>)}
           </TextField>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={handleExportAllExcel}
+            sx={{
+              textTransform: "none", borderRadius: "10px", fontWeight: 700,
+              px: 3, boxShadow: "0 2px 8px rgba(5,150,105,0.2)"
+            }}
+          >
+            Ekspor Excel
+          </Button>
           <Button
             variant="contained"
             disabled={selected.length === 0 || submitting}
@@ -374,16 +507,14 @@ export default function RekapTahap1Tab({ id_program }) {
                         <Checkbox
                           size="small"
                           checked={items.length > 0 && items.filter(p => {
-                            const totalRev  = p.total_reviewer || 0;
-                            const totalSub  = p.total_submit || 0;
-                            return p.status === 2 && totalSub === totalRev && totalRev > 0;
+                            const totalSub = p.total_submit || 0;
+                            return p.status === 2 && totalSub >= MIN_SUBMIT_TAHAP1;
                           }).every(p => selected.includes(p.id_proposal))}
                           indeterminate={items.some(p => selected.includes(p.id_proposal)) && !items.every(p => selected.includes(p.id_proposal))}
                           onChange={(e) => {
                             const ids = items.filter(p => {
-                              const totalRev  = p.total_reviewer || 0;
-                              const totalSub  = p.total_submit || 0;
-                              return p.status === 2 && totalSub === totalRev && totalRev > 0;
+                              const totalSub = p.total_submit || 0;
+                              return p.status === 2 && totalSub >= MIN_SUBMIT_TAHAP1;
                             }).map(p => p.id_proposal);
                             if (e.target.checked) {
                               setSelected(prev => Array.from(new Set([...prev, ...ids])));
@@ -411,10 +542,11 @@ export default function RekapTahap1Tab({ id_program }) {
                   </TableHead>
                   <TableBody>
                     {items.map((p, idx) => {
-                      const isFinalisable = p.status === 2 && (p.total_submit || 0) === (p.total_reviewer || 0) && (p.total_reviewer || 0) > 0;
+                      const isFinalisable = p.status === 2 && (p.total_submit || 0) >= MIN_SUBMIT_TAHAP1;
                       const isSelected    = selected.includes(p.id_proposal);
                       const key           = getKey(p.id_proposal);
                       const isExpanded    = expandedKeys.includes(key);
+                      const submittedCount = Math.min(p.total_submit || 0, MIN_SUBMIT_TAHAP1);
 
                       return (
                         <Fragment key={key}>
@@ -458,9 +590,9 @@ export default function RekapTahap1Tab({ id_program }) {
                             </TableCell>
                             <TableCell align="center">
                               <Chip
-                                label={`${p.total_submit} / ${p.total_reviewer}`}
+                                label={`${submittedCount} / ${MIN_SUBMIT_TAHAP1}`}
                                 size="small"
-                                color={p.total_submit === p.total_reviewer ? "success" : "default"}
+                                color={(p.total_submit || 0) >= MIN_SUBMIT_TAHAP1 ? "success" : "default"}
                                 sx={{ borderRadius: "6px", fontWeight: 800, fontSize: 11 }}
                               />
                             </TableCell>

@@ -28,11 +28,12 @@ const roundedField = {
   "& .MuiOutlinedInput-root": {
     borderRadius: "12px",
     backgroundColor: "#fff",
-    transition: "box-shadow 0.2s",
+    transition: "all 0.2s ease-in-out",
     "&:hover fieldset": { borderColor: COLORS.primary },
-    "&.Mui-focused fieldset": { borderColor: COLORS.primary },
-    "&.Mui-focused": { boxShadow: `0 0 0 3px ${COLORS.primaryLight}` },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary, borderWidth: "2px" },
+    "&.Mui-focused": { boxShadow: `0 0 0 4px ${COLORS.primaryLight}` },
   },
+  "& .MuiInputLabel-root.Mui-focused": { color: COLORS.primary, fontWeight: 700 },
 };
 
 const StatusPill = ({ label, type = "primary" }) => {
@@ -172,6 +173,7 @@ export default function TimelineProgramTab({ program, onUpdate }) {
             backgroundColor: COLORS.primary,
             boxShadow: "0 4px 12px rgba(13, 89, 242, 0.2)",
             width: { xs: "100%", sm: "auto" },
+            minWidth: 0,
             "&:hover": { 
               backgroundColor: COLORS.primaryDark,
               boxShadow: "0 6px 16px rgba(13, 89, 242, 0.3)",
@@ -186,7 +188,7 @@ export default function TimelineProgramTab({ program, onUpdate }) {
         p: { xs: 3, sm: 4 }, 
         borderRadius: "16px",
         border: `1.5px solid #E2E8F0`,
-        backgroundColor: "#F8FAFC",
+        backgroundColor: "#fff",
       }}>
         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "1.5fr 1fr 1fr 1fr" }, gap: { xs: 3, sm: 4 } }}>
           <Box>
@@ -274,7 +276,6 @@ export default function TimelineProgramTab({ program, onUpdate }) {
             sx={{
               textTransform: "none", borderRadius: "12px", px: 3, fontWeight: 700,
               backgroundColor: COLORS.error,
-              color: "#fff",
               boxShadow: "0 4px 12px rgba(220,38,38,0.2)",
               "&:hover": { 
                 backgroundColor: "#B91C1C",
@@ -291,7 +292,6 @@ export default function TimelineProgramTab({ program, onUpdate }) {
             sx={{
               textTransform: "none", borderRadius: "12px", px: 4, fontWeight: 700,
               backgroundColor: COLORS.primary,
-              color: "#fff",
               boxShadow: "0 4px 12px rgba(13, 89, 242, 0.2)",
               "&:hover": { 
                 backgroundColor: COLORS.primaryDark,

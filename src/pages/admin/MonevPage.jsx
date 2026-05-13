@@ -3,7 +3,7 @@ import {
   Box, Paper, Typography, Button, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, MenuItem, CircularProgress,
-  IconButton, Chip,
+  IconButton, Chip, Pagination,
 } from "@mui/material";
 import { Close, Add, AssignmentTurnedIn } from "@mui/icons-material";
 import Swal from "sweetalert2";
@@ -44,19 +44,19 @@ const roundedField = {
 };
 
 const tableHeadCell = {
-  fontWeight: 700,
-  fontSize: { xs: 11, sm: 12 },
-  color: "#374151",
+  fontWeight: 800,
+  fontSize: 12,
+  color: "#475569",
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
   backgroundColor: "#F8FAFC",
   borderBottom: `2px solid ${COLORS.primaryMuted}`,
-  py: 2,
-  textTransform: "uppercase",
-  letterSpacing: "0.04em",
+  py: 2.5,
 };
 
 const tableBodyRow = {
-  "& td": { borderBottom: `1px solid ${COLORS.slateLight}`, py: 2 },
-  "&:hover": { backgroundColor: "#F8FAFC" },
+  "&:hover": { backgroundColor: "#F1F5F9/50" },
+  "& td": { borderBottom: "1.5px solid #E2E8F0", py: 2 },
 };
 
 const TIPE_MAP = {
@@ -92,6 +92,8 @@ export default function MonevPage() {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [tahun, setTahun] = useState("");
+  const [page, setPage] = useState(1);
+  const rowsPerPage = 10;
 
   useEffect(() => {
     getMyProgram()
@@ -121,6 +123,10 @@ export default function MonevPage() {
 
   useEffect(() => { fetchLuaran(); }, [fetchLuaran]);
 
+  useEffect(() => {
+    setPage(1);
+  }, [tahun]);
+
   const tahunOptions = Array.from(new Set(
     luaranList
       .map((item) => {
@@ -138,6 +144,9 @@ export default function MonevPage() {
       const dateValue = item.deadline || item.created_at;
       return dateValue && new Date(dateValue).getFullYear() === Number(tahun);
     });
+
+  const totalPages = Math.max(1, Math.ceil(filteredLuaranList.length / rowsPerPage));
+  const paginatedList = filteredLuaranList.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
   const handleOpenCreate = () => {
     setEditData(null);
@@ -248,10 +257,9 @@ export default function MonevPage() {
   return (
     <BodyLayout Sidebar={AdminSidebar}>
       <PageTransition>
-        <Box sx={{ px: 1, py: 1 }}>
           <Box sx={{ mb: 4 }}>
-            <Typography sx={{ fontSize: { xs: 26, sm: 32, md: 36 }, fontWeight: 800, color: "#1F2937", mb: 0.5 }}>Monitoring dan Evaluasi</Typography>
-            <Typography sx={{ fontSize: { xs: 14, sm: 16 }, color: "#6B7280" }}>Kelola jenis luaran kegiatan per program</Typography>
+            <Typography sx={{ fontSize: 36, fontWeight: 800, color: "#1F2937", mb: 0.5 }}>Monitoring dan Evaluasi</Typography>
+            <Typography sx={{ fontSize: 16, color: "#6B7280" }}>Kelola jenis luaran kegiatan per program</Typography>
           </Box>
 
           {programs.length > 1 && (
@@ -276,14 +284,18 @@ export default function MonevPage() {
             </Box>
           )}
 
-          <Paper sx={{
-            borderRadius: "20px",
-            border: "1.5px solid #E5E7EB",
-            overflow: "hidden",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-          }}>
-            <Box sx={{ height: 4, background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
-            <Box sx={{ p: { xs: 2.5, sm: 3.5 }, borderBottom: `1.5px solid ${COLORS.slateLight}`, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+          <Paper
+            elevation={0}
+            sx={{
+              borderRadius: "20px",
+              border: "1.5px solid #E2E8F0",
+              overflow: "hidden",
+              boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+              position: "relative",
+            }}
+          >
+            <Box sx={{ height: "6px", background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
+            <Box sx={{ p: { xs: 3, md: 4 }, borderBottom: "1.5px solid #E2E8F0", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap", width: { xs: "100%", lg: "auto" } }}>
                 <TextField
                   select
@@ -305,8 +317,8 @@ export default function MonevPage() {
                     <MenuItem key={itemTahun} value={String(itemTahun)} sx={{ fontSize: 13 }}>{itemTahun}</MenuItem>
                   ))}
                 </TextField>
-                <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 500 }}>
-                  Total <b>{filteredLuaranList.length} luaran</b>
+                <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 600 }}>
+                  Total <span style={{ color: "#1E293B" }}>{filteredLuaranList.length} luaran</span>
                 </Typography>
               </Box>
 
@@ -321,22 +333,20 @@ export default function MonevPage() {
               >
                 {selectedProgram && (
                   <Button
-                    variant="contained"
+                    variant="outlined"
                     onClick={() => navigate(`/admin/monev/${selectedProgram.id_program}/progress`)}
                     sx={{
                       textTransform: "none",
+                      color: COLORS.primary,
+                      borderColor: COLORS.primaryMuted,
                       borderRadius: "12px",
-                      fontWeight: 600,
+                      fontWeight: 700,
                       px: 3,
                       py: 1.2,
-                      fontSize: 14,
-                      backgroundColor: "#fff",
-                      color: "#0D59F2",
-                      border: "1px solid #0D59F2",
+                      fontSize: { xs: 12, sm: 14 },
                       width: { xs: "100%", sm: "auto" },
                       whiteSpace: "nowrap",
-                      boxShadow: "none",
-                      "&:hover": { backgroundColor: "#f0f4ff", boxShadow: "none" },
+                      "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
                     }}
                   >
                     Lihat Progress Tim
@@ -348,24 +358,22 @@ export default function MonevPage() {
                   onClick={handleOpenCreate}
                   disabled={!selectedProgram}
                   sx={{
-                    textTransform: "none",
-                    borderRadius: "12px",
-                    backgroundColor: "#0D59F2",
-                    "&:hover": { backgroundColor: "#0846c7" },
-                    px: 3,
-                    py: 1.2,
-                    fontSize: 14,
-                    fontWeight: 600,
+                    textTransform: "none", borderRadius: "12px", px: { xs: 2, sm: 3 }, py: 1.2, fontWeight: 700,
+                    backgroundColor: COLORS.primary,
+                    boxShadow: "0 4px 12px rgba(13, 89, 242, 0.2)",
                     width: { xs: "100%", sm: "auto" },
                     whiteSpace: "nowrap",
-                    boxShadow: "0 4px 12px rgba(13,89,242,0.2)",
+                    "&:hover": {
+                      backgroundColor: COLORS.primaryDark,
+                      boxShadow: "0 6px 16px rgba(13, 89, 242, 0.3)",
+                    },
                   }}
                 >
                   Tambah Luaran
                 </Button>
               </Box>
             </Box>
-            <Box sx={{ p: { xs: 2.5, sm: 3.5 } }}>
+            <Box sx={{ p: { xs: 3, md: 4 } }}>
               {loading ? (
                 <Box sx={{ position: "relative", minHeight: 320 }}>
                   <LoadingScreen message="Memuat data luaran..." overlay minHeight="320px" />
@@ -384,8 +392,9 @@ export default function MonevPage() {
                   </Typography>
                 </Box>
               ) : (
-              <TableContainer>
-                <Table>
+                <>
+                <TableContainer sx={{ borderRadius: "16px", border: "1.5px solid #E2E8F0", overflow: "hidden", overflowX: "auto", mb: 4 }}>
+                <Table sx={{ minWidth: 600 }}>
                   <TableHead>
                     <TableRow>
                       {["No", "Nama Luaran", "Keterangan", "Tipe", "Deadline", "Aksi"].map((h, i) => (
@@ -396,7 +405,7 @@ export default function MonevPage() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {filteredLuaranList.map((luaran) => {
+                    {paginatedList.map((luaran) => {
                       const tipe = TIPE_MAP[luaran.tipe] || {};
                       const lewat = isDeadlineLewat(luaran.deadline);
                       return (
@@ -433,20 +442,30 @@ export default function MonevPage() {
                                 size="small" variant="outlined"
                                 onClick={() => handleOpenEdit(luaran)}
                                 sx={{
-                                  textTransform: "none", borderRadius: "50px", fontSize: 12,
-                                  fontWeight: 600, px: 2, borderColor: "#0D59F2", color: "#0D59F2",
-                                  "&:hover": { backgroundColor: "#f0f4ff" },
+                                  textTransform: "none",
+                                  color: COLORS.primary,
+                                  borderColor: COLORS.primaryMuted,
+                                  borderRadius: "10px",
+                                  fontWeight: 700,
+                                  fontSize: { xs: 11, sm: 12 },
+                                  px: { xs: 1, sm: 2 },
+                                  "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary }
                                 }}
                               >
                                 Edit
                               </Button>
                               <Button
                                 size="small" variant="outlined"
+                                color="error"
                                 onClick={() => handleDelete(luaran)}
                                 sx={{
-                                  textTransform: "none", borderRadius: "50px", fontSize: 12,
-                                  fontWeight: 600, px: 2, borderColor: "#e53935", color: "#e53935",
-                                  "&:hover": { backgroundColor: "rgba(229,57,53,0.06)" },
+                                  textTransform: "none",
+                                  borderColor: COLORS.errorLight,
+                                  borderRadius: "10px",
+                                  fontWeight: 700,
+                                  fontSize: { xs: 11, sm: 12 },
+                                  px: { xs: 1, sm: 2 },
+                                  "&:hover": { backgroundColor: COLORS.errorLight, borderColor: COLORS.error }
                                 }}
                               >
                                 Hapus
@@ -459,10 +478,35 @@ export default function MonevPage() {
                   </TableBody>
                 </Table>
               </TableContainer>
+
+                <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "space-between", alignItems: { xs: "flex-start", sm: "center" }, gap: 2, px: 1 }}>
+                  <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 600 }}>
+                    Menampilkan <span style={{ color: "#1E293B" }}>{(page - 1) * rowsPerPage + 1}–{Math.min(page * rowsPerPage, filteredLuaranList.length)}</span> dari <span style={{ color: "#1E293B" }}>{filteredLuaranList.length}</span> luaran
+                  </Typography>
+                  <Pagination
+                    count={totalPages}
+                    page={page}
+                    onChange={(e, v) => setPage(v)}
+                    color="primary"
+                    shape="rounded"
+                    size="small"
+                    sx={{
+                      "& .MuiPaginationItem-root": {
+                        fontWeight: 700,
+                        borderRadius: "10px",
+                        "&.Mui-selected": {
+                          backgroundColor: COLORS.primary,
+                          color: "#fff",
+                          "&:hover": { backgroundColor: COLORS.primaryDark },
+                        },
+                      },
+                    }}
+                  />
+                </Box>
+                </>
             )}
             </Box>
           </Paper>
-        </Box>
 
         <Dialog open={openForm} onClose={handleCloseForm} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: { xs: "16px", sm: "24px" }, overflow: "hidden" } }}>
           <Box sx={{ p: { xs: 1.5, sm: 2 }, display: "flex", alignItems: "center", justifyContent: "space-between", background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`, color: "#fff" }}>

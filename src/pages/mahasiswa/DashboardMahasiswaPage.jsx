@@ -43,7 +43,7 @@ const getProposalStatusInfo = (status) => {
     2:  { label: "Review Tahap 1",         backgroundColor: "#3949ab" },
     3:  { label: "Tidak Lolos Desk",       backgroundColor: "#c62828" },
     4:  { label: "Lolos Desk",             backgroundColor: "#2e7d32" },
-    5:  { label: "Panel Wawancara",        backgroundColor: "#f57f17" },
+    5:  { label: "Wawancara",        backgroundColor: "#f57f17" },
     6:  { label: "Tidak Lolos Wawancara",  backgroundColor: "#c62828" },
     7:  { label: "Lolos Wawancara",        backgroundColor: "#2e7d32" },
     8:  { label: "Pembimbing Diajukan",    backgroundColor: "#1565c0" },

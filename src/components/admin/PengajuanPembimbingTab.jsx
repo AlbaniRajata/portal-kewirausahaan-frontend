@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Box, Typography, TextField, MenuItem, Table, TableBody,
-  TableCell, TableContainer, TableHead, TableRow, CircularProgress,
-  Dialog, DialogTitle, DialogContent, DialogActions,
+  TableCell, TableContainer, TableHead, TableRow,
+  Dialog, DialogContent, DialogActions,
   Button, IconButton, Divider, Paper, Pagination,
 } from "@mui/material";
-import { Close } from "@mui/icons-material";
+import { Close, HowToReg } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import { getDashboardPengajuanPembimbing } from "../../api/admin";
 import LoadingScreen from "../common/LoadingScreen";
@@ -54,19 +54,19 @@ const roundedField = {
 };
 
 const tableHeadCell = {
-  fontWeight: 700,
-  fontSize: { xs: 11, sm: 12 },
-  color: "#374151",
+  fontWeight: 800,
+  fontSize: 12,
+  color: "#475569",
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
   backgroundColor: "#F8FAFC",
   borderBottom: `2px solid ${COLORS.primaryMuted}`,
-  py: 2,
-  textTransform: "uppercase",
-  letterSpacing: "0.04em",
+  py: 2.5,
 };
 
 const tableBodyRow = {
-  "& td": { borderBottom: `1px solid ${COLORS.slateLight}`, py: 2 },
-  "&:hover": { backgroundColor: "#F8FAFC" },
+  "&:hover": { backgroundColor: "#F1F5F9/50" },
+  "& td": { borderBottom: "1.5px solid #E2E8F0", py: 2 },
 };
 
 const StatusPill = ({ label, backgroundColor }) => (
@@ -199,22 +199,31 @@ export default function PengajuanPembimbingTab() {
           </TextField>
         </Box>
 
-        <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 500, textAlign: { xs: "left", sm: "right" } }}>
-          Total <b>{filteredList.length} pengajuan</b>
+        <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 600, textAlign: { xs: "left", sm: "right" } }}>
+          Total <span style={{ color: "#1E293B" }}>{filteredList.length} pengajuan</span>
         </Typography>
       </Box>
 
       {filteredList.length === 0 ? (
-        <Box sx={{ textAlign: "center", py: 12 }}>
-          <Typography sx={{ color: COLORS.slate, fontSize: 16, fontWeight: 500 }}>Belum ada pengajuan pembimbing</Typography>
+        <Box sx={{ textAlign: "center", py: 10 }}>
+          <Box sx={{
+            width: 100, height: 100, borderRadius: "50%", backgroundColor: COLORS.slateLight,
+            display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 3,
+          }}>
+            <HowToReg sx={{ fontSize: 48, color: COLORS.primaryMuted }} />
+          </Box>
+          <Typography sx={{ fontSize: 20, fontWeight: 700, color: "#1F2937", mb: 1 }}>Belum Ada Pengajuan Pembimbing</Typography>
+          <Typography sx={{ fontSize: 14, color: COLORS.slate }}>
+            Belum ada data pengajuan pembimbing yang tersedia
+          </Typography>
         </Box>
       ) : (
         <>
-          <TableContainer sx={{ borderRadius: "12px", border: `1.5px solid ${COLORS.slateLight}`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-            <Table>
+          <TableContainer sx={{ borderRadius: "16px", border: "1.5px solid #E2E8F0", overflow: "hidden", overflowX: "auto", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)" }}>
+            <Table sx={{ minWidth: 600 }}>
               <TableHead>
                 <TableRow>
-                  {["Judul Proposal", "Mahasiswa Pengaju", "Dosen Pembimbing", "Tanggal Diajukan", "Status", "Aksi"].map((h, i) => (
+                  {["JUDUL PROPOSAL", "MAHASISWA PENGAJU", "DOSEN PEMBIMBING", "TANGGAL DIAJUKAN", "STATUS", "AKSI"].map((h, i) => (
                     <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 5 && { textAlign: "center" }) }}>{h}</TableCell>
                   ))}
                 </TableRow>
@@ -236,10 +245,14 @@ export default function PengajuanPembimbingTab() {
                         <Button size="small" variant="outlined"
                           onClick={() => { setSelectedItem(item); setDialogOpen(true); }}
                           sx={{
-                            textTransform: "none", borderRadius: "12px", fontSize: 12, fontWeight: 600, px: 2.5,
-                            borderColor: COLORS.primary, color: COLORS.primary,
-                            transition: "all 0.2s",
-                            "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primaryDark }
+                            textTransform: "none",
+                            color: COLORS.primary,
+                            borderColor: COLORS.primaryMuted,
+                            borderRadius: "10px",
+                            fontWeight: 700,
+                            fontSize: { xs: 11, sm: 12 },
+                            px: { xs: 1, sm: 2 },
+                            "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary }
                           }}
                         >
                           Detail
@@ -256,12 +269,13 @@ export default function PengajuanPembimbingTab() {
             display: "flex",
             flexDirection: { xs: "column", sm: "row" },
             justifyContent: "space-between",
-            alignItems: "center",
+            alignItems: { xs: "flex-start", sm: "center" },
             gap: 2,
             mt: 3,
+            px: 1,
           }}>
-            <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 500 }}>
-              Menampilkan <b>{filteredList.length > 0 ? (page - 1) * rowsPerPage + 1 : 0}–{Math.min(page * rowsPerPage, filteredList.length)}</b> dari <b>{filteredList.length}</b> data
+            <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 600 }}>
+              Menampilkan <span style={{ color: "#1E293B" }}>{filteredList.length > 0 ? (page - 1) * rowsPerPage + 1 : 0}–{Math.min(page * rowsPerPage, filteredList.length)}</span> dari <span style={{ color: "#1E293B" }}>{filteredList.length}</span> data
             </Typography>
             <Pagination
               count={totalPages}
@@ -269,16 +283,15 @@ export default function PengajuanPembimbingTab() {
               onChange={(e, v) => setPage(v)}
               color="primary"
               shape="rounded"
-              showFirstButton
-              showLastButton
+              size="small"
               sx={{
                 "& .MuiPaginationItem-root": {
-                  fontWeight: 600,
-                  borderRadius: "8px",
+                  fontWeight: 700,
+                  borderRadius: "10px",
                   "&.Mui-selected": {
-                    background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.secondary})`,
+                    backgroundColor: COLORS.primary,
                     color: "#fff",
-                    "&:hover": { background: `linear-gradient(135deg, ${COLORS.primaryDark}, ${COLORS.secondary})` },
+                    "&:hover": { backgroundColor: COLORS.primaryDark },
                   },
                 },
               }}
@@ -296,7 +309,7 @@ export default function PengajuanPembimbingTab() {
       >
         <Box sx={{ p: { xs: 1.5, sm: 2 }, display: "flex", alignItems: "center", justifyContent: "space-between", background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`, color: "#fff" }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, px: 1 }}>
-            <Typography sx={{ fontWeight: 700, fontSize: 16 }}>Detail Pengajuan Pembimbing</Typography>
+            <Typography sx={{ fontWeight: 800, fontSize: { xs: 16, sm: 18 } }}>Detail Pengajuan Pembimbing</Typography>
           </Box>
           <IconButton
             onClick={() => setDialogOpen(false)}
@@ -354,12 +367,11 @@ export default function PengajuanPembimbingTab() {
           <Button
             onClick={() => setDialogOpen(false)}
             variant="contained"
+            color="error"
             sx={{
-              textTransform: "none", borderRadius: "12px", px: 4,
-              fontWeight: 700, backgroundColor: COLORS.primary,
-              boxShadow: "0 4px 12px rgba(13,89,242,0.2)",
-              transition: "all 0.2s",
-              "&:hover": { backgroundColor: COLORS.primaryDark, boxShadow: "0 6px 16px rgba(13,89,242,0.3)" },
+              textTransform: "none", borderRadius: "12px", px: 4, fontWeight: 700,
+              backgroundColor: "#9CA3AF",
+              "&:hover": { backgroundColor: "#78716C" },
             }}
           >
             Tutup

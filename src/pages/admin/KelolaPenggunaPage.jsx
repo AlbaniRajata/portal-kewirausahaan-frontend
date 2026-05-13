@@ -1,75 +1,81 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Box, Paper, Typography, Tabs, Tab, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, Button, Dialog, DialogTitle,
+  TableContainer, TableHead, TableRow, Button, Dialog,
   DialogContent, DialogActions, TextField, MenuItem,
   IconButton, Pagination, Tooltip, InputAdornment, Divider,
 } from "@mui/material";
-import {
-  Close, Search, Visibility, VisibilityOff,
-} from "@mui/icons-material";
+import { Close, Search, Visibility, VisibilityOff } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
 import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import {
-  getMahasiswaList, createMahasiswa, updateMahasiswa,
-  getDosenList, createDosen, updateDosen,
-  getReviewerListKelola, createReviewer, updateReviewer,
-  getJuriListKelola, createJuri, updateJuri,
-  toggleUserActive, resetPassword, getProdi,
+  getMahasiswaList, getDosenList, getReviewerListKelola, getJuriListKelola,
+  getProdi, createMahasiswa, updateMahasiswa, createDosen, updateDosen,
+  createReviewer, updateReviewer, createJuri, updateJuri,
+  toggleUserActive, resetPassword,
 } from "../../api/admin";
-import { validateFormSecurity } from "../../utils/inputSecurity";
 
 const COLORS = {
-  primary:      "#0D59F2",
+  primary: "#0D59F2",
   primaryLight: "#E0F2FE",
-  primaryDark:  "#0369A1",
+  primaryDark: "#0369A1",
   primaryMuted: "#93C5FD",
-  secondary:    "#2563EB",
-  accent:       "#3B82F6",
-  slate:        "#64748B",
-  slateLight:   "#F1F5F9",
-  success:      "#059669",
+  secondary: "#2563EB",
+  accent: "#3B82F6",
+  slate: "#64748B",
+  slateLight: "#F1F5F9",
+  success: "#059669",
   successLight: "#ECFDF5",
-  warning:      "#D97706",
+  warning: "#D97706",
   warningLight: "#FFFBEB",
-  error:        "#DC2626",
-  errorLight:    "#ff7070",
+  error: "#DC2626",
+  errorLight: "#ff7070",
 };
-
-const FieldLabel = ({ children, required }) => (
-  <Typography sx={{ fontWeight: 600, mb: 0.8, fontSize: 13, color: "#374151", display: "flex", gap: 0.4 }}>
-    {children}
-    {required && <span style={{ color: COLORS.error }}>*</span>}
-  </Typography>
-);
 
 const roundedField = {
   "& .MuiOutlinedInput-root": {
     borderRadius: "12px",
     backgroundColor: "#fff",
-    transition: "box-shadow 0.2s",
+    transition: "all 0.2s ease-in-out",
     "&:hover fieldset": { borderColor: COLORS.primary },
-    "&.Mui-focused fieldset": { borderColor: COLORS.primary },
-    "&.Mui-focused": { boxShadow: `0 0 0 3px ${COLORS.primaryLight}` },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary, borderWidth: "2px" },
+    "&.Mui-focused": { boxShadow: `0 0 0 4px ${COLORS.primaryLight}` },
   },
+  "& .MuiInputLabel-root.Mui-focused": { color: COLORS.primary, fontWeight: 700 },
 };
 
 const tableHeadCell = {
-  fontWeight: 700,
-  fontSize: 13,
-  color: "#374151",
+  fontWeight: 800,
+  fontSize: 12,
+  color: "#475569",
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
   backgroundColor: "#F8FAFC",
   borderBottom: `2px solid ${COLORS.primaryMuted}`,
-  py: 2,
+  py: 2.5,
 };
 
 const tableBodyRow = {
-  "& td": { borderBottom: `1px solid ${COLORS.slateLight}`, py: 2 },
-  "&:hover": { backgroundColor: "#F8FAFC" },
+  "&:hover": { backgroundColor: "#F1F5F9/50" },
+  "& td": { borderBottom: "1.5px solid #E2E8F0", py: 2 },
 };
+
+const pageCard = {
+  borderRadius: "20px",
+  border: "1.5px solid #E2E8F0",
+  overflow: "hidden",
+  boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+  position: "relative",
+};
+
+const FieldLabel = ({ children, required }) => (
+  <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 1, color: "#334155" }}>
+    {children} {required && <span style={{ color: COLORS.error }}>*</span>}
+  </Typography>
+);
 
 const StatusPill = ({ active }) => (
   <Box sx={{
@@ -296,12 +302,6 @@ export default function KelolaPenggunaPage() {
 
     if (!validate(cur, curForm, curTabKey)) return;
 
-    const securityCheck = validateFormSecurity(curForm);
-    if (!securityCheck.isValid) {
-      setErrors((prev) => ({ ...prev, [securityCheck.field]: securityCheck.message }));
-      return;
-    }
-
     setDialog({ ...cur, open: false });
 
     const result = await Swal.fire({
@@ -342,36 +342,74 @@ export default function KelolaPenggunaPage() {
   };
 
   const handleToggleActive = async (user) => {
-    const newStatus = !user.is_active;
-    const result = await Swal.fire({
-      title: newStatus ? "Aktifkan Pengguna?" : "Nonaktifkan Pengguna?",
-      html: `<b>${user.nama_lengkap || user.username}</b> akan ${newStatus ? "diaktifkan" : "dinonaktifkan"}.`,
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonColor: newStatus ? COLORS.success : COLORS.error,
-      cancelButtonColor: COLORS.slate,
-      confirmButtonText: "Ya",
-      cancelButtonText: "Batal",
-    });
-    if (!result.isConfirmed) return;
-    try {
-      await toggleUserActive(user.id_user, newStatus);
-      await Swal.fire({
-        icon: "success",
-        title: "Berhasil",
-        text: `Pengguna berhasil ${newStatus ? "diaktifkan" : "dinonaktifkan"}`,
-        timer: 2000,
-        timerProgressBar: true,
-        showConfirmButton: false,
+    // Jika dosen, reviewer, atau juri, lakukan delete (hard delete)
+    const isNonMahasiswa = tabKey !== "mahasiswa";
+    
+    if (isNonMahasiswa) {
+      // Untuk dosen, reviewer, juri: delete
+      const result = await Swal.fire({
+        title: "Hapus Pengguna?",
+        html: `<b>${user.nama_lengkap || user.username}</b> akan dihapus permanen.`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: COLORS.error,
+        cancelButtonColor: COLORS.slate,
+        confirmButtonText: "Ya, Hapus",
+        cancelButtonText: "Batal",
       });
-      fetchData(tabKey, filters);
-    } catch (err) {
-      Swal.fire({
-        icon: "error",
-        title: "Gagal",
-        text: err.response?.data?.message || "Terjadi kesalahan",
-        confirmButtonColor: COLORS.primary,
+      if (!result.isConfirmed) return;
+      try {
+        await toggleUserActive(user.id_user, false);
+        await Swal.fire({
+          icon: "success",
+          title: "Berhasil",
+          text: `Pengguna berhasil dihapus`,
+          timer: 2000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+        });
+        fetchData(tabKey, filters);
+      } catch (err) {
+        Swal.fire({
+          icon: "error",
+          title: "Gagal",
+          text: err.response?.data?.message || "Terjadi kesalahan",
+          confirmButtonColor: COLORS.primary,
+        });
+      }
+    } else {
+      // Untuk mahasiswa: toggle active status (soft delete)
+      const newStatus = !user.is_active;
+      const result = await Swal.fire({
+        title: newStatus ? "Aktifkan Pengguna?" : "Nonaktifkan Pengguna?",
+        html: `<b>${user.nama_lengkap || user.username}</b> akan ${newStatus ? "diaktifkan" : "dinonaktifkan"}.`,
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: newStatus ? COLORS.success : COLORS.error,
+        cancelButtonColor: COLORS.slate,
+        confirmButtonText: "Ya",
+        cancelButtonText: "Batal",
       });
+      if (!result.isConfirmed) return;
+      try {
+        await toggleUserActive(user.id_user, newStatus);
+        await Swal.fire({
+          icon: "success",
+          title: "Berhasil",
+          text: `Pengguna berhasil ${newStatus ? "diaktifkan" : "dinonaktifkan"}`,
+          timer: 2000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+        });
+        fetchData(tabKey, filters);
+      } catch (err) {
+        Swal.fire({
+          icon: "error",
+          title: "Gagal",
+          text: err.response?.data?.message || "Terjadi kesalahan",
+          confirmButtonColor: COLORS.primary,
+        });
+      }
     }
   };
 
@@ -589,9 +627,8 @@ export default function KelolaPenggunaPage() {
   const renderRow = (user) => {
     const cells = [];
     cells.push(
-      <TableCell key="nama">
+      <TableCell key="nama" sx={{ width: 260, minWidth: 240, pl: { xs: 1.5, sm: 3 } }}>
         <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{user.nama_lengkap || user.username}</Typography>
-        <Typography sx={{ fontSize: 12, color: "#aaa" }}>@{user.username}</Typography>
       </TableCell>
     );
     if (tabKey === "mahasiswa") {
@@ -924,105 +961,86 @@ export default function KelolaPenggunaPage() {
   return (
     <BodyLayout Sidebar={AdminSidebar}>
       <PageTransition>
-        <Box sx={{ px: 1, py: 1 }}>
-          <Box sx={{ mb: 4 }}>
-            <Typography sx={{ fontSize: 36, fontWeight: 800, color: "#1F2937", mb: 0.5 }}>
-              Kelola Pengguna
-            </Typography>
-            <Typography sx={{ fontSize: 16, color: "#6B7280" }}>
-              Manajemen akun mahasiswa, dosen, reviewer, dan juri dalam sistem
-            </Typography>
+        <Box sx={{ mb: 4 }}>
+          <Typography sx={{ fontSize: 36, fontWeight: 800, color: "#1F2937", mb: 0.5 }}>
+            Kelola Pengguna
+          </Typography>
+          <Typography sx={{ fontSize: 16, color: "#6B7280" }}>
+            Manajemen akun mahasiswa, dosen, reviewer, dan juri dalam sistem portal kewirausahaan
+          </Typography>
+        </Box>
+
+        <Paper 
+          elevation={0} 
+          sx={{
+            borderRadius: "20px",
+            border: "1.5px solid #E2E8F0",
+            overflow: "hidden",
+            boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+            position: "relative",
+          }}
+        >
+          <Box sx={{ height: "6px", background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
+          
+          <Box sx={{ borderBottom: `1px solid ${COLORS.slateLight}`, overflowX: "auto", backgroundColor: "#fff" }}>
+            <Tabs
+              value={activeTab}
+              onChange={(e, v) => {
+                setActiveTab(v);
+                setPage(1);
+              }}
+              variant="scrollable"
+              scrollButtons="auto"
+              allowScrollButtonsMobile
+              sx={{
+                minHeight: 52,
+                px: { xs: 1, sm: 2 },
+                "& .MuiTab-root": {
+                  textTransform: "none",
+                  fontSize: { xs: 13, sm: 14 },
+                  fontWeight: 700,
+                  color: COLORS.slate,
+                  minHeight: 52,
+                  px: { xs: 2, sm: 3 },
+                  "&.Mui-selected": { color: COLORS.primary },
+                },
+                "& .MuiTabs-indicator": {
+                  backgroundColor: COLORS.primary,
+                  height: 3,
+                  borderRadius: "3px 3px 0 0",
+                },
+              }}
+            >
+              {TABS.map((t, i) => (
+                <Tab key={i} label={t.label} />
+              ))}
+            </Tabs>
           </Box>
 
-          <Paper sx={{ 
-            borderRadius: "20px", 
-            border: "1.5px solid #E5E7EB", 
-            overflow: "hidden",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-            position: "relative"
-          }}>
-            <Box sx={{ 
-              height: "4px", 
-              background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` 
-            }} />
-            
-            <Box sx={{ borderBottom: "1px solid #F1F5F9", backgroundColor: "#fff" }}>
-              <Tabs
-                value={activeTab}
-                onChange={(e, v) => {
-                  setActiveTab(v);
-                  setPage(1);
-                }}
-                variant="scrollable"
-                scrollButtons="auto"
-                sx={{
-                  px: 3,
-                  "& .MuiTab-root": {
-                    textTransform: "none", 
-                    fontSize: 14, 
-                    fontWeight: 600,
-                    color: COLORS.slate, 
-                    minHeight: 60,
-                    transition: "all 0.2s",
-                    "&.Mui-selected": { color: COLORS.primary },
-                  },
-                  "& .MuiTabs-indicator": {
-                    backgroundColor: COLORS.primary, height: 3, borderRadius: "3px 3px 0 0",
-                  },
-                }}
-              >
-                {TABS.map((t, i) => (
-                  <Tab key={i} label={t.label} />
-                ))}
-              </Tabs>
-            </Box>
+          <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
+            {renderFilters()}
 
-            <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
-              {renderFilters()}
-
-              {loading ? (
-                <Box sx={{ position: "relative", minHeight: 400 }}>
-                  <LoadingScreen message="Memuat data pengguna..." overlay minHeight="400px" />
-                </Box>
-              ) : paginatedList.length === 0 ? (
-                <Box sx={{ textAlign: "center", py: 12 }}>
-                  <Box
-                    sx={{
-                      width: 120,
-                      height: 120,
-                      borderRadius: "50%",
-                      backgroundColor: COLORS.slateLight,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      mx: "auto",
-                      mb: 3,
-                    }}
-                  />
-                  <Typography sx={{ fontSize: 22, fontWeight: 800, color: "#1F2937", mb: 1 }}>
+            {loading ? (
+              <Box sx={{ position: "relative", minHeight: 400 }}>
+                <LoadingScreen message="Memuat data pengguna..." overlay minHeight="400px" />
+              </Box>
+            ) : paginatedList.length === 0 ? (
+                <Paper elevation={0} sx={{ p: { xs: 5, sm: 10 }, textAlign: "center", borderRadius: "20px", border: "1.5px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
+                  <Typography sx={{ fontSize: { xs: 18, sm: 22 }, fontWeight: 800, color: "#1E293B", mb: 1 }}>
                     Belum ada {TABS[activeTab].label}
                   </Typography>
-                  <Typography sx={{ fontSize: 16, color: COLORS.slate }}>
+                  <Typography sx={{ fontSize: { xs: 14, sm: 16 }, color: COLORS.slate, fontWeight: 500 }}>
                     Klik tombol di atas untuk menambahkan {TABS[activeTab].label} baru
                   </Typography>
-                </Box>
+                </Paper>
               ) : (
                 <>
-                  <TableContainer
-                    sx={{
-                      borderRadius: "16px",
-                      border: `1.5px solid ${COLORS.slateLight}`,
-                      overflow: "auto",
-                      mb: 4,
-                    }}
-                  >
-                    <Table>
+                  <TableContainer sx={{ borderRadius: "16px", border: "1.5px solid #E2E8F0", overflow: "hidden", overflowX: "auto", mb: 4 }}>
+                    <Table sx={{ minWidth: 600 }}>
                       <TableHead>
                         <TableRow>
                           {renderColumns().map((h, i) => (
-                            <TableCell key={i} sx={tableHeadCell}>
-                              {h}
-                            </TableCell>
+                            <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 0 && { width: 260, minWidth: 240, pl: { xs: 1.5, sm: 3 } }), ...(h === "AKSI" && { textAlign: "center" }) }}>{h}</TableCell>
                           ))}
                         </TableRow>
                       </TableHead>
@@ -1031,48 +1049,41 @@ export default function KelolaPenggunaPage() {
                           <TableRow key={user.id_user} sx={tableBodyRow}>
                             {renderRow(user)}
                             <TableCell>
-                              <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
-                                <Tooltip title="Edit Data">
-                                  <Button
-                                    size="small"
-                                    variant="outlined"
-                                    onClick={() => handleOpenEdit(user)}
-                                    sx={{
-                                      textTransform: "none",
-                                      color: COLORS.primary,
-                                      borderColor: COLORS.primaryMuted,
-                                      borderRadius: "10px",
-                                      fontWeight: 600,
-                                      fontSize: 12,
-                                      px: 2,
-                                      "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
-                                    }}
-                                  >
-                                    Edit
-                                  </Button>
-                                </Tooltip>
-                                <Tooltip title={user.is_active ? "Nonaktifkan" : "Aktifkan"}>
-                                  <Button
-                                    size="small"
-                                    variant="outlined"
-                                    color={user.is_active ? "error" : "success"}
-                                    onClick={() => handleToggleActive(user)}
-                                    sx={{
-                                      textTransform: "none",
-                                      borderColor: user.is_active ? "#fce4ec" : "#dcfce7",
-                                      borderRadius: "10px",
-                                      fontWeight: 600,
-                                      fontSize: 12,
-                                      px: 2,
-                                      "&:hover": {
-                                        backgroundColor: user.is_active ? "rgba(229,57,53,0.06)" : "rgba(5,150,105,0.06)",
-                                        borderColor: user.is_active ? "#e53935" : "#059669",
-                                      },
-                                    }}
-                                  >
-                                    {user.is_active ? "Nonaktifkan" : "Aktifkan"}
-                                  </Button>
-                                </Tooltip>
+                              <Box sx={{ display: "flex", gap: { xs: 0.5, sm: 1.5 }, justifyContent: "center", flexWrap: "wrap" }}>
+                                <Button 
+                                  size="small" 
+                                  variant="outlined" 
+                                  onClick={() => handleOpenEdit(user)}
+                                  sx={{
+                                    textTransform: "none",
+                                    color: COLORS.primary,
+                                    borderColor: COLORS.primaryMuted,
+                                    borderRadius: "10px",
+                                    fontWeight: 700,
+                                    fontSize: { xs: 11, sm: 12 },
+                                    px: { xs: 1, sm: 2 },
+                                    "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary }
+                                  }}
+                                >
+                                  Edit
+                                </Button>
+                                <Button 
+                                  size="small" 
+                                  variant="outlined" 
+                                  color={tabKey !== "mahasiswa" ? "error" : (user.is_active ? "error" : "success")}
+                                  onClick={() => handleToggleActive(user)}
+                                  sx={{
+                                    textTransform: "none",
+                                    borderColor: tabKey !== "mahasiswa" ? COLORS.errorLight : (user.is_active ? COLORS.errorLight : "#dcfce7"),
+                                    borderRadius: "10px",
+                                    fontWeight: 700,
+                                    fontSize: { xs: 11, sm: 12 },
+                                    px: { xs: 1, sm: 2 },
+                                    "&:hover": { backgroundColor: tabKey !== "mahasiswa" ? COLORS.errorLight : (user.is_active ? COLORS.errorLight : "#dcfce7"), borderColor: tabKey !== "mahasiswa" ? COLORS.error : (user.is_active ? COLORS.error : COLORS.success) }
+                                  }}
+                                >
+                                  {tabKey !== "mahasiswa" ? "Hapus" : (user.is_active ? "Nonaktifkan" : "Aktifkan")}
+                                </Button>
                               </Box>
                             </TableCell>
                           </TableRow>
@@ -1081,33 +1092,25 @@ export default function KelolaPenggunaPage() {
                     </Table>
                   </TableContainer>
 
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: { xs: "column", sm: "row" },
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      gap: 2,
-                    }}
-                  >
-                    <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 500 }}>
-                      Menampilkan <b>{((page - 1) * rowsPerPage) + 1}–{Math.min(page * rowsPerPage, filteredList.length)}</b> dari <b>{filteredList.length}</b> data
+                  <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "space-between", alignItems: { xs: "flex-start", sm: "center" }, gap: 2, px: 1 }}>
+                    <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 600 }}>
+                      Menampilkan <span style={{ color: "#1E293B" }}>{((page - 1) * rowsPerPage) + 1}–{Math.min(page * rowsPerPage, filteredList.length)}</span> dari <span style={{ color: "#1E293B" }}>{filteredList.length}</span> data
                     </Typography>
-                    <Pagination
-                      count={totalPages}
-                      page={page}
-                      onChange={(e, v) => setPage(v)}
-                      color="primary"
+                    <Pagination 
+                      count={totalPages} 
+                      page={page} 
+                      onChange={(e, v) => setPage(v)} 
+                      color="primary" 
                       shape="rounded"
-                      size="medium"
+                      size="small"
                       sx={{
                         "& .MuiPaginationItem-root": {
-                          fontWeight: 600,
-                          borderRadius: "8px",
+                          fontWeight: 700,
+                          borderRadius: "10px",
                           "&.Mui-selected": {
-                            background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.secondary})`,
+                            backgroundColor: COLORS.primary,
                             color: "#fff",
-                            "&:hover": { background: `linear-gradient(135deg, ${COLORS.primaryDark}, ${COLORS.secondary})` },
+                            "&:hover": { backgroundColor: COLORS.primaryDark },
                           },
                         },
                       }}
@@ -1117,92 +1120,57 @@ export default function KelolaPenggunaPage() {
               )}
             </Box>
           </Paper>
-
-          <Dialog
-            open={dialog.open}
-            onClose={handleCloseDialog}
-            maxWidth="sm"
-            fullWidth
-            PaperProps={{
-              sx: {
-                borderRadius: "24px",
-                boxShadow: "0 20px 40px rgba(0,0,0,0.1)",
-                overflow: "hidden",
-              },
-            }}
-          >
-            <DialogTitle sx={{ p: 0 }}>
-              <Box sx={{ 
-                background: `linear-gradient(135deg, ${COLORS.primaryDark} 0%, ${COLORS.primary} 100%)`, 
-                p: 3, 
-                color: "#fff",
-                position: "relative"
-              }}>
-                <Typography sx={{ fontWeight: 800, fontSize: 18, letterSpacing: "-0.01em" }}>
-                  {dialog.mode === "create" ? `Tambah ${TABS[activeTab].label}` : `Edit Data ${TABS[activeTab].label}`}
-                </Typography>
-                <Typography sx={{ fontSize: 13, opacity: 0.9, mt: 0.5, fontWeight: 500 }}>
-                  {dialog.mode === "create" ? "Lengkapi informasi di bawah untuk menambahkan akun baru" : "Perbarui informasi akun pengguna terpilih"}
-                </Typography>
-                <IconButton
-                  onClick={handleCloseDialog}
-                  sx={{
-                    position: "absolute", 
-                    right: 16, 
-                    top: 20, 
-                    color: "#fff", 
-                    "&:hover": { backgroundColor: "rgba(255,255,255,0.1)" }
-                  }}
-                >
-                  <Close sx={{ fontSize: 20 }} />
-                </IconButton>
-              </Box>
-            </DialogTitle>
-            <DialogContent sx={{ px: 4, py: 3 }}>
-              <Box sx={{ mt: 1 }}>
-                {renderFormFields(dialog, form, tabKey)}
-              </Box>
-            </DialogContent>
-            <DialogActions sx={{ px: 4, py: 3, backgroundColor: "#F8FAFC", borderTop: "1px solid #E2E8F0" }}>
-              <Button
-                onClick={handleCloseDialog}
+        <Dialog open={dialog.open} onClose={handleCloseDialog} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: { xs: "16px", sm: "24px" }, overflow: "hidden" } }}>
+          <Box sx={{ p: { xs: 1.5, sm: 2 }, display: "flex", alignItems: "center", justifyContent: "space-between", background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`, color: "#fff" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, px: 1 }}>
+              <Typography sx={{ fontWeight: 800, fontSize: { xs: 16, sm: 18 } }}>
+                {dialog.mode === "create" ? `Tambah ${TABS[activeTab].label}` : `Edit Data ${TABS[activeTab].label}`}
+              </Typography>
+            </Box>
+            <IconButton onClick={handleCloseDialog} sx={{ color: "#fff", "&:hover": { backgroundColor: "rgba(255,255,255,0.2)" } }}>
+              <Close />
+            </IconButton>
+          </Box>
+          <DialogContent sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 3, sm: 4 } }}>
+            <Box>
+              {renderFormFields(dialog, form, tabKey)}
+            </Box>
+          </DialogContent>
+          <DialogActions sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 2, sm: 3 }, backgroundColor: "#F8FAFC", borderTop: "1.5px solid #E2E8F0", gap: 1.5, flexDirection: { xs: "column", sm: "row" }, "& > button": { width: { xs: "100%", sm: "auto" } } }}>
+              <Button 
+                variant="contained"
+                onClick={handleCloseDialog} 
                 disabled={submitting}
                 sx={{
-                  textTransform: "none",
-                  borderRadius: "12px",
-                  px: 4,
-                  py: 1,
-                  fontWeight: 700,
-                  color: COLORS.slate,
-                  border: `1.5px solid ${COLORS.slateLight}`,
-                  "&:hover": { backgroundColor: COLORS.slateLight, borderColor: COLORS.slateLight },
+                  textTransform: "none", borderRadius: "12px", px: 3, fontWeight: 700,
+                  backgroundColor: COLORS.error,
+                  boxShadow: "0 4px 12px rgba(220,38,38,0.2)",
+                  "&:hover": { 
+                    backgroundColor: "#B91C1C",
+                    boxShadow: "0 6px 16px rgba(220,38,38,0.3)",
+                  },
                 }}
               >
                 Batal
               </Button>
-              <Button
-                variant="contained"
-                onClick={handleSave}
-                disabled={submitting}
-                sx={{
-                  textTransform: "none",
-                  borderRadius: "12px",
-                  px: 4,
-                  py: 1,
-                  fontWeight: 700,
-                  backgroundColor: COLORS.primary,
-                  boxShadow: `0 4px 12px ${COLORS.primary}40`,
-                  "&:hover": {
-                    backgroundColor: COLORS.primaryDark,
-                    boxShadow: `0 6px 16px ${COLORS.primary}60`,
-                  },
-                }}
-              >
-                {submitting ? "Menyimpan..." : "Simpan Data"}
-              </Button>
-            </DialogActions>
-          </Dialog>
-        </Box>
+            <Button 
+              variant="contained" 
+              onClick={handleSave} 
+              disabled={submitting}
+              sx={{
+                textTransform: "none", borderRadius: "12px", px: 4, fontWeight: 700,
+                backgroundColor: COLORS.primary,
+                boxShadow: "0 4px 12px rgba(13, 89, 242, 0.2)",
+                "&:hover": { 
+                  backgroundColor: COLORS.primaryDark,
+                  boxShadow: "0 6px 16px rgba(13, 89, 242, 0.3)",
+                },
+              }}
+            >
+              {submitting ? "Menyimpan..." : "Simpan Perubahan"}
+            </Button>
+          </DialogActions>
+        </Dialog>
       </PageTransition>
     </BodyLayout>
   );

@@ -17,6 +17,7 @@ import { getDosenPembimbing, getDosenBebanPembimbing } from "../../api/admin";
 const COLORS = {
   primary: "#0D59F2",
   primaryLight: "#E0F2FE",
+  primaryDark: "#0369A1",
   primaryMuted: "#93C5FD",
   slate: "#64748B",
   slateLight: "#F1F5F9",
@@ -26,17 +27,19 @@ const COLORS = {
 };
 
 const tableHeadCell = {
-  fontWeight: 700,
-  fontSize: 13,
-  color: "#374151",
+  fontWeight: 800,
+  fontSize: 12,
+  color: "#475569",
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
   backgroundColor: "#F8FAFC",
   borderBottom: `2px solid ${COLORS.primaryMuted}`,
-  py: 2,
+  py: 2.5,
 };
 
 const tableBodyRow = {
-  "& td": { borderBottom: `1px solid ${COLORS.slateLight}`, py: 2 },
-  "&:hover": { backgroundColor: "#F8FAFC" },
+  "&:hover": { backgroundColor: "#F1F5F9/50" },
+  "& td": { borderBottom: "1.5px solid #E2E8F0", py: 2 },
 };
 
 export default function DosenPembimbingTab({ id_program }) {
@@ -124,8 +127,8 @@ export default function DosenPembimbingTab({ id_program }) {
         </Box>
       </Box>
 
-      <TableContainer sx={{ borderRadius: "16px", border: `1.5px solid ${COLORS.slateLight}`, overflow: "auto", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)" }}>
-        <Table>
+      <TableContainer sx={{ borderRadius: "16px", border: "1.5px solid #E2E8F0", overflow: "auto", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)" }}>
+        <Table sx={{ minWidth: 600 }}>
           <TableHead>
             <TableRow sx={{ backgroundColor: "#fafafa" }}>
               <TableCell sx={tableHeadCell}>NAMA LENGKAP</TableCell>
@@ -138,9 +141,14 @@ export default function DosenPembimbingTab({ id_program }) {
           </TableHead>
           <TableBody>
             {dosenMergedData.length === 0 ? (
-              <TableRow sx={tableBodyRow}>
-                <TableCell colSpan={4} sx={{ textAlign: "center", py: 4, color: "#999" }}>
-                  Tidak ada dosen pembimbing
+              <TableRow>
+                <TableCell colSpan={4} sx={{ textAlign: "center", py: 6 }}>
+                  <Typography sx={{ fontSize: { xs: 16, sm: 18 }, fontWeight: 800, color: "#1E293B", mb: 0.5 }}>
+                    Belum ada dosen pembimbing
+                  </Typography>
+                  <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 500 }}>
+                    Belum ada data dosen pembimbing yang tersedia
+                  </Typography>
                 </TableCell>
               </TableRow>
             ) : (
@@ -198,25 +206,25 @@ export default function DosenPembimbingTab({ id_program }) {
         </Table>
       </TableContainer>
 
-      <Box sx={{ mt: 3, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexDirection: { xs: "column", sm: "row" } }}>
-        <Typography sx={{ fontSize: 13, color: COLORS.slate, fontWeight: 500 }}>
-          Menampilkan {startDisplay}–{endDisplay} dari {dosenMergedData.length} dosen
+      <Box sx={{ mt: 3, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexDirection: { xs: "column", sm: "row" }, px: 1 }}>
+        <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 600 }}>
+          Menampilkan <span style={{ color: "#1E293B" }}>{startDisplay}–{endDisplay}</span> dari <span style={{ color: "#1E293B" }}>{dosenMergedData.length}</span> dosen
         </Typography>
         <Pagination
           count={totalPages}
           page={page}
-          onChange={(_, v) => setPage(v)}
+          onChange={(e, v) => setPage(v)}
           color="primary"
           shape="rounded"
-          showFirstButton
-          showLastButton
+          size="small"
           sx={{
             "& .MuiPaginationItem-root": {
-              fontWeight: 600,
-              borderRadius: "8px",
+              fontWeight: 700,
+              borderRadius: "10px",
               "&.Mui-selected": {
-                background: `linear-gradient(135deg, ${COLORS.primary}, #2563EB)`,
+                backgroundColor: COLORS.primary,
                 color: "#fff",
+                "&:hover": { backgroundColor: COLORS.primaryDark },
               },
             },
           }}

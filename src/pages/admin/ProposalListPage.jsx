@@ -12,7 +12,7 @@ import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
 import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
-import { getMyProgram, getPesertaDetail, getProposalDetailAdmin, getProposalList } from "../../api/admin";
+import { getPesertaDetail, getProposalDetailAdmin, getProposalList } from "../../api/admin";
 
 const COLORS = {
   primary:      "#0D59F2",
@@ -35,25 +35,36 @@ const roundedField = {
   "& .MuiOutlinedInput-root": {
     borderRadius: "12px",
     backgroundColor: "#fff",
-    transition: "box-shadow 0.2s",
+    transition: "all 0.2s ease-in-out",
     "&:hover fieldset": { borderColor: COLORS.primary },
-    "&.Mui-focused fieldset": { borderColor: COLORS.primary },
-    "&.Mui-focused": { boxShadow: `0 0 0 3px ${COLORS.primaryLight}` },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary, borderWidth: "2px" },
+    "&.Mui-focused": { boxShadow: `0 0 0 4px ${COLORS.primaryLight}` },
   },
+  "& .MuiInputLabel-root.Mui-focused": { color: COLORS.primary, fontWeight: 700 },
 };
 
 const tableHeadCell = {
-  fontWeight: 700,
-  fontSize: 13,
-  color: "#374151",
+  fontWeight: 800,
+  fontSize: 12,
+  color: "#475569",
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
   backgroundColor: "#F8FAFC",
   borderBottom: `2px solid ${COLORS.primaryMuted}`,
-  py: 2,
+  py: 2.5,
 };
 
 const tableBodyRow = {
-  "& td": { borderBottom: `1px solid ${COLORS.slateLight}`, py: 2 },
-  "&:hover": { backgroundColor: "#F8FAFC" },
+  "&:hover": { backgroundColor: "#F1F5F9/50" },
+  "& td": { borderBottom: "1.5px solid #E2E8F0", py: 2 },
+};
+
+const pageCard = {
+  borderRadius: "20px",
+  border: "1.5px solid #E2E8F0",
+  overflow: "hidden",
+  boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+  position: "relative",
 };
 
 const STATUS_MAP = {
@@ -62,7 +73,7 @@ const STATUS_MAP = {
   2: { label: "Ditugaskan ke Reviewer",      colorType: "info"    },
   3: { label: "Tidak Lolos Desk Evaluasi",   colorType: "error"   },
   4: { label: "Lolos Desk Evaluasi",         colorType: "success" },
-  5: { label: "Panel Wawancara",             colorType: "warning" },
+  5: { label: "Wawancara",             colorType: "warning" },
   6: { label: "Tidak Lolos Wawancara",       colorType: "error"   },
   7: { label: "Lolos Wawancara",             colorType: "success" },
   8: { label: "Pembimbing Diajukan",         colorType: "primary" },
@@ -128,29 +139,12 @@ const getKategoriName = (proposal) =>
   proposal?.nama_kategori || proposal?.kategori?.nama_kategori ||
   proposal?.kategori?.nama || "Tanpa Kategori";
 
-const getProgramDisplayName = (program) => {
-  const nama = program?.nama_program?.trim();
-  const ket  = program?.keterangan?.trim();
-  if (nama && ket && nama.toLowerCase() !== ket.toLowerCase()) return ket;
-  return nama || ket || "PENDAFTAR PMW";
+const getExportTitle = (tahunFilter) => {
+  return tahunFilter ? `DAFTAR PROPOSAL ${tahunFilter}` : "DAFTAR PROPOSAL";
 };
 
-const getExportTitle = (program, tahunFilter) => {
-  const programText = `${program?.nama_program || ""} ${program?.keterangan || ""}`.toLowerCase();
-  let baseTitle = getProgramDisplayName(program).toUpperCase();
-  if (programText.includes("pmw") || programText.includes("program mahasiswa wirausaha")) {
-    baseTitle = "DAFTAR PROGRAM MAHASISWA WIRAUSAHA";
-  } else if (programText.includes("inbis") || programText.includes("inkubator bisnis")) {
-    baseTitle = "DAFTAR INKUBATOR BISNIS";
-  }
-  return tahunFilter ? `${baseTitle} ${tahunFilter}` : baseTitle;
-};
-
-const getProgramNameForFilename = (program) => {
-  const programText = `${program?.nama_program || ""} ${program?.keterangan || ""}`.toLowerCase();
-  if (programText.includes("pmw") || programText.includes("program mahasiswa wirausaha")) return "PMW";
-  if (programText.includes("inbis") || programText.includes("inkubator bisnis")) return "INBIS";
-  return program?.keterangan?.substring(0, 10).toUpperCase() || "Program";
+const getFileName = (tahunFilter) => {
+  return tahunFilter ? `DaftarProposal_${tahunFilter}` : "DaftarProposal";
 };
 
 const getAnggotaPeranLabel = (anggota) => {
@@ -215,30 +209,14 @@ export default function ProposalListPage() {
   const navigate = useNavigate();
   const [loading, setLoading]           = useState(true);
   const [proposalList, setProposalList] = useState([]);
-  const [programOptions, setProgramOptions] = useState([]);
   const [page, setPage]                 = useState(1);
   const [exporting, setExporting]       = useState(false);
   const rowsPerPage = 10;
 
-  const [filters, setFilters] = useState({ id_program: "", status: [], tahun: "" });
-
-  useEffect(() => {
-    getMyProgram()
-      .then((res) => {
-        const myProgram = res?.data;
-        if (myProgram?.id_program) {
-          setProgramOptions([myProgram]);
-          setFilters((prev) => ({ ...prev, id_program: myProgram.id_program }));
-        }
-      })
-      .catch(() => {
-        Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat data program", confirmButtonColor: COLORS.primary });
-      });
-  }, []);
+  const [filters, setFilters] = useState({ kategori: "", status: [], tahun: "" });
 
   const fetchProposals = useCallback(async () => {
     try {
-      if (!filters.id_program) { setProposalList([]); return; }
       setLoading(true);
 
       const fetchAllPages = async (baseFilters) => {
@@ -264,10 +242,10 @@ export default function ProposalListPage() {
 
       let allProposals = [];
       if (filters.status.length === 0) {
-        allProposals = await fetchAllPages({ id_program: filters.id_program });
+        allProposals = await fetchAllPages({});
       } else {
         const promises = filters.status.map((statusValue) =>
-          fetchAllPages({ id_program: filters.id_program, status: statusValue })
+          fetchAllPages({ status: statusValue })
         );
         const results = await Promise.all(promises);
         allProposals = results.flatMap((list) => list || []);
@@ -280,7 +258,7 @@ export default function ProposalListPage() {
     } finally {
       setLoading(false);
     }
-  }, [filters.id_program, filters.status]);
+  }, [filters.status]);
 
   useEffect(() => { fetchProposals(); }, [fetchProposals]);
 
@@ -295,13 +273,25 @@ export default function ProposalListPage() {
       .filter(Boolean)
   )).sort((a, b) => b - a);
 
-  const filteredProposalList = filters.tahun === ""
-    ? proposalList
-    : proposalList.filter((item) => {
-        const d = item.tanggal_submit || item.created_at;
-        if (!d) return false;
-        return new Date(d).getFullYear() === Number(filters.tahun);
-      });
+  const kategoriOptions = Array.from(new Set(
+    proposalList
+      .map((item) => getKategoriName(item))
+      .filter((value) => value && value !== "Tanpa Kategori")
+  )).sort((a, b) => a.localeCompare(b, "id-ID"));
+
+  const normalizedKategoriFilter = filters.kategori.trim().toLowerCase();
+
+  const filteredProposalList = proposalList.filter((item) => {
+    const d = item.tanggal_submit || item.created_at;
+    const matchesTahun = filters.tahun === "" || (d && new Date(d).getFullYear() === Number(filters.tahun));
+    const kategoriName = getKategoriName(item).trim().toLowerCase();
+    const matchesKategori = filters.kategori === "" || kategoriName === normalizedKategoriFilter;
+    return matchesTahun && matchesKategori;
+  });
+
+  useEffect(() => {
+    setPage(1);
+  }, [filters.kategori, filters.tahun]);
 
   const totalPages    = Math.ceil(filteredProposalList.length / rowsPerPage);
   const paginatedList = filteredProposalList.slice((page - 1) * rowsPerPage, page * rowsPerPage);
@@ -347,8 +337,9 @@ export default function ProposalListPage() {
       anggotaRaw.forEach((anggota) => {
         const key    = getAnggotaKey(anggota);
         const idUser = anggota?.id_user || anggota?.id;
-        if (!key || !idUser || !filters.id_program) return;
-        if (!pesertaQueue.has(key)) pesertaQueue.set(key, { idUser, idProgram: filters.id_program });
+        const idProgram = proposal?.id_program || proposal?.program?.id_program || null;
+        if (!key || !idUser || !idProgram) return;
+        if (!pesertaQueue.has(key)) pesertaQueue.set(key, { idUser, idProgram });
       });
     });
 
@@ -371,9 +362,7 @@ export default function ProposalListPage() {
   };
 
   const buildExportFileName = () => {
-    const selectedProgram = programOptions.find((p) => String(p.id_program) === String(filters.id_program)) || programOptions[0];
-    const programName = getProgramNameForFilename(selectedProgram);
-    return filters.tahun ? `DaftarProposal_${programName}_${filters.tahun}` : `DaftarProposal_${programName}`;
+    return getFileName(filters.tahun);
   };
 
   const handleExportXlsx = async () => {
@@ -385,8 +374,7 @@ export default function ProposalListPage() {
     try {
       const XLSX = await getXLSX();
       const groupedData = await buildDetailedExportGroups();
-      const selectedProgram = programOptions.find((p) => String(p.id_program) === String(filters.id_program)) || programOptions[0];
-      const aoa     = [[getExportTitle(selectedProgram, filters.tahun)], []];
+      const aoa     = [[getExportTitle(filters.tahun)], []];
       const merges  = [{ s: { r: 0, c: 0 }, e: { r: 0, c: exportHeaders.length - 1 } }];
       const dataRowRanges = [];
       let rowIndex = 2;
@@ -472,14 +460,8 @@ export default function ProposalListPage() {
             </Typography>
           </Box>
 
-          <Paper sx={{
-            borderRadius: "20px",
-            border: "1.5px solid #E5E7EB",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-            overflow: "hidden",
-            mb: 3,
-          }}>
-            <Box sx={{ height: 4, background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
+          <Paper elevation={0} sx={{ ...pageCard, mb: 3 }}>
+            <Box sx={{ height: "6px", background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
 
             <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
               <Box sx={{
@@ -488,35 +470,6 @@ export default function ProposalListPage() {
                 flexDirection: { xs: "column", lg: "row" },
                 alignItems: { xs: "stretch", lg: "center" },
               }}>
-                <TextField
-                  select size="small"
-                  value={filters.id_program}
-                  onChange={(e) => setFilters({ ...filters, id_program: e.target.value })}
-                  disabled
-                  SelectProps={{
-                    displayEmpty: true,
-                    renderValue: (v) => (
-                      <span style={{ fontSize: 14, color: !v ? "#9CA3AF" : "inherit" }}>
-                        {!v ? "Pilih Program" : programOptions.find(p => String(p.id_program) === String(v))
-                          ? getProgramDisplayName(programOptions.find(p => String(p.id_program) === String(v)))
-                          : v}
-                      </span>
-                    ),
-                  }}
-                  sx={{
-                    ...roundedField,
-                    width: { xs: "100%", lg: "auto" },
-                    minWidth: { xs: 0, lg: 200 },
-                    flex: { lg: "0 1 200px" },
-                  }}
-                >
-                  {programOptions.map((prog) => (
-                    <MenuItem key={prog.id_program} value={prog.id_program} sx={{ fontSize: 13 }}>
-                      {getProgramDisplayName(prog)}
-                    </MenuItem>
-                  ))}
-                </TextField>
-
                 <Autocomplete
                   multiple
                   options={statusOptions}
@@ -554,6 +507,33 @@ export default function ProposalListPage() {
                     },
                   }}
                 />
+
+                <TextField
+                  select size="small"
+                  value={filters.kategori}
+                  onChange={(e) => setFilters({ ...filters, kategori: e.target.value })}
+                  SelectProps={{
+                    displayEmpty: true,
+                    renderValue: (v) => (
+                      <span style={{ fontSize: 14, color: !v ? "#9CA3AF" : "inherit" }}>
+                        {!v ? "Semua Kategori" : v}
+                      </span>
+                    ),
+                  }}
+                  sx={{
+                    ...roundedField,
+                    width: { xs: "100%", lg: "auto" },
+                    minWidth: { xs: 0, lg: 220 },
+                    flex: { lg: "0 1 220px" },
+                  }}
+                >
+                  <MenuItem value="" sx={{ fontSize: 13 }}>Semua Kategori</MenuItem>
+                  {kategoriOptions.map((kategori) => (
+                    <MenuItem key={kategori} value={kategori} sx={{ fontSize: 13 }}>
+                      {kategori}
+                    </MenuItem>
+                  ))}
+                </TextField>
 
                 <TextField
                   select size="small"
@@ -608,13 +588,8 @@ export default function ProposalListPage() {
             </Box>
           </Paper>
 
-          <Paper sx={{
-            borderRadius: "20px",
-            border: "1.5px solid #E5E7EB",
-            overflow: "hidden",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-          }}>
-            <Box sx={{ height: 4, background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
+          <Paper elevation={0} sx={pageCard}>
+            <Box sx={{ height: "6px", background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
 
             <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
               {loading ? (
@@ -650,7 +625,7 @@ export default function ProposalListPage() {
                     <Table sx={{ minWidth: 900 }}>
                       <TableHead>
                         <TableRow>
-                          {["JUDUL PROPOSAL", "NAMA TIM", "KETUA TIM", "DOSEN PEMBIMBING", "PROGRAM", "STATUS", "TANGGAL SUBMIT", "AKSI"].map((h, i) => (
+                          {["JUDUL PROPOSAL", "NAMA TIM", "KETUA TIM", "DOSEN PEMBIMBING", "KATEGORI", "STATUS", "TANGGAL SUBMIT", "AKSI"].map((h, i) => (
                             <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 7 && { textAlign: "center" }) }}>
                               {h}
                             </TableCell>
@@ -668,7 +643,7 @@ export default function ProposalListPage() {
                                 </Typography>
                               </TableCell>
                               <TableCell>
-                                <Typography sx={{ fontSize: 13, color: "#475569" }}>{proposal.nama_tim}</Typography>
+                                  {getKategoriName(proposal)}
                               </TableCell>
                               <TableCell>
                                 <Typography sx={{ fontWeight: 600, fontSize: 14, color: "#1E293B" }}>
@@ -682,7 +657,7 @@ export default function ProposalListPage() {
                                 </Typography>
                               </TableCell>
                               <TableCell>
-                                <Typography sx={{ fontSize: 13, color: "#475569" }}>{proposal.keterangan}</Typography>
+                                <Typography sx={{ fontSize: 13, color: "#475569" }}>{getKategoriName(proposal)}</Typography>
                               </TableCell>
                               <TableCell>
                                 <StatusPill
@@ -739,16 +714,15 @@ export default function ProposalListPage() {
                       onChange={(e, v) => setPage(v)}
                       color="primary"
                       shape="rounded"
-                      showFirstButton
-                      showLastButton
+                      size="small"
                       sx={{
                         "& .MuiPaginationItem-root": {
-                          fontWeight: 600,
-                          borderRadius: "8px",
+                          fontWeight: 700,
+                          borderRadius: "10px",
                           "&.Mui-selected": {
-                            background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.secondary})`,
+                            backgroundColor: COLORS.primary,
                             color: "#fff",
-                            "&:hover": { background: `linear-gradient(135deg, ${COLORS.primaryDark}, ${COLORS.secondary})` },
+                            "&:hover": { backgroundColor: COLORS.primaryDark },
                           },
                         },
                       }}

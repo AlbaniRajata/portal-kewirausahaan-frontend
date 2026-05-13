@@ -158,7 +158,7 @@ const getStatusInfo = (statusCode) => {
     2: { label: "Review Tahap 1",         backgroundColor: COLORS.secondary },
     3: { label: "Tidak Lolos Desk",       backgroundColor: COLORS.error },
     4: { label: "Lolos Desk",             backgroundColor: COLORS.success },
-    5: { label: "Panel Wawancara",        backgroundColor: COLORS.warning },
+    5: { label: "Wawancara",        backgroundColor: COLORS.warning },
     6: { label: "Tidak Lolos Wawancara",  backgroundColor: COLORS.error },
     7: { label: "Lolos Wawancara",        backgroundColor: COLORS.success },
     8: { label: "Pembimbing Diajukan",    backgroundColor: COLORS.primary },

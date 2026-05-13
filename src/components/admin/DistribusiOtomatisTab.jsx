@@ -161,7 +161,7 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
   const [pageRekom, setPageRekom] = useState(1);
   const [pageDetail, setPageDetail] = useState(1);
   const [pageRencana, setPageRencana] = useState(1);
-  const rowsPerPage = 6;
+  const rowsPerPage = 10;
 
   const fetchPreview = useCallback(async () => {
     if (!id_program) return;
@@ -329,7 +329,7 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
     );
   }
 
-  const semuaSudahTerdistribusi = tahap === 2 && preview.belum_terdistribusi === 0;
+  const semuaSudahTerdistribusi = preview.belum_terdistribusi === 0;
 
   return (
     <Box>
@@ -339,396 +339,246 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
           display: "grid",
           gridTemplateColumns:
             tahap === 1
-              ? { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" }
+              ? { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }
               : { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(4, 1fr)" },
           gap: 2,
         }}
       >
-        {tahap === 1 ? (
-          <>
-            <StatCard
-              label="Total Proposal"
-              value={preview.total_proposal}
-              color={COLORS.primary}
-              bg="#f3f7ff"
-              borderColor="#d7e5fb"
-            />
-            <StatCard
-              label="Total Reviewer"
-              value={preview.total_reviewer}
-              color="#7C3AED"
-              bg="#F5F3FF"
-              borderColor="#DDD6FE"
-            />
-            <StatCard
-              label="Rata-rata per Reviewer"
-              value={Math.ceil(preview.total_proposal / preview.total_reviewer)}
-              color={COLORS.success}
-              bg="#f2faf3"
-              borderColor="#d7e9d8"
-            />
-          </>
-        ) : (
-          <>
-            <StatCard
-              label="Total Proposal"
-              value={preview.total_proposal}
-              color={COLORS.primary}
-              bg="#f3f7ff"
-              borderColor="#d7e5fb"
-            />
-            <StatCard
-              label="Sudah Berpasangan"
-              value={preview.sudah_terdistribusi}
-              color={COLORS.success}
-              bg="#f2faf3"
-              borderColor="#d7e9d8"
-            />
-            <StatCard
-              label="Belum Berpasangan"
-              value={preview.belum_terdistribusi}
-              color={COLORS.error}
-              bg="#fff5f5"
-              borderColor="#fecaca"
-            />
-            <StatCard
-              label="Jumlah Pasang"
-              value={preview.jumlah_pasang}
-              color={COLORS.warning}
-              bg="#fff7ee"
-              borderColor="#fde3c7"
-            />
-          </>
-        )}
+        <StatCard
+          label="Total Proposal"
+          value={preview.total_proposal}
+          color={COLORS.primary}
+          bg="#f3f7ff"
+          borderColor="#d7e5fb"
+        />
+        <StatCard
+          label="Sudah Berpasangan"
+          value={preview.sudah_terdistribusi}
+          color={COLORS.success}
+          bg="#f2faf3"
+          borderColor="#d7e9d8"
+        />
+        <StatCard
+          label="Belum Berpasangan"
+          value={preview.belum_terdistribusi}
+          color={COLORS.error}
+          bg="#fff5f5"
+          borderColor="#fecaca"
+        />
+        <StatCard
+          label={tahap === 1 ? "Total Reviewer" : "Jumlah Pasang"}
+          value={tahap === 1 ? preview.total_reviewer : preview.jumlah_pasang}
+          color={tahap === 1 ? "#7C3AED" : COLORS.warning}
+          bg={tahap === 1 ? "#F5F3FF" : "#fff7ee"}
+          borderColor={tahap === 1 ? "#DDD6FE" : "#fde3c7"}
+        />
       </Box>
 
       <Typography sx={{ fontSize: 15, fontWeight: 700, color: "#1a1a1a", mb: 2 }}>
         {tahap === 1 ? "Rekomendasi Distribusi" : "Preview Distribusi"}
       </Typography>
 
-      {tahap === 1 ? (
-        preview.rekomendasi && preview.rekomendasi.length > 0 ? (
-          (() => {
-            const total = preview.rekomendasi.length;
-            const totalPages = Math.max(1, Math.ceil(total / rowsPerPage));
-            const start = (pageRekom - 1) * rowsPerPage;
-            const paginated = preview.rekomendasi.slice(start, start + rowsPerPage);
-            return (
-              <>
-                {paginated.map((reviewer) => (
-            <Paper
-              key={reviewer.id_reviewer}
-              variant="outlined"
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <Paper
+          variant="outlined"
+          sx={{
+            p: 3,
+            borderRadius: "16px",
+            border: `1.5px solid ${COLORS.primaryMuted}`,
+            backgroundColor: "#f3f7ff",
+          }}
+        >
+          <Typography sx={{ fontWeight: 700, mb: 1.5, color: COLORS.primary, fontSize: 14 }}>
+            {tahap === 1 ? "Sistem Pasangan (2 Reviewer Internal)" : "Sistem Pasangan (Reviewer + Juri)"}
+          </Typography>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+            <Typography sx={{ fontSize: 13, color: "#374151" }}>
+              {tahap === 1 ? (
+                <>
+                  Tersedia <Box component="span" sx={{ fontWeight: 700 }}>{preview.total_reviewer}</Box> reviewer aktif. 
+                  Setiap proposal akan dinilai oleh 2 orang reviewer berbeda.
+                </>
+              ) : (
+                <>
+                  Tersedia <Box component="span" sx={{ fontWeight: 700 }}>{preview.total_reviewer}</Box> reviewer dan{" "}
+                  <Box component="span" sx={{ fontWeight: 700 }}>{preview.total_juri}</Box> juri →{" "}
+                  <Box component="span" sx={{ fontWeight: 700 }}>{preview.jumlah_pasang}</Box> pasang unik.
+                </>
+              )}
+            </Typography>
+            <Typography sx={{ fontSize: 13, color: "#374151" }}>
+              Proposal sudah berpasangan:{" "}
+              <Box component="span" sx={{ fontWeight: 700, color: COLORS.success }}>
+                {preview.sudah_terdistribusi}
+              </Box>
+            </Typography>
+            <Typography sx={{ fontSize: 13, color: "#374151" }}>
+              Proposal sisa untuk didistribusikan:{" "}
+              <Box
+                component="span"
+                sx={{
+                  fontWeight: 700,
+                  color: preview.belum_terdistribusi > 0 ? COLORS.error : COLORS.success,
+                }}
+              >
+                {preview.belum_terdistribusi}
+              </Box>
+            </Typography>
+          </Box>
+        </Paper>
+
+        {preview.detail_sudah && preview.detail_sudah.length > 0 && (
+          <Box>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: COLORS.success, mb: 1.5 }}>
+              Sudah Berpasangan ({preview.detail_sudah.length})
+            </Typography>
+            <TableContainer
               sx={{
-                mb: 2,
                 borderRadius: "16px",
                 border: `1.5px solid ${COLORS.slateLight}`,
                 boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)",
-                overflow: "hidden",
+                overflow: "auto",
               }}
             >
-              <Box sx={{ p: 2.5 }}>
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1 }}>
-                  <Box>
-                    <Typography sx={{ fontSize: 15, fontWeight: 700, mb: 0.25, color: "#1a1a1a" }}>
-                      {reviewer.nama_reviewer}
-                    </Typography>
-                    <Typography sx={{ fontSize: 13, color: COLORS.slate }}>
-                      {reviewer.institusi || "-"}
-                    </Typography>
-                    {reviewer.bidang_keahlian && (
-                      <Typography sx={{ fontSize: 12, color: "#94a3b8" }}>
-                        Bidang: {reviewer.bidang_keahlian}
-                      </Typography>
-                    )}
-                  </Box>
-                  <Chip
-                    label={`${reviewer.proposals.length} Proposal`}
-                    sx={{
-                      fontWeight: 700,
-                      fontSize: 12,
-                      borderRadius: "50px",
-                      backgroundColor: COLORS.primaryLight,
-                      color: COLORS.primary,
-                      border: `1px solid ${COLORS.primaryMuted}`,
-                    }}
-                  />
-                </Box>
-
-                <Button
-                  size="small"
-                  onClick={() => toggleExpand(reviewer.id_reviewer)}
-                  variant="outlined"
-                  sx={{
-                    textTransform: "none",
-                    borderRadius: "50px",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    mt: 1,
-                    px: 2,
-                    borderColor: COLORS.primary,
-                    color: COLORS.primary,
-                    "&:hover": { backgroundColor: "#f0f4ff" },
-                  }}
-                >
-                  {expandedReviewer[reviewer.id_reviewer] ? "Sembunyikan Detail" : "Lihat Detail"}
-                </Button>
-
-                <Collapse in={expandedReviewer[reviewer.id_reviewer]}>
-                  <TableContainer
-                    sx={{
-                      mt: 2,
-                      borderRadius: "12px",
-                      border: `1px solid ${COLORS.slateLight}`,
-                      overflow: "auto",
-                    }}
-                  >
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell sx={{ ...tableHeadCell, fontSize: 12 }}>ID</TableCell>
-                          <TableCell sx={{ ...tableHeadCell, fontSize: 12 }}>JUDUL PROPOSAL</TableCell>
-                          <TableCell sx={{ ...tableHeadCell, fontSize: 12 }}>TIM</TableCell>
-                          <TableCell sx={{ ...tableHeadCell, fontSize: 12 }}>MODAL</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {reviewer.proposals.map((p) => (
-                          <TableRow key={p.id_proposal} sx={tableBodyRow}>
-                            <TableCell sx={{ fontSize: 13 }}>{p.id_proposal}</TableCell>
-                            <TableCell>
-                              <Typography sx={{ fontSize: 13, maxWidth: 300 }}>{p.judul}</Typography>
-                            </TableCell>
-                            <TableCell sx={{ fontSize: 13 }}>{p.nama_tim}</TableCell>
-                            <TableCell sx={{ fontSize: 13 }}>{formatRupiah(p.modal_diajukan)}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </Collapse>
-              </Box>
-            </Paper>
-                ))}
-
-                <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-                  <Pagination
-                    count={Math.max(1, Math.ceil(preview.rekomendasi.length / rowsPerPage))}
-                    page={pageRekom}
-                    onChange={(e, v) => setPageRekom(v)}
-                    color="primary"
-                    shape="rounded"
-                    showFirstButton
-                    showLastButton
-                  />
-                </Box>
-              </>
-            );
-          })()
-        ) : (
-          <Box sx={{ textAlign: "center", py: 5 }}>
-            <Typography sx={{ fontSize: 14, color: COLORS.slate }}>
-              Tidak ada rekomendasi distribusi
-            </Typography>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ ...tableHeadCell, fontSize: 12 }}>PROPOSAL</TableCell>
+                    <TableCell sx={{ ...tableHeadCell, fontSize: 12 }}>KATEGORI</TableCell>
+                    <TableCell sx={{ ...tableHeadCell, fontSize: 12 }}>{tahap === 1 ? "REVIEWER 1" : "REVIEWER"}</TableCell>
+                    <TableCell sx={{ ...tableHeadCell, fontSize: 12 }}>{tahap === 1 ? "REVIEWER 2" : "JURI"}</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {(() => {
+                    const list = preview.detail_sudah || [];
+                    const start = (pageDetail - 1) * rowsPerPage;
+                    const paginated = list.slice(start, start + rowsPerPage);
+                    return paginated.map((item) => (
+                      <TableRow key={item.id_proposal} sx={tableBodyRow}>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 12, maxWidth: 250 }}>{item.judul}</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 12 }}>{item.nama_kategori || item.kategori || "-"}</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 12, fontWeight: 500 }}>
+                            {item.reviewer1?.nama_lengkap || item.reviewer?.nama_lengkap || "-"}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 12, fontWeight: 500 }}>
+                            {item.reviewer2?.nama_lengkap || item.juri?.nama_lengkap || "-"}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    ));
+                  })()}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+              <Pagination
+                count={Math.max(1, Math.ceil((preview.detail_sudah || []).length / rowsPerPage))}
+                page={pageDetail}
+                onChange={(e, v) => setPageDetail(v)}
+                color="primary"
+                shape="rounded"
+              />
+            </Box>
           </Box>
-        )
-      ) : (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        )}
+
+        {preview.rencana_distribusi && preview.rencana_distribusi.length > 0 && (
+          <Box>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: COLORS.warning, mb: 1.5 }}>
+              Akan Didistribusikan ({preview.rencana_distribusi.length})
+            </Typography>
+            <TableContainer
+              sx={{
+                borderRadius: "16px",
+                border: `1.5px solid #fde3c7`,
+                backgroundColor: "#fff",
+                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)",
+                overflow: "auto",
+              }}
+            >
+              <Table size="small">
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: "#fff7ee" }}>
+                    <TableCell sx={{ ...tableHeadCell, fontSize: 12, backgroundColor: "#fff7ee", borderBottom: `2px solid #fde3c7` }}>
+                      PROPOSAL
+                    </TableCell>
+                    <TableCell sx={{ ...tableHeadCell, fontSize: 12, backgroundColor: "#fff7ee", borderBottom: `2px solid #fde3c7` }}>
+                      KATEGORI
+                    </TableCell>
+                    <TableCell sx={{ ...tableHeadCell, fontSize: 12, backgroundColor: "#fff7ee", borderBottom: `2px solid #fde3c7` }}>
+                      {tahap === 1 ? "REVIEWER 1" : "REVIEWER"}
+                    </TableCell>
+                    <TableCell sx={{ ...tableHeadCell, fontSize: 12, backgroundColor: "#fff7ee", borderBottom: `2px solid #fde3c7` }}>
+                      {tahap === 1 ? "REVIEWER 2" : "JURI"}
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {(() => {
+                    const list = preview.rencana_distribusi || [];
+                    const start = (pageRencana - 1) * rowsPerPage;
+                    const paginated = list.slice(start, start + rowsPerPage);
+                    return paginated.map((item) => (
+                      <TableRow key={item.id_proposal} sx={tableBodyRow}>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 12, maxWidth: 250 }}>{item.judul}</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 12 }}>{item.nama_kategori || item.kategori || "-"}</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 12, fontWeight: 500 }}>
+                            {item.reviewer1?.nama_lengkap || item.reviewer?.nama_lengkap || "-"}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography sx={{ fontSize: 12, fontWeight: 500 }}>
+                            {item.reviewer2?.nama_lengkap || item.juri?.nama_lengkap || "-"}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    ));
+                  })()}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+              <Pagination
+                count={Math.max(1, Math.ceil((preview.rencana_distribusi || []).length / rowsPerPage))}
+                page={pageRencana}
+                onChange={(e, v) => setPageRencana(v)}
+                color="primary"
+                shape="rounded"
+              />
+            </Box>
+          </Box>
+        )}
+
+        {semuaSudahTerdistribusi && (
           <Paper
             variant="outlined"
             sx={{
-              p: 3,
+              p: 2.5,
               borderRadius: "16px",
-              border: `1.5px solid ${COLORS.primaryMuted}`,
-              backgroundColor: "#f3f7ff",
+              backgroundColor: COLORS.successLight,
+              border: `1.5px solid #6EE7B7`,
+              textAlign: "center",
             }}
           >
-            <Typography sx={{ fontWeight: 700, mb: 1.5, color: COLORS.primary, fontSize: 14 }}>
-              Sistem Pasangan (Reviewer + Juri)
+            <Typography sx={{ fontSize: 14, fontWeight: 600, color: COLORS.success }}>
+              ✓ Semua proposal sudah memiliki pasangan penilai lengkap
             </Typography>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
-              <Typography sx={{ fontSize: 13, color: "#374151" }}>
-                Tersedia{" "}
-                <Box component="span" sx={{ fontWeight: 700 }}>
-                  {preview.total_reviewer}
-                </Box>{" "}
-                reviewer dan{" "}
-                <Box component="span" sx={{ fontWeight: 700 }}>
-                  {preview.total_juri}
-                </Box>{" "}
-                juri →{" "}
-                <Box component="span" sx={{ fontWeight: 700 }}>
-                  {preview.jumlah_pasang}
-                </Box>{" "}
-                pasang unik siap dipakai terlebih dahulu.
-              </Typography>
-              <Typography sx={{ fontSize: 13, color: "#374151" }}>
-                Proposal sudah berpasangan:{" "}
-                <Box component="span" sx={{ fontWeight: 700, color: COLORS.success }}>
-                  {preview.sudah_terdistribusi}
-                </Box>
-              </Typography>
-              <Typography sx={{ fontSize: 13, color: "#374151" }}>
-                Proposal sisa untuk didistribusikan:{" "}
-                <Box
-                  component="span"
-                  sx={{
-                    fontWeight: 700,
-                    color: preview.belum_terdistribusi > 0 ? COLORS.error : COLORS.success,
-                  }}
-                >
-                  {preview.belum_terdistribusi}
-                </Box>
-              </Typography>
-            </Box>
           </Paper>
-
-          {preview.detail_sudah && preview.detail_sudah.length > 0 && (
-            <Box>
-              <Typography sx={{ fontSize: 13, fontWeight: 700, color: COLORS.success, mb: 1.5 }}>
-                Sudah Berpasangan ({preview.detail_sudah.length})
-              </Typography>
-              <TableContainer
-                sx={{
-                  borderRadius: "16px",
-                  border: `1.5px solid ${COLORS.slateLight}`,
-                  boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)",
-                  overflow: "auto",
-                }}
-              >
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ ...tableHeadCell, fontSize: 12 }}>PROPOSAL</TableCell>
-                      <TableCell sx={{ ...tableHeadCell, fontSize: 12 }}>REVIEWER</TableCell>
-                      <TableCell sx={{ ...tableHeadCell, fontSize: 12 }}>JURI</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {(() => {
-                      const list = preview.detail_sudah || [];
-                      const total = list.length;
-                      const totalPages = Math.max(1, Math.ceil(total / rowsPerPage));
-                      const start = (pageDetail - 1) * rowsPerPage;
-                      const paginated = list.slice(start, start + rowsPerPage);
-                      return paginated.map((item) => (
-                        <TableRow key={item.id_proposal} sx={tableBodyRow}>
-                          <TableCell>
-                            <Typography sx={{ fontSize: 12, maxWidth: 250 }}>{item.judul}</Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography sx={{ fontSize: 12, fontWeight: 500 }}>
-                              {item.reviewer?.nama_lengkap || "-"}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography sx={{ fontSize: 12, fontWeight: 500 }}>
-                              {item.juri?.nama_lengkap || "-"}
-                            </Typography>
-                          </TableCell>
-                        </TableRow>
-                      ));
-                    })()}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-              <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-                <Pagination
-                  count={Math.max(1, Math.ceil((preview.detail_sudah || []).length / rowsPerPage))}
-                  page={pageDetail}
-                  onChange={(e, v) => setPageDetail(v)}
-                  color="primary"
-                  shape="rounded"
-                />
-              </Box>
-            </Box>
-          )}
-
-          {preview.rencana_distribusi && preview.rencana_distribusi.length > 0 && (
-            <Box>
-              <Typography sx={{ fontSize: 13, fontWeight: 700, color: COLORS.warning, mb: 1.5 }}>
-                Akan Didistribusikan ({preview.rencana_distribusi.length})
-              </Typography>
-              <TableContainer
-                sx={{
-                  borderRadius: "16px",
-                  border: `1.5px solid #fde3c7`,
-                  backgroundColor: "#fff",
-                  boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)",
-                  overflow: "auto",
-                }}
-              >
-                <Table size="small">
-                  <TableHead>
-                    <TableRow sx={{ backgroundColor: "#fff7ee" }}>
-                      <TableCell sx={{ ...tableHeadCell, fontSize: 12, backgroundColor: "#fff7ee", borderBottom: `2px solid #fde3c7` }}>
-                        PROPOSAL
-                      </TableCell>
-                      <TableCell sx={{ ...tableHeadCell, fontSize: 12, backgroundColor: "#fff7ee", borderBottom: `2px solid #fde3c7` }}>
-                        REVIEWER
-                      </TableCell>
-                      <TableCell sx={{ ...tableHeadCell, fontSize: 12, backgroundColor: "#fff7ee", borderBottom: `2px solid #fde3c7` }}>
-                        JURI
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {(() => {
-                      const list = preview.rencana_distribusi || [];
-                      const total = list.length;
-                      const start = (pageRencana - 1) * rowsPerPage;
-                      const paginated = list.slice(start, start + rowsPerPage);
-                      return paginated.map((item) => (
-                        <TableRow key={item.id_proposal} sx={tableBodyRow}>
-                          <TableCell>
-                            <Typography sx={{ fontSize: 12, maxWidth: 250 }}>{item.judul}</Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography sx={{ fontSize: 12, fontWeight: 500 }}>
-                              {item.reviewer?.nama_lengkap || "-"}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography sx={{ fontSize: 12, fontWeight: 500 }}>
-                              {item.juri?.nama_lengkap || "-"}
-                            </Typography>
-                          </TableCell>
-                        </TableRow>
-                      ));
-                    })()}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-              <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-                <Pagination
-                  count={Math.max(1, Math.ceil((preview.rencana_distribusi || []).length / rowsPerPage))}
-                  page={pageRencana}
-                  onChange={(e, v) => setPageRencana(v)}
-                  color="primary"
-                  shape="rounded"
-                />
-              </Box>
-            </Box>
-          )}
-
-          {semuaSudahTerdistribusi && (
-            <Paper
-              variant="outlined"
-              sx={{
-                p: 2.5,
-                borderRadius: "16px",
-                backgroundColor: COLORS.successLight,
-                border: `1.5px solid #6EE7B7`,
-                textAlign: "center",
-              }}
-            >
-              <Typography sx={{ fontSize: 14, fontWeight: 600, color: COLORS.success }}>
-                ✓ Semua proposal sudah memiliki pasangan reviewer dan juri
-              </Typography>
-            </Paper>
-          )}
-        </Box>
-      )}
+        )}
+      </Box>
 
       <Box
         sx={{

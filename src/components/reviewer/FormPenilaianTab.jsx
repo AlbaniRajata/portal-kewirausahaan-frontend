@@ -394,7 +394,7 @@ export default function FormPenilaianTab({ id_distribusi, onActionsChange }) {
               variant="contained"
               size="small"
               onClick={handleReset}
-              startIcon={<Refresh />}
+              startIcon={<Refresh sx={{ color: "#fff" }} />}
               sx={{
                 backgroundColor: "#FBBF24",
                 color: "#fff",

@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Box, Typography, TextField, MenuItem, Table, TableBody,
-  TableCell, TableContainer, TableHead, TableRow, CircularProgress,
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  Button, IconButton, Divider, Chip, Paper,
+  TableCell, TableContainer, TableHead, TableRow,
+  Dialog, DialogContent, DialogActions,
+  Button, IconButton, Divider, Chip, Paper, Pagination,
 } from "@mui/material";
-import { Close } from "@mui/icons-material";
+import { Close, CalendarMonth } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import { getDashboardBimbingan } from "../../api/admin";
 import LoadingScreen from "../common/LoadingScreen";
@@ -54,19 +54,19 @@ const roundedField = {
 };
 
 const tableHeadCell = {
-  fontWeight: 700,
-  fontSize: { xs: 11, sm: 12 },
-  color: "#374151",
+  fontWeight: 800,
+  fontSize: 12,
+  color: "#475569",
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
   backgroundColor: "#F8FAFC",
   borderBottom: `2px solid ${COLORS.primaryMuted}`,
-  py: 2,
-  textTransform: "uppercase",
-  letterSpacing: "0.04em",
+  py: 2.5,
 };
 
 const tableBodyRow = {
-  "& td": { borderBottom: `1px solid ${COLORS.slateLight}`, py: 2 },
-  "&:hover": { backgroundColor: "#F8FAFC" },
+  "&:hover": { backgroundColor: "#F1F5F9/50" },
+  "& td": { borderBottom: "1.5px solid #E2E8F0", py: 2 },
 };
 
 const StatusPill = ({ label, backgroundColor }) => (
@@ -89,6 +89,8 @@ export default function JadwalBimbinganTab() {
   const [tahunFilter, setTahunFilter] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [page, setPage] = useState(1);
+  const rowsPerPage = 10;
 
   const fetchData = useCallback(async () => {
     try {
@@ -121,6 +123,18 @@ export default function JadwalBimbinganTab() {
       const dateValue = item.tanggal_bimbingan || item.created_at;
       return dateValue && new Date(dateValue).getFullYear() === Number(tahunFilter);
     });
+
+  const totalPages = Math.max(1, Math.ceil(filteredList.length / rowsPerPage));
+  const startIdx = (page - 1) * rowsPerPage;
+  const paginatedList = filteredList.slice(startIdx, startIdx + rowsPerPage);
+
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, tahunFilter]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   if (loading) {
     return (
@@ -184,27 +198,36 @@ export default function JadwalBimbinganTab() {
           </TextField>
         </Box>
 
-        <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 500, textAlign: { xs: "left", sm: "right" } }}>
-          Total <b>{filteredList.length} jadwal</b>
+        <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 600, textAlign: { xs: "left", sm: "right" } }}>
+          Total <span style={{ color: "#1E293B" }}>{filteredList.length} jadwal</span>
         </Typography>
       </Box>
 
       {filteredList.length === 0 ? (
-        <Box sx={{ textAlign: "center", py: 12 }}>
-          <Typography sx={{ color: COLORS.slate, fontSize: 16, fontWeight: 500 }}>Belum ada jadwal bimbingan</Typography>
+        <Box sx={{ textAlign: "center", py: 10 }}>
+          <Box sx={{
+            width: 100, height: 100, borderRadius: "50%", backgroundColor: COLORS.slateLight,
+            display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 3,
+          }}>
+            <CalendarMonth sx={{ fontSize: 48, color: COLORS.primaryMuted }} />
+          </Box>
+          <Typography sx={{ fontSize: 20, fontWeight: 700, color: "#1F2937", mb: 1 }}>Belum Ada Jadwal Bimbingan</Typography>
+          <Typography sx={{ fontSize: 14, color: COLORS.slate }}>
+            Belum ada data jadwal bimbingan yang tersedia
+          </Typography>
         </Box>
       ) : (
-        <TableContainer sx={{ borderRadius: "12px", border: `1.5px solid ${COLORS.slateLight}`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-          <Table>
+        <TableContainer sx={{ borderRadius: "16px", border: "1.5px solid #E2E8F0", overflow: "hidden", overflowX: "auto", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)" }}>
+          <Table sx={{ minWidth: 600 }}>
             <TableHead>
               <TableRow>
-                {["Tim", "Topik", "Dosen", "Tanggal Bimbingan", "Metode", "Status", "Aksi"].map((h, i) => (
+                {["TIM", "TOPIK", "DOSEN", "TANGGAL BIMBINGAN", "METODE", "STATUS", "AKSI"].map((h, i) => (
                   <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 6 && { textAlign: "center" }) }}>{h}</TableCell>
                 ))}
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredList.map((item) => {
+              {paginatedList.map((item) => {
                 const sp = STATUS_PILL[item.status] || { label: "Unknown", backgroundColor: "#757575" };
                 return (
                   <TableRow key={item.id_bimbingan} sx={tableBodyRow}>
@@ -231,10 +254,14 @@ export default function JadwalBimbinganTab() {
                       <Button size="small" variant="outlined"
                         onClick={() => { setSelectedItem(item); setDialogOpen(true); }}
                         sx={{
-                          textTransform: "none", borderRadius: "12px", fontSize: 12, fontWeight: 600, px: 2.5,
-                          borderColor: COLORS.primary, color: COLORS.primary,
-                          transition: "all 0.2s",
-                          "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primaryDark }
+                          textTransform: "none",
+                          color: COLORS.primary,
+                          borderColor: COLORS.primaryMuted,
+                          borderRadius: "10px",
+                          fontWeight: 700,
+                          fontSize: { xs: 11, sm: 12 },
+                          px: { xs: 1, sm: 2 },
+                          "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary }
                         }}
                       >
                         Detail
@@ -248,29 +275,50 @@ export default function JadwalBimbinganTab() {
         </TableContainer>
       )}
 
+      {filteredList.length > 0 && (
+        <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "space-between", alignItems: { xs: "flex-start", sm: "center" }, gap: 2, mt: 3, px: 1 }}>
+          <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 600 }}>
+            Menampilkan <span style={{ color: "#1E293B" }}>{startIdx + 1}–{Math.min(page * rowsPerPage, filteredList.length)}</span> dari <span style={{ color: "#1E293B" }}>{filteredList.length}</span> jadwal
+          </Typography>
+          <Pagination
+            count={totalPages}
+            page={page}
+            onChange={(e, v) => setPage(v)}
+            color="primary"
+            shape="rounded"
+            size="small"
+            sx={{
+              "& .MuiPaginationItem-root": {
+                fontWeight: 700,
+                borderRadius: "10px",
+                "&.Mui-selected": {
+                  backgroundColor: COLORS.primary,
+                  color: "#fff",
+                  "&:hover": { backgroundColor: COLORS.primaryDark },
+                },
+              },
+            }}
+          />
+        </Box>
+      )}
+
       <Dialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         maxWidth="sm"
         fullWidth
-        PaperProps={{ sx: { borderRadius: "16px" } }}
+        PaperProps={{ sx: { borderRadius: { xs: "16px", sm: "24px" }, overflow: "hidden" } }}
       >
-        <DialogTitle sx={{ pb: 1.5, borderBottom: `1.5px solid ${COLORS.slateLight}` }}>
-          <Box sx={{ pr: 4 }}>
-            <Typography sx={{ fontWeight: 700, fontSize: 16, color: "#1F2937" }}>Detail Jadwal Bimbingan</Typography>
-            {selectedItem && (
-              <Typography sx={{ fontSize: 13, color: "#6B7280", mt: 0.5 }}>{selectedItem.topik}</Typography>
-            )}
+        <Box sx={{ p: { xs: 1.5, sm: 2 }, display: "flex", alignItems: "center", justifyContent: "space-between", background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`, color: "#fff" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, px: 1 }}>
+            <Typography sx={{ fontWeight: 800, fontSize: { xs: 16, sm: 18 } }}>Detail Jadwal Bimbingan</Typography>
           </Box>
-          <IconButton
-            onClick={() => setDialogOpen(false)}
-            sx={{ position: "absolute", right: 12, top: 12, color: "#888", "&:hover": { backgroundColor: COLORS.primaryLight } }}
-          >
+          <IconButton onClick={() => setDialogOpen(false)} sx={{ color: "#fff", "&:hover": { backgroundColor: "rgba(255,255,255,0.2)" } }}>
             <Close />
           </IconButton>
-        </DialogTitle>
+        </Box>
 
-        <DialogContent dividers sx={{ px: 3, py: 3, backgroundColor: "#FAFBFF" }}>
+        <DialogContent sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 3, sm: 4 } }}>
           {selectedItem && (
             <Box>
               <Box sx={{ mb: 3 }}>
@@ -337,16 +385,15 @@ export default function JadwalBimbinganTab() {
           )}
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, py: 2.5, borderTop: `1.5px solid ${COLORS.slateLight}` }}>
+        <DialogActions sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 2, sm: 3 }, backgroundColor: "#F8FAFC", borderTop: "1.5px solid #E2E8F0", gap: 1.5, flexDirection: { xs: "column", sm: "row" }, "& > button": { width: { xs: "100%", sm: "auto" } } }}>
           <Button
             onClick={() => setDialogOpen(false)}
             variant="contained"
+            color="error"
             sx={{
-              textTransform: "none", borderRadius: "12px", px: 4,
-              fontWeight: 700, backgroundColor: COLORS.primary,
-              boxShadow: "0 4px 12px rgba(13,89,242,0.2)",
-              transition: "all 0.2s",
-              "&:hover": { backgroundColor: COLORS.primaryDark, boxShadow: "0 6px 16px rgba(13,89,242,0.3)" },
+              textTransform: "none", borderRadius: "12px", px: 4, fontWeight: 700,
+              backgroundColor: "#9CA3AF",
+              "&:hover": { backgroundColor: "#78716C" },
             }}
           >
             Tutup

@@ -544,7 +544,7 @@ export default function PenugasanPage() {
                     sx={roundedField}
                   >
                     <MenuItem value="1">Tahap 1 - Desk Evaluasi</MenuItem>
-                    <MenuItem value="2">Tahap 2 - Panel Wawancara</MenuItem>
+                    <MenuItem value="2">Tahap 2 - Wawancara</MenuItem>
                   </TextField>
                 </Box>
                 <Box sx={{ minWidth: 200, flex: "1 1 auto" }}>
@@ -620,7 +620,7 @@ export default function PenugasanPage() {
                 }}
               >
                 <Tab label="Daftar Penugasan" />
-                {tahapFilter === "2" && <Tab label="Hasil Peringkat" />}
+                <Tab label="Hasil Peringkat" />
               </Tabs>
             </Box>
 
@@ -824,7 +824,7 @@ export default function PenugasanPage() {
             </>
           )}
 
-          {activeTab === 1 && tahapFilter === "2" && (
+          {activeTab === 1 && (
             <>
               {loadingPeringkat ? (
                 <Box sx={{ position: "relative", minHeight: 320 }}>

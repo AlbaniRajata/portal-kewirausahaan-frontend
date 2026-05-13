@@ -26,25 +26,28 @@ export default function BimbinganPage() {
   return (
     <BodyLayout Sidebar={AdminSidebar}>
       <PageTransition>
-        <Box sx={{ px: 1, py: 1 }}>
           <Box sx={{ mb: 4 }}>
-            <Typography sx={{ fontSize: { xs: 26, sm: 32, md: 36 }, fontWeight: 800, color: "#1F2937", mb: 0.5 }}>
+            <Typography sx={{ fontSize: 36, fontWeight: 800, color: "#1F2937", mb: 0.5 }}>
               Bimbingan
             </Typography>
-            <Typography sx={{ fontSize: { xs: 14, sm: 16 }, color: "#6B7280" }}>
+            <Typography sx={{ fontSize: 16, color: "#6B7280" }}>
               Kelola pengajuan pembimbing dan jadwal bimbingan mahasiswa
             </Typography>
           </Box>
 
-          <Paper sx={{
-            borderRadius: "20px",
-            border: "1.5px solid #E5E7EB",
-            overflow: "hidden",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-          }}>
-            <Box sx={{ height: 4, background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
+          <Paper
+            elevation={0}
+            sx={{
+              borderRadius: "20px",
+              border: "1.5px solid #E2E8F0",
+              overflow: "hidden",
+              boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+              position: "relative",
+            }}
+          >
+            <Box sx={{ height: "6px", background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
 
-            <Box sx={{ borderBottom: "1px solid #F1F5F9", backgroundColor: "#fff" }}>
+            <Box sx={{ borderBottom: "1px solid #eef2f7", backgroundColor: "#fff" }}>
               <Tabs
                 value={activeTab}
                 onChange={(_, v) => setActiveTab(v)}
@@ -52,15 +55,15 @@ export default function BimbinganPage() {
                 scrollButtons="auto"
                 allowScrollButtonsMobile
                 sx={{
-                  px: { xs: 2, sm: 3 },
+                  px: { xs: 1, sm: 2 },
                   "& .MuiTab-root": {
                     textTransform: "none",
                     fontSize: { xs: 13, sm: 14 },
-                    fontWeight: 600,
+                    fontWeight: 700,
                     color: COLORS.slate,
-                    minHeight: 60,
-                    transition: "all 0.2s",
-                    "&.Mui-selected": { color: COLORS.primary, fontWeight: 700 },
+                    minHeight: 56,
+                    px: { xs: 2, sm: 3 },
+                    "&.Mui-selected": { fontWeight: 800, color: COLORS.primary },
                   },
                   "& .MuiTabs-indicator": {
                     backgroundColor: COLORS.primary, height: 3, borderRadius: "3px 3px 0 0",
@@ -72,12 +75,11 @@ export default function BimbinganPage() {
               </Tabs>
             </Box>
 
-            <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
+            <Box sx={{ p: { xs: 3, md: 4 }, minWidth: 0 }}>
               {activeTab === 0 && <PengajuanPembimbingTab />}
               {activeTab === 1 && <JadwalBimbinganTab />}
             </Box>
           </Paper>
-        </Box>
       </PageTransition>
     </BodyLayout>
   );

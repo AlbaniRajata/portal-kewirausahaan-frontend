@@ -11,7 +11,7 @@ import BodyLayout from "../../components/layouts/BodyLayout";
 import AdminSidebar from "../../components/layouts/AdminSidebar";
 import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
-import { getMyProgram, getTimList, getTimDetail, getPesertaList, getPesertaDetail } from "../../api/admin";
+import { getMyProgram, getTimList, getTimDetail, withdrawTim, deleteTim, getPesertaList, getPesertaDetail, getKategori } from "../../api/admin";
 
 const COLORS = {
   primary:      "#0D59F2",
@@ -34,29 +34,55 @@ const roundedField = {
   "& .MuiOutlinedInput-root": {
     borderRadius: "12px",
     backgroundColor: "#fff",
-    transition: "box-shadow 0.2s",
+    transition: "all 0.2s ease-in-out",
     "&:hover fieldset": { borderColor: COLORS.primary },
-    "&.Mui-focused fieldset": { borderColor: COLORS.primary },
-    "&.Mui-focused": { boxShadow: `0 0 0 3px ${COLORS.primaryLight}` },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary, borderWidth: "2px" },
+    "&.Mui-focused": { boxShadow: `0 0 0 4px ${COLORS.primaryLight}` },
   },
+  "& .MuiInputLabel-root.Mui-focused": { color: COLORS.primary, fontWeight: 700 },
+};
+
+const pageCard = {
+  borderRadius: "20px",
+  border: "1.5px solid #E2E8F0",
+  overflow: "hidden",
+  boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+  position: "relative",
+};
+
+const tabStyle = {
+  textTransform: "none",
+  fontSize: { xs: 13, sm: 14 },
+  fontWeight: 700,
+  color: COLORS.slate,
+  minHeight: 52,
+  px: { xs: 2, sm: 3 },
+  "&.Mui-selected": { color: COLORS.primary },
+};
+
+const actionButtonSx = {
+  textTransform: "none",
+  borderRadius: "10px",
+  fontWeight: 700,
+  fontSize: { xs: 11, sm: 12 },
+  px: { xs: 1, sm: 2 },
+  minWidth: 0,
 };
 
 const tableHeadCell = {
-  fontWeight: 700,
+  fontWeight: 800,
   fontSize: 12,
   textTransform: "uppercase",
   letterSpacing: "0.05em",
-  color: "#374151",
+  color: "#475569",
   backgroundColor: "#F8FAFC",
   borderBottom: `2px solid ${COLORS.primaryMuted}`,
-  py: 2,
-  px: 2,
-  whiteSpace: "nowrap",
+  py: 2.5,
 };
 
 const tableBodyRow = {
-  "& td": { borderBottom: `1px solid ${COLORS.slateLight}`, py: 2, px: 2 },
-  "&:hover": { backgroundColor: "#F8FAFC" },
+  "&:hover": { backgroundColor: "#F1F5F9/50" },
+  "& td": { borderBottom: "1.5px solid #E2E8F0", py: 2 },
 };
 
 const ANGGOTA_STATUS = {
@@ -77,7 +103,7 @@ const PROPOSAL_STATUS = {
   2: { label: "Ditugaskan Reviewer Tahap 1", colorType: "info" },
   3: { label: "Tidak Lolos Desk Evaluasi",   colorType: "error" },
   4: { label: "Lolos Desk Evaluasi",         colorType: "success" },
-  5: { label: "Panel Wawancara",             colorType: "warning" },
+  5: { label: "Wawancara",             colorType: "warning" },
   6: { label: "Tidak Lolos Wawancara",       colorType: "error" },
   7: { label: "Lolos Wawancara",             colorType: "success" },
   8: { label: "Pembimbing Diajukan",         colorType: "primary" },
@@ -136,12 +162,16 @@ const getDosenPembimbingName = (item) =>
   item?.pengajuan_pembimbing?.nama_dosen ||
   "-";
 
+const getTimKategoriName = (item) =>
+  item?.nama_kategori || item?.kategori?.nama_kategori || item?.proposal?.nama_kategori || "Tanpa Kategori";
+
 export default function TimPesertaPage() {
   const [activeTab, setActiveTab]       = useState(0);
   const [loading, setLoading]           = useState(true);
   const [timList, setTimList]           = useState([]);
   const [pesertaList, setPesertaList]   = useState([]);
   const [programList, setProgramList]   = useState([]);
+  const [kategoriList, setKategoriList] = useState([]);
   const [page, setPage]                 = useState(1);
   const rowsPerPage = 10;
 
@@ -151,7 +181,7 @@ export default function TimPesertaPage() {
     return rawData.data || rawData.items || rawData.list || [];
   };
 
-  const [filters, setFilters] = useState({ search: "", id_program: "", tahun: "" });
+  const [filters, setFilters] = useState({ search: "", id_program: "", id_kategori: "", tahun: "" });
 
   const [openDetail, setOpenDetail]       = useState(false);
   const [detailData, setDetailData]       = useState(null);
@@ -172,12 +202,22 @@ export default function TimPesertaPage() {
       });
   }, []);
 
+  useEffect(() => {
+    getKategori()
+      .then((res) => {
+        const data = Array.isArray(res?.data) ? res.data : (res?.data || []);
+        setKategoriList(data);
+      })
+      .catch(() => {});
+  }, []);
+
   const fetchTim = useCallback(async () => {
     setLoading(true);
     try {
       if (!filters.id_program) { setTimList([]); return; }
       const params = { limit: 100 };
       if (filters.id_program) params.id_program = filters.id_program;
+      if (filters.id_kategori) params.id_kategori = filters.id_kategori;
       if (filters.search) params.search = filters.search;
 
       let currentPage = 1;
@@ -204,7 +244,7 @@ export default function TimPesertaPage() {
     } finally {
       setLoading(false);
     }
-  }, [filters.id_program, filters.search]);
+  }, [filters.id_program, filters.id_kategori, filters.search]);
 
   const fetchPeserta = useCallback(async () => {
     setLoading(true);
@@ -281,6 +321,52 @@ export default function TimPesertaPage() {
     }
   };
 
+  const handleWithdrawTim = async (item) => {
+    const result = await Swal.fire({
+      title: "Nonaktifkan Tim?",
+      html: `Tandai <b>${item.nama_tim || "Tim ini"}</b> sebagai mengundurkan diri?<br/><small style="color: #6B7280;">Tim akan dinonaktifkan namun masih bisa dipulihkan atau dihapus nanti.</small>`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: COLORS.warning,
+      cancelButtonColor: COLORS.slate,
+      confirmButtonText: "Ya, Nonaktifkan",
+      cancelButtonText: "Batal",
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      await withdrawTim(item.id_tim);
+      await Swal.fire({ icon: "success", title: "Berhasil", text: "Tim berhasil dinonaktifkan", timer: 2000, timerProgressBar: true, showConfirmButton: false });
+      if (selectedItem?.id_tim === item.id_tim) setOpenDetail(false);
+      fetchTim();
+    } catch (err) {
+      Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Gagal menandai tim mengundurkan diri", confirmButtonColor: COLORS.primary });
+    }
+  };
+
+  const handleDeleteTim = async (item) => {
+    const result = await Swal.fire({
+      title: "Hapus Tim Permanen?",
+      html: `<b>${item.nama_tim || "Tim ini"}</b> akan dihapus permanen dari sistem.<br/><small style="color: #DC2626; font-weight: bold;">Tindakan ini tidak dapat dibatalkan!</small>`,
+      icon: "error",
+      showCancelButton: true,
+      confirmButtonColor: COLORS.error,
+      cancelButtonColor: COLORS.slate,
+      confirmButtonText: "Ya, Hapus Permanen",
+      cancelButtonText: "Batal",
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      await deleteTim(item.id_tim);
+      await Swal.fire({ icon: "success", title: "Berhasil", text: "Tim berhasil dihapus", timer: 2000, timerProgressBar: true, showConfirmButton: false });
+      if (selectedItem?.id_tim === item.id_tim) setOpenDetail(false);
+      fetchTim();
+    } catch (err) {
+      Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Gagal menghapus tim", confirmButtonColor: COLORS.primary });
+    }
+  };
+
   const currentList = activeTab === 0 ? timList : pesertaList;
 
   const getYearFromItem = (item) => {
@@ -301,6 +387,10 @@ export default function TimPesertaPage() {
     ? currentList
     : currentList.filter((item) => getYearFromItem(item) === Number(filters.tahun));
 
+  useEffect(() => {
+    setPage(1);
+  }, [filters.id_program, filters.id_kategori, filters.search, filters.tahun, activeTab]);
+
   const totalPages   = Math.ceil(filteredList.length / rowsPerPage);
   const paginatedList = filteredList.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
@@ -315,13 +405,14 @@ export default function TimPesertaPage() {
         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3 }}>
           <DetailRow label="Nama Tim"       value={detailData.nama_tim} />
           <DetailRow label="Program"        value={detailData.nama_program} />
+          <DetailRow label="Kategori"       value={getTimKategoriName(detailData)} />
           <DetailRow label="Tanggal Dibuat" value={formatDate(detailData.created_at)} />
         </Box>
 
         <Divider sx={{ borderColor: COLORS.slateLight }} />
         <Typography sx={{ fontWeight: 700, fontSize: 14, color: "#1E293B" }}>Anggota Tim</Typography>
         {detailData.anggota?.length > 0 ? (
-          <TableContainer sx={{ borderRadius: "12px", border: `1.5px solid ${COLORS.slateLight}` }}>
+          <TableContainer sx={{ borderRadius: "12px", border: "1.5px solid #E2E8F0", overflow: "hidden" }}>
             <Table size="small">
               <TableHead>
                 <TableRow>
@@ -382,9 +473,11 @@ export default function TimPesertaPage() {
 
   const renderPesertaDetail = () => {
     if (!detailData) return null;
-    const ls = LOLOS_STATUS[detailData.status_lolos]      || LOLOS_STATUS[0];
+    const proposalStatus = detailData.proposal
+      ? (PROPOSAL_STATUS[detailData.proposal.status] || PROPOSAL_STATUS[0])
+      : null;
+    const ps = proposalStatus;
     const as = detailData.status_anggota !== undefined     ? (ANGGOTA_STATUS[detailData.status_anggota] || ANGGOTA_STATUS[0]) : null;
-    const ps = detailData.proposal                         ? (PROPOSAL_STATUS[detailData.proposal.status] || PROPOSAL_STATUS[0]) : null;
     const propDosen2 = getDosenPembimbingName(detailData.proposal);
     const itemDosen2 = getDosenPembimbingName(detailData);
     const dosenName = (propDosen2 && propDosen2 !== "-") ? propDosen2 : (itemDosen2 && itemDosen2 !== "-") ? itemDosen2 : detailData.pembimbing?.nama_dosen || detailData.dosen_pembimbing || "-";
@@ -403,13 +496,16 @@ export default function TimPesertaPage() {
           <DetailRow label="Program"       value={detailData.nama_program} />
           <DetailRow label="Tahun Daftar"  value={detailData.tahun} />
           <Box>
-            <Typography sx={{ fontSize: 11, fontWeight: 700, color: COLORS.slate, textTransform: "uppercase", letterSpacing: "0.05em", mb: 0.75 }}>Status Lolos</Typography>
-            <StatusPill label={ls.label} colorType={ls.colorType} />
+            <Typography sx={{ fontSize: 11, fontWeight: 700, color: COLORS.slate, textTransform: "uppercase", letterSpacing: "0.05em", mb: 0.75 }}>Status Proposal</Typography>
+            {proposalStatus
+              ? <StatusPill label={proposalStatus.label} colorType={proposalStatus.colorType} />
+              : <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#1E293B" }}>-</Typography>
+            }
           </Box>
         </Box>
 
         <Divider sx={{ borderColor: COLORS.slateLight }} />
-        <Typography sx={{ fontWeight: 700, fontSize: 14, color: "#1E293B" }}>Informasi Tim</Typography>
+              <Typography sx={{ fontWeight: 700, fontSize: 14, color: "#1E293B" }}>Informasi Tim</Typography>
         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3 }}>
           <DetailRow label="Nama Tim" value={detailData.nama_tim} />
           <Box>
@@ -470,26 +566,19 @@ export default function TimPesertaPage() {
             </Typography>
           </Box>
 
-          <Paper sx={{
-            borderRadius: "20px",
-            border: "1.5px solid #E5E7EB",
-            overflow: "hidden",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-          }}>
-            <Box sx={{ height: 4, background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
+          <Paper elevation={0} sx={pageCard}>
+            <Box sx={{ height: 6, background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
 
-            <Box sx={{ borderBottom: "1px solid #F1F5F9", backgroundColor: "#fff" }}>
+            <Box sx={{ borderBottom: "1px solid #E2E8F0", backgroundColor: "#fff" }}>
               <Tabs
                 value={activeTab}
                 onChange={(e, v) => { setActiveTab(v); setPage(1); }}
                 variant="scrollable"
                 scrollButtons="auto"
                 sx={{
-                  px: { xs: 2, sm: 3 },
+                  px: { xs: 1, sm: 2 },
                   "& .MuiTab-root": {
-                    textTransform: "none", fontSize: { xs: 13, sm: 14 }, fontWeight: 600,
-                    color: COLORS.slate, minHeight: 60, transition: "all 0.2s",
-                    "&.Mui-selected": { color: COLORS.primary },
+                    ...tabStyle,
                   },
                   "& .MuiTabs-indicator": { backgroundColor: COLORS.primary, height: 3, borderRadius: "3px 3px 0 0" },
                 }}
@@ -500,18 +589,7 @@ export default function TimPesertaPage() {
             </Box>
 
             <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
-              <Box sx={{
-                display: "grid",
-                gridTemplateColumns: {
-                  xs: "1fr",
-                  sm: "1fr 1fr",
-                  lg: "repeat(3, minmax(0, 1fr))",
-                  xl: "repeat(12, minmax(0, 1fr))",
-                },
-                gap: { xs: 1.25, sm: 1.5, lg: 2 },
-                mb: 4,
-                alignItems: "stretch",
-              }}>
+              <Box sx={{ display: "flex", gap: { xs: 1, sm: 2 }, mb: 4, alignItems: "center", flexWrap: "wrap" }}>
                 <TextField
                   size="small"
                   placeholder={activeTab === 0 ? "Cari judul proposal, nama tim, ketua..." : "Cari nama, email, NIM..."}
@@ -526,8 +604,8 @@ export default function TimPesertaPage() {
                   }}
                   sx={{
                     ...roundedField,
-                    width: "100%",
-                    gridColumn: { xs: "1", sm: "1 / -1", lg: "span 2", xl: "span 6" },
+                    flex: { xs: "1 1 100%", sm: 1 },
+                    maxWidth: { sm: 420 },
                   }}
                 />
                 <TextField
@@ -537,14 +615,39 @@ export default function TimPesertaPage() {
                   disabled
                   sx={{
                     ...roundedField,
-                    width: "100%",
-                    gridColumn: { xs: "1", sm: "span 1", lg: "span 1", xl: "span 3" },
+                    flex: { xs: "1 1 100%", sm: 1 },
+                    maxWidth: { sm: 260 },
                   }}
                 >
                   {programList.map((p) => (
                     <MenuItem key={p.id_program} value={p.id_program} sx={{ fontSize: 13 }}>{p.keterangan}</MenuItem>
                   ))}
                 </TextField>
+                {activeTab === 0 && (
+                  <TextField
+                    select size="small"
+                    value={filters.id_kategori}
+                    onChange={(e) => setFilters({ ...filters, id_kategori: e.target.value })}
+                    SelectProps={{
+                      displayEmpty: true,
+                      renderValue: (v) => (
+                        <span style={{ fontSize: 14, color: !v ? "#9CA3AF" : "inherit" }}>
+                          {!v ? "Semua Kategori" : (kategoriList.find((k) => String(k.id_kategori) === String(v))?.nama_kategori || v)}
+                        </span>
+                      ),
+                    }}
+                    sx={{
+                      ...roundedField,
+                      flex: { xs: "1 1 100%", sm: 1 },
+                      maxWidth: { sm: 260 },
+                    }}
+                  >
+                    <MenuItem value="" sx={{ fontSize: 13 }}>Semua Kategori</MenuItem>
+                    {kategoriList.map((k) => (
+                      <MenuItem key={k.id_kategori} value={k.id_kategori} sx={{ fontSize: 13 }}>{k.nama_kategori}</MenuItem>
+                    ))}
+                  </TextField>
+                )}
                 <TextField
                   select size="small"
                   value={filters.tahun}
@@ -559,8 +662,8 @@ export default function TimPesertaPage() {
                   }}
                   sx={{
                     ...roundedField,
-                    width: "100%",
-                    gridColumn: { xs: "1", sm: "span 1", lg: "span 1", xl: "span 3" },
+                    flex: { xs: "1 1 100%", sm: 1 },
+                    maxWidth: { sm: 200 },
                   }}
                 >
                   <MenuItem value="" sx={{ fontSize: 13 }}>Semua Tahun</MenuItem>
@@ -575,7 +678,7 @@ export default function TimPesertaPage() {
                   <LoadingScreen message="Memuat data..." overlay minHeight="400px" />
                 </Box>
               ) : paginatedList.length === 0 ? (
-                <Box sx={{ textAlign: "center", py: 12 }}>
+                <Paper elevation={0} sx={{ p: { xs: 5, sm: 8 }, textAlign: "center", borderRadius: "20px", border: "1.5px solid #E2E8F0", backgroundColor: "#F8FAFC" }}>
                   <Box sx={{
                     width: 120, height: 120, borderRadius: "50%",
                     backgroundColor: COLORS.slateLight,
@@ -593,28 +696,41 @@ export default function TimPesertaPage() {
                   <Typography sx={{ fontSize: 16, color: COLORS.slate }}>
                     {filters.search ? "Coba kata kunci pencarian lain" : "Belum ada data yang terdaftar pada program ini"}
                   </Typography>
-                </Box>
+                </Paper>
               ) : (
                 <>
                   <TableContainer sx={{
                     borderRadius: "16px",
-                    border: `1.5px solid ${COLORS.slateLight}`,
+                    border: "1.5px solid #E2E8F0",
                     overflow: "auto",
                     mb: 4,
-                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)",
                     "& table": { minWidth: { xs: 800, sm: 900 } },
-                    "&::-webkit-scrollbar": { height: 6 },
-                    "&::-webkit-scrollbar-thumb": { backgroundColor: COLORS.slateLight, borderRadius: "3px" },
                   }}>
                     <Table>
                       <TableHead>
                         <TableRow>
                           {activeTab === 0
-                            ? ["JUDUL PROPOSAL", "KETUA", "DOSEN PEMBIMBING", "ANGGOTA", "PROPOSAL", "AKSI"].map((h, i) => (
-                                <TableCell key={i} sx={tableHeadCell}>{h}</TableCell>
+                            ? ["JUDUL PROPOSAL", "KATEGORI", "KETUA", "DOSEN PEMBIMBING", "ANGGOTA", "PROPOSAL", "AKSI"].map((h, i) => (
+                                <TableCell
+                                  key={i}
+                                  sx={{
+                                    ...tableHeadCell,
+                                    textAlign: i === 6 ? "center" : "left",
+                                  }}
+                                >
+                                  {h}
+                                </TableCell>
                               ))
-                            : ["NAMA PESERTA", "NIM", "TIM", "DOSEN PEMBIMBING", "PERAN", "STATUS LOLOS", "AKSI"].map((h, i) => (
-                                <TableCell key={i} sx={tableHeadCell}>{h}</TableCell>
+                              : ["NAMA PESERTA", "NIM", "TIM", "DOSEN PEMBIMBING", "PERAN", "STATUS PROPOSAL", "AKSI"].map((h, i) => (
+                                <TableCell
+                                  key={i}
+                                  sx={{
+                                    ...tableHeadCell,
+                                    textAlign: i === 6 ? "center" : "left",
+                                  }}
+                                >
+                                  {h}
+                                </TableCell>
                               ))
                           }
                         </TableRow>
@@ -627,6 +743,9 @@ export default function TimPesertaPage() {
                                 <TableRow key={item.id_tim} sx={tableBodyRow}>
                                   <TableCell>
                                     <Typography sx={{ fontWeight: 700, fontSize: 14, color: "#1E293B" }}>{item.judul_proposal || "-"}</Typography>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Typography sx={{ fontSize: 13, color: "#475569" }}>{getTimKategoriName(item)}</Typography>
                                   </TableCell>
                                   <TableCell>
                                     <Typography sx={{ fontSize: 13, fontWeight: 600, color: "#1E293B" }}>{item.nama_ketua || "-"}</Typography>
@@ -642,24 +761,58 @@ export default function TimPesertaPage() {
                                       : <Typography sx={{ fontSize: 12, color: COLORS.slate }}>Belum ada</Typography>
                                     }
                                   </TableCell>
-                                  <TableCell align="center">
-                                    <Button size="small" variant="outlined"
-                                      onClick={() => handleViewTimDetail(item)}
-                                      sx={{
-                                        textTransform: "none", borderRadius: "10px",
-                                        fontSize: 12, fontWeight: 700, px: 2,
-                                        color: COLORS.primary, borderColor: COLORS.primaryMuted,
-                                        "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
-                                      }}
-                                    >
-                                      Detail
-                                    </Button>
+                                  <TableCell align="center" sx={{ textAlign: "center" }}>
+                                    <Box sx={{ display: "flex", justifyContent: "center", gap: 1, flexWrap: "wrap" }}>
+                                      <Button size="small" variant="outlined"
+                                        onClick={() => handleViewTimDetail(item)}
+                                        sx={{
+                                          ...actionButtonSx,
+                                          color: COLORS.primary, borderColor: COLORS.primaryMuted,
+                                          minWidth: 92,
+                                          "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
+                                        }}
+                                      >
+                                        Detail
+                                      </Button>
+                                      {item.status === 0 && (
+                                        <Button size="small" variant="contained"
+                                          onClick={() => handleWithdrawTim(item)}
+                                          sx={{
+                                            textTransform: "none", borderRadius: "10px",
+                                            fontSize: 12, fontWeight: 700, px: 2,
+                                            minWidth: 100,
+                                            backgroundColor: COLORS.warning,
+                                            boxShadow: "0 4px 12px rgba(217,119,6,0.2)",
+                                            "&:hover": { backgroundColor: "#B45309", boxShadow: "0 6px 16px rgba(217,119,6,0.3)" },
+                                          }}
+                                        >
+                                          Nonaktifkan
+                                        </Button>
+                                      )}
+                                      {item.status === 2 && (
+                                        <Button size="small" variant="contained"
+                                          onClick={() => handleDeleteTim(item)}
+                                          sx={{
+                                            textTransform: "none", borderRadius: "10px",
+                                            fontSize: 12, fontWeight: 700, px: 2,
+                                            minWidth: 92,
+                                            backgroundColor: COLORS.error,
+                                            boxShadow: "0 4px 12px rgba(220,38,38,0.2)",
+                                            "&:hover": { backgroundColor: "#B91C1C", boxShadow: "0 6px 16px rgba(220,38,38,0.3)" },
+                                          }}
+                                        >
+                                          Hapus Tim
+                                        </Button>
+                                      )}
+                                    </Box>
                                   </TableCell>
                                 </TableRow>
                               );
                             })
                           : paginatedList.map((item) => {
-                              const ls = LOLOS_STATUS[item.status_lolos] || LOLOS_STATUS[0];
+                              const proposalStatus = item.status_proposal !== undefined && item.status_proposal !== null
+                                ? (PROPOSAL_STATUS[item.status_proposal] || PROPOSAL_STATUS[0])
+                                : null;
                               return (
                                 <TableRow key={`${item.id_user}-${item.id_program}`} sx={tableBodyRow}>
                                   <TableCell>
@@ -677,19 +830,26 @@ export default function TimPesertaPage() {
                                       : <Typography sx={{ fontSize: 12, color: COLORS.slate }}>-</Typography>
                                     }
                                   </TableCell>
-                                  <TableCell><StatusPill label={ls.label} colorType={ls.colorType} /></TableCell>
-                                  <TableCell align="center">
-                                    <Button size="small" variant="outlined"
-                                      onClick={() => handleViewPesertaDetail(item)}
-                                      sx={{
-                                        textTransform: "none", borderRadius: "10px",
-                                        fontSize: 12, fontWeight: 700, px: 2,
-                                        color: COLORS.primary, borderColor: COLORS.primaryMuted,
-                                        "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
-                                      }}
-                                    >
-                                      Detail
-                                    </Button>
+                                  <TableCell>
+                                    {proposalStatus
+                                      ? <StatusPill label={proposalStatus.label} colorType={proposalStatus.colorType} />
+                                      : <Typography sx={{ fontSize: 12, color: COLORS.slate }}>Belum ada</Typography>
+                                    }
+                                  </TableCell>
+                                  <TableCell align="center" sx={{ textAlign: "center" }}>
+                                    <Box sx={{ display: "flex", justifyContent: "center" }}>
+                                      <Button size="small" variant="outlined"
+                                        onClick={() => handleViewPesertaDetail(item)}
+                                        sx={{
+                                          ...actionButtonSx,
+                                          color: COLORS.primary, borderColor: COLORS.primaryMuted,
+                                          minWidth: 92,
+                                          "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
+                                        }}
+                                      >
+                                        Detail
+                                      </Button>
+                                    </Box>
                                   </TableCell>
                                 </TableRow>
                               );
@@ -715,14 +875,15 @@ export default function TimPesertaPage() {
                       onChange={(e, v) => setPage(v)}
                       color="primary"
                       shape="rounded"
+                      size="small"
                       sx={{
                         "& .MuiPaginationItem-root": {
-                          fontWeight: 600,
-                          borderRadius: "8px",
+                          fontWeight: 700,
+                          borderRadius: "10px",
                           "&.Mui-selected": {
-                            background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.secondary})`,
+                            backgroundColor: COLORS.primary,
                             color: "#fff",
-                            "&:hover": { background: `linear-gradient(135deg, ${COLORS.primaryDark}, ${COLORS.secondary})` },
+                            "&:hover": { backgroundColor: COLORS.primaryDark },
                           },
                         },
                       }}
@@ -738,7 +899,7 @@ export default function TimPesertaPage() {
             onClose={() => setOpenDetail(false)}
             maxWidth="md"
             fullWidth
-            PaperProps={{ sx: { borderRadius: { xs: "16px", sm: "24px" }, boxShadow: "0 20px 40px rgba(0,0,0,0.1)", overflow: "hidden", m: { xs: 1, sm: 2 }, maxHeight: { xs: "calc(100vh - 16px)", sm: "calc(100vh - 32px)" } } }}
+            PaperProps={{ sx: { borderRadius: { xs: "16px", sm: "24px" }, overflow: "hidden", m: { xs: 1, sm: 2 }, maxHeight: { xs: "calc(100vh - 16px)", sm: "calc(100vh - 32px)" } } }}
           >
             <DialogTitle sx={{ p: 0 }}>
               <Box sx={{
@@ -784,10 +945,15 @@ export default function TimPesertaPage() {
                 onClick={() => setOpenDetail(false)}
                 variant="contained"
                 sx={{
-                  textTransform: "none", borderRadius: "12px", px: 4, py: 1, fontWeight: 700,
-                  backgroundColor: COLORS.primary,
-                  boxShadow: `0 4px 12px ${COLORS.primary}40`,
-                  "&:hover": { backgroundColor: COLORS.primaryDark, boxShadow: `0 6px 16px ${COLORS.primary}60` },
+                  textTransform: "none",
+                  borderRadius: "12px",
+                  px: 4,
+                  py: 1,
+                  fontWeight: 700,
+                  backgroundColor: "#9CA3AF",
+                  "&:hover": {
+                    backgroundColor: "#78716C",
+                  },
                 }}
               >
                 Tutup
