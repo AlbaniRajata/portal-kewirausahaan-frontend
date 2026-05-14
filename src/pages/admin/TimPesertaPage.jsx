@@ -708,41 +708,45 @@ export default function TimPesertaPage() {
                   }}>
                     <Table>
                       <TableHead>
-                        <TableRow>
-                          {activeTab === 0
-                            ? ["JUDUL PROPOSAL", "KATEGORI", "KETUA", "DOSEN PEMBIMBING", "ANGGOTA", "PROPOSAL", "AKSI"].map((h, i) => (
-                                <TableCell
-                                  key={i}
-                                  sx={{
-                                    ...tableHeadCell,
-                                    textAlign: i === 6 ? "center" : "left",
-                                  }}
-                                >
-                                  {h}
-                                </TableCell>
-                              ))
-                              : ["NAMA PESERTA", "NIM", "TIM", "DOSEN PEMBIMBING", "PERAN", "STATUS PROPOSAL", "AKSI"].map((h, i) => (
-                                <TableCell
-                                  key={i}
-                                  sx={{
-                                    ...tableHeadCell,
-                                    textAlign: i === 6 ? "center" : "left",
-                                  }}
-                                >
-                                  {h}
-                                </TableCell>
-                              ))
-                          }
-                        </TableRow>
-                      </TableHead>
+                          <TableRow>
+                            {activeTab === 0
+                              ? ["JUDUL PROPOSAL", "KATEGORI", "KETUA", "DOSEN PEMBIMBING", "ANGGOTA", "PROPOSAL", "AKSI"].map((h, i) => (
+                                  <TableCell
+                                    key={i}
+                                    sx={{
+                                      ...tableHeadCell,
+                                      textAlign: i === 6 ? "center" : "left",
+                                      width: i === 0 ? "40%" : i === 6 ? 220 : "auto",
+                                      minWidth: i === 6 ? 220 : "auto",
+                                    }}
+                                  >
+                                    {h}
+                                  </TableCell>
+                                ))
+                                : ["NAMA PESERTA", "NIM", "TIM", "DOSEN PEMBIMBING", "PERAN", "STATUS PROPOSAL", "AKSI"].map((h, i) => (
+                                  <TableCell
+                                    key={i}
+                                    sx={{
+                                      ...tableHeadCell,
+                                      textAlign: i === 6 ? "center" : "left",
+                                      width: i === 6 ? 200 : "auto",
+                                      minWidth: i === 6 ? 200 : "auto",
+                                    }}
+                                  >
+                                    {h}
+                                  </TableCell>
+                                ))
+                            }
+                          </TableRow>
+                        </TableHead>
                       <TableBody>
                         {activeTab === 0
                           ? paginatedList.map((item) => {
                               const proposalStatus = item.id_proposal ? (PROPOSAL_STATUS[item.status_proposal] || PROPOSAL_STATUS[0]) : null;
                               return (
                                 <TableRow key={item.id_tim} sx={tableBodyRow}>
-                                  <TableCell>
-                                    <Typography sx={{ fontWeight: 700, fontSize: 14, color: "#1E293B" }}>{item.judul_proposal || "-"}</Typography>
+                                  <TableCell sx={{ width: "40%", minWidth: 280 }}>
+                                    <Typography sx={{ fontWeight: 700, fontSize: 14, color: "#1E293B", whiteSpace: "normal" }}>{item.judul_proposal || "-"}</Typography>
                                   </TableCell>
                                   <TableCell>
                                     <Typography sx={{ fontSize: 13, color: "#475569" }}>{getTimKategoriName(item)}</Typography>
@@ -761,8 +765,8 @@ export default function TimPesertaPage() {
                                       : <Typography sx={{ fontSize: 12, color: COLORS.slate }}>Belum ada</Typography>
                                     }
                                   </TableCell>
-                                  <TableCell align="center" sx={{ textAlign: "center" }}>
-                                    <Box sx={{ display: "flex", justifyContent: "center", gap: 1, flexWrap: "wrap" }}>
+                                  <TableCell align="center" sx={{ textAlign: "center", width: 220, minWidth: 220 }}>
+                                    <Box sx={{ display: "flex", justifyContent: "center", gap: 1, flexWrap: "nowrap" }}>
                                       <Button size="small" variant="outlined"
                                         onClick={() => handleViewTimDetail(item)}
                                         sx={{
@@ -774,7 +778,7 @@ export default function TimPesertaPage() {
                                       >
                                         Detail
                                       </Button>
-                                      {item.status === 0 && (
+                                      {item.status !== 2 && (
                                         <Button size="small" variant="contained"
                                           onClick={() => handleWithdrawTim(item)}
                                           sx={{
