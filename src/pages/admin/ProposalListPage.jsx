@@ -78,13 +78,14 @@ const STATUS_MAP = {
   7: { label: "Lolos Wawancara",             colorType: "success" },
   8: { label: "Pembimbing Diajukan",         colorType: "primary" },
   9: { label: "Pembimbing Disetujui",        colorType: "success" },
+  10: { label: "Nonaktif / Mengundurkan Diri", colorType: "error" },
 };
 
 const STATUS_BG_MAP = {
   0: "#666",     1: "#1565c0", 2: "#3949ab",
   3: "#c62828",  4: "#2e7d32", 5: "#3949ab",
   6: "#c62828",  7: "#2e7d32", 8: "#1565c0",
-  9: "#2e7d32",
+  9: "#2e7d32", 10: "#c62828",
 };
 
 const COLOR_TYPE_MAP = {

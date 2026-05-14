@@ -108,6 +108,7 @@ const PROPOSAL_STATUS = {
   7: { label: "Lolos Wawancara",             colorType: "success" },
   8: { label: "Pembimbing Diajukan",         colorType: "primary" },
   9: { label: "Pembimbing Disetujui",        colorType: "success" },
+  10: { label: "Nonaktif / Mengundurkan Diri", colorType: "error" },
 };
 
 const COLOR_TYPE_MAP = {
@@ -170,7 +171,6 @@ export default function TimPesertaPage() {
   const [loading, setLoading]           = useState(true);
   const [timList, setTimList]           = useState([]);
   const [pesertaList, setPesertaList]   = useState([]);
-  const [programList, setProgramList]   = useState([]);
   const [kategoriList, setKategoriList] = useState([]);
   const [page, setPage]                 = useState(1);
   const rowsPerPage = 10;
@@ -181,7 +181,7 @@ export default function TimPesertaPage() {
     return rawData.data || rawData.items || rawData.list || [];
   };
 
-  const [filters, setFilters] = useState({ search: "", id_program: "", id_kategori: "", tahun: "" });
+  const [filters, setFilters] = useState({ search: "", id_program: "", id_kategori: "", tahun: "", status_proposal: "" });
 
   const [openDetail, setOpenDetail]       = useState(false);
   const [detailData, setDetailData]       = useState(null);
@@ -193,7 +193,6 @@ export default function TimPesertaPage() {
       .then((res) => {
         const myProgram = res?.data;
         if (myProgram?.id_program) {
-          setProgramList([myProgram]);
           setFilters((prev) => ({ ...prev, id_program: myProgram.id_program }));
         }
       })
@@ -383,13 +382,16 @@ export default function TimPesertaPage() {
     currentList.map((item) => getYearFromItem(item)).filter(Boolean)
   )).sort((a, b) => b - a);
 
-  const filteredList = filters.tahun === ""
-    ? currentList
-    : currentList.filter((item) => getYearFromItem(item) === Number(filters.tahun));
+  const filteredList = currentList.filter((item) => {
+    const yearMatch = filters.tahun === "" || getYearFromItem(item) === Number(filters.tahun);
+    const statusMatch = filters.status_proposal === ""
+      || Number(item?.status_proposal) === Number(filters.status_proposal);
+    return yearMatch && statusMatch;
+  });
 
   useEffect(() => {
     setPage(1);
-  }, [filters.id_program, filters.id_kategori, filters.search, filters.tahun, activeTab]);
+  }, [filters.id_program, filters.id_kategori, filters.search, filters.tahun, filters.status_proposal, activeTab]);
 
   const totalPages   = Math.ceil(filteredList.length / rowsPerPage);
   const paginatedList = filteredList.slice((page - 1) * rowsPerPage, page * rowsPerPage);
@@ -608,21 +610,6 @@ export default function TimPesertaPage() {
                     maxWidth: { sm: 420 },
                   }}
                 />
-                <TextField
-                  select size="small"
-                  value={filters.id_program}
-                  onChange={(e) => setFilters({ ...filters, id_program: e.target.value })}
-                  disabled
-                  sx={{
-                    ...roundedField,
-                    flex: { xs: "1 1 100%", sm: 1 },
-                    maxWidth: { sm: 260 },
-                  }}
-                >
-                  {programList.map((p) => (
-                    <MenuItem key={p.id_program} value={p.id_program} sx={{ fontSize: 13 }}>{p.keterangan}</MenuItem>
-                  ))}
-                </TextField>
                 {activeTab === 0 && (
                   <TextField
                     select size="small"
@@ -648,6 +635,33 @@ export default function TimPesertaPage() {
                     ))}
                   </TextField>
                 )}
+                <TextField
+                  select size="small"
+                  value={filters.status_proposal}
+                  onChange={(e) => setFilters({ ...filters, status_proposal: e.target.value })}
+                  SelectProps={{
+                    displayEmpty: true,
+                    renderValue: (v) => (
+                      <span style={{ fontSize: 14, color: !v ? "#9CA3AF" : "inherit" }}>
+                        {!v ? "Semua Status Proposal" : (PROPOSAL_STATUS[v]?.label || v)}
+                      </span>
+                    ),
+                  }}
+                  sx={{
+                    ...roundedField,
+                    flex: { xs: "1 1 100%", sm: 1 },
+                    maxWidth: { sm: 280 },
+                  }}
+                >
+                  <MenuItem value="" sx={{ fontSize: 13 }}>Semua Status Proposal</MenuItem>
+                  {Object.keys(PROPOSAL_STATUS)
+                    .sort((a, b) => Number(a) - Number(b))
+                    .map((statusKey) => (
+                      <MenuItem key={statusKey} value={statusKey} sx={{ fontSize: 13 }}>
+                        {PROPOSAL_STATUS[statusKey].label}
+                      </MenuItem>
+                    ))}
+                </TextField>
                 <TextField
                   select size="small"
                   value={filters.tahun}
@@ -710,7 +724,7 @@ export default function TimPesertaPage() {
                       <TableHead>
                           <TableRow>
                             {activeTab === 0
-                              ? ["JUDUL PROPOSAL", "KATEGORI", "KETUA", "DOSEN PEMBIMBING", "ANGGOTA", "PROPOSAL", "AKSI"].map((h, i) => (
+                              ? ["JUDUL PROPOSAL", "KATEGORI", "KETUA", "DOSEN PEMBIMBING", "ANGGOTA", "STATUS", "AKSI"].map((h, i) => (
                                   <TableCell
                                     key={i}
                                     sx={{

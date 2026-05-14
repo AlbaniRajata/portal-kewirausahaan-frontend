@@ -68,6 +68,7 @@ const STATUS_MAP = {
   6: { label: "Tidak Lolos Wawancara", colorType: "error"   },
   7: { label: "Lolos Wawancara",       colorType: "success" },
   8: { label: "Lolos (Selesai)",       colorType: "success" },
+  10: { label: "Nonaktif / Mengundurkan Diri", colorType: "error" },
 };
 
 const COLOR_TYPE_MAP = {

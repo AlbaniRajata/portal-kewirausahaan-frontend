@@ -90,8 +90,8 @@ const getStatusInfo = (statusCode) => {
     6:  { label: "Wawancara",         backgroundColor: "#3949ab" },
     7:  { label: "Tidak Lolos Wawancara",   backgroundColor: "#c62828" },
     8:  { label: "Lolos Wawancara",         backgroundColor: "#2e7d32" },
-    9:  { label: "Pembimbing Diajukan",     backgroundColor: "#1565c0" },
-    10: { label: "Pembimbing Disetujui",    backgroundColor: "#2e7d32" },
+    9:  { label: "Pembimbing Disetujui",    backgroundColor: "#2e7d32" },
+    10: { label: "Nonaktif / Mengundurkan Diri", backgroundColor: "#c62828" },
   };
   return map[statusCode] || { label: "Unknown", backgroundColor: "#666" };
 };

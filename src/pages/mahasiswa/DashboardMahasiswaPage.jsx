@@ -48,6 +48,7 @@ const getProposalStatusInfo = (status) => {
     7:  { label: "Lolos Wawancara",        backgroundColor: "#2e7d32" },
     8:  { label: "Pembimbing Diajukan",    backgroundColor: "#1565c0" },
     9:  { label: "Pembimbing Disetujui",   backgroundColor: "#2e7d32" },
+    10: { label: "Nonaktif / Mengundurkan Diri", backgroundColor: "#c62828" },
   };
   return map[status] ?? { label: "Unknown", backgroundColor: "#757575" };
 };
