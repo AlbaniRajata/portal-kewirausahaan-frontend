@@ -278,15 +278,31 @@ export default function VerifikasiPage() {
       setBulkLoading(true);
       const res = await bulkApproveMahasiswa(selectedIds);
       setSelectedIds([]);
+      
+      let htmlContent = `
+        <div style="text-align:left">
+          <div>Berhasil diverifikasi: <b>${res.data.success_count ?? 0}</b></div>
+          <div>Gagal diverifikasi: <b>${res.data.failed_count ?? 0}</b></div>
+      `;
+      
+      if (res.data.errors && res.data.errors.length > 0) {
+        htmlContent += `
+          <hr style="margin: 10px 0;">
+          <div style="font-size: 12px; color: #666;">
+            <b>Detail Kegagalan:</b>
+        `;
+        res.data.errors.forEach((err) => {
+          htmlContent += `<div style="margin-top: 5px;">• ${err.message}</div>`;
+        });
+        htmlContent += `</div>`;
+      }
+      
+      htmlContent += `</div>`;
+      
       await Swal.fire({
-        icon: res.failed_count ? "warning" : "success",
-        title: res.failed_count ? "Selesai dengan catatan" : "Berhasil",
-        html: `
-          <div style="text-align:left">
-            <div>Berhasil diverifikasi: <b>${res.success_count ?? 0}</b></div>
-            <div>Gagal diverifikasi: <b>${res.failed_count ?? 0}</b></div>
-          </div>
-        `,
+        icon: res.data.failed_count ? "warning" : "success",
+        title: res.data.failed_count ? "Selesai dengan catatan" : "Berhasil",
+        html: htmlContent,
         confirmButtonColor: COLORS.primary,
       });
       await fetchMahasiswa();
