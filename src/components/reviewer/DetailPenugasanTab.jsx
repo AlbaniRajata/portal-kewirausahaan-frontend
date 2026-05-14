@@ -100,6 +100,7 @@ export default function DetailPenugasanTab({ penugasan, onAccept, onReject, subm
   const [rejectDialog, setRejectDialog] = useState(false);
   const [catatan, setCatatan] = useState("");
   const [errors, setErrors] = useState({});
+  const isProposalNonaktif = Number(penugasan?.status_proposal) === 10;
 
   const handleOpenReject = () => { setRejectDialog(true); setCatatan(""); setErrors({}); };
   const handleCloseReject = () => { setRejectDialog(false); setCatatan(""); setErrors({}); };
@@ -269,7 +270,7 @@ export default function DetailPenugasanTab({ penugasan, onAccept, onReject, subm
             </Box>
           )}
 
-          {penugasan.status === 0 && (
+          {penugasan.status === 0 && !isProposalNonaktif && (
             <>
               <Divider sx={{ my: 3 }} />
               <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>

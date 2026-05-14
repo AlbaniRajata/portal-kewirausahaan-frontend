@@ -91,7 +91,11 @@ const FieldLabel = ({ children, required }) => (
   </Typography>
 );
 
-const getStatusInfo = (status) => {
+const getStatusInfo = (status, statusProposal = null) => {
+  // Jika proposal nonaktif, tampilkan status itu
+  if (statusProposal !== null && Number(statusProposal) === 10) {
+    return { label: "Nonaktif / Mengundurkan Diri", backgroundColor: COLORS.error };
+  }
   const map = {
     0: { label: "Menunggu Response", backgroundColor: "#f57f17" },
     1: { label: "Disetujui",         backgroundColor: COLORS.success },
@@ -560,6 +564,7 @@ export default function PenugasanPage() {
                     <MenuItem value="2">Ditolak</MenuItem>
                     <MenuItem value="3">Draft Penilaian</MenuItem>
                     <MenuItem value="4">Selesai Dinilai</MenuItem>
+                    <MenuItem value="10">Nonaktif / Mengundurkan Diri</MenuItem>
                   </TextField>
                 </Box>
                 <Box sx={{ minWidth: 280, flex: "2 1 auto" }}>
@@ -676,7 +681,8 @@ export default function PenugasanPage() {
                     </TableHead>
                     <TableBody>
                       {filtered.map((item) => {
-                        const si = getStatusInfo(item.status);
+                        const si = getStatusInfo(item.status, item.status_proposal);
+                        const isProposalNonaktif = Number(item?.status_proposal) === 10 || Number(item?.status_tim) === 2;
                         return (
                           <TableRow key={item.id_distribusi} sx={tableBodyRow}>
                             <TableCell>
@@ -707,7 +713,7 @@ export default function PenugasanPage() {
                             </TableCell>
                             <TableCell align="center">
                               <Box sx={{ display: "inline-flex", gap: 1, flexWrap: "wrap", justifyContent: "center" }}>
-                                {item.status === 0 && (
+                                {item.status === 0 && !isProposalNonaktif && (
                                   <>
                                     <Button
                                       size="small" variant="contained"
@@ -759,7 +765,7 @@ export default function PenugasanPage() {
                                       <Button
                                         size="small" variant="contained"
                                         onClick={() => navigate(`/reviewer/penugasan/${item.id_distribusi}?tab=1`)}
-                                        disabled={!!pairApprovalMap[item.id_distribusi]?.blocked}
+                                        disabled={!!pairApprovalMap[item.id_distribusi]?.blocked || isProposalNonaktif}
                                         sx={{
                                           textTransform: "none", borderRadius: "10px",
                                           fontSize: 12, fontWeight: 600, px: 2,
@@ -776,7 +782,7 @@ export default function PenugasanPage() {
                                       <Button
                                         size="small" variant="contained"
                                         onClick={() => navigate(`/reviewer/penugasan/${item.id_distribusi}?tab=1`)}
-                                        disabled={!!pairApprovalMap[item.id_distribusi]?.blocked}
+                                        disabled={!!pairApprovalMap[item.id_distribusi]?.blocked || isProposalNonaktif}
                                         sx={{
                                           textTransform: "none", borderRadius: "10px",
                                           fontSize: 12, fontWeight: 600, px: 2,

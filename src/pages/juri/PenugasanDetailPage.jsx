@@ -132,6 +132,7 @@ export default function PenugasanDetailJuriPage() {
   if (!penugasan) return null;
 
   const blockedByPairApproval = isTahap2BlockedByPairApproval(penugasan);
+  const isProposalNonaktif = Number(penugasan?.status_proposal) === 10;
 
   return (
     <BodyLayout Sidebar={JuriNavbar}>
@@ -182,7 +183,7 @@ export default function PenugasanDetailJuriPage() {
                 <Tab label="Detail Penugasan" />
                 <Tab
                   label="Form Penilaian"
-                  disabled={(penugasan.status !== 1 && penugasan.status !== 3) || blockedByPairApproval}
+                  disabled={(penugasan.status !== 1 && penugasan.status !== 3) || blockedByPairApproval || isProposalNonaktif}
                 />
               </Tabs>
             </Box>
