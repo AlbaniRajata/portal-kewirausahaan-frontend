@@ -475,7 +475,7 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
 
     const proposal = proposals.find((p) => p.id_proposal === selectedProposal);
     const result = await Swal.fire({
-      title: "Konfirmasi Distribusi Panel",
+      title: "Konfirmasi Distribusi Wawancara",
       html: `Assign wawancara ke:<br/><br/>
              <b>${proposal?.judul}</b><br/><br/>
              Reviewer: <b>${selectedReviewerTahap2.nama_lengkap}</b><br/>
@@ -514,7 +514,7 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
       Swal.fire({
         icon: "error",
         title: "Gagal",
-        text: err.response?.data?.message || "Terjadi kesalahan saat assign panel",
+        text: err.response?.data?.message || "Terjadi kesalahan saat assign wawancara",
         confirmButtonColor: COLORS.primary,
       });
     } finally {
@@ -798,7 +798,7 @@ function DistribusiManualTahap2({
             "&:disabled": { backgroundColor: "#ccc" },
           }}
         >
-          {assigning ? "Memproses..." : "Assign Panel ke Proposal"}
+          {assigning ? "Memproses..." : "Assign Wawancara ke Proposal"}
         </Button>
       </Box>
     </Box>

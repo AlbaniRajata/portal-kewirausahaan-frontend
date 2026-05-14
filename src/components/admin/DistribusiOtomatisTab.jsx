@@ -212,7 +212,7 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
     const confirmText =
       tahap === 1
         ? `Anda akan mendistribusikan <b>${preview.total_proposal}</b> proposal ke <b>${reviewerText}</b> secara otomatis.<br/><br/>Lanjutkan?`
-        : `Anda akan mendistribusikan <b>${preview.belum_terdistribusi}</b> proposal yang belum memiliki pasangan panel.<br/><br/>
+        : `Anda akan mendistribusikan <b>${preview.belum_terdistribusi}</b> proposal yang belum memiliki pasangan wawancara.<br/><br/>
            Sistem akan mendistribusikan berurutan berdasarkan ID reviewer dan ID juri (round-robin) sesuai preview.<br/><br/>Lanjutkan?`;
 
     const result = await Swal.fire({

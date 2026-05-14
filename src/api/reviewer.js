@@ -57,6 +57,11 @@ export const submitPenilaian = async (id_distribusi) => {
   return res.data;
 };
 
+export const resetPenilaian = async (id_distribusi) => {
+  const res = await api.post(`/reviewer/penilaian/${id_distribusi}/reset`);
+  return res.data;
+};
+
 export const getPeringkat = async (tahap) => {
   const res = await api.get(`/reviewer/peringkat?tahap=${tahap}`);
   return res.data;

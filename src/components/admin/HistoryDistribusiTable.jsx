@@ -49,8 +49,8 @@ const STATUS_CONFIG = {
 };
 
 const STATUS_PROPOSAL_CONFIG = {
-  4: { label: "Desk", backgroundColor: "#1565c0" },
-  5: { label: "Panel", backgroundColor: "#6a1b9a" },
+  4: { label: "Desk Evaluasi", backgroundColor: "#1565c0" },
+  5: { label: "Wawancara", backgroundColor: "#6a1b9a" },
 };
 
 const StatusPill = ({ status, configMap = STATUS_CONFIG }) => {

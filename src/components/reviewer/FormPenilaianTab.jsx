@@ -7,7 +7,7 @@ import {
 import { Info, CheckCircle, Refresh } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import { getFormPenilaian, simpanNilai, submitPenilaian } from "../../api/reviewer";
+import { getFormPenilaian, simpanNilai, submitPenilaian, resetPenilaian } from "../../api/reviewer";
 import LoadingScreen from "../common/LoadingScreen";
 
 const COLORS = {
@@ -278,25 +278,33 @@ export default function FormPenilaianTab({ id_distribusi, onActionsChange }) {
       cancelButtonText: "Batal"
     });
 
-    if (result.isConfirmed) {
+    if (!result.isConfirmed) return;
+
+    try {
+      const response = await resetPenilaian(id_distribusi);
+      if (!response.success) {
+        Swal.fire({ icon: "error", title: "Gagal", text: response.message, confirmButtonText: "OK" });
+        return;
+      }
+
       const initialForm = {};
-      data.nilai.forEach((item) => {
-        initialForm[item.id_kriteria] = {
-          skor: "",
-          catatan: "",
-        };
+      data.kriteria.forEach((item) => {
+        initialForm[item.id_kriteria] = { skor: "", catatan: "" };
       });
       setFormData(initialForm);
       setErrors({});
       localStorage.removeItem(`penilaian_draft_reviewer_${id_distribusi}`);
-      
+      await fetchFormPenilaian();
+
       Swal.fire({
         icon: "success",
         title: "Berhasil Reset",
         text: "Form penilaian telah dikosongkan",
         timer: 1500,
-        showConfirmButton: false
+        showConfirmButton: false,
       });
+    } catch (err) {
+      Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || "Terjadi kesalahan saat reset", confirmButtonText: "OK" });
     }
   };
 
