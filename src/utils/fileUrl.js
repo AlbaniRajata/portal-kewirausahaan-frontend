@@ -9,6 +9,7 @@ export const getUploadUrl = (folder, filename) => {
   if (filename.startsWith("http://") || filename.startsWith("https://")) return filename;
 
   let path = filename;
+  if (path.startsWith("uploads/")) path = `/${path}`;
   if (path.startsWith("/uploads/")) {
     return path;
   } else if (path.startsWith(`/${folder}/`) || path.startsWith(folder + "/")) {
@@ -23,12 +24,15 @@ export const getDownloadUrl = (folder, filename) => {
   if (!filename) return null;
   if (filename.startsWith("http://") || filename.startsWith("https://")) return filename;
 
-  if (filename.startsWith("/uploads/")) {
-    return filename;
-  } else if (filename.startsWith(`/${folder}/`) || filename.startsWith(folder + "/")) {
-    const path = filename.startsWith("/") ? filename : `/${filename}`;
+  const normalized = filename.startsWith("uploads/") ? `/${filename}` : filename;
+
+  if (normalized.startsWith("/uploads/")) {
+    return normalized;
+  } else if (normalized.startsWith(`/${folder}/`) || normalized.startsWith(folder + "/")) {
+    const path = normalized.startsWith("/") ? normalized : `/${normalized}`;
     return `/uploads${path}`;
   } else {
-    return `/uploads/${folder}/${filename}`;
+    const cleanName = normalized.startsWith("/") ? normalized.slice(1) : normalized;
+    return `/uploads/${folder}/${cleanName}`;
   }
 };

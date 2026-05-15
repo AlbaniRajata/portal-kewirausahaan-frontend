@@ -5,6 +5,12 @@ import {
   Typography,
   Button,
   CircularProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -14,6 +20,7 @@ import {
   IconButton,
   LinearProgress,
   Chip,
+  Pagination,
 } from "@mui/material";
 import {
   Close,
@@ -84,19 +91,19 @@ const TIPE_MAP = {
 };
 
 const tableHeadCell = {
-  fontWeight: 700,
-  fontSize: { xs: 11, sm: 12 },
-  color: "#374151",
+  fontWeight: 800,
+  fontSize: 12,
+  color: "#475569",
   backgroundColor: "#F8FAFC",
   borderBottom: `2px solid ${COLORS.primaryMuted}`,
-  py: 2,
+  py: 2.5,
   textTransform: "uppercase",
-  letterSpacing: "0.04em",
+  letterSpacing: "0.05em",
 };
 
 const tableBodyRow = {
-  "& td": { borderBottom: `1px solid ${COLORS.slateLight}`, py: 2 },
-  "&:hover": { backgroundColor: "#F8FAFC" },
+  "&:hover": { backgroundColor: "#F1F5F9/50" },
+  "& td": { borderBottom: "1.5px solid #E2E8F0", py: 2 },
 };
 
 const roundedField = {
@@ -107,6 +114,14 @@ const roundedField = {
     "&:hover fieldset": { borderColor: COLORS.primary },
     "&.Mui-focused fieldset": { borderColor: COLORS.primary },
     "&.Mui-focused": { boxShadow: `0 0 0 3px ${COLORS.primaryLight}` },
+  },
+};
+
+const swalOptions = {
+  customClass: { container: "swal-over-dialog" },
+  didOpen: () => {
+    const container = document.querySelector(".swal-over-dialog");
+    if (container) container.style.zIndex = "99999";
   },
 };
 
@@ -166,6 +181,8 @@ export default function MonevProgressPage() {
   const [reviewErrors, setReviewErrors] = useState({});
   const [submittingReview, setSubmittingReview] = useState(false);
   const [tahun, setTahun] = useState("");
+  const [page, setPage] = useState(1);
+  const rowsPerPage = 10;
 
   const fetchProgress = useCallback(async () => {
     try {
@@ -174,6 +191,7 @@ export default function MonevProgressPage() {
       setProgressList(res.data || []);
     } catch {
       Swal.fire({
+        ...swalOptions,
         icon: "error",
         title: "Gagal",
         text: "Gagal memuat progress tim",
@@ -206,6 +224,17 @@ export default function MonevProgressPage() {
     ? progressList
     : progressList.filter((tim) => getYearFromProgress(tim) === Number(tahun));
 
+  useEffect(() => {
+    setPage(1);
+  }, [tahun]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProgressList.length / rowsPerPage));
+  const paginatedProgressList = filteredProgressList.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
   const handleViewDetail = async (tim) => {
     setSelectedTim(tim);
     setDetailLuaran([]);
@@ -216,6 +245,7 @@ export default function MonevProgressPage() {
       setDetailLuaran(res.data || []);
     } catch {
       Swal.fire({
+        ...swalOptions,
         icon: "error",
         title: "Gagal",
         text: "Gagal memuat detail luaran tim",
@@ -261,6 +291,7 @@ export default function MonevProgressPage() {
     setOpenReview(false);
     const statusNum = parseInt(reviewForm.status);
     const result = await Swal.fire({
+      ...swalOptions,
       title: "Konfirmasi Review",
       text: `${statusNum === 2 ? "Setujui" : "Tolak"} luaran "${selectedLuaranTim?.nama_luaran}" dari tim "${selectedTim?.nama_tim}"?`,
       icon: "question",
@@ -281,6 +312,7 @@ export default function MonevProgressPage() {
         catatan_admin: reviewForm.catatan_admin.trim() || null,
       });
       await Swal.fire({
+        ...swalOptions,
         icon: "success",
         title: "Berhasil",
         text:
@@ -298,6 +330,7 @@ fetchProgress();
 setTimeout(() => setOpenDetail(true), 200);
     } catch (err) {
       Swal.fire({
+        ...swalOptions,
         icon: "error",
         title: "Gagal",
         text: err.response?.data?.message || "Gagal melakukan review",
@@ -390,164 +423,155 @@ setTimeout(() => setOpenDetail(true), 200);
                 </Typography>
               </Box>
             ) : (
-              <Box sx={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr>
-                      {[
-                        "Nama Tim",
-                        "Ketua",
-                        "NIM",
-                        "Progress",
-                        "Submitted",
-                        "Disetujui",
-                        "Ditolak",
-                        "Aksi",
-                      ].map((h, i) => (
-                        <th
-                          key={i}
-                          style={{
-                            ...tableHeadCell,
-                            textAlign: i === 7 ? "center" : "left",
-                            padding: "12px 16px",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredProgressList.map((tim) => {
-                      const pct =
-                        tim.total_luaran > 0
-                          ? Math.round(
-                              (tim.total_disetujui / tim.total_luaran) * 100,
-                            )
-                          : 0;
-                      return (
-                        <tr
-                          key={tim.id_tim}
-                          style={{ borderBottom: "1px solid #f5f5f5" }}
-                        >
-                          <td style={{ padding: "14px 16px" }}>
-                            <Typography sx={{ fontWeight: 700, fontSize: 14 }}>
-                              {tim.nama_tim}
-                            </Typography>
-                          </td>
-                          <td style={{ padding: "14px 16px" }}>
-                            <Typography sx={{ fontSize: 13, fontWeight: 600 }}>
-                              {tim.nama_ketua}
-                            </Typography>
-                          </td>
-                          <td style={{ padding: "14px 16px" }}>
-                            <Typography sx={{ fontSize: 13, color: "#555" }}>
-                              {tim.nim}
-                            </Typography>
-                          </td>
-                          <td style={{ padding: "14px 16px", minWidth: 180 }}>
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                              }}
-                            >
-                              <LinearProgress
-                                variant="determinate"
-                                value={pct}
-                                sx={{
-                                  flex: 1,
-                                  height: 8,
-                                  borderRadius: 4,
-                                  backgroundColor: "#f0f0f0",
-                                  "& .MuiLinearProgress-bar": {
-                                    backgroundColor:
-                                      pct === 100 ? "#2e7d32" : "#0D59F2",
+              <Box sx={{ px: { xs: 2, sm: 3.5 }, py: { xs: 2, sm: 2.5 } }}>
+                <TableContainer sx={{ borderRadius: "16px", border: "1.5px solid #E2E8F0", overflow: "hidden", overflowX: "auto", mb: 0 }}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        {[
+                          "Nama Tim",
+                          "Ketua",
+                          "NIM",
+                          "Progress",
+                          "Submitted",
+                          "Disetujui",
+                          "Ditolak",
+                          "Aksi",
+                        ].map((h, i) => (
+                          <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 7 && { textAlign: "center" }), whiteSpace: "nowrap" }}>
+                            {h}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {paginatedProgressList.map((tim) => {
+                        const pct =
+                          tim.total_luaran > 0
+                            ? Math.round((tim.total_disetujui / tim.total_luaran) * 100)
+                            : 0;
+                        return (
+                          <TableRow key={tim.id_tim} sx={tableBodyRow}>
+                            <TableCell>
+                              <Typography sx={{ fontWeight: 700, fontSize: 14 }}>
+                                {tim.nama_tim}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography sx={{ fontSize: 13, fontWeight: 600 }}>
+                                {tim.nama_ketua}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography sx={{ fontSize: 13, color: COLORS.slate }}>
+                                {tim.nim}
+                              </Typography>
+                            </TableCell>
+                            <TableCell sx={{ minWidth: 220 }}>
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                <LinearProgress
+                                  variant="determinate"
+                                  value={pct}
+                                  sx={{
+                                    flex: 1,
+                                    height: 8,
                                     borderRadius: 4,
-                                  },
-                                }}
+                                    backgroundColor: "#f0f0f0",
+                                    "& .MuiLinearProgress-bar": {
+                                      backgroundColor: pct === 100 ? COLORS.success : COLORS.primary,
+                                      borderRadius: 4,
+                                    },
+                                  }}
+                                />
+                                <Typography sx={{ fontSize: 12, fontWeight: 700, color: COLORS.slate, minWidth: 36 }}>
+                                  {pct}%
+                                </Typography>
+                              </Box>
+                              <Typography sx={{ fontSize: 11, color: COLORS.slate, mt: 0.5 }}>
+                                {tim.total_disetujui}/{tim.total_luaran} luaran
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Chip
+                                label={tim.total_submitted}
+                                size="small"
+                                sx={{ backgroundColor: "#f57f17", color: "#fff", fontWeight: 700 }}
                               />
-                              <Typography
+                            </TableCell>
+                            <TableCell>
+                              <Chip
+                                label={tim.total_disetujui}
+                                size="small"
+                                sx={{ backgroundColor: COLORS.success, color: "#fff", fontWeight: 700 }}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Chip
+                                label={tim.total_ditolak}
+                                size="small"
+                                sx={{ backgroundColor: COLORS.error, color: "#fff", fontWeight: 700 }}
+                              />
+                            </TableCell>
+                            <TableCell align="center">
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                onClick={() => handleViewDetail(tim)}
                                 sx={{
-                                  fontSize: 12,
-                                  fontWeight: 700,
-                                  color: "#555",
-                                  minWidth: 36,
+                                  textTransform: "none",
+                                  borderRadius: "10px",
+                                  fontSize: 13,
+                                  fontWeight: 600,
+                                  px: 2,
+                                  borderColor: COLORS.primary,
+                                  color: COLORS.primary,
+                                  "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
                                 }}
                               >
-                                {pct}%
-                              </Typography>
-                            </Box>
-                            <Typography
-                              sx={{ fontSize: 11, color: "#888", mt: 0.5 }}
-                            >
-                              {tim.total_disetujui}/{tim.total_luaran} luaran
-                            </Typography>
-                          </td>
-                          <td style={{ padding: "14px 16px" }}>
-                            <Chip
-                              label={tim.total_submitted}
-                              size="small"
-                              sx={{
-                                backgroundColor: "#f57f17",
-                                color: "#fff",
-                                fontWeight: 700,
-                              }}
-                            />
-                          </td>
-                          <td style={{ padding: "14px 16px" }}>
-                            <Chip
-                              label={tim.total_disetujui}
-                              size="small"
-                              sx={{
-                                backgroundColor: "#2e7d32",
-                                color: "#fff",
-                                fontWeight: 700,
-                              }}
-                            />
-                          </td>
-                          <td style={{ padding: "14px 16px" }}>
-                            <Chip
-                              label={tim.total_ditolak}
-                              size="small"
-                              sx={{
-                                backgroundColor: "#c62828",
-                                color: "#fff",
-                                fontWeight: 700,
-                              }}
-                            />
-                          </td>
-                          <td
-                            style={{
-                              padding: "14px 16px",
-                              textAlign: "center",
-                            }}
-                          >
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              onClick={() => handleViewDetail(tim)}
-                              sx={{
-                                textTransform: "none",
-                                borderRadius: "50px",
-                                fontSize: 12,
-                                fontWeight: 600,
-                                px: 2,
-                                borderColor: "#0D59F2",
-                                color: "#0D59F2",
-                                "&:hover": { backgroundColor: "#f0f4ff" },
-                              }}
-                            >
-                              Detail
-                            </Button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                                Detail
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Box>
+            )}
+
+            {!loading && filteredProgressList.length > 0 && (
+              <Box sx={{
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
+                justifyContent: "space-between",
+                alignItems: { xs: "flex-start", sm: "center" },
+                gap: 2,
+                px: { xs: 2, sm: 3.5 },
+                py: { xs: 1.5, sm: 2.5 },
+              }}>
+                <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 600 }}>
+                  Menampilkan <span style={{ color: "#1E293B" }}>{(page - 1) * rowsPerPage + 1}–{Math.min(page * rowsPerPage, filteredProgressList.length)}</span> dari <span style={{ color: "#1E293B" }}>{filteredProgressList.length}</span> tim
+                </Typography>
+                <Pagination
+                  count={totalPages}
+                  page={page}
+                  onChange={(e, v) => setPage(v)}
+                  color="primary"
+                  shape="rounded"
+                  size="small"
+                  sx={{
+                    "& .MuiPaginationItem-root": {
+                      fontWeight: 700,
+                      borderRadius: "10px",
+                      "&.Mui-selected": {
+                        backgroundColor: COLORS.primary,
+                        color: "#fff",
+                        "&:hover": { backgroundColor: COLORS.primaryDark },
+                      },
+                    },
+                  }}
+                />
               </Box>
             )}
           </Paper>
@@ -610,15 +634,18 @@ setTimeout(() => setOpenDetail(true), 200);
                     <Box
                       key={luaran.id_luaran}
                       sx={{
-                        border: `1px solid ${luaran.status === 2 ? "#a5d6a7" : luaran.status === 1 ? "#ffe082" : "#f0f0f0"}`,
-                        borderRadius: "12px",
+                        border: `1.5px solid ${luaran.status === 2 ? "#A7F3D0" : luaran.status === 1 ? "#FDE68A" : luaran.status === 3 ? "#FCA5A5" : "#E2E8F0"}`,
+                        borderRadius: "14px",
                         p: 2.5,
+                        boxShadow: "0 2px 8px rgba(15,23,42,0.04)",
                         backgroundColor:
                           luaran.status === 2
-                            ? "#f9fffe"
+                            ? COLORS.successLight
                             : luaran.status === 1
-                              ? "#fffdf5"
-                              : "#fafafa",
+                              ? COLORS.warningLight
+                              : luaran.status === 3
+                                ? "#FEF2F2"
+                                : "#fff",
                       }}
                     >
                       <Box
@@ -642,6 +669,16 @@ setTimeout(() => setOpenDetail(true), 200);
                               {luaran.nama_luaran}
                             </Typography>
                             <Chip
+                              label={`Urutan ${luaran.urutan || "-"}`}
+                              size="small"
+                              sx={{
+                                backgroundColor: COLORS.slateLight,
+                                color: "#334155",
+                                fontWeight: 700,
+                                fontSize: 11,
+                              }}
+                            />
+                            <Chip
                               label={tipe.label}
                               size="small"
                               sx={{
@@ -661,14 +698,7 @@ setTimeout(() => setOpenDetail(true), 200);
                         <StatusPill status={luaran.status ?? 0} />
                       </Box>
 
-                      <Box
-                        sx={{
-                          display: "grid",
-                          gridTemplateColumns: "1fr 1fr",
-                          gap: 1.5,
-                          mb: 1.5,
-                        }}
-                      >
+                      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5, mb: 1.5 }}>
                         <Box>
                           <Typography sx={{ fontSize: 11, color: "#888" }}>
                             Deadline
@@ -716,6 +746,10 @@ setTimeout(() => setOpenDetail(true), 200);
                             flexDirection: "column",
                             gap: 1,
                             mb: luaran.status === 1 ? 1.5 : 0,
+                            p: 1.5,
+                            borderRadius: "10px",
+                            backgroundColor: "#fff",
+                            border: "1px dashed #CBD5E1",
                           }}
                         >
                           {luaran.file_luaran && (
@@ -846,12 +880,13 @@ setTimeout(() => setOpenDetail(true), 200);
               onClick={() => setOpenDetail(false)}
               sx={{
                 textTransform: "none",
-                borderRadius: "50px",
+                borderRadius: "10px",
                 px: 4,
-                fontWeight: 600,
-                backgroundColor: "#FDB022",
+                py: 1,
+                fontWeight: 700,
+                backgroundColor: "#64748B",
                 color: "#fff",
-                "&:hover": { backgroundColor: "#e09a1a" },
+                "&:hover": { backgroundColor: "#475569" },
               }}
             >
               Tutup

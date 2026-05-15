@@ -43,6 +43,14 @@ const roundedField = {
   },
 };
 
+const swalOptions = {
+  customClass: { container: "swal-over-dialog" },
+  didOpen: () => {
+    const container = document.querySelector(".swal-over-dialog");
+    if (container) container.style.zIndex = "99999";
+  },
+};
+
 const tableHeadCell = {
   fontWeight: 800,
   fontSize: 12,
@@ -103,7 +111,7 @@ export default function MonevPage() {
         if (list.length > 0) setSelectedProgram(list[0]);
       })
       .catch(() => {
-        Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat data program", confirmButtonColor: "#0D59F2" });
+        Swal.fire({ ...swalOptions, icon: "error", title: "Gagal", text: "Gagal memuat data program", confirmButtonColor: "#0D59F2" });
       })
       .finally(() => setLoadingProgram(false));
   }, []);
@@ -115,7 +123,7 @@ export default function MonevPage() {
       const res = await getLuaranProgram(selectedProgram.id_program);
       setLuaranList(res.data || []);
     } catch {
-      Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memuat data luaran", confirmButtonColor: "#0D59F2" });
+      Swal.fire({ ...swalOptions, icon: "error", title: "Gagal", text: "Gagal memuat data luaran", confirmButtonColor: "#0D59F2" });
     } finally {
       setLoading(false);
     }
@@ -202,6 +210,7 @@ export default function MonevPage() {
         await createLuaran(selectedProgram.id_program, payload);
       }
       await Swal.fire({
+        ...swalOptions,
         icon: "success", title: "Berhasil",
         text: editData ? "Luaran berhasil diperbarui" : "Luaran berhasil dibuat",
         timer: 2000, timerProgressBar: true, showConfirmButton: false,
@@ -210,6 +219,7 @@ export default function MonevPage() {
       fetchLuaran();
     } catch (err) {
       Swal.fire({
+        ...swalOptions,
         icon: "error", title: "Gagal",
         text: err.response?.data?.message || "Gagal menyimpan luaran",
         confirmButtonColor: "#0D59F2",
@@ -221,6 +231,7 @@ export default function MonevPage() {
 
   const handleDelete = async (luaran) => {
     const result = await Swal.fire({
+      ...swalOptions,
       title: "Hapus Luaran",
       text: `Hapus luaran "${luaran.nama_luaran}"? Aksi ini tidak bisa dibatalkan.`,
       icon: "warning", showCancelButton: true,
@@ -231,12 +242,14 @@ export default function MonevPage() {
     try {
       await deleteLuaran(luaran.id_luaran);
       await Swal.fire({
+        ...swalOptions,
         icon: "success", title: "Berhasil", text: "Luaran berhasil dihapus",
         timer: 2000, timerProgressBar: true, showConfirmButton: false,
       });
       fetchLuaran();
     } catch (err) {
       Swal.fire({
+        ...swalOptions,
         icon: "error", title: "Gagal",
         text: err.response?.data?.message || "Gagal menghapus luaran",
         confirmButtonColor: "#0D59F2",
