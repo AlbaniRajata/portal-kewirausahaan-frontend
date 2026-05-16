@@ -535,12 +535,17 @@ export default function PengajuanPembimbingPage() {
           )}
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, py: 2, gap: 1, justifyContent: { xs: "center", sm: "flex-end" }, flexWrap: "wrap" }}>
+        <DialogActions sx={{
+          px: { xs: 2.5, sm: 3 }, py: { xs: 2, sm: 3 },
+          gap: 1.5,
+          flexDirection: { xs: "column", sm: "row" },
+          "& > button": { width: { xs: "100%", sm: "auto" } },
+        }}>
           <Button
             onClick={handleCloseDialog}
             sx={{
               backgroundColor: COLORS.error,
-              textTransform: "none", borderRadius: "12px", px: 3, py: 1,
+              textTransform: "none", borderRadius: "10px", px: 3, py: 1.2,
               fontWeight: 700, fontSize: 14, color: COLORS.slateLight,
             }}
           >
@@ -554,7 +559,7 @@ export default function PengajuanPembimbingPage() {
               onClick={handleAjukan}
               disabled={submitting}
               sx={{
-                textTransform: "none", borderRadius: "10px", px: 3, py: 1,
+                textTransform: "none", borderRadius: "10px", px: 3, py: 1.2,
                 fontWeight: 700, fontSize: 14,
                 backgroundColor: COLORS.primary,
                 "&:hover": { backgroundColor: COLORS.primaryDark },

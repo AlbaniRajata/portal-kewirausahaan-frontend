@@ -27,6 +27,17 @@ const COLORS = {
   error: "#DC2626",
 };
 
+const roundedField = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "12px",
+    backgroundColor: "#fff",
+    transition: "all 0.2s ease-in-out",
+    "&:hover fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary, borderWidth: "2px" },
+    "&.Mui-focused": { boxShadow: `0 0 0 4px ${COLORS.primaryLight}` },
+  },
+};
+
 const SectionHeader = ({ icon: Icon, title, subtitle, gradient }) => (
   <Box sx={{
     display: "flex", alignItems: "center", gap: 2, mb: 3,
@@ -260,7 +271,13 @@ export default function UndanganAnggotaPage() {
                 </Box>
               </Box>
 
-              <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
+              <Box sx={{
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
+                justifyContent: { xs: "stretch", sm: "flex-end" },
+                gap: 1.5,
+                "& > button": { width: { xs: "100%", sm: "auto" } },
+              }}>
                 <Button
                   onClick={() => {
                     setSelectedTim(timDetail);
@@ -290,15 +307,15 @@ export default function UndanganAnggotaPage() {
             </Box>
           </Paper>
 
-          <Dialog open={openReject} onClose={() => setOpenReject(false)} fullWidth maxWidth="sm">
+          <Dialog open={openReject} onClose={() => setOpenReject(false)} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: "16px" } }}>
             <DialogTitle>
-              Tolak Undangan
-              <IconButton onClick={() => setOpenReject(false)} sx={{ position: "absolute", right: 8, top: 8 }}>
+              <Typography sx={{ fontWeight: 700, fontSize: 18 }}>Tolak Undangan</Typography>
+              <IconButton onClick={() => setOpenReject(false)} sx={{ position: "absolute", right: 8, top: 8, color: "#888" }}>
                 <Close />
               </IconButton>
             </DialogTitle>
 
-            <DialogContent>
+            <DialogContent dividers sx={{ px: { xs: 2.5, sm: 3 }, py: { xs: 3, sm: 4 } }}>
               <TextField
                 fullWidth
                 multiline
@@ -307,22 +324,28 @@ export default function UndanganAnggotaPage() {
                 onChange={(e) => setCatatan(e.target.value)}
                 error={!!errors.catatan}
                 helperText={errors.catatan}
-                sx={{ mt: 2 }}
+                placeholder="Tuliskan alasan penolakan..."
+                sx={roundedField}
               />
             </DialogContent>
 
-            <DialogActions>
+            <DialogActions sx={{
+              px: { xs: 2.5, sm: 3 }, py: { xs: 2, sm: 3 },
+              gap: 1.5,
+              flexDirection: { xs: "column", sm: "row" },
+              "& > button": { width: { xs: "100%", sm: "auto" } },
+            }}>
               <Button onClick={() => setOpenReject(false)} sx={{
                 borderRadius: "10px", px: 3, py: 1.2, fontWeight: 700, textTransform: "none",
-                backgroundColor: COLORS.error, color: "#fff",
-                "&:hover": { backgroundColor: "#B91C1C" },
+                backgroundColor: COLORS.primary, color: "#fff",
+                "&:hover": { backgroundColor: COLORS.primaryDark },
               }}>
                 Batal
               </Button>
               <Button onClick={handleReject} variant="contained" sx={{
                 borderRadius: "10px", px: 3, py: 1.2, fontWeight: 700, textTransform: "none",
                 backgroundColor: COLORS.error,
-                "&:hover": { backgroundColor: "#DC2626" },
+                "&:hover": { backgroundColor: "#B91C1C" },
               }}>
                 Tolak
               </Button>

@@ -304,7 +304,7 @@ export default function LogBimbinganPage() {
     }
   };
 
-return (
+  return (
     <BodyLayout Sidebar={MahasiswaNavbar}>
       <PageTransition>
         <Box>
@@ -318,7 +318,7 @@ return (
             </Typography>
           </Box>
 
-<Box sx={{ display: "flex", justifyContent: "flex-end", mb: 4 }}>
+          <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 4 }}>
             <Button
               variant="contained"
               onClick={handleOpenDialog}
@@ -515,11 +515,16 @@ return (
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, py: 2, gap: 1.5, justifyContent: "flex-end" }}>
+        <DialogActions sx={{
+          px: { xs: 2.5, sm: 3 }, py: { xs: 2, sm: 3 },
+          gap: 1.5,
+          flexDirection: { xs: "column", sm: "row" },
+          "& > button": { width: { xs: "100%", sm: "auto" } },
+        }}>
           <Button
             onClick={handleCloseDialog}
             sx={{
-              textTransform: "none", borderRadius: "10px", px: 3, fontWeight: 600,
+              textTransform: "none", borderRadius: "10px", px: 3, py: 1.2, fontWeight: 600,
               backgroundColor: COLORS.error, color: "#fff",
               "&:hover": { backgroundColor: "#B91C1C" },
             }}
