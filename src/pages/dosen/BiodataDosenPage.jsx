@@ -196,6 +196,7 @@ export default function BiodataDosenPage() {
 
     const securityCheck = validateFormSecurity({
       nama_lengkap: formBiodata.nama_lengkap,
+      username: formBiodata.username,
       no_hp: formBiodata.no_hp,
       bidang_keahlian: formBiodata.bidang_keahlian,
       alamat: formBiodata.alamat,
@@ -209,6 +210,7 @@ export default function BiodataDosenPage() {
     try {
       const formData = new FormData();
       formData.append("nama_lengkap",    formBiodata.nama_lengkap);
+      if (formBiodata.username) formData.append("username", formBiodata.username);
       formData.append("no_hp",           formBiodata.no_hp);
       formData.append("alamat",          formBiodata.alamat);
       formData.append("bidang_keahlian", formBiodata.bidang_keahlian);
@@ -334,7 +336,13 @@ export default function BiodataDosenPage() {
                 </Box>
                 <Box>
                   <FieldLabel>Username</FieldLabel>
-                  <ReadonlyField value={formBiodata.username} />
+                  <TextField
+                    fullWidth placeholder="(Opsional) Masukkan username jika ingin"
+                    value={formBiodata.username}
+                    onChange={(e) => handleChangeBiodata("username", e.target.value)}
+                    error={!!errors.username} helperText={errors.username}
+                    disabled={submitting} sx={roundedField}
+                  />
                 </Box>
               </Box>
 

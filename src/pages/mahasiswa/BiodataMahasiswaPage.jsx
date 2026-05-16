@@ -188,6 +188,7 @@ export default function BiodataMahasiswaPage() {
 
     const securityCheck = validateFormSecurity({
       nama_lengkap: formBiodata.nama_lengkap,
+      username: formBiodata.username,
       no_hp: formBiodata.no_hp,
       alamat: formBiodata.alamat,
     });
@@ -200,6 +201,7 @@ export default function BiodataMahasiswaPage() {
     try {
       const formData = new FormData();
       formData.append("nama_lengkap", formBiodata.nama_lengkap);
+      if (formBiodata.username) formData.append("username", formBiodata.username);
       formData.append("no_hp", formBiodata.no_hp);
       formData.append("alamat", formBiodata.alamat);
       if (formBiodata.foto) formData.append("foto", formBiodata.foto);
@@ -325,7 +327,13 @@ export default function BiodataMahasiswaPage() {
                 </Box>
                 <Box>
                   <FieldLabel>Username</FieldLabel>
-                  <ReadonlyField value={formBiodata.username} />
+                  <TextField
+                    fullWidth placeholder="(Opsional) Masukkan username jika ingin"
+                    value={formBiodata.username}
+                    onChange={(e) => handleChangeBiodata("username", e.target.value)}
+                    error={!!errors.username} helperText={errors.username}
+                    disabled={submitting} sx={roundedField}
+                  />
                 </Box>
               </Box>
 

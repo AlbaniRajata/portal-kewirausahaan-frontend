@@ -25,7 +25,7 @@ export default function RegisterDosenPage() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
-    username: "", nip: "", email: "",
+    nama_lengkap: "", nip: "", email: "",
     id_prodi: null, password: "",
   });
 
@@ -90,7 +90,7 @@ export default function RegisterDosenPage() {
 
   const validate = () => {
     const newErrors = {};
-    if (!form.username) newErrors.username = "Username wajib diisi";
+    if (!form.nama_lengkap) newErrors.nama_lengkap = "Nama lengkap wajib diisi";
     if (!form.nip) newErrors.nip = "NIP wajib diisi";
     if (!form.email) newErrors.email = "Email wajib diisi";
     else if (!form.email.includes("@")) newErrors.email = "Format email tidak valid";
@@ -105,7 +105,7 @@ export default function RegisterDosenPage() {
     if (!validate()) return;
 
     const securityCheck = validateFormSecurity({
-      username: form.username,
+      nama_lengkap: form.nama_lengkap,
       nip: form.nip,
       email: form.email,
       password: form.password,
@@ -118,7 +118,7 @@ export default function RegisterDosenPage() {
     setLoading(true);
     try {
       const payload = {
-        username: form.username,
+        nama_lengkap: form.nama_lengkap,
         email: form.email,
         password: form.password,
         nip: form.nip,
@@ -368,7 +368,7 @@ export default function RegisterDosenPage() {
             transition: "transform 0.6s ease 0.25s, opacity 0.6s ease 0.25s",
           }}>
             {[
-              { label: "Username", field: "username", placeholder: "Masukkan username" },
+              { label: "Nama Lengkap", field: "nama_lengkap", placeholder: "Masukkan nama lengkap" },
               { label: "NIP", field: "nip", placeholder: "Masukkan NIP" },
               { label: "Email", field: "email", placeholder: "Masukkan email" },
             ].map(({ label, field, placeholder }) => (

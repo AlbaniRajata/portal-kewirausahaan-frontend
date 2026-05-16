@@ -25,7 +25,7 @@ export default function RegisterMahasiswaPage() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
-    username: "", nim: "", email: "",
+    nama_lengkap: "", nim: "", email: "",
     id_prodi: null, tahun_masuk: "",
     password: "", foto_ktm: null,
   });
@@ -118,7 +118,7 @@ export default function RegisterMahasiswaPage() {
 
   const validate = () => {
     const newErrors = {};
-    if (!form.username) newErrors.username = "Username wajib diisi";
+    if (!form.nama_lengkap) newErrors.nama_lengkap = "Nama lengkap wajib diisi";
     if (!form.nim) newErrors.nim = "NIM wajib diisi";
     if (!form.email) newErrors.email = "Email wajib diisi";
     else if (!form.email.includes("@")) newErrors.email = "Format email tidak valid";
@@ -136,7 +136,7 @@ export default function RegisterMahasiswaPage() {
     if (!validate()) return;
 
     const securityCheck = validateFormSecurity({
-      username: form.username,
+      nama_lengkap: form.nama_lengkap,
       nim: form.nim,
       email: form.email,
       tahun_masuk: form.tahun_masuk,
@@ -150,7 +150,7 @@ export default function RegisterMahasiswaPage() {
     setLoading(true);
     try {
       const formData = new FormData();
-      formData.append("username", form.username);
+      formData.append("nama_lengkap", form.nama_lengkap);
       formData.append("email", form.email);
       formData.append("password", form.password);
       formData.append("nim", form.nim);
@@ -384,7 +384,7 @@ export default function RegisterMahasiswaPage() {
             transition: "transform 0.6s ease 0.25s, opacity 0.6s ease 0.25s",
           }}>
             {[
-              { label: "Username", field: "username", placeholder: "Masukkan username" },
+              { label: "Nama Lengkap", field: "nama_lengkap", placeholder: "Masukkan nama lengkap" },
               { label: "NIM", field: "nim", placeholder: "Masukkan NIM" },
               { label: "Email", field: "email", placeholder: "Masukkan email" },
             ].map(({ label, field, placeholder }) => (
