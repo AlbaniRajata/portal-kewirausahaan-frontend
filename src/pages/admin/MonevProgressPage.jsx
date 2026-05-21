@@ -416,10 +416,10 @@ setTimeout(() => setOpenDetail(true), 200);
                 <Typography
                   sx={{ fontSize: 20, fontWeight: 700, color: "#444", mb: 1 }}
                 >
-                  Belum Ada Tim
+                  Belum Ada Tim yang Lolos
                 </Typography>
                 <Typography sx={{ fontSize: 14, color: "#999" }}>
-                  Belum ada tim yang terdaftar pada program ini
+                  Belum ada tim yang lolos tahap penilaian wawancara untuk program ini.
                 </Typography>
               </Box>
             ) : (

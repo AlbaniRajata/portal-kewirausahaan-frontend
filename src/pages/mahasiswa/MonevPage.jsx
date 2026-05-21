@@ -15,6 +15,7 @@ import MahasiswaNavbar from "../../components/layouts/MahasiswaNavbar";
 import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import { getLuaranMahasiswa, submitLuaran } from "../../api/mahasiswa";
+import { getProposalStatus } from "../../api/mahasiswa";
 import { downloadFile } from "../../utils/download";
 
 const COLORS = {
@@ -148,6 +149,7 @@ export default function MonevPage() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
   const [statusMessage, setStatusMessage] = useState(null);
+  const [hasMonevAccess, setHasMonevAccess] = useState(true);
   const [openSubmit, setOpenSubmit] = useState(false);
   const [selectedLuaran, setSelectedLuaran] = useState(null);
   const [file, setFile] = useState(null);
@@ -179,6 +181,24 @@ export default function MonevPage() {
   useEffect(() => {
     fetchLuaran();
   }, [fetchLuaran]);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await getProposalStatus();
+        if (!active) return;
+        if (res?.success && res.data?.proposal && Number(res.data.proposal.status) >= 7) {
+          setHasMonevAccess(true);
+        } else {
+          setHasMonevAccess(false);
+        }
+      } catch (err) {
+        if (active) setHasMonevAccess(false);
+      }
+    })();
+    return () => { active = false; };
+  }, []);
 
   const handleOpenSubmit = (luaran) => {
     setSelectedLuaran(luaran);
@@ -346,6 +366,12 @@ export default function MonevPage() {
               Pantau dan kumpulkan luaran kegiatan program Anda
             </Typography>
           </Box>
+
+          {hasMonevAccess === false && (
+            <InfoBox type="warning">
+              Monev akan menampilkan detail dan pengumpulan luaran setelah tim Anda lolos tahap 2. Saat ini tim Anda belum lolos tahap 2.
+            </InfoBox>
+          )}
 
           {statusMessage && (
             <InfoBox type="warning">{statusMessage}</InfoBox>

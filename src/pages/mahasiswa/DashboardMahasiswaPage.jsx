@@ -71,7 +71,8 @@ const isBiodataLengkap = (profile) => !!(
   profile?.nim &&
   profile?.no_hp &&
   profile?.nama_prodi &&
-  profile?.foto
+  // Accept either profile photo or KTM photo as completing biodata
+  (profile?.foto || profile?.foto_ktm)
 );
 
 const SectionHeader = ({ icon: Icon, title, subtitle, gradient }) => (

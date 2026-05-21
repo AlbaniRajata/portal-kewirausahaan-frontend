@@ -391,6 +391,7 @@ export default function ProposalFormPage() {
 
   const handleSubmit = async () => {
     if (!status?.data?.proposal) return;
+
     const result = await Swal.fire({
       title: "Konfirmasi Submit",
       text: "Setelah submit, proposal tidak bisa diedit lagi. Lanjutkan?",
@@ -399,8 +400,20 @@ export default function ProposalFormPage() {
       confirmButtonText: "Ya, Submit", cancelButtonText: "Batal",
     });
     if (!result.isConfirmed) return;
+
     setSubmitting(true);
     try {
+      // If there are unsaved changes (edited form or new file), save first
+      if (status.data.proposal && (file || form.judul !== status.data.proposal.judul || Number(form.id_kategori) !== Number(status.data.proposal.id_kategori) || String(form.modal_diajukan) !== String(status.data.proposal.modal_diajukan))) {
+        const formData = new FormData();
+        formData.append("id_program", status.data.tim.id_program);
+        formData.append("judul", form.judul.trim());
+        formData.append("id_kategori", form.id_kategori);
+        formData.append("modal_diajukan", form.modal_diajukan);
+        if (file) formData.append("file_proposal", file);
+        await updateProposal(status.data.proposal.id_proposal, formData);
+      }
+
       const response = await submitProposal(status.data.proposal.id_proposal);
       await Swal.fire({
         icon: "success", title: "Berhasil",

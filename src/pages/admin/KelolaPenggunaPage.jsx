@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   Box, Paper, Typography, Tabs, Tab, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Button, Dialog,
-  DialogContent, DialogActions, TextField, MenuItem,
+  DialogContent, DialogActions, TextField, MenuItem, Autocomplete,
   IconButton, Pagination, Tooltip, InputAdornment, Divider,
 } from "@mui/material";
 import { Close, Search, Visibility, VisibilityOff } from "@mui/icons-material";
@@ -113,7 +113,7 @@ const emptyForms = {
 const TAHUN_OPTIONS = Array.from({ length: 15 }, (_, i) => new Date().getFullYear() - i);
 
 const initFilters = {
-  mahasiswa: { search: "", is_active: "", id_prodi: "", id_jurusan: "", tahun: "" },
+  mahasiswa: { search: "", is_active: "", id_prodi: "", tahun: "" },
   dosen: { search: "", is_active: "", id_prodi: "", tahun: "" },
   reviewer: { search: "", is_active: "", tahun: "" },
   juri: { search: "", is_active: "", tahun: "" },
@@ -124,12 +124,20 @@ const truncateWithEllipsis = (text, max = 42) => {
   return text.length > max ? `${text.slice(0, max)}...` : text;
 };
 
+const formatProdiLabel = (prodi) => {
+  if (!prodi) return "";
+  const jenjang = prodi.jenjang || "";
+  const namaProdi = prodi.nama_prodi || "";
+  const namaJurusan = prodi.nama_jurusan || "";
+  const namaKampus = prodi.nama_kampus || "";
+  return `${jenjang} ${namaProdi} - ${namaJurusan} (${namaKampus})`.trim();
+};
+
 export default function KelolaPenggunaPage() {
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(true);
   const [lists, setLists] = useState({ mahasiswa: [], dosen: [], reviewer: [], juri: [] });
   const [prodiList, setProdiList] = useState([]);
-  const [jurusanList, setJurusanList] = useState([]);
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
 
@@ -152,7 +160,6 @@ export default function KelolaPenggunaPage() {
       if (f.search) params.search = f.search;
       if (f.is_active !== "") params.is_active = f.is_active;
       if (f.id_prodi) params.id_prodi = f.id_prodi;
-      if (role === "mahasiswa" && f.id_jurusan) params.id_jurusan = f.id_jurusan;
 
       let res;
       if (role === "mahasiswa" || role === "dosen") {
@@ -197,15 +204,6 @@ export default function KelolaPenggunaPage() {
     getProdi().then((res) => {
       const prodi = res.data || [];
       setProdiList(prodi);
-      const seen = new Set();
-      const uniqueJurusan = [];
-      prodi.forEach((p) => {
-        if (p.id_jurusan && !seen.has(p.id_jurusan)) {
-          seen.add(p.id_jurusan);
-          uniqueJurusan.push({ id_jurusan: p.id_jurusan, nama_jurusan: p.nama_jurusan });
-        }
-      });
-      setJurusanList(uniqueJurusan);
     }).catch(() => {});
   }, []);
 
@@ -261,6 +259,11 @@ export default function KelolaPenggunaPage() {
     setShowPassword(false);
     setShowNewPassword(false);
     setDialog({ open: true, mode: "edit", role: tabKey, data: user });
+  };
+
+  const findProdiOption = (idProdi) => {
+    if (!idProdi) return null;
+    return prodiList.find((p) => String(p.id_prodi) === String(idProdi)) || null;
   };
 
   const handleCloseDialog = () => {
@@ -506,91 +509,62 @@ export default function KelolaPenggunaPage() {
 
       {tabKey === "mahasiswa" && (
         <>
-          <TextField
-            select
+          <Autocomplete
             size="small"
-            value={currentFilter.id_prodi}
-            onChange={(e) => setFilter("id_prodi", e.target.value)}
-            SelectProps={{
-              displayEmpty: true,
-              renderValue: (v) => (
-                <span style={{ fontSize: 14, color: !v ? "#9CA3AF" : "inherit" }}>
-                  {!v ? "Semua Prodi" : prodiList.find(p => p.id_prodi === v)?.nama_prodi || v}
-                </span>
-              ),
+            options={prodiList}
+            value={findProdiOption(currentFilter.id_prodi)}
+            onChange={(e, value) => setFilter("id_prodi", value ? String(value.id_prodi) : "")}
+            getOptionLabel={(option) => formatProdiLabel(option)}
+            isOptionEqualToValue={(option, value) => String(option.id_prodi) === String(value?.id_prodi)}
+            filterOptions={(options, { inputValue }) => {
+              if (!inputValue) return options;
+              const s = inputValue.toLowerCase();
+              return options.filter((o) =>
+                String(o?.nama_prodi || "").toLowerCase().includes(s) ||
+                String(o?.jenjang || "").toLowerCase().includes(s) ||
+                String(o?.nama_jurusan || "").toLowerCase().includes(s) ||
+                String(o?.nama_kampus || "").toLowerCase().includes(s)
+              );
             }}
+            renderInput={(params) => (
+              <TextField {...params} placeholder="Ketik atau pilih prodi" sx={roundedField} />
+            )}
             sx={{
-              ...roundedField,
               width: { xs: "100%", xl: "auto" },
-              minWidth: { xs: "100%", xl: 180 },
-              flex: { xl: "0 1 180px" },
+              minWidth: { xs: "100%", xl: 320 },
+              flex: { xl: "0 1 320px" },
             }}
-          >
-            <MenuItem value="" sx={{ fontSize: 13 }}>Semua Prodi</MenuItem>
-            {prodiList.map((p) => (
-              <MenuItem key={p.id_prodi} value={p.id_prodi} sx={{ fontSize: 13 }}>
-                {p.jenjang} {p.nama_prodi}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
-            size="small"
-            value={currentFilter.id_jurusan}
-            onChange={(e) => setFilter("id_jurusan", e.target.value)}
-            SelectProps={{
-              displayEmpty: true,
-              renderValue: (v) => (
-                <span style={{ fontSize: 14, color: !v ? "#9CA3AF" : "inherit" }}>
-                  {!v ? "Semua Jurusan" : jurusanList.find(j => j.id_jurusan === v)?.nama_jurusan || v}
-                </span>
-              ),
-            }}
-            sx={{
-              ...roundedField,
-              width: { xs: "100%", xl: "auto" },
-              minWidth: { xs: "100%", xl: 180 },
-              flex: { xl: "0 1 180px" },
-            }}
-          >
-            <MenuItem value="" sx={{ fontSize: 13 }}>Semua Jurusan</MenuItem>
-            {jurusanList.map((j) => (
-              <MenuItem key={j.id_jurusan} value={j.id_jurusan} sx={{ fontSize: 13 }}>
-                {j.nama_jurusan}
-              </MenuItem>
-            ))}
-          </TextField>
+          />
         </>
       )}
 
       {tabKey === "dosen" && (
-        <TextField
-          select
+        <Autocomplete
           size="small"
-          value={currentFilter.id_prodi}
-          onChange={(e) => setFilter("id_prodi", e.target.value)}
-          SelectProps={{
-            displayEmpty: true,
-            renderValue: (v) => (
-              <span style={{ fontSize: 14, color: !v ? "#9CA3AF" : "inherit" }}>
-                {!v ? "Semua Prodi" : prodiList.find(p => p.id_prodi === v)?.nama_prodi || v}
-              </span>
-            ),
+          options={prodiList}
+          value={findProdiOption(currentFilter.id_prodi)}
+          onChange={(e, value) => setFilter("id_prodi", value ? String(value.id_prodi) : "")}
+          getOptionLabel={(option) => formatProdiLabel(option)}
+          isOptionEqualToValue={(option, value) => String(option.id_prodi) === String(value?.id_prodi)}
+          filterOptions={(options, { inputValue }) => {
+            if (!inputValue) return options;
+            const s = inputValue.toLowerCase();
+            return options.filter((o) =>
+              String(o?.nama_prodi || "").toLowerCase().includes(s) ||
+              String(o?.jenjang || "").toLowerCase().includes(s) ||
+              String(o?.nama_jurusan || "").toLowerCase().includes(s) ||
+              String(o?.nama_kampus || "").toLowerCase().includes(s)
+            );
           }}
+          renderInput={(params) => (
+            <TextField {...params} placeholder="Ketik atau pilih prodi" sx={roundedField} />
+          )}
           sx={{
-            ...roundedField,
             width: { xs: "100%", xl: "auto" },
-            minWidth: { xs: "100%", xl: 200 },
-            flex: { xl: "0 1 200px" },
+            minWidth: { xs: "100%", xl: 320 },
+            flex: { xl: "0 1 320px" },
           }}
-        >
-          <MenuItem value="" sx={{ fontSize: 13 }}>Semua Prodi</MenuItem>
-          {prodiList.map((p) => (
-            <MenuItem key={p.id_prodi} value={p.id_prodi} sx={{ fontSize: 13 }}>
-              {p.jenjang} {p.nama_prodi}
-            </MenuItem>
-          ))}
-        </TextField>
+        />
       )}
 
       <Button
@@ -797,45 +771,51 @@ export default function KelolaPenggunaPage() {
         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3 }}>
           <Box>
             <FieldLabel required>Program Studi</FieldLabel>
-            <TextField
-              select
+            <Autocomplete
               fullWidth
-              value={currentForm.id_prodi || ""}
-              onChange={(e) => {
-                setForm({ ...currentForm, id_prodi: e.target.value });
+              size="small"
+              options={prodiList}
+              value={findProdiOption(currentForm.id_prodi)}
+              onChange={(e, value) => {
+                setForm({ ...currentForm, id_prodi: value ? String(value.id_prodi) : "" });
                 setErrors((prev) => ({ ...prev, id_prodi: "" }));
               }}
-              SelectProps={{
-                displayEmpty: true,
-                renderValue: (selected) => {
-                  if (!selected) return <Typography sx={{ color: "#9ca3af", fontSize: 14 }}>Pilih prodi</Typography>;
-                  const selectedProdi = prodiList.find((p) => String(p.id_prodi) === String(selected));
-                  const fullLabel = selectedProdi
-                    ? `${selectedProdi.jenjang} ${selectedProdi.nama_prodi}`
-                    : "Pilih prodi";
-                  return <Typography sx={{ fontSize: 14 }}>{truncateWithEllipsis(fullLabel, 35)}</Typography>;
-                },
+              getOptionLabel={(option) => formatProdiLabel(option)}
+              isOptionEqualToValue={(option, value) => String(option.id_prodi) === String(value?.id_prodi)}
+              filterOptions={(options, { inputValue }) => {
+                if (!inputValue) return options;
+                const s = inputValue.toLowerCase();
+                return options.filter((o) =>
+                  String(o?.nama_prodi || "").toLowerCase().includes(s) ||
+                  String(o?.jenjang || "").toLowerCase().includes(s) ||
+                  String(o?.nama_jurusan || "").toLowerCase().includes(s) ||
+                  String(o?.nama_kampus || "").toLowerCase().includes(s)
+                );
               }}
-              error={!!errors.id_prodi}
-              helperText={errors.id_prodi}
-              sx={roundedField}
-            >
-              <MenuItem value="" disabled sx={{ fontSize: 14 }}>
-                Pilih prodi
-              </MenuItem>
-              {prodiList.map((p) => (
-                <MenuItem key={p.id_prodi} value={p.id_prodi} sx={{ fontSize: 14 }}>
-                  {p.jenjang} {p.nama_prodi}
-                </MenuItem>
-              ))}
-            </TextField>
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  placeholder="Ketik atau pilih prodi"
+                  error={!!errors.id_prodi}
+                  helperText={errors.id_prodi}
+                  sx={{
+                    ...roundedField,
+                    "& .MuiOutlinedInput-root": {
+                      ...roundedField["& .MuiOutlinedInput-root"],
+                      minHeight: 50,
+                    },
+                  }}
+                />
+              )}
+            />
           </Box>
           {currentTabKey === "mahasiswa" ? (
             <Box>
               <FieldLabel required>Tahun Masuk</FieldLabel>
               <TextField
-                select
                 fullWidth
+                size="small"
+                placeholder="Ketik tahun masuk"
                 value={currentForm.tahun_masuk || ""}
                 onChange={(e) => {
                   setForm({ ...currentForm, tahun_masuk: e.target.value });
@@ -843,21 +823,14 @@ export default function KelolaPenggunaPage() {
                 }}
                 error={!!errors.tahun_masuk}
                 helperText={errors.tahun_masuk}
-                sx={roundedField}
-                SelectProps={{
-                  displayEmpty: true,
-                  renderValue: (v) => <Typography sx={{ fontSize: 14, color: v ? "inherit" : "#9ca3af" }}>{v || "Pilih tahun"}</Typography>,
+                sx={{
+                  ...roundedField,
+                  "& .MuiOutlinedInput-root": {
+                    ...roundedField["& .MuiOutlinedInput-root"],
+                    minHeight: 50,
+                  },
                 }}
-              >
-                <MenuItem value="" disabled sx={{ fontSize: 14 }}>
-                  Pilih tahun
-                </MenuItem>
-                {TAHUN_OPTIONS.map((y) => (
-                  <MenuItem key={y} value={y} sx={{ fontSize: 14 }}>
-                    {y}
-                  </MenuItem>
-                ))}
-              </TextField>
+              />
             </Box>
           ) : (
             <Box>
