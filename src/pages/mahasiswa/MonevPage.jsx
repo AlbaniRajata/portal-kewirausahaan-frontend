@@ -14,7 +14,7 @@ import BodyLayout from "../../components/layouts/BodyLayout";
 import MahasiswaNavbar from "../../components/layouts/MahasiswaNavbar";
 import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
-import { getLuaranMahasiswa, submitLuaran } from "../../api/mahasiswa";
+import { getLuaranMahasiswa, submitLuaran, deleteLuaran } from "../../api/mahasiswa";
 import { getProposalStatus } from "../../api/mahasiswa";
 import { downloadFile } from "../../utils/download";
 
@@ -112,7 +112,7 @@ const InfoBox = ({ children, type = "info" }) => {
 
 const STATUS_MAP = {
   0: { label: "Belum Dikerjakan", bg: COLORS.slate, icon: <RadioButtonUnchecked sx={{ fontSize: 16 }} /> },
-  1: { label: "Submitted", bg: COLORS.warning, icon: <HourglassEmpty sx={{ fontSize: 16 }} /> },
+  1: { label: "Tersimpan", bg: COLORS.warning, icon: <HourglassEmpty sx={{ fontSize: 16 }} /> },
   2: { label: "Disetujui", bg: COLORS.success, icon: <CheckCircle sx={{ fontSize: 16 }} /> },
   3: { label: "Ditolak", bg: COLORS.error, icon: <Cancel sx={{ fontSize: 16 }} /> },
 };
@@ -292,13 +292,13 @@ export default function MonevPage() {
 
     const result = await Swal.fire({
       ...swalOptions,
-      title: "Konfirmasi Submit",
-      text: `Submit luaran "${selectedLuaran.nama_luaran}"? Luaran tidak dapat diubah setelah disubmit hingga direview admin.`,
+      title: "Konfirmasi Simpan",
+      text: `Simpan luaran "${selectedLuaran.nama_luaran}"? Luaran dapat diubah atau dihapus sampai disetujui admin.`,
       icon: "question",
       showCancelButton: true,
       confirmButtonColor: "#0D59F2",
       cancelButtonColor: "#666",
-      confirmButtonText: "Ya, Submit",
+      confirmButtonText: "Ya, Simpan",
       cancelButtonText: "Batal",
     });
     if (!result.isConfirmed) return;
@@ -318,7 +318,7 @@ export default function MonevPage() {
       await Swal.fire({
         icon: "success",
         title: "Berhasil",
-        text: "Luaran berhasil dikumpulkan",
+        text: "Luaran berhasil disimpan",
         timer: 2000,
         timerProgressBar: true,
         showConfirmButton: false,
@@ -328,7 +328,7 @@ export default function MonevPage() {
       await Swal.fire({
         icon: "error",
         title: "Gagal",
-        text: err.response?.data?.message || "Gagal mengumpulkan luaran",
+        text: err.response?.data?.message || "Gagal menyimpan luaran",
         confirmButtonText: "OK",
       });
     } finally {
@@ -336,10 +336,55 @@ export default function MonevPage() {
     }
   };
 
-  const canSubmitLuaran = (luaran) => {
+  const handleDeleteLuaran = async (luaran) => {
+    const result = await Swal.fire({
+      ...swalOptions,
+      title: "Hapus Luaran?",
+      text: `Hapus luaran "${luaran.nama_luaran}" dari penyimpanan?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: COLORS.error,
+      cancelButtonColor: COLORS.slate,
+      confirmButtonText: "Ya, Hapus",
+      cancelButtonText: "Batal",
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      setSubmitting(true);
+      await deleteLuaran(luaran.id_luaran);
+      await Swal.fire({
+        icon: "success",
+        title: "Berhasil",
+        text: "Luaran berhasil dihapus",
+        timer: 2000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+      });
+      fetchLuaran();
+    } catch (err) {
+      await Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: err.response?.data?.message || "Gagal menghapus luaran",
+        confirmButtonText: "OK",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const canSaveLuaran = (luaran) => {
     if (!data?.tim || data.tim.peran !== 1) return false;
-    if (luaran.status === 1 || luaran.status === 2) return false;
+    if (luaran.status === 2) return false;
     if (isDeadlineLewat(luaran.deadline)) return false;
+    return true;
+  };
+
+  const canDeleteLuaran = (luaran) => {
+    if (!data?.tim || data.tim.peran !== 1) return false;
+    if (!luaran.id_luaran_tim) return false;
+    if (luaran.status === 2) return false;
     return true;
   };
 
@@ -363,13 +408,13 @@ export default function MonevPage() {
               Monitoring & Evaluasi
             </Typography>
             <Typography sx={{ fontSize: 16, color: "#6B7280" }}>
-              Pantau dan kumpulkan luaran kegiatan program Anda
+              Pantau dan simpan luaran kegiatan program Anda
             </Typography>
           </Box>
 
           {hasMonevAccess === false && (
             <InfoBox type="warning">
-              Monev akan menampilkan detail dan pengumpulan luaran setelah tim Anda lolos tahap 2. Saat ini tim Anda belum lolos tahap 2.
+              Monev akan menampilkan detail dan penyimpanan luaran setelah tim Anda lolos tahap 2. Saat ini tim Anda belum lolos tahap 2.
             </InfoBox>
           )}
 
@@ -381,7 +426,7 @@ export default function MonevPage() {
             <>
               {data.tim.peran !== 1 && (
                 <InfoBox type="info">
-                  Hanya ketua tim yang dapat mengumpulkan luaran. Anda dapat memantau progress di halaman ini.
+                  Hanya ketua tim yang dapat menyimpan dan mengelola luaran. Anda dapat memantau progress di halaman ini.
                 </InfoBox>
               )}
 
@@ -415,7 +460,7 @@ export default function MonevPage() {
                     {[
                       { label: "Total", value: data.progress.total, bg: COLORS.slate },
                       { label: "Disetujui", value: data.progress.disetujui, bg: COLORS.success },
-                      { label: "Submitted", value: data.progress.submitted, bg: COLORS.warning },
+                      { label: "Tersimpan", value: data.progress.submitted, bg: COLORS.warning },
                       { label: "Ditolak", value: data.progress.ditolak, bg: COLORS.error },
                       { label: "Belum", value: data.progress.belum, bg: "#9CA3AF" },
                     ].map((item) => (
@@ -432,7 +477,8 @@ export default function MonevPage() {
                 {data.luaran.map((luaran) => {
                   const tipe = TIPE_MAP[luaran.tipe] || {};
                   const lewat = isDeadlineLewat(luaran.deadline);
-                  const bisa = canSubmitLuaran(luaran);
+                  const bisa = canSaveLuaran(luaran);
+                  const canDelete = canDeleteLuaran(luaran);
 
                   return (
                     <Paper key={luaran.id_luaran} elevation={0} sx={{
@@ -463,7 +509,7 @@ export default function MonevPage() {
                           </Box>
                           {luaran.submitted_at && (
                             <Box>
-                              <Typography sx={{ fontSize: 11, color: COLORS.slate, mb: 0.25 }}>Dikumpulkan</Typography>
+                              <Typography sx={{ fontSize: 11, color: COLORS.slate, mb: 0.25 }}>Disimpan</Typography>
                               <Typography sx={{ fontSize: 13, fontWeight: 600, color: "#1F2937" }}>{formatDate(luaran.submitted_at)}</Typography>
                             </Box>
                           )}
@@ -502,16 +548,27 @@ export default function MonevPage() {
                           </Box>
                         )}
 
-                        <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
-                          {bisa ? (
+                        <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 1 }}>
+                          {bisa && (
                             <Button variant="contained" size="small" onClick={() => handleOpenSubmit(luaran)} disabled={submitting} sx={{
                               textTransform: "none", borderRadius: "10px", fontSize: 13, fontWeight: 700,
-                              backgroundColor: luaran.status === 3 ? COLORS.warning : COLORS.primary,
-                              "&:hover": { backgroundColor: luaran.status === 3 ? "#B45309" : COLORS.primaryDark },
+                              backgroundColor: luaran.id_luaran_tim ? COLORS.warning : COLORS.primary,
+                              "&:hover": { backgroundColor: luaran.id_luaran_tim ? "#B45309" : COLORS.primaryDark },
                             }}>
-                              {luaran.status === 3 ? "Kumpulkan Ulang" : "Kumpulkan"}
+                              {luaran.id_luaran_tim ? "Edit" : "Simpan"}
                             </Button>
-                          ) : lewat && luaran.status !== 2 && luaran.status !== 1 ? (
+                          )}
+                          {canDelete && (
+                            <Button variant="outlined" size="small" onClick={() => handleDeleteLuaran(luaran)} disabled={submitting} sx={{
+                              textTransform: "none", borderRadius: "10px", fontSize: 13, fontWeight: 700,
+                              borderColor: COLORS.errorLight,
+                              color: COLORS.error,
+                              "&:hover": { backgroundColor: COLORS.errorLight, borderColor: COLORS.error },
+                            }}>
+                              Hapus
+                            </Button>
+                          )}
+                          {!bisa && lewat && !luaran.id_luaran_tim && luaran.status !== 2 ? (
                             <Typography sx={{ fontSize: 12, color: COLORS.error, fontWeight: 600 }}>Deadline telah lewat</Typography>
                           ) : null}
                         </Box>
@@ -557,7 +614,7 @@ export default function MonevPage() {
           <DialogTitle sx={{ pb: 1 }}>
             <Box sx={{ pr: 4 }}>
               <Typography sx={{ fontWeight: 700, fontSize: 18, color: "#1F2937" }}>
-                {selectedLuaran?.status === 3 ? "Kumpulkan Ulang Luaran" : "Kumpulkan Luaran"}
+                {selectedLuaran?.id_luaran_tim ? "Edit Luaran" : "Simpan Luaran"}
               </Typography>
               {selectedLuaran && <Typography sx={{ fontSize: 13, color: COLORS.slate, mt: 0.25 }}>{selectedLuaran.nama_luaran}</Typography>}
             </Box>
@@ -657,7 +714,7 @@ export default function MonevPage() {
               "&:hover": { backgroundColor: COLORS.primaryDark },
               "&:disabled": { backgroundColor: "#E5E7EB", color: "#9CA3AF" },
             }}>
-              {submitting ? "Mengumpulkan..." : "Kumpulkan"}
+              {submitting ? "Menyimpan..." : "Simpan"}
             </Button>
           </DialogActions>
         </Dialog>
