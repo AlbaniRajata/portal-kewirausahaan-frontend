@@ -291,10 +291,20 @@ export default function DaftarBimbinganPage() {
                         const metode = METODE_LABEL[b.metode];
                         return (
                           <TableRow key={b.id_bimbingan} sx={tableBodyRow}>
-                            <TableCell>
-                              <Typography sx={{ fontWeight: 600, fontSize: 14, maxWidth: 220, lineHeight: 1.4 }}>{b.topik}</Typography>
+                            <TableCell sx={{ maxWidth: 240 }}>
+                              <Typography sx={{
+                                fontWeight: 600, fontSize: 14, maxWidth: 240, lineHeight: 1.4,
+                                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                              }}>
+                                {b.topik}
+                              </Typography>
                               {b.judul_proposal && (
-                                <Typography sx={{ fontSize: 12, color: COLORS.slate, mt: 0.25 }}>{b.judul_proposal}</Typography>
+                                <Typography sx={{
+                                  fontSize: 12, color: COLORS.slate, mt: 0.25, maxWidth: 240,
+                                  whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                                }}>
+                                  {b.judul_proposal}
+                                </Typography>
                               )}
                             </TableCell>
                             <TableCell>

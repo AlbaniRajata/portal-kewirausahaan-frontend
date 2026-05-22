@@ -59,6 +59,20 @@ const STATUS_PENGAJUAN = {
   2: { label: "Ditolak",         backgroundColor: "#c62828" },
 };
 
+const STATUS_PROPOSAL = {
+  0: { label: "Draft",                         backgroundColor: COLORS.slate },
+  1: { label: "Diajukan",                      backgroundColor: COLORS.primary },
+  2: { label: "Ditugaskan Reviewer Tahap 1",   backgroundColor: "#0284C7" },
+  3: { label: "Tidak Lolos Desk Evaluasi",     backgroundColor: COLORS.error },
+  4: { label: "Lolos Desk Evaluasi",           backgroundColor: COLORS.success },
+  5: { label: "Wawancara",                     backgroundColor: COLORS.warning },
+  6: { label: "Tidak Lolos Wawancara",         backgroundColor: COLORS.error },
+  7: { label: "Lolos Wawancara",               backgroundColor: COLORS.success },
+  8: { label: "Pembimbing Diajukan",           backgroundColor: COLORS.primary },
+  9: { label: "Pembimbing Disetujui",          backgroundColor: COLORS.success },
+  10: { label: "Nonaktif / Mengundurkan Diri", backgroundColor: COLORS.error },
+};
+
 const SectionHeader = ({ icon: Icon, title, subtitle, gradient }) => (
   <Box sx={{
     display: "flex", alignItems: "center", gap: 2, mb: 3,
@@ -157,6 +171,7 @@ export default function DetailPengajuanPembimbingPage() {
 
   const { pengajuan, proposal, tim } = detail;
   const si = STATUS_PENGAJUAN[pengajuan.status];
+  const proposalStatus = proposal ? (STATUS_PROPOSAL[proposal.status] || STATUS_PROPOSAL[0]) : null;
 
   return (
     <BodyLayout Sidebar={DosenNavbar}>
@@ -271,7 +286,7 @@ export default function DetailPengajuanPembimbingPage() {
                     <TextField fullWidth value={proposal.judul} disabled multiline rows={2} sx={roundedField} />
                   </Box>
 
-                  <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3, mb: 3 }}>
+                  <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr 1fr" }, gap: 3, mb: 3 }}>
                     <Box>
                       <FieldLabel>Modal Diajukan</FieldLabel>
                       <ReadonlyField value={formatRupiah(proposal.modal_diajukan)} />
@@ -279,6 +294,13 @@ export default function DetailPengajuanPembimbingPage() {
                     <Box>
                       <FieldLabel>Tanggal Submit</FieldLabel>
                       <ReadonlyField value={formatDate(proposal.tanggal_submit)} />
+                    </Box>
+                    <Box>
+                      <FieldLabel>Status Proposal</FieldLabel>
+                      <StatusPill
+                        label={proposalStatus?.label || "—"}
+                        backgroundColor={proposalStatus?.backgroundColor || COLORS.slate}
+                      />
                     </Box>
                   </Box>
 

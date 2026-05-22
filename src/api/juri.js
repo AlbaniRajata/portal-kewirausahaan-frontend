@@ -70,3 +70,8 @@ export const bulkSubmitPenilaian = async (id_distribusi_list) => {
   const res = await api.post(`/juri/penilaian/bulk-submit`, { id_distribusi_list });
   return res.data;
 };
+
+export const deleteProfilePhoto = async () => {
+  const res = await api.delete("/juri/profile/foto");
+  return res.data;
+};

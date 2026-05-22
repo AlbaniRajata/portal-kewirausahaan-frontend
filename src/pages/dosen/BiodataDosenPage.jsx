@@ -9,7 +9,7 @@ import BodyLayout from "../../components/layouts/BodyLayout";
 import DosenNavbar from "../../components/layouts/DosenNavbar";
 import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
-import { getProfile, updateProfile, updatePassword } from "../../api/dosen";
+import { getProfile, updateProfile, updatePassword, deleteProfilePhoto } from "../../api/dosen";
 import { useAuthStore } from "../../store/authStore";
 import { validateFormSecurity, hasSuspiciousInput, hasSqlInjection } from "../../utils/inputSecurity";
 import { getUploadUrl } from "../../utils/fileUrl";
@@ -126,6 +126,7 @@ export default function BiodataDosenPage() {
         foto:            null,
       });
       if (response.data.foto) setImagePreview(getUploadUrl("profil", response.data.foto));
+      else setImagePreview(null);
     } catch {
       Swal.fire({ icon: "error", title: "Gagal Memuat", text: "Gagal memuat profil. Silahkan refresh halaman.", confirmButtonText: "OK" });
     } finally { setLoading(false); }
@@ -252,6 +253,45 @@ export default function BiodataDosenPage() {
     } finally { setSubmittingPassword(false); }
   };
 
+  const handleDeletePhoto = async () => {
+    const result = await Swal.fire({
+      title: "Hapus Foto Profil?",
+      text: "Foto profil akan dihapus dari akun Anda.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: COLORS.error,
+      cancelButtonColor: COLORS.slate,
+      confirmButtonText: "Ya, Hapus",
+      cancelButtonText: "Batal",
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      setSubmitting(true);
+      const response = await deleteProfilePhoto();
+      setImagePreview(null);
+      setFormBiodata((p) => ({ ...p, foto: null }));
+      await Swal.fire({
+        icon: "success",
+        title: "Berhasil",
+        text: response.message || "Foto profil berhasil dihapus",
+        timer: 2000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+      });
+      fetchProfile();
+    } catch (err) {
+      await Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: err.response?.data?.message || "Gagal menghapus foto profil",
+        confirmButtonText: "OK",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   if (loading) return (
     <BodyLayout Sidebar={DosenNavbar}>
       <Box sx={{ position: "relative", minHeight: "60vh" }}>
@@ -307,18 +347,32 @@ export default function BiodataDosenPage() {
                   <Typography sx={{ fontWeight: 700, fontSize: 14, color: COLORS.primaryDark, mb: 0.5 }}>Foto Profil</Typography>
                   <Typography sx={{ fontSize: 12, color: COLORS.slate, mb: 1.5 }}>PNG atau JPG, maksimal 5MB</Typography>
                   <input type="file" hidden id="foto-upload" accept="image/jpeg,image/jpg,image/png" onChange={handleFileChange} />
-                  <Button
-                    component="label" htmlFor="foto-upload" variant="contained" size="small"
-                    disabled={submitting}
-                    sx={{
-                      textTransform: "none", borderRadius: "10px", fontWeight: 600, fontSize: 12,
-                      background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.secondary})`,
-                      boxShadow: "none",
-                      "&:hover": { background: `linear-gradient(135deg, ${COLORS.primaryDark}, ${COLORS.secondary})`, boxShadow: "none" },
-                    }}
-                  >
-                    Ganti Foto
-                  </Button>
+                  <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                    <Button
+                      component="label" htmlFor="foto-upload" variant="contained" size="small"
+                      disabled={submitting}
+                      sx={{
+                        textTransform: "none", borderRadius: "10px", fontWeight: 600, fontSize: 12,
+                        background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.secondary})`,
+                        boxShadow: "none",
+                        "&:hover": { background: `linear-gradient(135deg, ${COLORS.primaryDark}, ${COLORS.secondary})`, boxShadow: "none" },
+                      }}
+                    >
+                      Ganti Foto
+                    </Button>
+                    <Button
+                      variant="outlined" size="small"
+                      disabled={submitting || !imagePreview}
+                      onClick={handleDeletePhoto}
+                      sx={{
+                        textTransform: "none", borderRadius: "10px", fontWeight: 600, fontSize: 12,
+                        borderColor: COLORS.errorLight, color: COLORS.error,
+                        "&:hover": { backgroundColor: COLORS.errorLight, borderColor: COLORS.error },
+                      }}
+                    >
+                      Hapus Foto
+                    </Button>
+                  </Box>
                   {errors.foto && <Typography sx={{ fontSize: 12, color: COLORS.error, mt: 0.5 }}>{errors.foto}</Typography>}
                 </Box>
               </Box>

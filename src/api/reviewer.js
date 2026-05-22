@@ -71,3 +71,8 @@ export const bulkSubmitPenilaian = async (id_distribusi_list) => {
   const res = await api.post(`/reviewer/penilaian/bulk-submit`, { id_distribusi_list });
   return res.data;
 };
+
+export const deleteProfilePhoto = async () => {
+  const res = await api.delete("/reviewer/profile/foto");
+  return res.data;
+};

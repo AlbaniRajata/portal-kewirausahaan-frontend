@@ -68,3 +68,8 @@ export const getMonevDetailTim = async (id_tim) => {
   const res = await api.get(`/dosen/monev/tim/${id_tim}`);
   return res.data;
 };
+
+export const deleteProfilePhoto = async () => {
+  const res = await api.delete("/dosen/profile/foto");
+  return res.data;
+};

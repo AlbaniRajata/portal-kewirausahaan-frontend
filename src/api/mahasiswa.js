@@ -139,3 +139,8 @@ export const cekEligibilitasInbis = async () => {
   const res = await api.get("/mahasiswa/tim/eligibilitas-inbis");
   return res.data;
 };
+
+export const deleteProfilePhoto = async () => {
+  const res = await api.delete("/mahasiswa/profile/foto");
+  return res.data;
+};

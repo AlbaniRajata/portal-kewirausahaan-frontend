@@ -576,3 +576,8 @@ export const updateBatchPembimbing = async (updates) => {
   const res = await api.post("/admin/pemerataan-pembimbing/batch-update", { updates });
   return res.data;
 };
+
+export const deleteProfilePhoto = async () => {
+  const res = await api.delete("/admin/profile/foto");
+  return res.data;
+};
