@@ -235,11 +235,13 @@ export default function RekapTahap1Tab({ id_program }) {
         const d = res.value.data;
         d.reviewer.forEach(evalData => {
           const rId = evalData.reviewer?.id_user || evalData.user?.id_user;
-          const rName = evalData.reviewer?.nama || evalData.user?.nama;
-          if (!reviewerMap[rId]) {
-            reviewerMap[rId] = { name: rName, evaluations: [] };
+          const rName = evalData.reviewer?.nama_lengkap || evalData.reviewer?.nama || evalData.user?.nama_lengkap || evalData.user?.nama;
+          const roleType = "Internal";
+          const key = `Reviewer_${roleType}_${rId}`;
+          if (!reviewerMap[key]) {
+            reviewerMap[key] = { name: rName || "Evaluator", roleType, evaluations: [] };
           }
-          reviewerMap[rId].evaluations.push({
+          reviewerMap[key].evaluations.push({
             judul: d.proposal.judul,
             details: evalData.detail,
             total: evalData.total_nilai,
@@ -248,8 +250,8 @@ export default function RekapTahap1Tab({ id_program }) {
         });
       });
 
-      const reviewerIds = Object.keys(reviewerMap);
-      if (reviewerIds.length === 0) {
+      const reviewerKeys = Object.keys(reviewerMap);
+      if (reviewerKeys.length === 0) {
         Swal.fire({ icon: "info", title: "Info", text: "Belum ada data penilaian yang bisa diekspor. Pastikan minimal 2 reviewer sudah submit." });
         return;
       }
@@ -257,15 +259,26 @@ export default function RekapTahap1Tab({ id_program }) {
       const XLSX = await getXLSX();
       const wb = XLSX.utils.book_new();
 
-      reviewerIds.forEach(rId => {
-        const reviewer = reviewerMap[rId];
+      const reviewerItems = reviewerKeys
+        .map((key) => ({ key, ...reviewerMap[key] }))
+        .sort((a, b) => {
+          if (a.roleType !== b.roleType) return a.roleType.localeCompare(b.roleType, "id-ID");
+          return (a.name || "").localeCompare(b.name || "", "id-ID");
+        });
+
+      const counterMap = {};
+      reviewerItems.forEach((reviewer) => {
+        const counterKey = `Reviewer_${reviewer.roleType}`;
+        counterMap[counterKey] = (counterMap[counterKey] || 0) + 1;
+        const indexLabel = counterMap[counterKey];
+
         const rows = [];
         const criteria = reviewer.evaluations[0].details;
 
         // Title & Reviewer Name
         rows.push(["NILAI EVALUASI"]);
         rows.push(["PRESENTASI PROPOSAL USAHA MAHASISWA"]);
-        rows.push([]);
+        rows.push([""]);
         rows.push([reviewer.name]);
 
         // Headers
@@ -273,6 +286,7 @@ export default function RekapTahap1Tab({ id_program }) {
         criteria.forEach(c => headers.push(`${c.nama_kriteria} (${c.bobot}%)`));
         headers.push("NILAI (BOBOT X SKOR)");
         rows.push(headers);
+        const headerRowIndex = rows.length - 1;
 
         // Data Rows
         reviewer.evaluations.forEach((ev, idx) => {
@@ -296,22 +310,33 @@ export default function RekapTahap1Tab({ id_program }) {
         const headerStyle = { font: { bold: true }, fill: { fgColor: { rgb: "F1F5F9" } }, border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } } };
         const cellStyle = { border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } } };
 
-        const range = XLSX.utils.decode_range(ws['!ref']);
-        for (let R = 4; R <= range.e.r; ++R) {
+        const range = XLSX.utils.decode_range(ws["!ref"]);
+        for (let R = headerRowIndex; R <= range.e.r; ++R) {
           for (let C = 0; C <= range.e.c; ++C) {
             const cell_ref = XLSX.utils.encode_cell({ c: C, r: R });
             if (!ws[cell_ref]) continue;
-            if (R === 4) ws[cell_ref].s = headerStyle;
-            else if (R <= 4 + reviewer.evaluations.length) ws[cell_ref].s = cellStyle;
+            if (R === headerRowIndex) ws[cell_ref].s = headerStyle;
+            else if (R <= headerRowIndex + reviewer.evaluations.length) ws[cell_ref].s = cellStyle;
           }
         }
 
-        ws['!cols'] = [{ wch: 5 }, { wch: 60 }];
-        criteria.forEach(() => ws['!cols'].push({ wch: 15 }));
-        ws['!cols'].push({ wch: 20 });
+        const centerStyle = { alignment: { horizontal: "center" } };
+        if (ws.A1) ws.A1.s = { ...(ws.A1.s || {}), ...centerStyle };
+        if (ws.A2) ws.A2.s = { ...(ws.A2.s || {}), ...centerStyle };
+        const lastCol = headers.length - 1;
+        const merges = ws["!merges"] || [];
+        merges.push(
+          { s: { r: 0, c: 0 }, e: { r: 0, c: lastCol } },
+          { s: { r: 1, c: 0 }, e: { r: 1, c: lastCol } }
+        );
+        ws["!merges"] = merges;
+
+        ws["!cols"] = [{ wch: 5 }, { wch: 60 }];
+        criteria.forEach(() => ws["!cols"].push({ wch: 25 }));
+        ws["!cols"].push({ wch: 25 });
 
         // Sheet name max 31 chars
-        const sheetName = reviewer.name.substring(0, 31).replace(/[\\/*?[\]]/g, "_");
+        const sheetName = `Reviewer ${indexLabel}_${reviewer.roleType}`.substring(0, 31).replace(/[\\/*?[\]]/g, "_");
         XLSX.utils.book_append_sheet(wb, ws, sheetName);
       });
 

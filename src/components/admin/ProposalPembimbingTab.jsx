@@ -9,7 +9,6 @@ import {
   TableRow,
   Button,
   Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   TextField,
@@ -42,7 +41,7 @@ const COLORS = {
   successLight: "#ECFDF5",
   warning: "#D97706",
   error: "#DC2626",
-  warningLight: "#ff7070",
+  warningLight: "#ffea95",
 };
 
 const tableHeadCell = {
@@ -80,16 +79,32 @@ const statCard = {
   boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
 };
 
+const formatCurrency = (value) => {
+  if (value === null || value === undefined || value === "") return "-";
+  const num = Number(value);
+  if (Number.isNaN(num)) return "-";
+  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(num);
+};
+
+const formatDate = (value) => {
+  if (!value) return "-";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "-";
+  return d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+};
+
 export default function ProposalPembimbingTab({ id_program }) {
   const [proposals, setProposals] = useState([]);
   const [dosenList, setDosenList] = useState([]);
   const [dosenBeban, setDosenBeban] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [openDialog, setOpenDialog] = useState(false);
+  const [openDetailDialog, setOpenDetailDialog] = useState(false);
+  const [openEditDialog, setOpenEditDialog] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState(null);
   const [selectedDosen, setSelectedDosen] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [page, setPage] = useState(1);
+  const [filterStatus, setFilterStatus] = useState("all");
   const itemsPerPage = 10;
 
   const fetchData = useCallback(async () => {
@@ -124,14 +139,24 @@ export default function ProposalPembimbingTab({ id_program }) {
     setPage(1);
   }, [proposals.length]);
 
+  const handleDetailClick = (proposal) => {
+    setSelectedProposal(proposal);
+    setOpenDetailDialog(true);
+  };
+
+  const handleCloseDetailDialog = () => {
+    setOpenDetailDialog(false);
+    setSelectedProposal(null);
+  };
+
   const handleEditClick = (proposal) => {
     setSelectedProposal(proposal);
     setSelectedDosen(proposal.pembimbing?.id_dosen || dosenList[0]?.id_dosen || "");
-    setOpenDialog(true);
+    setOpenEditDialog(true);
   };
 
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
+  const handleCloseEditDialog = () => {
+    setOpenEditDialog(false);
     setSelectedProposal(null);
     setSelectedDosen("");
   };
@@ -143,6 +168,15 @@ export default function ProposalPembimbingTab({ id_program }) {
 
   const getDosenInfo = (id_dosen) => {
     return dosenList.find((d) => d.id_dosen === parseInt(id_dosen, 10));
+  };
+
+  const getFilteredProposals = () => {
+    if (filterStatus === "belum") {
+      return proposals.filter((p) => !p.pembimbing?.id_dosen);
+    } else if (filterStatus === "sudah") {
+      return proposals.filter((p) => p.pembimbing?.id_dosen);
+    }
+    return proposals;
   };
 
   const handleSaveChanges = async () => {
@@ -169,7 +203,7 @@ export default function ProposalPembimbingTab({ id_program }) {
         showConfirmButton: false,
       });
 
-      handleCloseDialog();
+      handleCloseEditDialog();
       fetchData();
     } catch (error) {
       Swal.fire({
@@ -194,11 +228,12 @@ export default function ProposalPembimbingTab({ id_program }) {
   const currentDosenInfo = getDosenInfo(selectedDosen);
   const currentBeban = getDosenBebanInfo(selectedDosen);
 
-  const totalPages = Math.max(1, Math.ceil(proposals.length / itemsPerPage));
+  const filteredProposals = getFilteredProposals();
+  const totalPages = Math.max(1, Math.ceil(filteredProposals.length / itemsPerPage));
   const startIdx = (page - 1) * itemsPerPage;
-  const paginatedProposals = proposals.slice(startIdx, startIdx + itemsPerPage);
-  const startDisplay = proposals.length === 0 ? 0 : startIdx + 1;
-  const endDisplay = Math.min(page * itemsPerPage, proposals.length);
+  const paginatedProposals = filteredProposals.slice(startIdx, startIdx + itemsPerPage);
+  const startDisplay = filteredProposals.length === 0 ? 0 : startIdx + 1;
+  const endDisplay = Math.min(page * itemsPerPage, filteredProposals.length);
 
   return (
     <Box>
@@ -217,6 +252,31 @@ export default function ProposalPembimbingTab({ id_program }) {
         </Box>
       </Box>
 
+      <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap", alignItems: "center" }}>
+        <TextField
+          select
+          size="small"
+          value={filterStatus}
+          onChange={(e) => {
+            setFilterStatus(e.target.value);
+            setPage(1);
+          }}
+          SelectProps={{
+            displayEmpty: true,
+            renderValue: (v) => (
+              <span style={{ fontSize: 14, color: !v ? "#9CA3AF" : "inherit" }}>
+                {!v || v === "all" ? "Semua Status" : (v === "belum" ? "Belum Ditentukan" : "Sudah Ditentukan")}
+              </span>
+            ),
+          }}
+          sx={{ ...roundedField, width: { xs: "100%", sm: "auto" }, minWidth: { xs: "100%", sm: 200 } }}
+        >
+          <MenuItem value="all" sx={{ fontSize: 13 }}>Semua Status</MenuItem>
+          <MenuItem value="belum" sx={{ fontSize: 13 }}>Belum Ditentukan</MenuItem>
+          <MenuItem value="sudah" sx={{ fontSize: 13 }}>Sudah Ditentukan</MenuItem>
+        </TextField>
+      </Box>
+
       <TableContainer sx={{ borderRadius: "16px", border: "1.5px solid #E2E8F0", overflow: "auto", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)" }}>
         <Table sx={{ minWidth: 600 }}>
           <TableHead>
@@ -229,7 +289,7 @@ export default function ProposalPembimbingTab({ id_program }) {
             </TableRow>
           </TableHead>
           <TableBody>
-            {proposals.length === 0 ? (
+            {filteredProposals.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} sx={{ textAlign: "center", py: 6 }}>
                   <Typography sx={{ fontSize: { xs: 16, sm: 18 }, fontWeight: 800, color: "#1E293B", mb: 0.5 }}>
@@ -271,23 +331,42 @@ export default function ProposalPembimbingTab({ id_program }) {
                     )}
                   </TableCell>
                   <TableCell sx={{ textAlign: "center" }}>
-                    <Button
-                      size="small"
-                      onClick={() => handleEditClick(proposal)}
-                      variant="outlined"
-                      sx={{
-                        textTransform: "none",
-                        color: COLORS.primary,
-                        borderColor: COLORS.primaryMuted,
-                        borderRadius: "10px",
-                        fontWeight: 700,
-                        fontSize: { xs: 11, sm: 12 },
-                        px: { xs: 1, sm: 2 },
-                        "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
-                      }}
-                    >
-                      Detail
-                    </Button>
+                    <Box sx={{ display: "flex", gap: { xs: 0.5, sm: 1.5 }, justifyContent: "center", flexWrap: "wrap" }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => handleDetailClick(proposal)}
+                        sx={{
+                          textTransform: "none",
+                          color: COLORS.primary,
+                          borderColor: COLORS.primaryMuted,
+                          borderRadius: "10px",
+                          fontWeight: 700,
+                          fontSize: { xs: 11, sm: 12 },
+                          px: { xs: 1, sm: 2 },
+                          "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
+                        }}
+                      >
+                        Detail
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => handleEditClick(proposal)}
+                        sx={{
+                          textTransform: "none",
+                          color: COLORS.warning,
+                          borderColor: COLORS.warningLight,
+                          borderRadius: "10px",
+                          fontWeight: 700,
+                          fontSize: { xs: 11, sm: 12 },
+                          px: { xs: 1, sm: 2 },
+                          "&:hover": { backgroundColor: COLORS.warningLight, borderColor: COLORS.warning },
+                        }}
+                      >
+                        Edit
+                      </Button>
+                    </Box>
                   </TableCell>
                 </TableRow>
               ))
@@ -298,7 +377,7 @@ export default function ProposalPembimbingTab({ id_program }) {
 
       <Box sx={{ mt: 3, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexDirection: { xs: "column", sm: "row" }, px: 1 }}>
         <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 600 }}>
-          Menampilkan <span style={{ color: "#1E293B" }}>{startDisplay}–{endDisplay}</span> dari <span style={{ color: "#1E293B" }}>{proposals.length}</span> proposal
+          Menampilkan <span style={{ color: "#1E293B" }}>{startDisplay}–{endDisplay}</span> dari <span style={{ color: "#1E293B" }}>{filteredProposals.length}</span> proposal
         </Typography>
         <Pagination
           count={totalPages}
@@ -322,8 +401,118 @@ export default function ProposalPembimbingTab({ id_program }) {
       </Box>
 
       <Dialog
-        open={openDialog}
-        onClose={handleCloseDialog}
+        open={openDetailDialog}
+        onClose={handleCloseDetailDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: { xs: "16px", sm: "24px" }, overflow: "hidden" } }}
+      >
+        <Box sx={{ p: { xs: 1.5, sm: 2 }, display: "flex", alignItems: "center", justifyContent: "space-between", background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`, color: "#fff" }}>
+          <Typography sx={{ fontWeight: 800, fontSize: { xs: 16, sm: 18 } }}>
+            Detail Proposal
+          </Typography>
+          <IconButton onClick={handleCloseDetailDialog} sx={{ color: "#fff", "&:hover": { backgroundColor: "rgba(255,255,255,0.2)" } }}>
+            <Close />
+          </IconButton>
+        </Box>
+        <DialogContent
+          sx={{
+            px: { xs: 2.5, sm: 4 },
+            py: { xs: 3, sm: 4 },
+            maxHeight: "70vh",
+            overflowY: "auto",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+            "&::-webkit-scrollbar": { width: 0, height: 0 },
+          }}
+        >
+          {selectedProposal && (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+              <Paper variant="outlined" sx={{ p: 2.5, borderRadius: "14px", backgroundColor: "#fafafa", border: `1px solid ${COLORS.slateLight}` }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <Box>
+                    <Typography sx={{ fontSize: 11, color: "#94a3b8", mb: 0.5, fontWeight: 700, textTransform: "uppercase" }}>Judul Proposal</Typography>
+                    <Typography sx={{ fontSize: 14, fontWeight: 600 }}>{selectedProposal.judul}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography sx={{ fontSize: 11, color: "#94a3b8", mb: 0.5, fontWeight: 700, textTransform: "uppercase" }}>Nama Tim</Typography>
+                    <Typography sx={{ fontSize: 14, fontWeight: 600 }}>{selectedProposal.nama_tim}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography sx={{ fontSize: 11, color: "#94a3b8", mb: 0.5, fontWeight: 700, textTransform: "uppercase" }}>Kategori</Typography>
+                    <Typography sx={{ fontSize: 14, fontWeight: 600 }}>{selectedProposal.nama_kategori}</Typography>
+                  </Box>
+                  <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
+                    <Box>
+                      <Typography sx={{ fontSize: 11, color: "#94a3b8", mb: 0.5, fontWeight: 700, textTransform: "uppercase" }}>Program</Typography>
+                      <Typography sx={{ fontSize: 14, fontWeight: 600 }}>{selectedProposal.nama_program || "-"}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography sx={{ fontSize: 11, color: "#94a3b8", mb: 0.5, fontWeight: 700, textTransform: "uppercase" }}>Modal Diajukan</Typography>
+                      <Typography sx={{ fontSize: 14, fontWeight: 600 }}>{formatCurrency(selectedProposal.modal_diajukan)}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography sx={{ fontSize: 11, color: "#94a3b8", mb: 0.5, fontWeight: 700, textTransform: "uppercase" }}>Tanggal Submit</Typography>
+                      <Typography sx={{ fontSize: 14, fontWeight: 600 }}>{formatDate(selectedProposal.tanggal_submit)}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography sx={{ fontSize: 11, color: "#94a3b8", mb: 0.5, fontWeight: 700, textTransform: "uppercase" }}>ID Tim</Typography>
+                      <Typography sx={{ fontSize: 14, fontWeight: 600 }}>{selectedProposal.id_tim || "-"}</Typography>
+                    </Box>
+                  </Box>
+                </Box>
+              </Paper>
+
+              <Paper variant="outlined" sx={{ p: 2.5, borderRadius: "14px", backgroundColor: "#f0f9ff", border: "1px solid #bfdbfe" }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <Typography sx={{ fontSize: 12, fontWeight: 800, color: "#0369a1", textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                    Dosen Pembimbing Saat Ini
+                  </Typography>
+                  {selectedProposal.pembimbing?.id_dosen ? (
+                    <>
+                      <Box>
+                        <Typography sx={{ fontSize: 11, color: "#666", mb: 0.5 }}>Nama Lengkap</Typography>
+                        <Typography sx={{ fontSize: 14, fontWeight: 600, color: "#0D59F2" }}>{selectedProposal.pembimbing.nama_dosen}</Typography>
+                      </Box>
+                      <Box>
+                        <Typography sx={{ fontSize: 11, color: "#666", mb: 0.5 }}>NIP</Typography>
+                        <Typography sx={{ fontSize: 14 }}>{selectedProposal.pembimbing.nip}</Typography>
+                      </Box>
+                    </>
+                  ) : (
+                    <Typography sx={{ fontSize: 14, color: "#999", fontStyle: "italic" }}>Belum ditentukan</Typography>
+                  )}
+                </Box>
+              </Paper>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 2, sm: 3 }, backgroundColor: "#F8FAFC", borderTop: "1.5px solid #E2E8F0", gap: 1.5, flexDirection: { xs: "column", sm: "row" }, "& > button": { width: { xs: "100%", sm: "auto" } } }}>
+          <Button
+            onClick={handleCloseDetailDialog}
+            variant="outlined"
+            sx={{
+              textTransform: "none",
+              borderRadius: "12px",
+              px: 3,
+              fontWeight: 700,
+              color: COLORS.slate,
+              borderColor: "#e2e8f0",
+              backgroundColor: "#fff",
+              "&:hover": {
+                backgroundColor: "#f8fafc",
+                borderColor: COLORS.slate,
+              },
+            }}
+          >
+            Tutup
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={openEditDialog}
+        onClose={handleCloseEditDialog}
         maxWidth="sm"
         fullWidth
         PaperProps={{ sx: { borderRadius: { xs: "16px", sm: "24px" }, overflow: "hidden" } }}
@@ -334,7 +523,7 @@ export default function ProposalPembimbingTab({ id_program }) {
               Edit Dosen Pembimbing
             </Typography>
           </Box>
-          <IconButton onClick={handleCloseDialog} sx={{ color: "#fff", "&:hover": { backgroundColor: "rgba(255,255,255,0.2)" } }}>
+          <IconButton onClick={handleCloseEditDialog} sx={{ color: "#fff", "&:hover": { backgroundColor: "rgba(255,255,255,0.2)" } }}>
             <Close />
           </IconButton>
         </Box>
@@ -419,7 +608,7 @@ export default function ProposalPembimbingTab({ id_program }) {
         </DialogContent>
         <DialogActions sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 2, sm: 3 }, backgroundColor: "#F8FAFC", borderTop: "1.5px solid #E2E8F0", gap: 1.5, flexDirection: { xs: "column", sm: "row" }, "& > button": { width: { xs: "100%", sm: "auto" } } }}>
           <Button
-            onClick={handleCloseDialog}
+            onClick={handleCloseEditDialog}
             variant="contained"
             disabled={submitting}
             sx={{

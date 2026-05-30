@@ -227,16 +227,17 @@ export default function RekapTahap2Tab({ id_program }) {
         proposalList.map(p => getRekapWawancara(id_program, p.id_proposal))
       );
 
-      const evaluatorMap = {}; // Use name + role as key to separate sheets
+      const evaluatorMap = {}; // key: role + type + id
       allResults.forEach((res) => {
         if (res.status !== "fulfilled" || !res.value?.success || !res.value?.data) return;
         const d = res.value.data;
         const addEvaluator = (evalData, role) => {
           const uId = evalData.user?.id_user || evalData.id_user;
-          const uName = evalData.user?.nama || "Evaluator";
-          const key = `${role}_${uId}`;
+          const uName = evalData.user?.nama_lengkap || evalData.user?.nama || "Evaluator";
+          const roleType = role === "Reviewer" ? "Internal" : "Eksternal";
+          const key = `${role}_${roleType}_${uId}`;
           if (!evaluatorMap[key]) {
-            evaluatorMap[key] = { name: uName, role, evaluations: [] };
+            evaluatorMap[key] = { name: uName, role, roleType, evaluations: [] };
           }
           evaluatorMap[key].evaluations.push({
             judul: d.proposal.judul,
@@ -259,20 +260,37 @@ export default function RekapTahap2Tab({ id_program }) {
       const XLSX = await getXLSX();
       const wb = XLSX.utils.book_new();
 
-      evaluatorKeys.forEach(key => {
-        const evItem = evaluatorMap[key];
+      const evaluatorItems = evaluatorKeys
+        .map((key) => ({ key, ...evaluatorMap[key] }))
+        .sort((a, b) => {
+          if (a.roleType !== b.roleType) return a.roleType.localeCompare(b.roleType, "id-ID");
+          return (a.name || "").localeCompare(b.name || "", "id-ID");
+        });
+
+      const reviewerItems = evaluatorItems.filter((item) => item.role === "Reviewer");
+      const juriItems = evaluatorItems.filter((item) => item.role === "Juri");
+      const maxLen = Math.max(reviewerItems.length, juriItems.length);
+
+      for (let i = 0; i < maxLen; i += 1) {
+        const pairIndex = i + 1;
+        const orderedItems = [reviewerItems[i], juriItems[i]].filter(Boolean);
+
+        orderedItems.forEach((evItem) => {
+          const indexLabel = pairIndex;
+
         const rows = [];
         const criteria = evItem.evaluations[0].details;
 
         rows.push(["NILAI EVALUASI"]);
         rows.push(["PRESENTASI PROPOSAL USAHA MAHASISWA"]);
-        rows.push([]);
+        rows.push([""]);
         rows.push([evItem.name]);
 
         const headers = ["NO", "JUDUL"];
         criteria.forEach(c => headers.push(`${c.nama_kriteria} (${c.bobot}%)`));
         headers.push("NILAI (BOBOT X SKOR)");
         rows.push(headers);
+        const headerRowIndex = rows.length - 1;
 
         evItem.evaluations.forEach((ev, idx) => {
           const row = [idx + 1, ev.judul];
@@ -293,23 +311,35 @@ export default function RekapTahap2Tab({ id_program }) {
         const headerStyle = { font: { bold: true }, fill: { fgColor: { rgb: "F1F5F9" } }, border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } } };
         const cellStyle = { border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } } };
 
-        const range = XLSX.utils.decode_range(ws['!ref']);
-        for (let R = 4; R <= range.e.r; ++R) {
+        const range = XLSX.utils.decode_range(ws["!ref"]);
+        for (let R = headerRowIndex; R <= range.e.r; ++R) {
           for (let C = 0; C <= range.e.c; ++C) {
             const cell_ref = XLSX.utils.encode_cell({ c: C, r: R });
             if (!ws[cell_ref]) continue;
-            if (R === 4) ws[cell_ref].s = headerStyle;
-            else if (R <= 4 + evItem.evaluations.length) ws[cell_ref].s = cellStyle;
+            if (R === headerRowIndex) ws[cell_ref].s = headerStyle;
+            else if (R <= headerRowIndex + evItem.evaluations.length) ws[cell_ref].s = cellStyle;
           }
         }
 
-        ws['!cols'] = [{ wch: 5 }, { wch: 60 }];
-        criteria.forEach(() => ws['!cols'].push({ wch: 15 }));
-        ws['!cols'].push({ wch: 20 });
+        const centerStyle = { alignment: { horizontal: "center" } };
+        if (ws.A1) ws.A1.s = { ...(ws.A1.s || {}), ...centerStyle };
+        if (ws.A2) ws.A2.s = { ...(ws.A2.s || {}), ...centerStyle };
+        const lastCol = headers.length - 1;
+        const merges = ws["!merges"] || [];
+        merges.push(
+          { s: { r: 0, c: 0 }, e: { r: 0, c: lastCol } },
+          { s: { r: 1, c: 0 }, e: { r: 1, c: lastCol } }
+        );
+        ws["!merges"] = merges;
 
-        const sheetName = `${evItem.role.substring(0, 3)}_${evItem.name.substring(0, 20)}`.substring(0, 31).replace(/[\\/*?[\]]/g, "_");
+        ws["!cols"] = [{ wch: 5 }, { wch: 60 }];
+        criteria.forEach(() => ws["!cols"].push({ wch: 25 }));
+        ws["!cols"].push({ wch: 25 });
+
+        const sheetName = `${evItem.role} ${indexLabel}_${evItem.roleType}`.substring(0, 31).replace(/[\\/*?[\]]/g, "_");
         XLSX.utils.book_append_sheet(wb, ws, sheetName);
-      });
+        });
+      }
 
       XLSX.writeFile(wb, `Rekap_Nilai_Wawancara.xlsx`);
       Swal.close();

@@ -135,9 +135,6 @@ export default function DistribusiPenilaiPage() {
             <Box sx={{ height: 4, background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})` }} />
 
             <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
-              <Typography sx={{ fontSize: 14, fontWeight: 700, color: "#374151", mb: 1.5 }}>
-                Filter Program & Tahap
-              </Typography>
 
               <Box sx={{
                 display: "flex",

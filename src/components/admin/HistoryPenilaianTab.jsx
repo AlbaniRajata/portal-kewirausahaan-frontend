@@ -14,6 +14,8 @@ import {
   getHistoryPenilaianTahap2,
   getHistoryDetailTahap1,
   getHistoryDetailTahap2,
+  getDetailMahasiswa,
+  getProposalDetailAdmin,
 } from "../../api/admin";
 
 const COLORS = {
@@ -107,9 +109,11 @@ const getFinalisasiDateValue = (item) =>
   item?.updated_at || item?.created_at || null;
 
 const getProgramTitleForExport = (program) => {
-  const nama = program?.nama_program || "";
-  const ket  = program?.keterangan || "";
-  return `${nama} ${ket}`.toUpperCase() || "DAFTAR PROGRAM";
+  const text = `${program?.nama_program || ""} ${program?.keterangan || ""}`.toLowerCase();
+  if (text.includes("pmw")) return "PROGRAM MAHASISWA USAHA";
+  if (text.includes("inbis")) return "PROGRAM INBIS";
+  const raw = `${program?.nama_program || ""} ${program?.keterangan || ""}`.trim();
+  return raw ? `PROGRAM ${raw}`.toUpperCase() : "PROGRAM";
 };
 
 const getProgramNameForFilename = (program) => {
@@ -122,6 +126,71 @@ const getProgramNameForFilename = (program) => {
 const getProposalKey = (tahap, proposalId) => `${tahap}-${proposalId}`;
 const getTahap1Nilai = (item) => item.rata_rata_nilai ?? item.total_nilai ?? item.nilai ?? "-";
 const getTahap2Nilai = (item) => item.nilai_rata_rata ?? item.total_nilai ?? "-";
+
+const getDosenPembimbingName = (item) =>
+  item?.nama_dosen || item?.nama_pembimbing || item?.dosen_pembimbing ||
+  item?.pembimbing?.nama_dosen || item?.pembimbing?.nama_lengkap ||
+  item?.pengajuan_pembimbing?.nama_dosen || "-";
+
+const getAnggotaPeranLabel = (anggota) => {
+  const peran = anggota?.peran;
+  return (peran === 1 || String(peran).toLowerCase() === "ketua") ? "Ketua" : "Anggota";
+};
+
+const getAnggotaKey = (a) => String(a?.id_user || a?.id || a?.nim || a?.username || "");
+const getAnggotaProdi = (a, p) => {
+  const j = a?.jenjang ? `${a.jenjang} ` : "";
+  const jp = p?.jenjang ? `${p.jenjang} ` : "";
+  return a?.prodi || `${j}${a?.nama_prodi || ""}`.trim() || `${jp}${p?.nama_prodi || ""}`.trim() || "-";
+};
+const getAnggotaJurusan = (a, p) => a?.nama_jurusan || a?.jurusan || a?.mahasiswa?.nama_jurusan || p?.nama_jurusan || "-";
+const getAnggotaNoHp = (a, p) => a?.no_hp || a?.nomor_hp || a?.hp || a?.mahasiswa?.no_hp || p?.no_hp || "-";
+
+const getAnggotaRowsForExport = (proposal, detail, pesertaDetailMap = new Map()) => {
+  const anggotaRaw = detail?.anggota_tim || detail?.anggota || proposal?.anggota_tim || [];
+  if (Array.isArray(anggotaRaw) && anggotaRaw.length > 0) {
+    return [...anggotaRaw]
+      .sort((a, b) => {
+        const pA = getAnggotaPeranLabel(a) === "Ketua" ? 0 : 1;
+        const pB = getAnggotaPeranLabel(b) === "Ketua" ? 0 : 1;
+        if (pA !== pB) return pA - pB;
+        return (a?.nama_lengkap || "").localeCompare(b?.nama_lengkap || "", "id-ID");
+      })
+      .map((anggota) => {
+        const key = getAnggotaKey(anggota);
+        const pd  = key ? pesertaDetailMap.get(key) : null;
+        return {
+          keterangan: getAnggotaPeranLabel(anggota),
+          nama:       anggota?.nama_lengkap || anggota?.nama || anggota?.username || "-",
+          nim:        anggota?.nim  || "-",
+          prodi:      getAnggotaProdi(anggota, pd),
+          jurusan:    getAnggotaJurusan(anggota, pd),
+          noHp:       getAnggotaNoHp(anggota, pd),
+        };
+      });
+  }
+  return [{
+    keterangan: "Ketua",
+    nama:    proposal?.ketua?.nama_lengkap  || "-",
+    nim:     proposal?.ketua?.nim           || "-",
+    prodi:   getAnggotaProdi(proposal?.ketua, null),
+    jurusan: getAnggotaJurusan(proposal?.ketua, null),
+    noHp:    getAnggotaNoHp(proposal?.ketua, null),
+  }];
+};
+
+const middleAlignWorksheetColumns = (XLSX, worksheet, columns = [], startRow = 0, endRow = 0) => {
+  for (let row = startRow; row <= endRow; row += 1) {
+    columns.forEach((col) => {
+      const cellRef = XLSX.utils.encode_cell({ r: row, c: col });
+      const cell = worksheet[cellRef];
+      if (!cell) return;
+      cell.s = { ...(cell.s || {}), alignment: { ...(cell.s?.alignment || {}), vertical: "center" } };
+    });
+  }
+};
+
+const exportHeaders = ["NO", "NAMA USAHA", "NO", "KETERANGAN", "NAMA", "NIM", "PRODI", "JURUSAN", "NO HP", "DOSEN PEMBIMBING"];
 
 const getPenilaiLabel = (tahap, historyDetail) => {
   if (!historyDetail) return "-";
@@ -463,24 +532,146 @@ export default function HistoryPenilaianTab({ id_program }) {
     setExportingTahap(tahap);
     try {
       const XLSX = await getXLSX();
-      const allProposals = filtered;
-      const historyResults = await Promise.allSettled(allProposals.map(p => tahap === 1 ? getHistoryDetailTahap1(id_program, p.id_proposal) : getHistoryDetailTahap2(id_program, p.id_proposal)));
-      
-      const aoa = [[getProgramTitleForExport(programInfo)], [], ["NO", "JUDUL PROPOSAL", "TIM", "KATEGORI", "PENILAI", "NILAI", "TANGGAL FINALISASI", "STATUS"]];
-      allProposals.forEach((p, idx) => {
-        const hist = historyResults[idx].status === "fulfilled" ? historyResults[idx].value.data : null;
-        aoa.push([idx + 1, p.judul, p.nama_tim, p.nama_kategori, getPenilaiLabel(tahap, hist), tahap === 1 ? getTahap1Nilai(p) : getTahap2Nilai(p), formatDate(getFinalisasiDateValue(p)), STATUS_MAP[p.status_proposal]?.label || "-"]);
+      const groupedData = await (async () => {
+        const grouped = new Map();
+        [...filtered]
+          .sort((a, b) => {
+            const kA = a?.nama_kategori || "Tanpa Kategori";
+            const kB = b?.nama_kategori || "Tanpa Kategori";
+            if (kA !== kB) return kA.localeCompare(kB, "id-ID");
+            return (a?.judul || "").localeCompare(b?.judul || "", "id-ID");
+          })
+          .forEach((proposal) => {
+            const k = proposal?.nama_kategori || "Tanpa Kategori";
+            if (!grouped.has(k)) grouped.set(k, []);
+            grouped.get(k).push(proposal);
+          });
+
+        const allProposals = Array.from(grouped.values()).flat();
+        const detailMap = new Map();
+        const pesertaDetailMap = new Map();
+
+        if (allProposals.length > 0) {
+          const results = await Promise.allSettled(allProposals.map((p) => getProposalDetailAdmin(p.id_proposal)));
+          results.forEach((result, index) => {
+            const id = allProposals[index]?.id_proposal;
+            if (!id) return;
+            if (result.status === "fulfilled") detailMap.set(id, result.value?.data || null);
+          });
+        }
+
+        const pesertaQueue = new Map();
+        allProposals.forEach((proposal) => {
+          const detail = detailMap.get(proposal.id_proposal);
+          const anggotaRaw = detail?.anggota_tim || detail?.anggota || proposal?.anggota_tim || [];
+          if (!Array.isArray(anggotaRaw)) return;
+          anggotaRaw.forEach((anggota) => {
+            const key = getAnggotaKey(anggota);
+            const idUser = anggota?.id_user || anggota?.id;
+            const idProgram = proposal?.id_program || proposal?.program?.id_program || null;
+            if (!key || !idUser || !idProgram) return;
+            if (!pesertaQueue.has(key)) pesertaQueue.set(key, { idUser, idProgram });
+          });
+        });
+
+        if (pesertaQueue.size > 0) {
+          const targets = Array.from(pesertaQueue.entries());
+          const results = await Promise.allSettled(targets.map(([, v]) => getDetailMahasiswa(v.idUser, v.idProgram)));
+          results.forEach((result, index) => {
+            if (result.status !== "fulfilled") return;
+            const key = targets[index]?.[0];
+            if (!key) return;
+            pesertaDetailMap.set(key, result.value?.data || null);
+          });
+        }
+
+        return Array.from(grouped.entries()).map(([kategori, items]) => ({
+          kategori,
+          items: items.map((proposal) => ({ ...proposal, detail: detailMap.get(proposal.id_proposal) || null })),
+          pesertaDetailMap,
+        }));
+      })();
+
+      const aoa = [["DAFTAR PROPOSAL LOLOS"], [getProgramTitleForExport(programInfo)], []];
+      const merges = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: exportHeaders.length - 1 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: exportHeaders.length - 1 } },
+      ];
+      const dataRowRanges = [];
+      let rowIndex = 3;
+
+      groupedData.forEach((group) => {
+        aoa.push([String(group.kategori || "Tanpa Kategori").toUpperCase()]);
+        merges.push({ s: { r: rowIndex, c: 0 }, e: { r: rowIndex, c: exportHeaders.length - 1 } });
+        rowIndex += 1;
+        aoa.push(exportHeaders);
+        rowIndex += 1;
+
+        let anggotaNomor = 1;
+        group.items.forEach((proposal, proposalIndex) => {
+          const anggotaRows = getAnggotaRowsForExport(proposal, proposal.detail, group.pesertaDetailMap);
+          const startRow = rowIndex;
+          anggotaRows.forEach((anggota, anggotaIndex) => {
+            aoa.push([
+              anggotaIndex === 0 ? proposalIndex + 1 : "",
+              anggotaIndex === 0 ? proposal?.judul || "-" : "",
+              anggotaNomor,
+              anggota?.keterangan || "-",
+              anggota?.nama       || "-",
+              anggota?.nim        || "-",
+              anggota?.prodi      || "-",
+              anggota?.jurusan    || "-",
+              anggota?.noHp       || "-",
+              anggotaIndex === 0 ? getDosenPembimbingName(proposal?.detail || proposal) : "",
+            ]);
+            anggotaNomor += 1;
+            rowIndex += 1;
+          });
+          const endRow = rowIndex - 1;
+          dataRowRanges.push({ startRow, endRow });
+          if (anggotaRows.length > 1) {
+            merges.push({ s: { r: startRow, c: 0 }, e: { r: endRow, c: 0 } });
+            merges.push({ s: { r: startRow, c: 1 }, e: { r: endRow, c: 1 } });
+            merges.push({ s: { r: startRow, c: 9 }, e: { r: endRow, c: 9 } });
+          }
+        });
+        aoa.push([]);
+        rowIndex += 1;
       });
 
-      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      const worksheet = XLSX.utils.aoa_to_sheet(aoa);
+      dataRowRanges.forEach(({ startRow, endRow }) => {
+        middleAlignWorksheetColumns(XLSX, worksheet, [0, 1, 9], startRow, endRow);
+      });
+      worksheet["!merges"] = merges;
+      worksheet["!cols"] = [
+        { wch: 6 }, { wch: 48 }, { wch: 6 }, { wch: 14 }, { wch: 28 },
+        { wch: 16 }, { wch: 32 }, { wch: 20 }, { wch: 17 }, { wch: 30 },
+      ];
+
+      [0, 1].forEach((rowIdx) => {
+        for (let col = 0; col < exportHeaders.length; col++) {
+          const cellRef = XLSX.utils.encode_cell({ r: rowIdx, c: col });
+          if (!worksheet[cellRef]) continue;
+          worksheet[cellRef].s = {
+            ...(worksheet[cellRef].s || {}),
+            alignment: {
+              horizontal: "center",
+              vertical: "center",
+              wrapText: true,
+            },
+          };
+        }
+      });
+
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "History Penilaian");
+      XLSX.utils.book_append_sheet(wb, worksheet, "Proposal");
       const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
       const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `History_Penilaian_Tahap${tahap}_${getProgramNameForFilename(programInfo)}.xlsx`;
+      a.download = `DaftarProposalLolos_Tahap${tahap}_${getProgramNameForFilename(programInfo)}.xlsx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

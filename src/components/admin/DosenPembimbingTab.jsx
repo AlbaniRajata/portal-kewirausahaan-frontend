@@ -9,6 +9,8 @@ import {
   TableRow,
   Typography,
   Pagination,
+  TextField,
+  MenuItem,
 } from "@mui/material";
 import LoadingScreen from "../common/LoadingScreen";
 import Swal from "sweetalert2";
@@ -42,11 +44,43 @@ const tableBodyRow = {
   "& td": { borderBottom: "1.5px solid #E2E8F0", py: 2 },
 };
 
+const roundedField = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "12px",
+    backgroundColor: "#fff",
+    transition: "box-shadow 0.2s",
+    "&:hover fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused": { boxShadow: `0 0 0 3px ${COLORS.primaryLight}` },
+  },
+};
+
+const getBebanCategory = (jumlah) => {
+  const n = Number(jumlah || 0);
+  if (n === 0) return "tanpa";
+  if (n <= 2) return "ringan";
+  if (n <= 4) return "sedang";
+  return "berat";
+};
+
+const getProdiJurusanLabel = (dosen) => {
+  const prodiParts = [];
+  if (dosen?.jenjang) prodiParts.push(dosen.jenjang);
+  if (dosen?.nama_prodi) prodiParts.push(dosen.nama_prodi);
+  const prodi = prodiParts.join(" ").trim();
+  const jurusan = dosen?.nama_jurusan;
+  if (prodi && jurusan) return `${prodi} - ${jurusan}`;
+  if (prodi) return prodi;
+  if (jurusan) return jurusan;
+  return "-";
+};
+
 export default function DosenPembimbingTab({ id_program }) {
   const [dosenList, setDosenList] = useState([]);
   const [dosenBeban, setDosenBeban] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [filterBeban, setFilterBeban] = useState("all");
   const itemsPerPage = 10;
 
   const fetchData = useCallback(async () => {
@@ -77,7 +111,7 @@ export default function DosenPembimbingTab({ id_program }) {
 
   useEffect(() => {
     setPage(1);
-  }, [dosenList.length, dosenBeban.length]);
+  }, [dosenList.length, dosenBeban.length, filterBeban]);
 
   const getDosenBebanInfo = (id_dosen) => {
     return dosenBeban.find((d) => d.id_dosen === id_dosen) || { jumlah_bimbingan: 0 };
@@ -88,11 +122,15 @@ export default function DosenPembimbingTab({ id_program }) {
     ...getDosenBebanInfo(dosen.id_dosen),
   }));
 
-  const totalPages = Math.max(1, Math.ceil(dosenMergedData.length / itemsPerPage));
+  const filteredDosen = filterBeban === "all"
+    ? dosenMergedData
+    : dosenMergedData.filter((dosen) => getBebanCategory(dosen.jumlah_bimbingan) === filterBeban);
+
+  const totalPages = Math.max(1, Math.ceil(filteredDosen.length / itemsPerPage));
   const startIdx = (page - 1) * itemsPerPage;
-  const paginatedDosen = dosenMergedData.slice(startIdx, startIdx + itemsPerPage);
-  const startDisplay = dosenMergedData.length === 0 ? 0 : startIdx + 1;
-  const endDisplay = Math.min(page * itemsPerPage, dosenMergedData.length);
+  const paginatedDosen = filteredDosen.slice(startIdx, startIdx + itemsPerPage);
+  const startDisplay = filteredDosen.length === 0 ? 0 : startIdx + 1;
+  const endDisplay = Math.min(page * itemsPerPage, filteredDosen.length);
   const countTanpaBimbingan = dosenMergedData.filter((d) => Number(d.jumlah_bimbingan) === 0).length;
   const countRingan = dosenMergedData.filter((d) => Number(d.jumlah_bimbingan) > 0 && Number(d.jumlah_bimbingan) <= 2).length;
   const countSedang = dosenMergedData.filter((d) => Number(d.jumlah_bimbingan) > 2 && Number(d.jumlah_bimbingan) <= 4).length;
@@ -127,20 +165,52 @@ export default function DosenPembimbingTab({ id_program }) {
         </Box>
       </Box>
 
+      <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap", alignItems: "center" }}>
+        <TextField
+          select
+          size="small"
+          value={filterBeban}
+          onChange={(e) => {
+            setFilterBeban(e.target.value);
+            setPage(1);
+          }}
+          SelectProps={{
+            displayEmpty: true,
+            renderValue: (v) => (
+              <span style={{ fontSize: 14, color: !v ? "#9CA3AF" : "inherit" }}>
+                {!v || v === "all" ? "Semua Beban" : (
+                  v === "tanpa" ? "Tanpa Bimbingan" :
+                  v === "ringan" ? "Ringan (1-2)" :
+                  v === "sedang" ? "Sedang (3-4)" :
+                  "Berat (>4)"
+                )}
+              </span>
+            ),
+          }}
+          sx={{ ...roundedField, width: { xs: "100%", sm: "auto" }, minWidth: { xs: "100%", sm: 200 } }}
+        >
+          <MenuItem value="all" sx={{ fontSize: 13 }}>Semua Beban</MenuItem>
+          <MenuItem value="tanpa" sx={{ fontSize: 13 }}>Tanpa Bimbingan</MenuItem>
+          <MenuItem value="ringan" sx={{ fontSize: 13 }}>Ringan (1-2)</MenuItem>
+          <MenuItem value="sedang" sx={{ fontSize: 13 }}>Sedang (3-4)</MenuItem>
+          <MenuItem value="berat" sx={{ fontSize: 13 }}>Berat ({">"}4)</MenuItem>
+        </TextField>
+      </Box>
+
       <TableContainer sx={{ borderRadius: "16px", border: "1.5px solid #E2E8F0", overflow: "auto", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)" }}>
         <Table sx={{ minWidth: 600 }}>
           <TableHead>
             <TableRow sx={{ backgroundColor: "#fafafa" }}>
               <TableCell sx={tableHeadCell}>NAMA LENGKAP</TableCell>
               <TableCell sx={tableHeadCell}>NIP</TableCell>
-              <TableCell sx={tableHeadCell}>BIDANG KEAHLIAN</TableCell>
+              <TableCell sx={tableHeadCell}>PRODI/JURUSAN</TableCell>
               <TableCell sx={{ ...tableHeadCell, textAlign: "center", width: "120px" }}>
                 TOTAL TIM DIBIMBING
               </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {dosenMergedData.length === 0 ? (
+            {filteredDosen.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} sx={{ textAlign: "center", py: 6 }}>
                   <Typography sx={{ fontSize: { xs: 16, sm: 18 }, fontWeight: 800, color: "#1E293B", mb: 0.5 }}>
@@ -165,7 +235,7 @@ export default function DosenPembimbingTab({ id_program }) {
                   </TableCell>
                   <TableCell sx={{ fontSize: 13 }}>{dosen.nip}</TableCell>
                   <TableCell sx={{ fontSize: 13 }}>
-                    {dosen.bidang_keahlian || "-"}
+                    {getProdiJurusanLabel(dosen)}
                   </TableCell>
                   <TableCell sx={{ textAlign: "center" }}>
                     <Box
@@ -208,7 +278,7 @@ export default function DosenPembimbingTab({ id_program }) {
 
       <Box sx={{ mt: 3, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexDirection: { xs: "column", sm: "row" }, px: 1 }}>
         <Typography sx={{ fontSize: 14, color: COLORS.slate, fontWeight: 600 }}>
-          Menampilkan <span style={{ color: "#1E293B" }}>{startDisplay}–{endDisplay}</span> dari <span style={{ color: "#1E293B" }}>{dosenMergedData.length}</span> dosen
+          Menampilkan <span style={{ color: "#1E293B" }}>{startDisplay}–{endDisplay}</span> dari <span style={{ color: "#1E293B" }}>{filteredDosen.length}</span> dosen
         </Typography>
         <Pagination
           count={totalPages}

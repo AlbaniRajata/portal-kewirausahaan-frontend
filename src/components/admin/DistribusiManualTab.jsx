@@ -232,8 +232,8 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
   const [proposals, setProposals] = useState([]);
   const [panelHistory, setPanelHistory] = useState([]);
 
-  const [selectedReviewer, setSelectedReviewer] = useState(null);
-  const [selectedReviewers, setSelectedReviewers] = useState([]);
+  const [selectedReviewer1, setSelectedReviewer1] = useState(null);
+  const [selectedReviewer2, setSelectedReviewer2] = useState(null);
   const [selectedProposals, setSelectedProposals] = useState([]);
 
   const [selectedReviewerTahap2, setSelectedReviewerTahap2] = useState(null);
@@ -320,8 +320,8 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
     if (id_program) {
       fetchProposals();
       setSelectedProposals([]);
-      setSelectedReviewer(null);
-      setSelectedReviewers([]);
+      setSelectedReviewer1(null);
+      setSelectedReviewer2(null);
       setSelectedReviewerTahap2(null);
       setSelectedJuri(null);
       setSelectedProposal(null);
@@ -356,12 +356,11 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
     juriTersedia.length > 0 || slotKosong === 0 ? juriTersedia : juries;
 
   const handleAssignTahap1 = async () => {
-    const reviewersToUse = (selectedReviewers && selectedReviewers.length > 0) ? selectedReviewers : (selectedReviewer ? [selectedReviewer] : []);
-    if (!reviewersToUse || reviewersToUse.length === 0) {
+    if (!selectedReviewer1 || !selectedReviewer2) {
       Swal.fire({
         icon: "warning",
         title: "Perhatian",
-        text: "Silahkan pilih reviewer terlebih dahulu",
+        text: "Silahkan pilih 2 reviewer terlebih dahulu",
         confirmButtonColor: COLORS.primary,
       });
       return;
@@ -376,12 +375,11 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
       return;
     }
 
-    const reviewerNames = reviewersToUse.map((r) => r.nama_lengkap).join(" , ");
-
     const result = await Swal.fire({
       title: "Konfirmasi Distribusi",
       html: `Assign <b>${selectedProposals.length}</b> proposal ke:<br/><br/>
-             <b>${reviewerNames}</b><br/><br/>Lanjutkan?`,
+             Reviewer 1: <b>${selectedReviewer1.nama_lengkap}</b><br/>
+             Reviewer 2: <b>${selectedReviewer2.nama_lengkap}</b><br/><br/>Lanjutkan?`,
       icon: "question",
       showCancelButton: true,
       confirmButtonColor: COLORS.primary,
@@ -395,23 +393,14 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
     try {
       setAssigning(true);
 
-      // Round-robin distribute selected proposals among chosen reviewers
-      const groups = {};
-      reviewersToUse.forEach((r) => { groups[r.id_user] = []; });
-      for (let i = 0; i < selectedProposals.length; i++) {
-        const reviewer = reviewersToUse[i % reviewersToUse.length];
-        groups[reviewer.id_user].push(selectedProposals[i]);
-      }
-
       let totalAssigned = 0;
       let totalFailed = 0;
 
-      for (const reviewerId of Object.keys(groups)) {
-        const list = groups[reviewerId];
-        if (list.length === 0) continue;
+      // Distribute selected proposals to both reviewers
+      for (const reviewerId of [selectedReviewer1.id_user, selectedReviewer2.id_user]) {
         const res = await executeBulkDistribusi(id_program, tahap, {
           id_reviewer: reviewerId,
-          id_proposal_list: list,
+          id_proposal_list: selectedProposals,
         });
         const body = res.data || res;
         const ta = body?.total_assigned ?? 0;
@@ -423,14 +412,15 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
       await Swal.fire({
         icon: totalFailed > 0 ? "warning" : "success",
         title: "Distribusi Selesai",
-        html: `<b>Berhasil:</b> ${totalAssigned} proposal${
-          totalFailed > 0 ? `<br/><b>Gagal:</b> ${totalFailed} proposal` : ""
+        html: `<b>Berhasil:</b> ${totalAssigned} distribusi${
+          totalFailed > 0 ? `<br/><b>Gagal:</b> ${totalFailed} distribusi` : ""
         }`,
         confirmButtonColor: COLORS.primary,
       });
       onSuccess("Distribusi selesai");
       setSelectedProposals([]);
-      setSelectedReviewers([]);
+      setSelectedReviewer1(null);
+      setSelectedReviewer2(null);
       fetchProposals();
     } catch (err) {
       Swal.fire({
@@ -527,10 +517,10 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
       <DistribusiManualTahap1
         reviewers={reviewers}
         proposals={proposals}
-        selectedReviewer={selectedReviewer}
-        setSelectedReviewer={setSelectedReviewer}
-        selectedReviewers={selectedReviewers}
-        setSelectedReviewers={setSelectedReviewers}
+        selectedReviewer1={selectedReviewer1}
+        setSelectedReviewer1={setSelectedReviewer1}
+        selectedReviewer2={selectedReviewer2}
+        setSelectedReviewer2={setSelectedReviewer2}
         selectedProposals={selectedProposals}
         setSelectedProposals={setSelectedProposals}
         handleAssign={handleAssignTahap1}
@@ -566,10 +556,10 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
 function DistribusiManualTahap1({
   reviewers,
   proposals,
-  selectedReviewer,
-  setSelectedReviewer,
-  selectedReviewers,
-  setSelectedReviewers,
+  selectedReviewer1,
+  setSelectedReviewer1,
+  selectedReviewer2,
+  setSelectedReviewer2,
   selectedProposals,
   setSelectedProposals,
   handleAssign,
@@ -590,35 +580,67 @@ function DistribusiManualTahap1({
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      <SectionLabel>1. Pilih Reviewer</SectionLabel>
+      <SectionLabel>1. Pilih Reviewer (Pasangan)</SectionLabel>
 
-      <Autocomplete
-        multiple
-        options={reviewers}
-        value={selectedReviewers}
-        onChange={(_, v) => setSelectedReviewers(v)}
-        getOptionLabel={(o) => o.nama_lengkap || ""}
-        isOptionEqualToValue={(o, v) => o.id_user === v.id_user}
-        disabled={loadingReviewers}
-        loading={loadingReviewers}
-        renderOption={(props, option) => (
-          <Box component="li" {...props} key={option.id_user}>
-            <PersonOption
-              nama={option.nama_lengkap}
-              institusi={option.institusi}
-              keahlian={option.bidang_keahlian}
-            />
-          </Box>
-        )}
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            label="Reviewer"
-            placeholder="Cari atau pilih reviewer"
-            sx={roundedField}
+      <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+        <Box>
+          <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 1, color: "#374151" }}>Reviewer 1</Typography>
+          <Autocomplete
+            options={reviewers.filter((r) => !selectedReviewer2 || selectedReviewer2.id_user !== r.id_user)}
+            value={selectedReviewer1}
+            onChange={(_, v) => setSelectedReviewer1(v)}
+            getOptionLabel={(o) => o.nama_lengkap || ""}
+            isOptionEqualToValue={(o, v) => o.id_user === v.id_user}
+            disabled={loadingReviewers}
+            loading={loadingReviewers}
+            renderOption={(props, option) => (
+              <Box component="li" {...props} key={option.id_user}>
+                <PersonOption
+                  nama={option.nama_lengkap}
+                  institusi={option.institusi}
+                  keahlian={option.bidang_keahlian}
+                />
+              </Box>
+            )}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="Cari atau pilih reviewer"
+                sx={roundedField}
+              />
+            )}
           />
-        )}
-      />
+        </Box>
+
+        <Box>
+          <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 1, color: "#374151" }}>Reviewer 2</Typography>
+          <Autocomplete
+            options={reviewers.filter((r) => !selectedReviewer1 || selectedReviewer1.id_user !== r.id_user)}
+            value={selectedReviewer2}
+            onChange={(_, v) => setSelectedReviewer2(v)}
+            getOptionLabel={(o) => o.nama_lengkap || ""}
+            isOptionEqualToValue={(o, v) => o.id_user === v.id_user}
+            disabled={loadingReviewers}
+            loading={loadingReviewers}
+            renderOption={(props, option) => (
+              <Box component="li" {...props} key={option.id_user}>
+                <PersonOption
+                  nama={option.nama_lengkap}
+                  institusi={option.institusi}
+                  keahlian={option.bidang_keahlian}
+                />
+              </Box>
+            )}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="Cari atau pilih reviewer"
+                sx={roundedField}
+              />
+            )}
+          />
+        </Box>
+      </Box>
 
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <SectionLabel>2. Pilih Proposal ({selectedProposals.length} terpilih)</SectionLabel>
@@ -667,7 +689,7 @@ function DistribusiManualTahap1({
         <Button
           variant="contained"
           onClick={handleAssign}
-          disabled={assigning || selectedProposals.length === 0 || selectedReviewers.length === 0}
+          disabled={assigning || selectedProposals.length === 0 || !selectedReviewer1 || !selectedReviewer2}
           sx={{
             textTransform: "none",
             borderRadius: "50px",
