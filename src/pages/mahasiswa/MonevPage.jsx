@@ -14,7 +14,7 @@ import BodyLayout from "../../components/layouts/BodyLayout";
 import MahasiswaNavbar from "../../components/layouts/MahasiswaNavbar";
 import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
-import { getLuaranMahasiswa, submitLuaran, deleteLuaran } from "../../api/mahasiswa";
+import { getLuaranMahasiswa, submitLuaran, deleteLuaran, getRiwayatLuaran } from "../../api/mahasiswa";
 import { getProposalStatus } from "../../api/mahasiswa";
 import { downloadFile } from "../../utils/download";
 
@@ -157,6 +157,7 @@ export default function MonevPage() {
   const [links, setLinks] = useState([""]);
   const [linksError, setLinksError] = useState([]);
   const [submitting, setSubmitting] = useState(false);
+  const [riwayatLuaran, setRiwayatLuaran] = useState([]);
 
   const fetchLuaran = useCallback(async () => {
     try {
@@ -167,6 +168,13 @@ export default function MonevPage() {
         setStatusMessage(null);
       } else {
         setStatusMessage(res.message || "Gagal memuat data luaran");
+      }
+      
+      try {
+        const riwayatRes = await getRiwayatLuaran();
+        setRiwayatLuaran(riwayatRes.data || []);
+      } catch {
+        setRiwayatLuaran([]);
       }
     } catch (err) {
       setStatusMessage(
@@ -188,7 +196,7 @@ export default function MonevPage() {
       try {
         const res = await getProposalStatus();
         if (!active) return;
-        if (res?.success && res.data?.proposal && Number(res.data.proposal.status) >= 7) {
+        if (res?.success && res.data?.data?.proposal && Number(res.data.data.proposal.status) >= 7) {
           setHasMonevAccess(true);
         } else {
           setHasMonevAccess(false);

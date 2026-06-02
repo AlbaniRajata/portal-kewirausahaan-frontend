@@ -14,6 +14,7 @@ import LoadingScreen from "../../components/common/LoadingScreen";
 import {
   getTimStatus, getTimDetail, createTim, searchMahasiswa,
   addAnggotaTim, resetTim, cekEligibilitasInbis,
+  getRiwayatTim, lanjutInbis,
 } from "../../api/mahasiswa";
 import { getAllProgram } from "../../api/public";
 import { validateFormSecurity } from "../../utils/inputSecurity";
@@ -138,6 +139,10 @@ export default function AnggotaTimPage() {
   const [nimResults, setNimResults] = useState({});
   const [namaResults, setNamaResults] = useState({});
   const [inbisEligibility, setInbisEligibility] = useState(null);
+  
+  const [riwayatTim, setRiwayatTim] = useState([]);
+  const [inbisStatus, setInbisStatus] = useState(null);
+  const [processingInbis, setProcessingInbis] = useState(false);
 
   const [formTim, setFormTim] = useState({
     nama_tim: "",
@@ -174,6 +179,20 @@ export default function AnggotaTimPage() {
       if (response.data.hasTim && !willRedirect) {
         const detail = await getTimDetail();
         setTimDetail(detail.data);
+        
+        try {
+          const inbisRes = await cekEligibilitasInbis();
+          setInbisStatus(inbisRes.data);
+        } catch {
+          setInbisStatus(null);
+        }
+      }
+      
+      try {
+        const riwayatRes = await getRiwayatTim();
+        setRiwayatTim(riwayatRes.data || []);
+      } catch {
+        setRiwayatTim([]);
       }
     } catch {
       await Swal.fire({
@@ -437,6 +456,54 @@ export default function AnggotaTimPage() {
         text: err.response?.data?.message || "Gagal reset tim",
         confirmButtonText: "OK",
       });
+    }
+  };
+
+  const handleLanjutInbis = async (gunakanAnggotaSama) => {
+    const { value: formValues } = await Swal.fire({
+      title: "Lanjut ke Program INBIS",
+      html: `
+        <div style="text-align: left; margin-bottom: 15px; font-size: 14px;">
+          Tim PMW Anda akan diarsipkan. Silahkan masukkan nama tim baru untuk program INBIS.
+        </div>
+        <input id="swal-input-nama-tim" class="swal2-input" placeholder="Nama Tim INBIS" value="${timDetail?.nama_tim || ''}" style="width: 80%; margin: 0 auto; display: block;">
+      `,
+      focusConfirm: false,
+      showCancelButton: true,
+      confirmButtonText: "Ya, Lanjutkan",
+      cancelButtonText: "Batal",
+      confirmButtonColor: COLORS.primary,
+      cancelButtonColor: COLORS.slate,
+      preConfirm: () => {
+        const nama_tim = document.getElementById("swal-input-nama-tim").value;
+        if (!nama_tim) {
+          Swal.showValidationMessage("Nama tim wajib diisi");
+        }
+        return { nama_tim };
+      }
+    });
+
+    if (formValues) {
+      setProcessingInbis(true);
+      try {
+        const payload = {
+          nama_tim: formValues.nama_tim,
+          gunakan_anggota_sama: gunakanAnggotaSama,
+        };
+        const res = await lanjutInbis(payload);
+        await Swal.fire({
+          icon: "success", title: "Berhasil",
+          text: res.message || "Tim berhasil dilanjutkan ke INBIS",
+        });
+        fetchTimStatus();
+      } catch (err) {
+        await Swal.fire({
+          icon: "error", title: "Gagal",
+          text: err.response?.data?.message || "Gagal memproses pendaftaran INBIS",
+        });
+      } finally {
+        setProcessingInbis(false);
+      }
     }
   };
 
@@ -706,6 +773,41 @@ export default function AnggotaTimPage() {
                     <TextField fullWidth value={timDetail?.keterangan || ""} disabled sx={roundedField} />
                   </Box>
                 </Box>
+                
+                {inbisStatus && inbisStatus.lolos_pmw !== false && (
+                  <Box sx={{
+                    mb: 3, p: 2, borderRadius: "12px",
+                    background: "linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)",
+                    border: `1px solid #34D399`,
+                  }}>
+                    <Typography sx={{ fontSize: 14, color: "#065F46", fontWeight: 700, mb: 0.5 }}>
+                      Selamat! Tim Anda lolos tahap seleksi (wawancara)
+                    </Typography>
+                    <Typography sx={{ fontSize: 13, color: "#064E3B", mb: inbisStatus.eligible ? 1.5 : 0 }}>
+                      Tim Anda eligible untuk mendaftar program Inkubator Bisnis.
+                      {!inbisStatus.eligible && inbisStatus.alasan && ` (${inbisStatus.alasan})`}
+                    </Typography>
+                    
+                    {inbisStatus.eligible && timStatus?.isKetua && (
+                      <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", mt: 1.5 }}>
+                        <Button
+                          variant="contained" size="small"
+                          onClick={() => handleLanjutInbis(true)} disabled={processingInbis}
+                          sx={{ textTransform: "none", borderRadius: "8px", fontWeight: 600, backgroundColor: COLORS.primary }}
+                        >
+                          Lanjut INBIS (Anggota Sama)
+                        </Button>
+                        <Button
+                          variant="outlined" size="small"
+                          onClick={() => handleLanjutInbis(false)} disabled={processingInbis}
+                          sx={{ textTransform: "none", borderRadius: "8px", fontWeight: 600, borderColor: COLORS.primary, color: COLORS.primary }}
+                        >
+                          Lanjut INBIS (Anggota Berbeda)
+                        </Button>
+                      </Box>
+                    )}
+                  </Box>
+                )}
 
                 <Typography sx={{ fontWeight: 700, fontSize: 15, mb: 2, color: "#1F2937" }}>Daftar Anggota</Typography>
 
@@ -747,6 +849,63 @@ export default function AnggotaTimPage() {
                 </TableContainer>
               </Box>
             </Paper>
+
+            {riwayatTim && riwayatTim.length > 0 && (
+              <Paper elevation={0} sx={{
+                mt: 3, borderRadius: "20px",
+                border: "1.5px solid #E5E7EB",
+                overflow: "hidden",
+              }}>
+                <Box sx={{ height: 5, background: `linear-gradient(90deg, ${COLORS.slate}, ${COLORS.slateLight})` }} />
+                <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
+                  <SectionHeader
+                    icon={RestartAlt}
+                    title="Riwayat Tim (Arsip)"
+                    subtitle="Daftar tim Anda pada program sebelumnya"
+                    gradient={`linear-gradient(135deg, ${COLORS.slate} 0%, #9CA3AF 100%)`}
+                  />
+                  <TableContainer sx={{ borderRadius: "14px", border: "1.5px solid #E5E7EB", overflow: "hidden", overflowX: "auto" }}>
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          {["Nama Tim", "Program", "Peran", "Tanggal Dibuat", "Tanggal Diarsipkan"].map((h, i) => (
+                            <TableCell key={i} sx={tableHeadCell}>{h}</TableCell>
+                          ))}
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {riwayatTim.map((item, index) => {
+                          const peranInfo = getPeranInfo(item.peran);
+                          return (
+                            <TableRow key={index} sx={tableBodyRow}>
+                              <TableCell>
+                                <Typography sx={{ fontWeight: 600, fontSize: 14, color: "#1F2937" }}>{item.nama_tim}</Typography>
+                              </TableCell>
+                              <TableCell>
+                                <Typography sx={{ fontSize: 13, color: COLORS.slate }}>{item.nama_program}</Typography>
+                              </TableCell>
+                              <TableCell>
+                                <StatusPill label={peranInfo.label} backgroundColor={peranInfo.backgroundColor} />
+                              </TableCell>
+                              <TableCell>
+                                <Typography sx={{ fontSize: 13, color: COLORS.slate }}>
+                                  {new Date(item.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
+                                <Typography sx={{ fontSize: 13, color: COLORS.slate }}>
+                                  {item.archived_at ? new Date(item.archived_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "-"}
+                                </Typography>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
+              </Paper>
+            )}
           </Box>
         </PageTransition>
       </BodyLayout>

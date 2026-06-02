@@ -15,6 +15,7 @@ import {
   getStatusPembimbing,
   getListDosen,
   ajukanPembimbing,
+  getRiwayatPembimbing,
 } from "../../api/mahasiswa";
 
 
@@ -136,12 +137,18 @@ export default function PengajuanPembimbingPage() {
   const [dialogOpen, setDialogOpen]       = useState(false);
   const [selectedDosen, setSelectedDosen] = useState(null);
   const [submitting, setSubmitting]       = useState(false);
+  const [riwayatPembimbing, setRiwayatPembimbing] = useState([]);
 
   const fetchStatus = useCallback(async () => {
     try {
       setLoadingStatus(true);
       const res = await getStatusPembimbing();
       if (res.success) setStatusData(res.data);
+      
+      try {
+        const riwayatRes = await getRiwayatPembimbing();
+        setRiwayatPembimbing(riwayatRes.data || []);
+      } catch { setRiwayatPembimbing([]); }
     } catch {} finally { setLoadingStatus(false); }
   }, []);
 
@@ -454,6 +461,58 @@ export default function PengajuanPembimbingPage() {
               )}
             </Box>
           </Paper>
+
+          {riwayatPembimbing && riwayatPembimbing.length > 0 && (
+            <Paper elevation={0} sx={{ mt: 3, borderRadius: "20px", border: "1.5px solid #E5E7EB", overflow: "hidden" }}>
+              <Box sx={{ height: 5, background: `linear-gradient(90deg, ${COLORS.slate}, ${COLORS.slateLight})` }} />
+              <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
+                <SectionHeader
+                  icon={School}
+                  title="Riwayat Pengajuan Pembimbing (Arsip)"
+                  subtitle="Daftar pengajuan dosen pembimbing pada program sebelumnya"
+                  gradient={`linear-gradient(135deg, ${COLORS.slate} 0%, #9CA3AF 100%)`}
+                />
+                <TableContainer sx={{ borderRadius: "14px", border: "1.5px solid #E5E7EB", overflow: "hidden", overflowX: "auto" }}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        {["Nama Tim", "Program", "Nama Dosen", "Tanggal Diajukan", "Status"].map((h, i) => (
+                          <TableCell key={i} sx={tableHeadCell}>{h}</TableCell>
+                        ))}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {riwayatPembimbing.map((item, index) => {
+                        return (
+                          <TableRow key={index} sx={tableBodyRow}>
+                            <TableCell>
+                              <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{item.nama_tim}</Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography sx={{ fontSize: 13, color: COLORS.slate }}>{item.nama_program}</Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography sx={{ fontSize: 13, color: COLORS.slate }}>{item.nama_dosen}</Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography sx={{ fontSize: 13, color: COLORS.slate }}>{formatDate(item.created_at)}</Typography>
+                            </TableCell>
+                            <TableCell>
+                              <StatusPill
+                                label={STATUS_PENGAJUAN[item.status]?.label || "Unknown"}
+                                backgroundColor={STATUS_PENGAJUAN[item.status]?.backgroundColor || "#666"}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Box>
+            </Paper>
+          )}
+
         </Box>
       </PageTransition>
 

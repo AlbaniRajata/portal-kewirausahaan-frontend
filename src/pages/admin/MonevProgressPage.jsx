@@ -296,7 +296,7 @@ export default function MonevProgressPage() {
       text: `${statusNum === 2 ? "Setujui" : "Tolak"} luaran "${selectedLuaranTim?.nama_luaran}" dari tim "${selectedTim?.nama_tim}"?`,
       icon: "question",
       showCancelButton: true,
-      confirmButtonColor: statusNum === 2 ? "#2e7d32" : "#e53935",
+      confirmButtonColor: statusNum === 2 ? "#0D59F2" : "#e53935",
       cancelButtonColor: "#666",
       confirmButtonText: statusNum === 2 ? "Ya, Setujui" : "Ya, Tolak",
       cancelButtonText: "Batal",
@@ -604,9 +604,7 @@ setTimeout(() => setOpenDetail(true), 200);
           <Box sx={{ p: { xs: 1.5, sm: 2 }, display: "flex", alignItems: "center", justifyContent: "space-between", background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`, color: "#fff" }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, px: 1 }}>
               <Typography sx={{ fontWeight: 700, fontSize: 16 }}>Detail Luaran Tim</Typography>
-              {selectedTim && (
-                <Typography sx={{ fontSize: 13, opacity: 0.9, mt: 0.5, fontWeight: 500 }}>{selectedTim.nama_tim}</Typography>
-              )}
+              
             </Box>
             <IconButton
               onClick={() => setOpenDetail(false)}
@@ -995,18 +993,19 @@ setTimeout(() => setOpenDetail(true), 200);
             </Box>
           </DialogContent>
 
-          <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
+          <DialogActions sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 2, sm: 3 }, backgroundColor: "#F8FAFC", borderTop: "1.5px solid #E2E8F0", gap: 1.5, flexDirection: { xs: "column", sm: "row" }, "& > button": { width: { xs: "100%", sm: "auto" } } }}>
             <Button
+              variant="contained"
               onClick={handleCloseReview}
               disabled={submittingReview}
               sx={{
-                textTransform: "none",
-                borderRadius: "50px",
-                px: 4,
-                fontWeight: 600,
-                backgroundColor: "#FDB022",
-                color: "#fff",
-                "&:hover": { backgroundColor: "#e09a1a" },
+                textTransform: "none", borderRadius: "12px", px: 3, fontWeight: 700,
+                backgroundColor: COLORS.error,
+                boxShadow: "0 4px 12px rgba(220,38,38,0.2)",
+                "&:hover": { 
+                  backgroundColor: "#B91C1C",
+                  boxShadow: "0 6px 16px rgba(220,38,38,0.3)",
+                },
               }}
             >
               Batal
@@ -1016,15 +1015,12 @@ setTimeout(() => setOpenDetail(true), 200);
               onClick={handleSubmitReview}
               disabled={submittingReview}
               sx={{
-                textTransform: "none",
-                borderRadius: "50px",
-                px: 4,
-                fontWeight: 600,
-                backgroundColor:
-                  parseInt(reviewForm.status) === 3 ? "#e53935" : "#2e7d32",
-                "&:hover": {
-                  backgroundColor:
-                    parseInt(reviewForm.status) === 3 ? "#c62828" : "#1b5e20",
+                textTransform: "none", borderRadius: "12px", px: 4, fontWeight: 700,
+                backgroundColor: parseInt(reviewForm.status) === 3 ? COLORS.error : COLORS.primary,
+                boxShadow: parseInt(reviewForm.status) === 3 ? "0 4px 12px rgba(220,38,38,0.2)" : "0 4px 12px rgba(13, 89, 242, 0.2)",
+                "&:hover": { 
+                  backgroundColor: parseInt(reviewForm.status) === 3 ? "#B91C1C" : COLORS.primaryDark,
+                  boxShadow: parseInt(reviewForm.status) === 3 ? "0 6px 16px rgba(220,38,38,0.3)" : "0 6px 16px rgba(13, 89, 242, 0.3)",
                 },
               }}
             >

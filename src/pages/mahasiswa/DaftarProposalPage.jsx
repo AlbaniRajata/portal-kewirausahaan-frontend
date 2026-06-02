@@ -11,7 +11,7 @@ import BodyLayout from "../../components/layouts/BodyLayout";
 import MahasiswaNavbar from "../../components/layouts/MahasiswaNavbar";
 import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
-import { getProposalStatus } from "../../api/mahasiswa";
+import { getProposalStatus, getRiwayatProposal, cekEligibilitasInbis } from "../../api/mahasiswa";
 import { getAllProgram } from "../../api/public";
 
 const COLORS = {
@@ -173,6 +173,8 @@ export default function DaftarProposalPage() {
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState(null);
   const [programs, setPrograms] = useState([]);
+  const [inbisStatus, setInbisStatus] = useState(null);
+  const [riwayatProposal, setRiwayatProposal] = useState([]);
 
   useEffect(() => { fetchStatus(); fetchPrograms(); }, []);
 
@@ -188,6 +190,18 @@ export default function DaftarProposalPage() {
       setLoading(true);
       const response = await getProposalStatus();
       setStatus(response.data);
+      
+      if (response.data?.hasTim) {
+        try {
+          const inbisRes = await cekEligibilitasInbis();
+          setInbisStatus(inbisRes.data);
+        } catch { setInbisStatus(null); }
+        
+        try {
+          const riwayatRes = await getRiwayatProposal();
+          setRiwayatProposal(riwayatRes.data || []);
+        } catch { setRiwayatProposal([]); }
+      }
     } catch {
       await Swal.fire({
         icon: "error", title: "Gagal Memuat",
@@ -293,6 +307,22 @@ export default function DaftarProposalPage() {
                 </Typography>
               )}
             </InfoBox>
+          )}
+
+          {inbisStatus && inbisStatus.lolos_pmw !== false && (
+            <Box sx={{
+              mb: 3, p: 2, borderRadius: "12px",
+              background: "linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)",
+              border: `1px solid #34D399`,
+            }}>
+              <Typography sx={{ fontSize: 14, color: "#065F46", fontWeight: 700, mb: 0.5 }}>
+                Selamat! Tim Anda lolos tahap seleksi (wawancara)
+              </Typography>
+              <Typography sx={{ fontSize: 13, color: "#064E3B", mb: 0 }}>
+                Tim Anda eligible untuk mendaftar program Inkubator Bisnis.
+                {!inbisStatus.eligible && inbisStatus.alasan && ` (${inbisStatus.alasan})`}
+              </Typography>
+            </Box>
           )}
 
           <Paper elevation={0} sx={{
@@ -438,6 +468,67 @@ export default function DaftarProposalPage() {
                     </Box>
                   </Box>
                 </Box>
+              </Box>
+            </Paper>
+          )}
+
+          {riwayatProposal && riwayatProposal.length > 0 && (
+            <Paper elevation={0} sx={{
+              mt: 3, borderRadius: "20px",
+              border: "1.5px solid #E5E7EB",
+              overflow: "hidden",
+            }}>
+              <Box sx={{ height: 5, background: `linear-gradient(90deg, ${COLORS.slate}, ${COLORS.slateLight})` }} />
+              <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
+                <SectionHeader
+                  icon={Description}
+                  title="Riwayat Proposal (Arsip)"
+                  subtitle="Daftar proposal dari program sebelumnya"
+                  gradient={`linear-gradient(135deg, ${COLORS.slate} 0%, #9CA3AF 100%)`}
+                />
+
+                <TableContainer sx={{ borderRadius: "14px", border: "1.5px solid #E5E7EB", overflow: "hidden", overflowX: "auto" }}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        {["Judul Proposal", "Program", "Kategori", "Modal Diajukan", "Tanggal Submit", "Status"].map((head, i) => (
+                          <TableCell key={i} sx={tableHeadCell}>{head}</TableCell>
+                        ))}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {riwayatProposal.map((item, index) => {
+                        const rpStatusInfo = getStatusInfo(item.status_proposal);
+                        return (
+                          <TableRow key={index} sx={tableBodyRow}>
+                            <TableCell>
+                              <Typography sx={{ fontWeight: 600, maxWidth: 280, fontSize: 14, lineHeight: 1.4 }}>
+                                {item.judul}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography sx={{ fontSize: 13, color: COLORS.slate }}>{item.nama_program}</Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography sx={{ fontSize: 13, color: COLORS.slate }}>{item.nama_kategori || "-"}</Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography sx={{ fontSize: 14, fontWeight: 700, color: COLORS.primary }}>
+                                {formatRupiah(item.modal_diajukan)}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography sx={{ fontSize: 13, color: COLORS.slate }}>{formatDateInline(item.tanggal_submit)}</Typography>
+                            </TableCell>
+                            <TableCell>
+                              <StatusPill label={rpStatusInfo.label} backgroundColor={rpStatusInfo.backgroundColor} />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
               </Box>
             </Paper>
           )}

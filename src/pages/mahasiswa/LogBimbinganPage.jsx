@@ -12,7 +12,7 @@ import BodyLayout from "../../components/layouts/BodyLayout";
 import MahasiswaNavbar from "../../components/layouts/MahasiswaNavbar";
 import PageTransition from "../../components/PageTransition";
 import LoadingScreen from "../../components/common/LoadingScreen";
-import { getListBimbingan, ajukanBimbingan, getStatusPembimbing } from "../../api/mahasiswa";
+import { getListBimbingan, ajukanBimbingan, getStatusPembimbing, getRiwayatBimbingan } from "../../api/mahasiswa";
 
 const COLORS = {
   primary:      "#0D59F2",
@@ -174,6 +174,7 @@ export default function LogBimbinganPage() {
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [riwayatBimbingan, setRiwayatBimbingan] = useState([]);
 
   const fetchBimbingan = useCallback(async () => {
     try {
@@ -193,6 +194,13 @@ export default function LogBimbinganPage() {
 
       if (pembimbingRes.success) {
         setPembimbingInfo(pembimbingRes.data || null);
+      }
+
+      try {
+        const riwayatRes = await getRiwayatBimbingan();
+        setRiwayatBimbingan(riwayatRes.data || []);
+      } catch {
+        setRiwayatBimbingan([]);
       }
 
       if (bimbinganRes.success) setStatusMessage(null);
@@ -425,6 +433,76 @@ export default function LogBimbinganPage() {
                                 fontSize: 13, fontWeight: 600, px: 2,
                                 borderColor: COLORS.primary, color: COLORS.primary,
                                 "&:hover": { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
+                              }}
+                            >
+                              Detail
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Box>
+            </Paper>
+          )}
+
+          {riwayatBimbingan && riwayatBimbingan.length > 0 && (
+            <Paper elevation={0} sx={{ mt: 3, borderRadius: "20px", border: "1.5px solid #E5E7EB", overflow: "hidden" }}>
+              <Box sx={{ height: 5, background: `linear-gradient(90deg, ${COLORS.slate}, ${COLORS.slateLight})` }} />
+              <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
+                <SectionHeader
+                  icon={BookOutlined}
+                  title="Riwayat Bimbingan (Arsip)"
+                  subtitle="Daftar bimbingan pada program sebelumnya"
+                  gradient={`linear-gradient(135deg, ${COLORS.slate} 0%, #9CA3AF 100%)`}
+                />
+                <TableContainer sx={{ borderRadius: "14px", border: "1.5px solid #E5E7EB", overflow: "hidden", overflowX: "auto" }}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        {["Topik", "Tanggal Bimbingan", "Program", "Dosen", "Diajukan Oleh", "Status", "Aksi"].map((h, i) => (
+                          <TableCell key={i} sx={{ ...tableHeadCell, ...(i === 6 && { textAlign: "center" }) }}>
+                            {h}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {riwayatBimbingan.map((b) => (
+                        <TableRow key={b.id_bimbingan} sx={tableBodyRow}>
+                          <TableCell>
+                            <Typography sx={{ fontWeight: 600, fontSize: 14, maxWidth: 200 }}>
+                              {b.topik}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography sx={{ fontSize: 13, color: COLORS.slate }}>
+                              {formatDate(b.tanggal_bimbingan)}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography sx={{ fontSize: 13, color: COLORS.slate }}>{b.nama_program}</Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography sx={{ fontSize: 13, color: COLORS.slate }}>{b.nama_dosen}</Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography sx={{ fontSize: 13, color: COLORS.slate }}>{b.nama_pengaju}</Typography>
+                          </TableCell>
+                          <TableCell>
+                            <StatusPill label={STATUS_BIMBINGAN[b.status]?.label || "-"} backgroundColor={STATUS_BIMBINGAN[b.status]?.backgroundColor || "#666"} />
+                          </TableCell>
+                          <TableCell align="center">
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              onClick={() => navigate(`/mahasiswa/bimbingan/${b.id_bimbingan}`)}
+                              sx={{
+                                textTransform: "none", borderRadius: "10px",
+                                fontSize: 13, fontWeight: 600, px: 2,
+                                borderColor: COLORS.slate, color: COLORS.slate,
+                                "&:hover": { backgroundColor: COLORS.slateLight, borderColor: COLORS.slate },
                               }}
                             >
                               Detail

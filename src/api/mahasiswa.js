@@ -144,3 +144,33 @@ export const deleteProfilePhoto = async () => {
   const res = await api.delete("/mahasiswa/profile/foto");
   return res.data;
 };
+
+export const getRiwayatTim = async () => {
+  const res = await api.get("/mahasiswa/tim/riwayat");
+  return res.data;
+};
+
+export const lanjutInbis = async (payload) => {
+  const res = await api.post("/mahasiswa/tim/lanjut-inbis", payload);
+  return res.data;
+};
+
+export const getRiwayatProposal = async () => {
+  const res = await api.get("/mahasiswa/proposal/riwayat");
+  return res.data;
+};
+
+export const getRiwayatPembimbing = async () => {
+  const res = await api.get("/mahasiswa/pembimbing/riwayat");
+  return res.data;
+};
+
+export const getRiwayatBimbingan = async () => {
+  const res = await api.get("/mahasiswa/bimbingan/riwayat");
+  return res.data;
+};
+
+export const getRiwayatLuaran = async () => {
+  const res = await api.get("/mahasiswa/monev/riwayat");
+  return res.data;
+};
