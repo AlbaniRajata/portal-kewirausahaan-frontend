@@ -15,8 +15,9 @@ import {
   getMahasiswaList, getDosenList, getReviewerListKelola, getJuriListKelola,
   getProdi, createMahasiswa, updateMahasiswa, createDosen, updateDosen,
   createReviewer, updateReviewer, createJuri, updateJuri,
-  toggleUserActive, resetPassword,
+  toggleUserActive, resetPassword, getMyProgram,
 } from "../../api/admin";
+import { getAllProgram } from "../../api/public";
 
 const COLORS = {
   primary: "#0D59F2",
@@ -106,8 +107,8 @@ const TABS = [
 const emptyForms = {
   mahasiswa: { username: "", email: "", password: "", nama_lengkap: "", no_hp: "", alamat: "", nim: "", id_prodi: "", tahun_masuk: "" },
   dosen: { username: "", email: "", password: "", nama_lengkap: "", no_hp: "", alamat: "", nip: "", id_prodi: "", bidang_keahlian: "" },
-  reviewer: { username: "", email: "", password: "", nama_lengkap: "", no_hp: "", alamat: "", institusi: "", bidang_keahlian: "" },
-  juri: { username: "", email: "", password: "", nama_lengkap: "", no_hp: "", alamat: "", institusi: "", bidang_keahlian: "" },
+  reviewer: { username: "", email: "", password: "", nama_lengkap: "", no_hp: "", alamat: "", institusi: "", bidang_keahlian: "", id_program: "" },
+  juri: { username: "", email: "", password: "", nama_lengkap: "", no_hp: "", alamat: "", institusi: "", bidang_keahlian: "", id_program: "" },
 };
 
 const TAHUN_OPTIONS = Array.from({ length: 15 }, (_, i) => new Date().getFullYear() - i);
@@ -138,6 +139,8 @@ export default function KelolaPenggunaPage() {
   const [loading, setLoading] = useState(true);
   const [lists, setLists] = useState({ mahasiswa: [], dosen: [], reviewer: [], juri: [] });
   const [prodiList, setProdiList] = useState([]);
+  const [programList, setProgramList] = useState([]);
+  const [myProgram, setMyProgram] = useState(null);
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
 
@@ -205,6 +208,15 @@ export default function KelolaPenggunaPage() {
       const prodi = res.data || [];
       setProdiList(prodi);
     }).catch(() => {});
+
+    getAllProgram().then((res) => {
+      const programs = res.data || [];
+      setProgramList(programs);
+    }).catch(() => {});
+
+    getMyProgram().then((res) => {
+      setMyProgram(res.data || null);
+    }).catch(() => {});
   }, []);
 
   const setFilter = useCallback((key, val) => {
@@ -236,7 +248,11 @@ export default function KelolaPenggunaPage() {
   const paginatedList = filteredList.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
   const handleOpenCreate = () => {
-    setForm(emptyForms[tabKey]);
+    const f = { ...emptyForms[tabKey] };
+    if ((tabKey === "reviewer" || tabKey === "juri") && myProgram?.id_program) {
+      f.id_program = String(myProgram.id_program);
+    }
+    setForm(f);
     setErrors({});
     setShowPassword(false);
     setShowNewPassword(false);
@@ -253,7 +269,7 @@ export default function KelolaPenggunaPage() {
     };
     if (tabKey === "mahasiswa") Object.assign(f, { nim: user.nim || "", id_prodi: user.id_prodi || "", tahun_masuk: user.tahun_masuk || "" });
     else if (tabKey === "dosen") Object.assign(f, { nip: user.nip || "", id_prodi: user.id_prodi || "", bidang_keahlian: user.bidang_keahlian || "" });
-    else Object.assign(f, { institusi: user.institusi || "", bidang_keahlian: user.bidang_keahlian || "" });
+    else Object.assign(f, { institusi: user.institusi || "", bidang_keahlian: user.bidang_keahlian || "", id_program: user.id_program || "" });
     setForm(f);
     setErrors({});
     setShowPassword(false);
@@ -293,6 +309,9 @@ export default function KelolaPenggunaPage() {
     if (currentTabKey === "dosen") {
       if (!currentForm.nip?.trim()) e.nip = "NIP wajib diisi";
       if (!currentForm.id_prodi) e.id_prodi = "Prodi wajib dipilih";
+    }
+    if (currentTabKey === "reviewer" || currentTabKey === "juri") {
+      if (!currentForm.id_program) e.id_program = "Program wajib dipilih";
     }
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -595,7 +614,7 @@ export default function KelolaPenggunaPage() {
   const renderColumns = () => {
     if (tabKey === "mahasiswa") return ["NAMA LENGKAP", "NIM", "EMAIL", "PRODI", "TAHUN MASUK", "STATUS", "AKSI"];
     if (tabKey === "dosen") return ["NAMA LENGKAP", "NIP", "EMAIL", "PRODI", "BIDANG KEAHLIAN", "STATUS", "AKSI"];
-    return ["NAMA LENGKAP", "EMAIL", "INSTITUSI", "BIDANG KEAHLIAN", "STATUS", "AKSI"];
+    return ["NAMA LENGKAP", "EMAIL", "INSTITUSI", "PROGRAM", "BIDANG KEAHLIAN", "STATUS", "AKSI"];
   };
 
   const renderRow = (user) => {
@@ -634,6 +653,7 @@ export default function KelolaPenggunaPage() {
     } else {
       cells.push(<TableCell key="email"><Typography sx={{ fontSize: 13 }}>{user.email}</Typography></TableCell>);
       cells.push(<TableCell key="institusi"><Typography sx={{ fontSize: 13 }}>{user.institusi || "-"}</Typography></TableCell>);
+      cells.push(<TableCell key="program"><Typography sx={{ fontSize: 13, fontWeight: 600, color: COLORS.primaryDark }}>{user.nama_program || "-"}</Typography></TableCell>);
       cells.push(<TableCell key="keahlian"><Typography sx={{ fontSize: 13 }}>{user.bidang_keahlian || "-"}</Typography></TableCell>);
     }
     cells.push(<TableCell key="status"><StatusPill active={user.is_active} /></TableCell>);
@@ -849,6 +869,30 @@ export default function KelolaPenggunaPage() {
 
       {(currentTabKey === "reviewer" || currentTabKey === "juri") && (
         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3 }}>
+          <Box sx={{ gridColumn: { xs: "1", sm: "1 / -1" } }}>
+            <FieldLabel required>Program</FieldLabel>
+            <Autocomplete
+              fullWidth
+              size="small"
+              options={programList}
+              value={programList.find(p => String(p.id_program) === String(currentForm.id_program)) || null}
+              onChange={(e, value) => {
+                setForm({ ...currentForm, id_program: value ? String(value.id_program) : "" });
+                setErrors((prev) => ({ ...prev, id_program: "" }));
+              }}
+              getOptionLabel={(option) => option.nama_program || option.keterangan || ""}
+              isOptionEqualToValue={(option, value) => String(option.id_program) === String(value?.id_program)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  placeholder="Pilih program"
+                  error={!!errors.id_program}
+                  helperText={errors.id_program}
+                  sx={roundedField}
+                />
+              )}
+            />
+          </Box>
           <Box>
             <FieldLabel>Institusi</FieldLabel>
             <TextField

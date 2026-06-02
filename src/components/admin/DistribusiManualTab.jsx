@@ -342,18 +342,21 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
       .filter(Boolean)
   );
 
-  const reviewerTersedia = reviewers.filter(
+  const filteredReviewers = reviewers.filter(r => String(r.id_program) === String(id_program) && r.is_active);
+  const filteredJuries = juries.filter(j => String(j.id_program) === String(id_program) && j.is_active);
+
+  const reviewerTersedia = filteredReviewers.filter(
     (r) => !reviewerSudahAktif.has(normalizeId(r.id_user))
   );
-  const juriTersedia = juries.filter(
+  const juriTersedia = filteredJuries.filter(
     (j) => !juriSudahAktif.has(normalizeId(j.id_user))
   );
 
   const slotKosong = proposals.length;
   const reviewerOptions =
-    reviewerTersedia.length > 0 || slotKosong === 0 ? reviewerTersedia : reviewers;
+    reviewerTersedia.length > 0 || slotKosong === 0 ? reviewerTersedia : filteredReviewers;
   const juriOptions =
-    juriTersedia.length > 0 || slotKosong === 0 ? juriTersedia : juries;
+    juriTersedia.length > 0 || slotKosong === 0 ? juriTersedia : filteredJuries;
 
   const handleAssignTahap1 = async () => {
     if (!selectedReviewer1 || !selectedReviewer2) {
@@ -515,7 +518,7 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
   if (tahap === 1) {
     return (
       <DistribusiManualTahap1
-        reviewers={reviewers}
+        reviewerOptions={reviewerOptions}
         proposals={proposals}
         selectedReviewer1={selectedReviewer1}
         setSelectedReviewer1={setSelectedReviewer1}
@@ -554,7 +557,7 @@ export default function DistribusiManualTab({ id_program, tahap, onSuccess, onEr
 }
 
 function DistribusiManualTahap1({
-  reviewers,
+  reviewerOptions,
   proposals,
   selectedReviewer1,
   setSelectedReviewer1,
@@ -586,7 +589,7 @@ function DistribusiManualTahap1({
         <Box>
           <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 1, color: "#374151" }}>Reviewer 1</Typography>
           <Autocomplete
-            options={reviewers.filter((r) => !selectedReviewer2 || selectedReviewer2.id_user !== r.id_user)}
+            options={reviewerOptions.filter((r) => !selectedReviewer2 || selectedReviewer2.id_user !== r.id_user)}
             value={selectedReviewer1}
             onChange={(_, v) => setSelectedReviewer1(v)}
             getOptionLabel={(o) => o.nama_lengkap || ""}
@@ -615,7 +618,7 @@ function DistribusiManualTahap1({
         <Box>
           <Typography sx={{ fontSize: 13, fontWeight: 600, mb: 1, color: "#374151" }}>Reviewer 2</Typography>
           <Autocomplete
-            options={reviewers.filter((r) => !selectedReviewer1 || selectedReviewer1.id_user !== r.id_user)}
+            options={reviewerOptions.filter((r) => !selectedReviewer1 || selectedReviewer1.id_user !== r.id_user)}
             value={selectedReviewer2}
             onChange={(_, v) => setSelectedReviewer2(v)}
             getOptionLabel={(o) => o.nama_lengkap || ""}
