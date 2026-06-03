@@ -294,6 +294,7 @@ function StageSection({
 }) {
   const [kategoriFilter, setKategoriFilter] = useState("");
   const [tahunFilter, setTahunFilter]         = useState("");
+  const [searchFilter, setSearchFilter]     = useState("");
   const [expandedKeys, setExpandedKeys]     = useState([]);
   const [detailMap, setDetailMap]           = useState({});
   const [loadingKeys, setLoadingKeys]       = useState([]);
@@ -306,6 +307,12 @@ function StageSection({
   const filtered = list.filter(i => {
     if (kategoriFilter && i.nama_kategori !== kategoriFilter) return false;
     if (tahunFilter && String(new Date(getFinalisasiDateValue(i)).getFullYear()) !== tahunFilter) return false;
+    if (searchFilter) {
+      const q = searchFilter.toLowerCase();
+      const judul = (i.judul || "").toLowerCase();
+      const tim = (i.nama_tim || "").toLowerCase();
+      if (!judul.includes(q) && !tim.includes(q)) return false;
+    }
     return true;
   });
 
@@ -318,8 +325,8 @@ function StageSection({
 
   Object.keys(proposalsByCategory).forEach(cat => {
     proposalsByCategory[cat].sort((a, b) => {
-      const valA = tahap === 1 ? (a.rata_rata_nilai || 0) : (a.nilai_akhir || 0);
-      const valB = tahap === 1 ? (b.rata_rata_nilai || 0) : (b.nilai_akhir || 0);
+      const valA = tahap === 1 ? (a.rata_rata_nilai || 0) : (a.nilai_rata_rata || 0);
+      const valB = tahap === 1 ? (b.rata_rata_nilai || 0) : (b.nilai_rata_rata || 0);
       return valB - valA;
     });
   });
@@ -351,6 +358,13 @@ function StageSection({
         mb: 4, gap: 2, flexWrap: "wrap",
       }}>
         <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", alignItems: "center" }}>
+          <TextField
+            placeholder="Cari proposal atau tim..."
+            size="small"
+            value={searchFilter}
+            onChange={(e) => setSearchFilter(e.target.value)}
+            sx={{ ...roundedField, minWidth: 220 }}
+          />
           <TextField
             select size="small"
             value={kategoriFilter}
@@ -528,6 +542,13 @@ export default function HistoryPenilaianTab({ id_program }) {
 
   const handleExportXlsx = async (tahap, filtered) => {
     if (filtered.length === 0) return Swal.fire({ icon: "info", title: "Tidak ada data", text: "Tidak ada data untuk diekspor", confirmButtonColor: COLORS.primary });
+
+    Swal.fire({
+      title: "Menyiapkan Data",
+      text: "Sedang mengumpulkan data proposal...",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
+    });
     
     setExportingTahap(tahap);
     try {
@@ -675,6 +696,7 @@ export default function HistoryPenilaianTab({ id_program }) {
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+      Swal.close();
     } catch (e) {
       Swal.fire({ icon: "error", title: "Gagal", text: "Gagal mengekspor data", confirmButtonColor: COLORS.primary });
     } finally {

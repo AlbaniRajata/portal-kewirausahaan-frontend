@@ -40,18 +40,26 @@ const roundedField = {
 
 const tableHeadCell = {
   fontWeight: 800,
-  fontSize: 11,
+  fontSize: 12,
   color: "#475569",
-  backgroundColor: "#F8FAFC",
-  py: 2,
   textTransform: "uppercase",
   letterSpacing: "0.05em",
+  backgroundColor: "#F8FAFC",
   borderBottom: `2px solid ${COLORS.primaryMuted}`,
+  py: 2.5,
 };
 
 const tableBodyRow = {
-  "& td": { borderBottom: `1px solid ${COLORS.slateLight}`, py: 2 },
-  "&:hover": { backgroundColor: "#F8FAFC" },
+  "&:hover": { backgroundColor: "#F1F5F9/50" },
+  "& td": { borderBottom: "1.5px solid #E2E8F0", py: 2 },
+};
+
+const pageCard = {
+  borderRadius: "20px",
+  border: "1.5px solid #E2E8F0",
+  overflow: "hidden",
+  boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+  position: "relative",
 };
 
 const ROWS_PER_PAGE = 10;
@@ -192,6 +200,7 @@ export default function RekapTahap2Tab({ id_program }) {
   const [selected, setSelected]         = useState([]);
   const [submitting, setSubmitting]     = useState(false);
   const [kategoriFilter, setKategoriFilter] = useState("");
+  const [searchFilter, setSearchFilter] = useState("");
   const [expandedKeys, setExpandedKeys] = useState([]);
   const [detailMap, setDetailMap]       = useState({});
   const [loadingKeys, setLoadingKeys]   = useState([]);
@@ -308,7 +317,7 @@ export default function RekapTahap2Tab({ id_program }) {
         rows.push([catatans]);
 
         const ws = XLSX.utils.aoa_to_sheet(rows);
-        const headerStyle = { font: { bold: true }, fill: { fgColor: { rgb: "F1F5F9" } }, border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } } };
+        const headerStyle = { font: { bold: true }, border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } } };
         const cellStyle = { border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } } };
 
         const range = XLSX.utils.decode_range(ws["!ref"]);
@@ -357,21 +366,21 @@ export default function RekapTahap2Tab({ id_program }) {
   const filteredList = proposalList.filter((p) => {
     if (p.status !== 5) return false;
     if (kategoriFilter && p.nama_kategori !== kategoriFilter) return false;
+    if (searchFilter) {
+      const q = searchFilter.toLowerCase();
+      const judul = (p.judul || "").toLowerCase();
+      const tim = (p.nama_tim || "").toLowerCase();
+      if (!judul.includes(q) && !tim.includes(q)) return false;
+    }
     return true;
   });
 
-  const proposalsByCategory = filteredList.reduce((acc, p) => {
-    const cat = p.nama_kategori || "Tanpa Kategori";
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(p);
-    return acc;
-  }, {});
-
-  Object.keys(proposalsByCategory).forEach(cat => {
-    proposalsByCategory[cat].sort((a, b) => (b.nilai_rata_rata || 0) - (a.nilai_rata_rata || 0));
+  const sortedList = [...filteredList].sort((a, b) => {
+    const catA = a.nama_kategori || "Tanpa Kategori";
+    const catB = b.nama_kategori || "Tanpa Kategori";
+    if (catA !== catB) return catA.localeCompare(catB, "id-ID");
+    return (b.nilai_rata_rata || 0) - (a.nilai_rata_rata || 0);
   });
-
-  useEffect(() => { setSelected([]); }, [kategoriFilter]);
 
   const handleSelectOne = (id) => setSelected((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
 
@@ -391,8 +400,8 @@ export default function RekapTahap2Tab({ id_program }) {
     if (!result.isConfirmed) return;
     try {
       setSubmitting(true);
-      await finalisasiWawancaraBatch(id_program, isLolos ? { lolos: selected, tidak_lolos: [] } : { lolos: [], tidak_lolos: selected });
-      await Swal.fire({ icon: "success", title: "Berhasil", text: "Finalisasi berhasil", timer: 2000, timerProgressBar: true, showConfirmButton: false });
+      const res2 = await finalisasiWawancaraBatch(id_program, isLolos ? { lolos: selected, tidak_lolos: [] } : { lolos: [], tidak_lolos: selected });
+      await Swal.fire({ icon: "success", title: "Berhasil", text: res2.message || "Finalisasi berhasil", timer: 3000, timerProgressBar: true, showConfirmButton: false });
       setSelected([]);
       fetchProposals();
     } catch (err) {
@@ -470,6 +479,13 @@ export default function RekapTahap2Tab({ id_program }) {
       }}>
         <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", alignItems: "center" }}>
           <TextField
+            placeholder="Cari proposal atau tim..."
+            size="small"
+            value={searchFilter}
+            onChange={(e) => setSearchFilter(e.target.value)}
+            sx={{ ...roundedField, minWidth: 220 }}
+          />
+          <TextField
             select size="small"
             value={kategoriFilter}
             onChange={(e) => setKategoriFilter(e.target.value)}
@@ -532,73 +548,72 @@ export default function RekapTahap2Tab({ id_program }) {
           </Typography>
         </Box>
       ) : (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 5 }}>
-          {Object.entries(proposalsByCategory).map(([category, items]) => (
-            <Box key={category}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2, px: 1 }}>
-                <Typography sx={{ fontSize: 16, fontWeight: 800, color: "#1E293B", letterSpacing: "-0.01em" }}>
-                  {category}
-                </Typography>
-                <Chip 
-                  label={`${items.length} Proposal`} 
-                  size="small" 
-                  sx={{ fontWeight: 700, fontSize: 11, backgroundColor: "#E2E8F0", color: "#475569", borderRadius: "6px" }} 
-                />
-              </Box>
-
-              <TableContainer sx={{
-                borderRadius: "16px", border: `1px solid #E2E8F0`,
-                overflowX: "auto", backgroundColor: "#fff",
-                boxShadow: "0 2px 10px rgba(0,0,0,0.02)"
-              }}>
-                <Table sx={{ minWidth: 1000 }}>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell padding="checkbox" sx={{ ...tableHeadCell, pl: 2 }}>
-                        <Checkbox
-                          size="small"
-                          checked={items.length > 0 && items.filter(p => {
+        <Paper elevation={0} sx={{ ...pageCard, mb: 3 }}>
+            <TableContainer sx={{
+              borderRadius: "16px", border: `1.5px solid ${COLORS.slateLight}`,
+              overflowX: "auto", backgroundColor: "#fff",
+              boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)"
+            }}>
+              <Table sx={{ minWidth: 1100 }}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell padding="checkbox" sx={{ ...tableHeadCell, pl: 2 }}>
+                      <Checkbox
+                        size="small"
+                        checked={sortedList.length > 0 && sortedList.filter(p => {
+                          const totalPanel  = p.total_panel || 0;
+                          const totalSubmit = p.total_submit || 0;
+                          return p.status === 5 && totalSubmit === totalPanel && totalPanel > 0;
+                        }).every(p => selected.includes(p.id_proposal))}
+                        indeterminate={sortedList.some(p => selected.includes(p.id_proposal)) && !sortedList.every(p => selected.includes(p.id_proposal))}
+                        onChange={(e) => {
+                          const ids = sortedList.filter(p => {
                             const totalPanel  = p.total_panel || 0;
                             const totalSubmit = p.total_submit || 0;
                             return p.status === 5 && totalSubmit === totalPanel && totalPanel > 0;
-                          }).every(p => selected.includes(p.id_proposal))}
-                          indeterminate={items.some(p => selected.includes(p.id_proposal)) && !items.every(p => selected.includes(p.id_proposal))}
-                          onChange={(e) => {
-                            const ids = items.filter(p => {
-                              const totalPanel  = p.total_panel || 0;
-                              const totalSubmit = p.total_submit || 0;
-                              return p.status === 5 && totalSubmit === totalPanel && totalPanel > 0;
-                            }).map(p => p.id_proposal);
-                            if (e.target.checked) {
-                              setSelected(prev => Array.from(new Set([...prev, ...ids])));
-                            } else {
-                              setSelected(prev => prev.filter(id => !ids.includes(id)));
-                            }
-                          }}
-                          sx={{ color: COLORS.primaryMuted, "&.Mui-checked": { color: COLORS.primary } }}
-                        />
+                          }).map(p => p.id_proposal);
+                          if (e.target.checked) {
+                            setSelected(prev => Array.from(new Set([...prev, ...ids])));
+                          } else {
+                            setSelected(prev => prev.filter(id => !ids.includes(id)));
+                          }
+                        }}
+                        sx={{ color: COLORS.primaryMuted, "&.Mui-checked": { color: COLORS.primary } }}
+                      />
+                    </TableCell>
+                    {["Rank", "Judul Proposal", "Kategori", "Tim", "Reviewer", "Juri", "Rata-rata", "Status", "Aksi"].map((h, i) => (
+                      <TableCell 
+                        key={i} 
+                        sx={{ 
+                          ...tableHeadCell, 
+                          ...(i === 0 ? { textAlign: "center", width: 60 } : {}),
+                          ...(i >= 4 && i <= 7 ? { textAlign: "center" } : {}),
+                          ...(i === 8 && { textAlign: "center", width: 100 }) 
+                        }}
+                      >
+                        {h}
                       </TableCell>
-                      {["Rank", "Judul Proposal", "Tim", "Reviewer", "Juri", "Rata-rata", "Status", ""].map((h, i) => (
-                        <TableCell 
-                          key={i} 
-                          sx={{ 
-                            ...tableHeadCell, 
-                            ...(i === 0 ? { textAlign: "center", width: 60 } : {}),
-                            ...(i >= 3 && i <= 6 ? { textAlign: "center" } : {}),
-                            ...(i === 7 && { textAlign: "right", width: 100 }) 
-                          }}
-                        >
-                          {h}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {items.map((p, idx) => {
+                    ))}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {(() => {
+                    let currentCategory = null;
+                    let currentRank = 0;
+
+                    return sortedList.map((p, idx) => {
                       const isFinalisable = p.status === 5 && (p.total_submit || 0) === (p.total_panel || 0) && (p.total_panel || 0) > 0;
                       const isSelected    = selected.includes(p.id_proposal);
                       const key           = getKey(p.id_proposal);
                       const isExpanded    = expandedKeys.includes(key);
+
+                      const cat = p.nama_kategori || "Tanpa Kategori";
+                      if (cat !== currentCategory) {
+                        currentCategory = cat;
+                        currentRank = 1;
+                      } else {
+                        currentRank += 1;
+                      }
 
                       return (
                         <Fragment key={key}>
@@ -612,7 +627,7 @@ export default function RekapTahap2Tab({ id_program }) {
                             hover
                             onClick={() => toggleExpand(p)}
                           >
-                            <TableCell padding="checkbox" sx={{ pl: 2 }}>
+                            <TableCell padding="checkbox" sx={{ pl: 2 }} onClick={(e) => e.stopPropagation()}>
                               <Checkbox
                                 size="small"
                                 checked={isSelected}
@@ -624,18 +639,21 @@ export default function RekapTahap2Tab({ id_program }) {
                             <TableCell align="center">
                               <Box sx={{ 
                                 width: 24, height: 24, borderRadius: "50%", 
-                                backgroundColor: idx < 3 ? COLORS.primaryLight : "#F1F5F9",
-                                color: idx < 3 ? COLORS.primary : COLORS.slate,
+                                backgroundColor: currentRank <= 3 ? COLORS.primaryLight : "#F1F5F9",
+                                color: currentRank <= 3 ? COLORS.primary : COLORS.slate,
                                 display: "flex", alignItems: "center", justifyContent: "center",
                                 fontWeight: 800, fontSize: 10, mx: "auto"
                               }}>
-                                {idx + 1}
+                                {currentRank}
                               </Box>
                             </TableCell>
                             <TableCell>
                               <Typography sx={{ fontWeight: 700, fontSize: 13, color: "#1E293B", maxWidth: 350, lineHeight: 1.4 }}>
                                 {p.judul}
                               </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography sx={{ fontSize: 12, color: COLORS.slate }}>{cat}</Typography>
                             </TableCell>
                             <TableCell>
                               <Typography sx={{ fontSize: 12, color: COLORS.slate }}>{p.nama_tim}</Typography>
@@ -661,7 +679,7 @@ export default function RekapTahap2Tab({ id_program }) {
                             <TableCell align="center">
                               <StatusPill status={p.status} totalPanel={p.total_panel} totalSubmit={p.total_submit} />
                             </TableCell>
-                            <TableCell sx={{ textAlign: "right", pr: 2 }}>
+                            <TableCell align="center">
                               <Button
                                 size="small" variant="text"
                                 endIcon={isExpanded ? <KeyboardArrowDown /> : <KeyboardArrowRight />}
@@ -673,7 +691,7 @@ export default function RekapTahap2Tab({ id_program }) {
                             </TableCell>
                           </TableRow>
                           <TableRow>
-                            <TableCell sx={{ p: 0, borderBottom: isExpanded ? `1px solid #E2E8F0` : 0 }} colSpan={9}>
+                            <TableCell sx={{ p: 0, borderBottom: isExpanded ? `1.5px solid #E2E8F0` : 0 }} colSpan={10}>
                               <Collapse in={isExpanded} timeout="auto" unmountOnExit>
                                 <Box sx={{ px: 3, py: 2, backgroundColor: "#F8FAFC" }}>
                                   {renderExpanded(p)}
@@ -683,13 +701,12 @@ export default function RekapTahap2Tab({ id_program }) {
                           </TableRow>
                         </Fragment>
                       );
-                    })}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Box>
-          ))}
-        </Box>
+                    });
+                  })()}
+                </TableBody>
+              </Table>
+            </TableContainer>
+        </Paper>
       )}
     </Box>
   );

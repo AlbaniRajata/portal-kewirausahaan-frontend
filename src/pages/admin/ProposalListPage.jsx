@@ -214,7 +214,7 @@ export default function ProposalListPage() {
   const [exporting, setExporting]       = useState(false);
   const rowsPerPage = 10;
 
-  const [filters, setFilters] = useState({ kategori: "", status: [], tahun: "" });
+  const [filters, setFilters] = useState({ kategori: "", status: [], tahun: "", search: "" });
 
   const fetchProposals = useCallback(async () => {
     try {
@@ -282,17 +282,31 @@ export default function ProposalListPage() {
 
   const normalizedKategoriFilter = filters.kategori.trim().toLowerCase();
 
+  const searchFilter = filters.search.toLowerCase();
   const filteredProposalList = proposalList.filter((item) => {
     const d = item.tanggal_submit || item.created_at;
     const matchesTahun = filters.tahun === "" || (d && new Date(d).getFullYear() === Number(filters.tahun));
     const kategoriName = getKategoriName(item).trim().toLowerCase();
     const matchesKategori = filters.kategori === "" || kategoriName === normalizedKategoriFilter;
-    return matchesTahun && matchesKategori;
+    
+    let matchesSearch = true;
+    if (searchFilter) {
+      const judul = (item.judul || "").toLowerCase();
+      const namaTim = (item.nama_tim || "").toLowerCase();
+      const ketua = (item.ketua?.nama_lengkap || item.ketua?.username || "").toLowerCase();
+      const pembimbing = getDosenPembimbingName(item).toLowerCase();
+      matchesSearch = judul.includes(searchFilter) || 
+                      namaTim.includes(searchFilter) || 
+                      ketua.includes(searchFilter) || 
+                      pembimbing.includes(searchFilter);
+    }
+    
+    return matchesTahun && matchesKategori && matchesSearch;
   });
 
   useEffect(() => {
     setPage(1);
-  }, [filters.kategori, filters.tahun]);
+  }, [filters.kategori, filters.tahun, filters.search]);
 
   const totalPages    = Math.ceil(filteredProposalList.length / rowsPerPage);
   const paginatedList = filteredProposalList.slice((page - 1) * rowsPerPage, page * rowsPerPage);
@@ -471,6 +485,18 @@ export default function ProposalListPage() {
                 flexDirection: { xs: "column", lg: "row" },
                 alignItems: { xs: "stretch", lg: "center" },
               }}>
+                <TextField
+                  placeholder="Cari proposal atau tim..."
+                  size="small"
+                  value={filters.search}
+                  onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                  sx={{
+                    ...roundedField,
+                    width: { xs: "100%", lg: "auto" },
+                    minWidth: { xs: 0, lg: 220 },
+                    flex: { lg: "0 1 220px" },
+                  }}
+                />
                 <Autocomplete
                   multiple
                   options={statusOptions}

@@ -40,18 +40,26 @@ const roundedField = {
 
 const tableHeadCell = {
   fontWeight: 800,
-  fontSize: 11,
+  fontSize: 12,
   color: "#475569",
-  backgroundColor: "#F8FAFC",
-  py: 2,
   textTransform: "uppercase",
   letterSpacing: "0.05em",
+  backgroundColor: "#F8FAFC",
   borderBottom: `2px solid ${COLORS.primaryMuted}`,
+  py: 2.5,
 };
 
 const tableBodyRow = {
-  "& td": { borderBottom: `1px solid ${COLORS.slateLight}`, py: 2 },
-  "&:hover": { backgroundColor: "#F8FAFC" },
+  "&:hover": { backgroundColor: "#F1F5F9/50" },
+  "& td": { borderBottom: "1.5px solid #E2E8F0", py: 2 },
+};
+
+const pageCard = {
+  borderRadius: "20px",
+  border: "1.5px solid #E2E8F0",
+  overflow: "hidden",
+  boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+  position: "relative",
 };
 
 const ROWS_PER_PAGE = 10;
@@ -193,6 +201,7 @@ export default function RekapTahap1Tab({ id_program }) {
   const [selected, setSelected]         = useState([]);
   const [submitting, setSubmitting]     = useState(false);
   const [kategoriFilter, setKategoriFilter] = useState("");
+  const [searchFilter, setSearchFilter] = useState("");
   const [expandedKeys, setExpandedKeys] = useState([]);
   const [detailMap, setDetailMap]       = useState({});
   const [loadingKeys, setLoadingKeys]   = useState([]);
@@ -307,7 +316,7 @@ export default function RekapTahap1Tab({ id_program }) {
         const ws = XLSX.utils.aoa_to_sheet(rows);
 
         // Styling
-        const headerStyle = { font: { bold: true }, fill: { fgColor: { rgb: "F1F5F9" } }, border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } } };
+        const headerStyle = { font: { bold: true }, border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } } };
         const cellStyle = { border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } } };
 
         const range = XLSX.utils.decode_range(ws["!ref"]);
@@ -356,6 +365,12 @@ export default function RekapTahap1Tab({ id_program }) {
   const filteredList = proposalList.filter((p) => {
     if (p.status !== 2) return false;
     if (kategoriFilter && p.nama_kategori !== kategoriFilter) return false;
+    if (searchFilter) {
+      const q = searchFilter.toLowerCase();
+      const judul = (p.judul || "").toLowerCase();
+      const tim = (p.nama_tim || "").toLowerCase();
+      if (!judul.includes(q) && !tim.includes(q)) return false;
+    }
     return true;
   });
 
@@ -390,8 +405,8 @@ export default function RekapTahap1Tab({ id_program }) {
     if (!result.isConfirmed) return;
     try {
       setSubmitting(true);
-      await finalisasiDeskBatch(id_program, isLolos ? { lolos: selected, tidak_lolos: [] } : { lolos: [], tidak_lolos: selected });
-      await Swal.fire({ icon: "success", title: "Berhasil", text: "Finalisasi berhasil", timer: 2000, timerProgressBar: true, showConfirmButton: false });
+      const res1 = await finalisasiDeskBatch(id_program, isLolos ? { lolos: selected, tidak_lolos: [] } : { lolos: [], tidak_lolos: selected });
+      await Swal.fire({ icon: "success", title: "Berhasil", text: res1.message || "Finalisasi berhasil", timer: 3000, timerProgressBar: true, showConfirmButton: false });
       setSelected([]);
       fetchProposals();
     } catch (err) {
@@ -443,6 +458,13 @@ export default function RekapTahap1Tab({ id_program }) {
         mb: 4, gap: 2, flexWrap: "wrap",
       }}>
         <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", alignItems: "center" }}>
+          <TextField
+            placeholder="Cari proposal atau tim..."
+            size="small"
+            value={searchFilter}
+            onChange={(e) => setSearchFilter(e.target.value)}
+            sx={{ ...roundedField, minWidth: 220 }}
+          />
           <TextField
             select size="small"
             value={kategoriFilter}
@@ -520,10 +542,9 @@ export default function RekapTahap1Tab({ id_program }) {
                 />
               </Box>
 
+              <Paper elevation={0} sx={{ ...pageCard, mb: 3 }}>
               <TableContainer sx={{
-                borderRadius: "16px", border: `1px solid #E2E8F0`,
                 overflowX: "auto", backgroundColor: "#fff",
-                boxShadow: "0 2px 10px rgba(0,0,0,0.02)"
               }}>
                 <Table sx={{ minWidth: 1000 }}>
                   <TableHead>
@@ -644,7 +665,7 @@ export default function RekapTahap1Tab({ id_program }) {
                             </TableCell>
                           </TableRow>
                           <TableRow>
-                            <TableCell sx={{ p: 0, borderBottom: isExpanded ? `1px solid #E2E8F0` : 0 }} colSpan={8}>
+                            <TableCell sx={{ p: 0, borderBottom: isExpanded ? `1.5px solid #E2E8F0` : 0 }} colSpan={8}>
                               <Collapse in={isExpanded} timeout="auto" unmountOnExit>
                                 <Box sx={{ px: 3, py: 2, backgroundColor: "#F8FAFC" }}>
                                   {renderExpanded(p)}
@@ -658,6 +679,7 @@ export default function RekapTahap1Tab({ id_program }) {
                   </TableBody>
                 </Table>
               </TableContainer>
+              </Paper>
             </Box>
           ))}
         </Box>
