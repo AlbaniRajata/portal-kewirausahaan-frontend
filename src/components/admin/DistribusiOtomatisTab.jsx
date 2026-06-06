@@ -232,7 +232,27 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
       setExecuting(true);
 
       if (tahap === 1) {
-        await executeAutoDistribusi(id_program, tahap);
+        const res = await executeAutoDistribusi(id_program, tahap);
+        if (res?.data?.ada_tidak_lengkap) {
+          await Swal.fire({
+            icon: "warning",
+            title: "Distribusi Sebagian Selesai",
+            html: `<b>${res.data.total_lengkap} proposal</b> berhasil didistribusikan ke 2 reviewer.<br/><br/>
+                   <b style="color:#DC2626">${res.data.tidak_lengkap.length} proposal</b> tidak dapat didistribusikan secara lengkap karena jumlah reviewer tidak mencukupi.<br/><br/>
+                   Silakan gunakan tab <b>Distribusi Manual</b> untuk proposal-proposal tersebut.`,
+            confirmButtonColor: COLORS.primary,
+            confirmButtonText: "Mengerti",
+          });
+        } else {
+          await Swal.fire({
+            icon: "success",
+            title: "Berhasil",
+            text: "Distribusi berhasil dieksekusi",
+            timer: 2000,
+            timerProgressBar: true,
+            showConfirmButton: false,
+          });
+        }
       } else {
         const rencana = preview?.rencana_distribusi || [];
         if (rencana.length === 0) {
@@ -260,16 +280,16 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
             await executeManualDistribusiTahap2(id_program, { id_proposal, id_reviewer, id_juri });
           }
         }
-      }
 
-      await Swal.fire({
-        icon: "success",
-        title: "Berhasil",
-        text: "Distribusi berhasil dieksekusi",
-        timer: 2000,
-        timerProgressBar: true,
-        showConfirmButton: false,
-      });
+        await Swal.fire({
+          icon: "success",
+          title: "Berhasil",
+          text: "Distribusi berhasil dieksekusi",
+          timer: 2000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+        });
+      }
 
       if (onSuccess) onSuccess("Distribusi berhasil dieksekusi");
       fetchPreview();
@@ -559,6 +579,89 @@ export default function DistribusiOtomatisTab({ id_program, tahap, onSuccess, on
                 shape="rounded"
               />
             </Box>
+          </Box>
+        )}
+
+        {/* Warning: proposals that cannot be fully distributed automatically */}
+        {tahap === 1 && preview.rencana_tidak_lengkap && preview.rencana_tidak_lengkap.length > 0 && (
+          <Box>
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 2.5,
+                borderRadius: "16px",
+                backgroundColor: "#fff5f5",
+                border: `1.5px solid #fecaca`,
+                mb: 2,
+              }}
+            >
+              <Typography sx={{ fontSize: 14, fontWeight: 700, color: COLORS.error, mb: 0.5 }}>
+                ⚠️ {preview.rencana_tidak_lengkap.length} Proposal Tidak Dapat Didistribusikan Otomatis
+              </Typography>
+              <Typography sx={{ fontSize: 13, color: "#374151" }}>
+                Jumlah reviewer aktif (<b>{preview.total_reviewer}</b>) tidak mencukupi untuk mendistribusikan
+                proposal-proposal berikut ke 2 reviewer. Setelah eksekusi, gunakan tab{" "}
+                <b>Distribusi Manual</b> untuk melengkapi distribusi.
+              </Typography>
+            </Paper>
+            <TableContainer
+              sx={{
+                borderRadius: "16px",
+                border: `1.5px solid #fecaca`,
+                backgroundColor: "#fff",
+                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)",
+                overflow: "auto",
+              }}
+            >
+              <Table size="small">
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: "#fff5f5" }}>
+                    <TableCell sx={{ ...tableHeadCell, fontSize: 12, backgroundColor: "#fff5f5", borderBottom: `2px solid #fecaca` }}>
+                      PROPOSAL
+                    </TableCell>
+                    <TableCell sx={{ ...tableHeadCell, fontSize: 12, backgroundColor: "#fff5f5", borderBottom: `2px solid #fecaca` }}>
+                      KATEGORI
+                    </TableCell>
+                    <TableCell sx={{ ...tableHeadCell, fontSize: 12, backgroundColor: "#fff5f5", borderBottom: `2px solid #fecaca` }}>
+                      REVIEWER TERSEDIA
+                    </TableCell>
+                    <TableCell sx={{ ...tableHeadCell, fontSize: 12, backgroundColor: "#fff5f5", borderBottom: `2px solid #fecaca` }}>
+                      STATUS
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {(preview.rencana_tidak_lengkap || []).map((item) => (
+                    <TableRow key={item.id_proposal} sx={tableBodyRow}>
+                      <TableCell>
+                        <Typography sx={{ fontSize: 12, maxWidth: 250 }}>{item.judul}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography sx={{ fontSize: 12 }}>{item.nama_kategori || "-"}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography sx={{ fontSize: 12, fontWeight: 500 }}>
+                          {item.reviewer1?.nama_lengkap || "Tidak ada"}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label="Perlu Distribusi Manual"
+                          size="small"
+                          sx={{
+                            backgroundColor: "#fee2e2",
+                            color: COLORS.error,
+                            fontWeight: 700,
+                            fontSize: 11,
+                            borderRadius: "6px",
+                          }}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
           </Box>
         )}
 
