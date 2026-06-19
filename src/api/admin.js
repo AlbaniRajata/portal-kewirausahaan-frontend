@@ -344,6 +344,7 @@ export const getDosenList = async (filters = {}) => {
   if (filters.search) params.append("search", filters.search);
   if (filters.is_active !== undefined && filters.is_active !== "") params.append("is_active", filters.is_active);
   if (filters.id_prodi) params.append("id_prodi", filters.id_prodi);
+  if (filters.id_jurusan) params.append("id_jurusan", filters.id_jurusan);
   if (filters.status_verifikasi !== undefined && filters.status_verifikasi !== "") params.append("status_verifikasi", filters.status_verifikasi);
   if (filters.page) params.append("page", filters.page);
   if (filters.limit) params.append("limit", filters.limit);

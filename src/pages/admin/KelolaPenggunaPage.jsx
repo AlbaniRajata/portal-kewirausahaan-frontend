@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Box, Paper, Typography, Tabs, Tab, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Button, Dialog,
@@ -106,7 +106,7 @@ const TABS = [
 
 const emptyForms = {
   mahasiswa: { username: "", email: "", password: "", nama_lengkap: "", no_hp: "", alamat: "", nim: "", id_prodi: "", tahun_masuk: "" },
-  dosen: { username: "", email: "", password: "", nama_lengkap: "", no_hp: "", alamat: "", nip: "", id_prodi: "", bidang_keahlian: "" },
+  dosen: { username: "", email: "", password: "", nama_lengkap: "", no_hp: "", alamat: "", nip: "", id_prodi: "", id_jurusan: "", bidang_keahlian: "" },
   reviewer: { username: "", email: "", password: "", nama_lengkap: "", no_hp: "", alamat: "", institusi: "", bidang_keahlian: "", id_program: "" },
   juri: { username: "", email: "", password: "", nama_lengkap: "", no_hp: "", alamat: "", institusi: "", bidang_keahlian: "", id_program: "" },
 };
@@ -115,7 +115,7 @@ const TAHUN_OPTIONS = Array.from({ length: 15 }, (_, i) => new Date().getFullYea
 
 const initFilters = {
   mahasiswa: { search: "", is_active: "", id_prodi: "", tahun: "" },
-  dosen: { search: "", is_active: "", id_prodi: "", tahun: "" },
+  dosen: { search: "", is_active: "", id_jurusan: "", tahun: "" },
   reviewer: { search: "", is_active: "", tahun: "" },
   juri: { search: "", is_active: "", tahun: "" },
 };
@@ -140,6 +140,15 @@ export default function KelolaPenggunaPage() {
   const [lists, setLists] = useState({ mahasiswa: [], dosen: [], reviewer: [], juri: [] });
   const [prodiList, setProdiList] = useState([]);
   const [programList, setProgramList] = useState([]);
+  const jurusanOptions = useMemo(() => {
+    const map = new Map();
+    prodiList.forEach((p) => {
+      if (p.id_jurusan && p.nama_jurusan) {
+        map.set(Number(p.id_jurusan), { id_jurusan: Number(p.id_jurusan), nama_jurusan: p.nama_jurusan });
+      }
+    });
+    return Array.from(map.values());
+  }, [prodiList]);
   const [myProgram, setMyProgram] = useState(null);
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
@@ -163,6 +172,7 @@ export default function KelolaPenggunaPage() {
       if (f.search) params.search = f.search;
       if (f.is_active !== "") params.is_active = f.is_active;
       if (f.id_prodi) params.id_prodi = f.id_prodi;
+      if (f.id_jurusan) params.id_jurusan = f.id_jurusan;
 
       let res;
       if (role === "mahasiswa" || role === "dosen") {
@@ -268,7 +278,7 @@ export default function KelolaPenggunaPage() {
       new_password: "",
     };
     if (tabKey === "mahasiswa") Object.assign(f, { nim: user.nim || "", id_prodi: user.id_prodi || "", tahun_masuk: user.tahun_masuk || "" });
-    else if (tabKey === "dosen") Object.assign(f, { nip: user.nip || "", id_prodi: user.id_prodi || "", bidang_keahlian: user.bidang_keahlian || "" });
+    else if (tabKey === "dosen") Object.assign(f, { nip: user.nip || "", id_prodi: user.id_prodi || "", id_jurusan: user.id_jurusan || "", bidang_keahlian: user.bidang_keahlian || "" });
     else Object.assign(f, { institusi: user.institusi || "", bidang_keahlian: user.bidang_keahlian || "", id_program: user.id_program || "" });
     setForm(f);
     setErrors({});
@@ -308,6 +318,7 @@ export default function KelolaPenggunaPage() {
     }
     if (currentTabKey === "dosen") {
       if (!currentForm.nip?.trim()) e.nip = "NIP wajib diisi";
+      if (!currentForm.id_jurusan) e.id_jurusan = "Jurusan wajib dipilih";
       if (!currentForm.id_prodi) e.id_prodi = "Prodi wajib dipilih";
     }
     if (currentTabKey === "reviewer" || currentTabKey === "juri") {
@@ -560,23 +571,20 @@ export default function KelolaPenggunaPage() {
       {tabKey === "dosen" && (
         <Autocomplete
           size="small"
-          options={prodiList}
-          value={findProdiOption(currentFilter.id_prodi)}
-          onChange={(e, value) => setFilter("id_prodi", value ? String(value.id_prodi) : "")}
-          getOptionLabel={(option) => formatProdiLabel(option)}
-          isOptionEqualToValue={(option, value) => String(option.id_prodi) === String(value?.id_prodi)}
+          options={jurusanOptions}
+          value={jurusanOptions.find((j) => String(j.id_jurusan) === String(currentFilter.id_jurusan)) || null}
+          onChange={(e, value) => setFilter("id_jurusan", value ? String(value.id_jurusan) : "")}
+          getOptionLabel={(option) => option.nama_jurusan}
+          isOptionEqualToValue={(option, value) => String(option.id_jurusan) === String(value?.id_jurusan)}
           filterOptions={(options, { inputValue }) => {
             if (!inputValue) return options;
             const s = inputValue.toLowerCase();
             return options.filter((o) =>
-              String(o?.nama_prodi || "").toLowerCase().includes(s) ||
-              String(o?.jenjang || "").toLowerCase().includes(s) ||
-              String(o?.nama_jurusan || "").toLowerCase().includes(s) ||
-              String(o?.nama_kampus || "").toLowerCase().includes(s)
+              String(o?.nama_jurusan || "").toLowerCase().includes(s)
             );
           }}
           renderInput={(params) => (
-            <TextField {...params} placeholder="Ketik atau pilih prodi" sx={roundedField} />
+            <TextField {...params} placeholder="Ketik atau pilih jurusan" sx={roundedField} />
           )}
           sx={{
             width: { xs: "100%", xl: "auto" },
@@ -613,7 +621,7 @@ export default function KelolaPenggunaPage() {
 
   const renderColumns = () => {
     if (tabKey === "mahasiswa") return ["NAMA LENGKAP", "NIM", "EMAIL", "PRODI", "TAHUN MASUK", "STATUS", "AKSI"];
-    if (tabKey === "dosen") return ["NAMA LENGKAP", "NIP", "EMAIL", "PRODI", "BIDANG KEAHLIAN", "STATUS", "AKSI"];
+    if (tabKey === "dosen") return ["NAMA LENGKAP", "NIP", "EMAIL", "JURUSAN", "BIDANG KEAHLIAN", "STATUS", "AKSI"];
     return ["NAMA LENGKAP", "EMAIL", "INSTITUSI", "PROGRAM", "BIDANG KEAHLIAN", "STATUS", "AKSI"];
   };
 
@@ -641,10 +649,10 @@ export default function KelolaPenggunaPage() {
       cells.push(<TableCell key="nip"><Typography sx={{ fontSize: 13 }}>{user.nip}</Typography></TableCell>);
       cells.push(<TableCell key="email"><Typography sx={{ fontSize: 13 }}>{user.email}</Typography></TableCell>);
       cells.push(
-        <TableCell key="prodi" sx={{ width: 220, maxWidth: 220 }}>
-          <Tooltip title={`${user.jenjang || ""} ${user.nama_prodi || ""}`.trim()}>
+        <TableCell key="jurusan" sx={{ width: 220, maxWidth: 220 }}>
+          <Tooltip title={user.nama_jurusan || ""}>
             <Typography sx={{ fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", display: "block" }}>
-              {user.jenjang} {user.nama_prodi}
+              {user.nama_jurusan || "-"}
             </Typography>
           </Tooltip>
         </TableCell>
@@ -787,7 +795,7 @@ export default function KelolaPenggunaPage() {
         )}
       </Box>
 
-      {(currentTabKey === "mahasiswa" || currentTabKey === "dosen") && (
+      {currentTabKey === "mahasiswa" && (
         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3 }}>
           <Box>
             <FieldLabel required>Program Studi</FieldLabel>
@@ -829,41 +837,125 @@ export default function KelolaPenggunaPage() {
               )}
             />
           </Box>
-          {currentTabKey === "mahasiswa" ? (
-            <Box>
-              <FieldLabel required>Tahun Masuk</FieldLabel>
-              <TextField
-                fullWidth
-                size="small"
-                placeholder="Ketik tahun masuk"
-                value={currentForm.tahun_masuk || ""}
-                onChange={(e) => {
-                  setForm({ ...currentForm, tahun_masuk: e.target.value });
-                  setErrors((prev) => ({ ...prev, tahun_masuk: "" }));
-                }}
-                error={!!errors.tahun_masuk}
-                helperText={errors.tahun_masuk}
-                sx={{
-                  ...roundedField,
-                  "& .MuiOutlinedInput-root": {
-                    ...roundedField["& .MuiOutlinedInput-root"],
-                    minHeight: 50,
-                  },
-                }}
-              />
-            </Box>
-          ) : (
-            <Box>
-              <FieldLabel>Bidang Keahlian</FieldLabel>
-              <TextField
-                fullWidth
-                placeholder="Bidang keahlian"
-                value={currentForm.bidang_keahlian || ""}
-                onChange={(e) => setForm({ ...currentForm, bidang_keahlian: e.target.value })}
-                sx={roundedField}
-              />
-            </Box>
-          )}
+          <Box>
+            <FieldLabel required>Tahun Masuk</FieldLabel>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Ketik tahun masuk"
+              value={currentForm.tahun_masuk || ""}
+              onChange={(e) => {
+                setForm({ ...currentForm, tahun_masuk: e.target.value });
+                setErrors((prev) => ({ ...prev, tahun_masuk: "" }));
+              }}
+              error={!!errors.tahun_masuk}
+              helperText={errors.tahun_masuk}
+              sx={{
+                ...roundedField,
+                "& .MuiOutlinedInput-root": {
+                  ...roundedField["& .MuiOutlinedInput-root"],
+                  minHeight: 50,
+                },
+              }}
+            />
+          </Box>
+        </Box>
+      )}
+
+      {currentTabKey === "dosen" && (
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 3 }}>
+          <Box>
+            <FieldLabel required>Jurusan</FieldLabel>
+            <Autocomplete
+              fullWidth
+              size="small"
+              options={jurusanOptions}
+              value={jurusanOptions.find((j) => {
+                if (!currentForm.id_prodi) return false;
+                const prodi = prodiList.find((p) => String(p.id_prodi) === String(currentForm.id_prodi));
+                return prodi && String(j.id_jurusan) === String(prodi.id_jurusan);
+              }) || null}
+              onChange={(e, value) => {
+                setForm({ ...currentForm, id_prodi: "", id_jurusan: value ? String(value.id_jurusan) : "" });
+                setErrors((prev) => ({ ...prev, id_prodi: "" }));
+              }}
+              getOptionLabel={(option) => option.nama_jurusan}
+              isOptionEqualToValue={(option, value) => String(option.id_jurusan) === String(value?.id_jurusan)}
+              filterOptions={(options, { inputValue }) => {
+                if (!inputValue) return options;
+                const s = inputValue.toLowerCase();
+                return options.filter((o) =>
+                  String(o?.nama_jurusan || "").toLowerCase().includes(s)
+                );
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  placeholder="Ketik atau pilih jurusan"
+                  error={!!errors.id_jurusan}
+                  helperText={errors.id_jurusan}
+                  sx={{
+                    ...roundedField,
+                    "& .MuiOutlinedInput-root": {
+                      ...roundedField["& .MuiOutlinedInput-root"],
+                      minHeight: 50,
+                    },
+                  }}
+                />
+              )}
+            />
+          </Box>
+          <Box>
+            <FieldLabel required>Program Studi</FieldLabel>
+            <Autocomplete
+              fullWidth
+              size="small"
+              options={prodiList.filter((p) => currentForm.id_jurusan ? String(p.id_jurusan) === String(currentForm.id_jurusan) : true)}
+              value={findProdiOption(currentForm.id_prodi)}
+              onChange={(e, value) => {
+                setForm({ ...currentForm, id_prodi: value ? String(value.id_prodi) : "" });
+                setErrors((prev) => ({ ...prev, id_prodi: "" }));
+              }}
+              getOptionLabel={(option) => formatProdiLabel(option)}
+              isOptionEqualToValue={(option, value) => String(option.id_prodi) === String(value?.id_prodi)}
+              filterOptions={(options, { inputValue }) => {
+                if (!inputValue) return options;
+                const s = inputValue.toLowerCase();
+                return options.filter((o) =>
+                  String(o?.nama_prodi || "").toLowerCase().includes(s) ||
+                  String(o?.jenjang || "").toLowerCase().includes(s) ||
+                  String(o?.nama_jurusan || "").toLowerCase().includes(s) ||
+                  String(o?.nama_kampus || "").toLowerCase().includes(s)
+                );
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  placeholder={currentForm.id_jurusan ? "Pilih prodi" : "Pilih jurusan terlebih dahulu"}
+                  error={!!errors.id_prodi}
+                  helperText={errors.id_prodi}
+                  disabled={!currentForm.id_jurusan}
+                  sx={{
+                    ...roundedField,
+                    "& .MuiOutlinedInput-root": {
+                      ...roundedField["& .MuiOutlinedInput-root"],
+                      minHeight: 50,
+                    },
+                  }}
+                />
+              )}
+            />
+          </Box>
+          <Box>
+            <FieldLabel>Bidang Keahlian</FieldLabel>
+            <TextField
+              fullWidth
+              placeholder="Bidang keahlian"
+              value={currentForm.bidang_keahlian || ""}
+              onChange={(e) => setForm({ ...currentForm, bidang_keahlian: e.target.value })}
+              sx={roundedField}
+            />
+          </Box>
         </Box>
       )}
 
